@@ -1,0 +1,55 @@
+'use client';
+
+import { useEffect, useState, type ReactNode } from 'react';
+import type { NavGroup, NavItem } from '@/lib/nav';
+import { AppBar } from './AppBar';
+import { FeatureSheet } from './FeatureSheet';
+import { MobileTabBar } from './MobileTabBar';
+import { Sidebar } from './Sidebar';
+
+type Props = {
+  children: ReactNode;
+  groups: NavGroup[]; // đã lọc theo quyền
+  tabs: NavItem[]; // tab bar điện thoại, đã lọc theo quyền
+  badges: Record<string, number>; // số việc chờ của từng màn, cho bảng Tính năng
+  userName: string;
+  userEmail: string;
+  userRole: string;
+  canSettings: boolean;
+};
+
+// Khung ứng dụng: thanh bên (web), ngăn kéo (máy tính bảng), thanh trên cùng, tab bar và bảng Tính năng (điện thoại)
+export function ShellFrame({ children, groups, tabs, badges, userName, userEmail, userRole, canSettings }: Props) {
+  const [navOpen, setNavOpen] = useState(false);
+  const [featOpen, setFeatOpen] = useState(false);
+
+  // Esc đóng ngăn kéo menu hoặc bảng Tính năng
+  useEffect(() => {
+    if (!navOpen && !featOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      setNavOpen(false);
+      setFeatOpen(false);
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [navOpen, featOpen]);
+
+  return (
+    <div className="grid min-h-screen min-[1200px]:grid-cols-[240px_minmax(0,1fr)]">
+      <Sidebar groups={groups} open={navOpen} onNavigate={() => setNavOpen(false)} />
+
+      {navOpen && <div className="fixed inset-0 z-[55] bg-scrim" onClick={() => setNavOpen(false)} aria-hidden />}
+
+      <div className="flex min-w-0 flex-col">
+        <AppBar userName={userName} userEmail={userEmail} userRole={userRole} canSettings={canSettings} onOpenMenu={() => setNavOpen(true)} />
+        <main className="mx-auto w-full min-w-0 max-w-[1360px] flex-1 min-[1680px]:max-w-[1640px] min-[2240px]:max-w-[1920px] px-8 pb-14 pt-7 max-[1199px]:px-6 max-[1199px]:pt-6 max-[1199px]:pb-12 max-[767px]:px-4 max-[767px]:pb-[calc(116px+var(--safe-b))] max-[767px]:pt-4">
+          {children}
+        </main>
+      </div>
+
+      <MobileTabBar tabs={tabs} onFeatures={() => setFeatOpen(true)} />
+      <FeatureSheet open={featOpen} groups={groups} badges={badges} onClose={() => setFeatOpen(false)} />
+    </div>
+  );
+}

@@ -1,26 +1,232 @@
 @import "tailwindcss";
 
+/* ============================================================
+   Token thiết kế ESL Center. Nguồn chuẩn: docs/DESIGN.md.
+   Không ghi số cố định cho màu hay cỡ chữ trong component, dùng token ở đây.
+   ============================================================ */
+
+/* ---------- Bảng màu: sáng (mặc định) ---------- */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg: #FBF8F1;
+  --surface: #FFFFFF;
+  --ink: #2F2A1F;
+  --ink-2: #5A5344;
+  --muted: #958D7C;
+  --line: #ECE6D8;
+  --stone: #F1ECE0;
+  --stone-ink: #6B6453;
+  --primary: #FFD976;
+  --primary-deep: #F0B73A;
+  --primary-soft: #FFF4D6;
+  --on-primary: #2F2A1F;
+  --accent: #4E9F7A;
+  --mint: #DDF0E4;
+  --mint-ink: #2E6B4E;
+  --lav: #E6EFD9;
+  --lav-ink: #4A6A2A;
+  --butter: #FFF0C4;
+  --butter-ink: #7A5A00;
+  --blush: #F6DFD2;
+  --blush-ink: #8C4A2E;
+  --row-hover: #FDFAF3;
+  --bar-bg: rgba(251, 248, 241, 0.92);
+  --glass: rgba(255, 255, 255, 0.94);
+  --scrim: rgba(47, 42, 31, 0.3);
+  --shadow: 0 1px 2px rgba(47, 42, 31, 0.04), 0 14px 34px -22px rgba(47, 42, 31, 0.28);
+  --lift: 0 30px 80px -30px rgba(47, 42, 31, 0.45);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  color-scheme: light;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* ---------- Bảng màu: tối ---------- */
+:root[data-theme="dark"] {
+  --bg: #17130E;
+  --surface: #221D16;
+  --ink: #F4EEDF;
+  --ink-2: #CFC6B2;
+  --muted: #9D9580;
+  --line: #3A3328;
+  --stone: #2D281F;
+  --stone-ink: #CFC6B2;
+  --primary: #F5CD62;
+  --primary-deep: #E5B038;
+  --primary-soft: #3B3320;
+  --on-primary: #2A2316;
+  --accent: #6CC39C;
+  --mint: #1F3A2C;
+  --mint-ink: #9EDDBC;
+  --lav: #2A3322;
+  --lav-ink: #C4E0A0;
+  --butter: #3E3517;
+  --butter-ink: #FFDD8A;
+  --blush: #3A2A20;
+  --blush-ink: #F0BFA5;
+  --row-hover: #2A251C;
+  --bar-bg: rgba(23, 19, 14, 0.92);
+  --glass: rgba(34, 29, 22, 0.94);
+  --scrim: rgba(0, 0, 0, 0.55);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 14px 34px -22px rgba(0, 0, 0, 0.7);
+  --lift: 0 30px 80px -30px rgba(0, 0, 0, 0.75);
+  color-scheme: dark;
 }
 
+/* Theo hệ thống, khi người dùng chọn "Theo hệ thống" (data-theme chưa đặt) */
 @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  :root:not([data-theme="light"]) {
+    --bg: #17130E;
+    --surface: #221D16;
+    --ink: #F4EEDF;
+    --ink-2: #CFC6B2;
+    --muted: #9D9580;
+    --line: #3A3328;
+    --stone: #2D281F;
+    --stone-ink: #CFC6B2;
+    --primary: #F5CD62;
+    --primary-deep: #E5B038;
+    --primary-soft: #3B3320;
+    --on-primary: #2A2316;
+    --row-hover: #2A251C;
+    color-scheme: dark;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* ---------- Thang cỡ chữ: máy tính (≥ 1200px) ---------- */
+:root {
+  --fs-2xs: 11px;
+  --fs-xs: 12px;
+  --fs-sm: 13px;
+  --fs-base: 14px;
+  --fs-md: 15px;
+  --fs-lg: 16px;
+  --fs-xl: 18px;
+  --fs-2xl: 22px;
+  --fs-3xl: 28px;
+  --fs-h1: 30px;
+  --fs-display: 60px;
+  --fs-input: 15px;
+}
+
+/* ---------- Máy tính bảng (768–1199px) ---------- */
+@media (max-width: 1199px) {
+  :root {
+    --fs-3xl: 24px;
+    --fs-display: 44px;
+  }
+}
+
+/* ---------- Máy tính rộng (từ 1680px): chữ lớn hơn một bậc để không nhỏ trên màn lớn ---------- */
+@media (min-width: 1680px) {
+  :root {
+    --fs-2xs: 12px;
+    --fs-xs: 13px;
+    --fs-sm: 14px;
+    --fs-base: 15px;
+    --fs-md: 16px;
+    --fs-lg: 17px;
+    --fs-xl: 19px;
+    --fs-2xl: 24px;
+    --fs-3xl: 30px;
+    --fs-h1: 34px;
+    --fs-display: 68px;
+    --fs-input: 16px;
+  }
+}
+
+/* ---------- Điện thoại (dưới 768px): đổi ở đây, không ghi đè từng chỗ ---------- */
+@media (max-width: 767px) {
+  :root {
+    --fs-2xs: 10px;
+    --fs-xs: 11px;
+    --fs-sm: 12px;
+    --fs-base: 13px;
+    --fs-md: 14px;
+    --fs-lg: 15px;
+    --fs-xl: 16px;
+    --fs-2xl: 18px;
+    --fs-3xl: 20px;
+    --fs-h1: 22px;
+    --fs-display: 40px;
+    --fs-input: 16px; /* dưới 16px, iOS sẽ tự phóng to khi bấm vào ô nhập */
+  }
+}
+
+/* ---------- Ánh xạ sang Tailwind: dùng được text-base, bg-surface, text-ink... ---------- */
+@theme inline {
+  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-stone: var(--stone);
+  --color-stone-ink: var(--stone-ink);
+  --color-primary: var(--primary);
+  --color-primary-deep: var(--primary-deep);
+  --color-primary-soft: var(--primary-soft);
+  --color-on-primary: var(--on-primary);
+  --color-accent: var(--accent);
+  --color-mint: var(--mint);
+  --color-mint-ink: var(--mint-ink);
+  --color-lav: var(--lav);
+  --color-lav-ink: var(--lav-ink);
+  --color-butter: var(--butter);
+  --color-butter-ink: var(--butter-ink);
+  --color-blush: var(--blush);
+  --color-blush-ink: var(--blush-ink);
+  --color-row-hover: var(--row-hover);
+
+  --text-2xs: var(--fs-2xs);
+  --text-xs: var(--fs-xs);
+  --text-sm: var(--fs-sm);
+  --text-base: var(--fs-base);
+  --text-md: var(--fs-md);
+  --text-lg: var(--fs-lg);
+  --text-xl: var(--fs-xl);
+  --text-2xl: var(--fs-2xl);
+  --text-3xl: var(--fs-3xl);
+  --text-h1: var(--fs-h1);
+  --text-display: var(--fs-display);
+  --text-input: var(--fs-input);
+
+  --shadow-card: var(--shadow);
+  --shadow-lift: var(--lift);
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+  }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-size: var(--fs-base);
+    font-variant-numeric: tabular-nums;
+    -webkit-font-smoothing: antialiased;
+    transition: background-color 0.3s, color 0.3s;
+  }
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+    color: inherit;
+  }
+  button {
+    cursor: pointer;
+  }
+  :focus-visible {
+    outline: 2px solid var(--primary-deep);
+    outline-offset: 2px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation: none !important;
+      transition: none !important;
+    }
+  }
 }
