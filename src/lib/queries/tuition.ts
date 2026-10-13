@@ -1,0 +1,139 @@
+// Truy vấn học phí và báo cáo doanh thu. Chỉ chạy trên server.
+import { eq, sql } from 'drizzle-orm';
+import { db } from '@/db/client';
+import { centerSettings, tuitionPayments } from '@/db/schema';
+import { debtOf, dueDateFor, isOverdue, tuitionState, type TuitionState } from '@/lib/tuition';
+import { normalizeSearch } from '@/lib/text';
+
+export type InvoiceRow = {
+  id: number;
+  code: string;
+  fullName: string;
+  status: 'active' | 'trial' | 'paused' | 'finished';
+  className: string;
+  fee: number;
+  paid: number;
+  debt: number;
+  state: TuitionState;
+  dueDate: string; // YYYY-MM-DD
+  overdue: boolean;
+  lastPaidDate: string | null;
+};
+
+export type InvoiceFilter = 'all' | 'paid' | 'partial' | 'unpaid' | 'overdue';
+
+export async function getDueDay(): Promise<number> {
+  const [row] = await db.select({ dueDay: centerSettings.dueDay }).from(centerSettings).where(eq(centerSettings.id, 1)).limit(1);
+  return row?.dueDay ?? 10;
+}
+
+// Hoá đơn học phí của mọi học sinh: học phí lớp, số đã thu, còn nợ, hạn đóng, quá hạn.
+export async function listInvoices(todayKey: string, q: string, filter: InvoiceFilter): Promise<{ rows: InvoiceRow[]; counts: Record<InvoiceFilter, number>; totalDebt: number }> {
+  const dueDay = await getDueDay();
+  const result = await db.execute<{
+    id: number; full_name: string; search_key: string; status: InvoiceRow['status']; start_date: string; class_name: string;
+    fee: number; paid: number; last_paid: string | null;
+  }>(sql`
+    SELECT s.id, s.full_name, s.search_key, s.status, s.start_date::text AS start_date, c.name AS class_name, c.fee,
+      COALESCE(p.paid, 0)::int AS paid,
+      to_char(p.last_paid AT TIME ZONE 'Asia/Ho_Chi_Minh', 'YYYY-MM-DD') AS last_paid
+    FROM students s
+    JOIN classes c ON c.id = s.class_id
+    LEFT JOIN (
+      SELECT student_id, SUM(amount)::int AS paid, MAX(paid_at) AS last_paid
+      FROM tuition_payments GROUP BY student_id
+    ) p ON p.student_id = s.id
+    ORDER BY s.full_name
+  `);
+
+  const needle = normalizeSearch(q);
+  const all: InvoiceRow[] = result.rows.map((r) => {
+    const debt = debtOf(r.fee, r.paid);
+    const dueDate = dueDateFor(r.start_date, dueDay);
+    return {
+      id: r.id,
+      code: `HS-${String(r.id).padStart(4, '0')}`,
+      fullName: r.full_name,
+      status: r.status,
+      className: r.class_name,
+      fee: r.fee,
+      paid: r.paid,
+      debt,
+      state: tuitionState(r.fee, r.paid),
+      dueDate,
+      overdue: isOverdue(r.fee, r.paid, dueDate, todayKey),
+      lastPaidDate: r.last_paid,
+    };
+  });
+
+  const counts: Record<InvoiceFilter, number> = { all: all.length, paid: 0, partial: 0, unpaid: 0, overdue: 0 };
+  for (const r of all) {
+    counts[r.state] += 1;
+    if (r.overdue) counts.overdue += 1;
+  }
+
+  const rows = all
+    .filter((r) => {
+      if (needle && !normalizeSearch(`${r.fullName} ${r.code}`).includes(needle)) return false;
+      if (filter === 'all') return true;
+      if (filter === 'overdue') return r.overdue;
+      return r.state === filter;
+    });
+
+  return { rows, counts, totalDebt: all.reduce((sum, r) => sum + r.debt, 0) };
+}
+
+export type PaymentRow = { id: number; amount: number; paidDate: string; note: string };
+
+export async function listPaymentsOfStudent(studentId: number): Promise<PaymentRow[]> {
+  const result = await db.execute<{ id: number; amount: number; paid_date: string; note: string }>(sql`
+    SELECT id, amount, to_char(paid_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'YYYY-MM-DD') AS paid_date, note
+    FROM tuition_payments WHERE student_id = ${studentId} ORDER BY paid_at DESC, id DESC
+  `);
+  return result.rows.map((r) => ({ id: r.id, amount: r.amount, paidDate: r.paid_date, note: r.note }));
+}
+
+export type RevenueReport = {
+  month: string; // YYYY-MM
+  total: number;
+  count: number;
+  byClass: { classId: number; name: string; total: number; count: number }[];
+  trend: { month: string; total: number }[]; // sáu tháng gần nhất, tính đến tháng được chọn
+};
+
+// Doanh thu một tháng theo lớp, và xu hướng sáu tháng
+export async function getRevenueReport(month: string, monthsBack: string[]): Promise<RevenueReport> {
+  const byClassRows = await db.execute<{ class_id: number; name: string; total: number; n: number }>(sql`
+    SELECT c.id AS class_id, c.name, SUM(tp.amount)::int AS total, COUNT(tp.id)::int AS n
+    FROM tuition_payments tp
+    JOIN students s ON s.id = tp.student_id
+    JOIN classes c ON c.id = s.class_id
+    WHERE to_char(tp.paid_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'YYYY-MM') = ${month}
+    GROUP BY c.id, c.name
+    ORDER BY total DESC, c.name
+  `);
+  const trendRows = await db.execute<{ month: string; total: number }>(sql`
+    SELECT to_char(paid_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'YYYY-MM') AS month, SUM(amount)::int AS total
+    FROM tuition_payments
+    WHERE to_char(paid_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'YYYY-MM') IN (${sql.join(monthsBack.map((m) => sql`${m}`), sql`, `)})
+    GROUP BY 1
+  `);
+  const trendMap = new Map(trendRows.rows.map((r) => [r.month, r.total]));
+  const byClass = byClassRows.rows.map((r) => ({ classId: r.class_id, name: r.name, total: r.total, count: r.n }));
+  return {
+    month,
+    total: byClass.reduce((s, r) => s + r.total, 0),
+    count: byClass.reduce((s, r) => s + r.count, 0),
+    byClass,
+    trend: monthsBack.map((m) => ({ month: m, total: trendMap.get(m) ?? 0 })),
+  };
+}
+
+// Tổng số tiền đã thu của học sinh, dùng để kiểm tra không thu quá số còn nợ
+export async function paidOf(studentId: number): Promise<number> {
+  const [row] = await db
+    .select({ total: sql<number>`COALESCE(SUM(${tuitionPayments.amount}), 0)::int` })
+    .from(tuitionPayments)
+    .where(eq(tuitionPayments.studentId, studentId));
+  return Number(row?.total ?? 0);
+}

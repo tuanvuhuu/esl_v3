@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1791885522381,
+      "tag": "0000_windy_cammi",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791886607864,
+      "tag": "0001_expand_users_parents_schedule_assignments_history",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791887112011,
+      "tag": "0002_student_search_key",
+      "breakpoints": true
+    }
+  ]
+}
