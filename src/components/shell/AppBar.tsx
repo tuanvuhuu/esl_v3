@@ -1,6 +1,7 @@
 'use client';
 
 import { Bell, Menu, Search } from 'lucide-react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { useCrumbs } from './PageCrumbs';
@@ -42,7 +43,7 @@ export function AppBar({ userName, userEmail, userRole, canSettings, onOpenMenu 
   }
 
   return (
-    <header className="sticky top-0 z-30 flex min-h-[68px] items-center gap-2 border-b border-line bg-bar-bg px-8 py-3 backdrop-blur-md max-[1199px]:px-6 max-[767px]:min-h-[60px] max-[767px]:gap-2 max-[767px]:px-4 max-[767px]:py-2.5">
+    <header className="sticky top-0 z-30 flex shrink-0 min-h-[60px] items-center gap-2 border-b border-line bg-bar-bg px-6 py-2 backdrop-blur-md max-[1199px]:px-5 max-[767px]:min-h-[60px] max-[767px]:gap-2 max-[767px]:px-4 max-[767px]:py-2.5">
       <button
         type="button"
         onClick={onOpenMenu}
@@ -52,10 +53,10 @@ export function AppBar({ userName, userEmail, userRole, canSettings, onOpenMenu 
         <Menu className="size-[18px]" aria-hidden />
       </button>
 
-      <div className="hidden items-center gap-2 max-[1199px]:flex">
+      <Link href="/tong-quan" aria-label="ESL Center, về trang Tổng quan" className="hidden items-center gap-2 max-[1199px]:flex">
         <span className="grid size-9 place-items-center rounded-xl bg-primary text-md font-extrabold text-on-primary">E</span>
         <b className="text-base text-ink">ESL Center</b>
-      </div>
+      </Link>
 
       <nav aria-label="Vị trí hiện tại" className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden text-sm font-semibold text-muted max-[767px]:hidden">
         {crumbs?.map((c, i) => (

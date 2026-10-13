@@ -100,46 +100,54 @@ export function StudentFilters({
         )}
       </div>
 
-      {/* Chip trạng thái (mọi màn hình) */}
-      <div role="tablist" aria-label="Lọc theo trạng thái" className="flex flex-wrap gap-2">
-        {STATUS_CHIPS.map((chip) => {
-          const on = current.status === chip.value || (chip.value === 'all' && current.status === 'all');
-          return (
-            <button
-              key={chip.value}
-              type="button"
-              role="tab"
-              aria-selected={on}
-              onClick={() => go({ status: chip.value })}
-              className={`inline-flex h-9 items-center gap-1.5 rounded-full px-3.5 text-sm font-semibold transition-colors ${on ? 'bg-primary text-on-primary' : 'bg-stone text-stone-ink hover:bg-line'} max-[767px]:h-9 max-[767px]:text-xs`}
-            >
-              {chip.label}
-              <b className={`text-xs font-bold ${on ? 'opacity-80' : 'opacity-60'}`}>{statusCounts[chip.value] ?? 0}</b>
-            </button>
-          );
-        })}
-      </div>
+      {/* Chip trạng thái (mọi màn hình). Máy tính: chip, bộ lọc và nút thêm nằm cùng một hàng */}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div role="tablist" aria-label="Lọc theo trạng thái" className="flex flex-wrap gap-2">
+          {STATUS_CHIPS.map((chip) => {
+            const on = current.status === chip.value || (chip.value === 'all' && current.status === 'all');
+            return (
+              <button
+                key={chip.value}
+                type="button"
+                role="tab"
+                aria-selected={on}
+                onClick={() => go({ status: chip.value })}
+                className={`inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-sm font-semibold transition-colors ${on ? 'bg-primary text-on-primary' : 'bg-stone text-stone-ink hover:bg-line'} max-[767px]:h-9 max-[767px]:text-xs`}
+              >
+                {chip.label}
+                <b className={`text-xs font-bold ${on ? 'opacity-80' : 'opacity-60'}`}>{statusCounts[chip.value] ?? 0}</b>
+              </button>
+            );
+          })}
+        </div>
 
-      {/* Máy tính và máy tính bảng: chọn lớp và học phí */}
-      <div className="hidden flex-wrap gap-2 min-[768px]:flex">
-        <label className="flex items-center gap-2 rounded-xl border border-line bg-surface py-2 pl-3 pr-2 text-sm font-semibold text-ink">
-          <Filter className="size-3.5 text-muted" aria-hidden />
-          <span className="sr-only">Lọc theo lớp</span>
-          <select value={current.cls} onChange={(e) => go({ cls: e.target.value })} className="bg-transparent text-sm font-semibold text-ink outline-none">
-            <option value="">Tất cả lớp</option>
-            {classes.map((c) => (
-              <option key={c.id} value={c.id}>{c.name}</option>
-            ))}
-          </select>
-        </label>
-        <label className="flex items-center gap-2 rounded-xl border border-line bg-surface py-2 pl-3 pr-2 text-sm font-semibold text-ink">
-          <span className="sr-only">Lọc theo học phí</span>
-          <select value={current.tuition} onChange={(e) => go({ tuition: e.target.value })} className="bg-transparent text-sm font-semibold text-ink outline-none">
-            {TUITION_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>{o.label}</option>
-            ))}
-          </select>
-        </label>
+        {/* Máy tính và máy tính bảng: chọn lớp, học phí và thêm học sinh */}
+        <div className="ml-auto hidden flex-wrap items-center gap-2 min-[768px]:flex">
+          <label className="flex h-8 items-center gap-2 rounded-xl border border-line bg-surface pl-2.5 pr-2 text-sm font-semibold text-ink">
+            <Filter className="size-3.5 text-muted" aria-hidden />
+            <span className="sr-only">Lọc theo lớp</span>
+            <select value={current.cls} onChange={(e) => go({ cls: e.target.value })} className="bg-transparent text-sm font-semibold text-ink outline-none">
+              <option value="">Tất cả lớp</option>
+              {classes.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+          </label>
+          <label className="flex h-8 items-center gap-2 rounded-xl border border-line bg-surface pl-2.5 pr-2 text-sm font-semibold text-ink">
+            <span className="sr-only">Lọc theo học phí</span>
+            <select value={current.tuition} onChange={(e) => go({ tuition: e.target.value })} className="bg-transparent text-sm font-semibold text-ink outline-none">
+              {TUITION_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+          </label>
+          {onAdd && (
+            <button type="button" onClick={onAdd} className="inline-flex h-8 items-center gap-1.5 rounded-xl bg-primary px-3 text-sm font-bold text-on-primary">
+              <Plus className="size-4" aria-hidden />
+              Thêm học sinh
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Điện thoại: bảng Bộ lọc trượt từ đáy (DESIGN mục 3) */}

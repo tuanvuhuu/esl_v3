@@ -13,20 +13,20 @@ File này là nguồn chuẩn cho giao diện. Khi sửa giao diện, đọc fil
 
 ## 2. Thang cỡ chữ `--fs-*`
 
-| Biến | Máy tính (≥1200) | Máy tính bảng (768–1199) | Điện thoại (<768) |
-|---|---|---|---|
-| `--fs-2xs` | 11 | 11 | 10 |
-| `--fs-xs` | 12 | 12 | 11 |
-| `--fs-sm` | 13 | 13 | 12 |
-| `--fs-base` | 14 | 14 | 13 |
-| `--fs-md` | 15 | 15 | 14 |
-| `--fs-lg` | 16 | 16 | 15 |
-| `--fs-xl` | 18 | 18 | 16 |
-| `--fs-2xl` | 22 | 22 | 18 |
-| `--fs-3xl` | 28 | 24 | 20 |
-| `--fs-h1` | 30 | 30 | 22 |
-| `--fs-display` | 60 | 44 | 40 |
-| `--fs-input` | 15 | 15 | 16 |
+| Biến | Máy tính (1200–1679) | Máy tính rộng (≥1680) | Máy tính bảng (768–1199) | Điện thoại (<768) |
+|---|---|---|---|---|
+| `--fs-2xs` | 10 | 11 | 10 | 10 |
+| `--fs-xs` | 11 | 12 | 11 | 11 |
+| `--fs-sm` | 12 | 13 | 12 | 12 |
+| `--fs-base` | 13 | 14 | 13 | 13 |
+| `--fs-md` | 14 | 15 | 14 | 14 |
+| `--fs-lg` | 15 | 16 | 15 | 15 |
+| `--fs-xl` | 16 | 18 | 16 | 16 |
+| `--fs-2xl` | 20 | 22 | 20 | 18 |
+| `--fs-3xl` | 24 | 28 | 24 | 20 |
+| `--fs-h1` | 26 | 30 | 26 | 22 |
+| `--fs-display` | 56 | 60 | 44 | 40 |
+| `--fs-input` | 15 | 16 | 15 | 16 |
 
 - Quy tắc: không viết `font-size: 13px`, luôn dùng biến (token `text-base`, `text-2xs`...).
 - Ô nhập trên điện thoại giữ 16px để iOS không tự phóng to khi bấm vào. Đây là ngoại lệ có chủ đích.
@@ -34,10 +34,11 @@ File này là nguồn chuẩn cho giao diện. Khi sửa giao diện, đọc fil
 
 ## 3. Khung màn hình
 
-- **Từ 1200px:** thanh bên cố định 240px. Danh sách học sinh là bảng 7 cột.
+- **Từ 1200px:** thanh bên cố định 208px. Thanh trên và menu đứng yên, nội dung cuộn trong khung chính (đổi trang thì về đầu). Bảng học sinh là 7 cột, vừa màn hình: thân bảng tự cuộn, tiêu đề cột dính, phân trang luôn thấy.
 - **768–1199px:** menu thành ngăn kéo (nút ≡). Học sinh là thẻ.
 - **Dưới 768px:** thanh tab dưới đáy, học sinh là thẻ, bộ lọc là bảng trượt từ đáy (`Sheet`), hồ sơ và form mở toàn màn hình.
 - Hồ sơ học sinh trên máy tính mở trong ngăn kéo bên phải (`?h=<id>`), danh sách vẫn hiện bên trái. Điện thoại mở trang riêng (`/hoc-sinh/<id>`).
+- Menu bên trái (máy tính và ngăn kéo) có ô "Tìm kiếm chức năng" ở đầu. Gõ không dấu vẫn ra mục có dấu, và chỉ hiện các mục khớp. Mục đang mở có nền vàng nhạt và vạch vàng đậm bên trái. Thanh cuộn của menu chỉ hiện khi rê chuột vào (class `scroll-quiet`).
 
 ## 4. Thanh trên cùng
 

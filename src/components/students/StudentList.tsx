@@ -1,6 +1,6 @@
 'use client';
 
-import { Eye, Pencil, Plus, Trash2 } from 'lucide-react';
+import { Eye, Pencil, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState, useTransition, type ReactNode } from 'react';
@@ -100,39 +100,29 @@ export function StudentList({ rows, phoneRows, total, page, pageCount, loadedPag
   const hasMorePhone = phoneRows.length < total;
 
   return (
-    <section className="flex flex-col">
-      <header className="mb-5 flex flex-wrap items-end justify-between gap-4 max-[767px]:mb-3">
+    <section className="flex flex-col min-[1200px]:min-h-0 min-[1200px]:flex-1">
+      <header className="mb-4 flex flex-wrap items-end justify-between gap-4 max-[767px]:mb-3">
         <div className="min-w-0">
           <PageCrumbs crumbs={['Đào tạo', 'Học sinh']} />
-          <h1 className="text-h1 font-extrabold leading-tight tracking-tight text-ink">Học sinh</h1>
-          <p className="mt-2 text-base text-muted max-[767px]:mt-1.5 max-[767px]:text-sm">Quản lý hồ sơ, tiến độ học và học phí của từng học viên.</p>
+          {/* Từ 768px tên trang nằm trên thanh trên cùng (đường dẫn), nên tiêu đề chỉ còn cho trình đọc màn hình */}
+          <h1 className="text-h1 font-extrabold leading-tight tracking-tight text-ink min-[768px]:sr-only">Học sinh</h1>
+          <p className="mt-1 text-base text-muted max-[767px]:mt-1.5 max-[767px]:text-sm">Quản lý hồ sơ, tiến độ học và học phí của từng học viên.</p>
         </div>
-        {canEdit && (
-          <div className="flex items-center gap-2 max-[767px]:hidden">
-            <button type="button" onClick={() => setCreating(true)} className="inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-base font-bold text-on-primary">
-              <Plus className="size-4" aria-hidden />
-              Thêm học sinh
-            </button>
-          </div>
-        )}
       </header>
 
       <StudentFilters current={filters} classes={classes} statusCounts={statusCounts} onAdd={canEdit ? () => setCreating(true) : undefined} />
 
-      <p className="mb-3 hidden text-sm text-muted min-[768px]:block">
-        {total === 0 ? 'Không có học sinh phù hợp.' : `Hiển thị ${(page - 1) * PAGE_SIZE + 1}–${Math.min(page * PAGE_SIZE, total)} trên ${total} học sinh`}
-      </p>
       <p className="mb-3 text-sm text-muted min-[768px]:hidden">
         {total === 0 ? 'Không có học sinh phù hợp.' : `Đang hiển thị ${phoneRows.length} trên ${total} học sinh`}
       </p>
 
       {/* Máy tính (từ 1200px): bảng 7 cột */}
-      <div className="hidden overflow-hidden rounded-[24px] bg-surface shadow-card min-[1200px]:block">
+      <div className="hidden overflow-hidden rounded-[24px] bg-surface shadow-card min-[1200px]:flex min-[1200px]:min-h-0 min-[1200px]:flex-1 min-[1200px]:flex-col">
         {rows.length === 0 ? (
           <EmptyState title="Không tìm thấy học sinh phù hợp" hint="Thử đổi từ khoá hoặc bỏ bớt bộ lọc." />
         ) : (
-          <div role="table" aria-label="Danh sách học sinh">
-            <div role="row" className="grid grid-cols-[minmax(170px,2.2fr)_minmax(110px,1.1fr)_minmax(120px,1.2fr)_64px_minmax(120px,1.3fr)_minmax(104px,1fr)_44px] gap-x-3 border-b border-line px-4 py-2.5 text-xs font-semibold text-muted">
+          <div role="table" aria-label="Danh sách học sinh" className="scroll-quiet min-[1200px]:min-h-0 min-[1200px]:flex-1 min-[1200px]:overflow-y-auto">
+            <div role="row" className="grid grid-cols-[minmax(170px,2.2fr)_minmax(110px,1.1fr)_minmax(120px,1.2fr)_64px_minmax(120px,1.3fr)_minmax(104px,1fr)_44px] gap-x-3 border-b border-line bg-surface px-4 py-2 text-xs font-semibold text-muted sticky top-0 z-10">
               <span role="columnheader">Học sinh</span>
               <span role="columnheader">Lớp & giáo viên</span>
               <span role="columnheader">Tiến độ</span>
@@ -142,7 +132,7 @@ export function StudentList({ rows, phoneRows, total, page, pageCount, loadedPag
               <span role="columnheader" className="sr-only">Thao tác</span>
             </div>
             {rows.map((row) => (
-              <div key={row.id} role="row" className="grid grid-cols-[minmax(170px,2.2fr)_minmax(110px,1.1fr)_minmax(120px,1.2fr)_64px_minmax(120px,1.3fr)_minmax(104px,1fr)_44px] items-center gap-x-3 border-b border-line px-4 py-3.5 transition-colors last:border-0 hover:bg-row-hover">
+              <div key={row.id} role="row" className="grid grid-cols-[minmax(170px,2.2fr)_minmax(110px,1.1fr)_minmax(120px,1.2fr)_64px_minmax(120px,1.3fr)_minmax(104px,1fr)_44px] items-center gap-x-3 border-b border-line px-4 py-2.5 transition-colors last:border-0 hover:bg-row-hover">
                 <div role="cell" className="flex min-w-0 items-center gap-3">
                   <Avatar name={row.fullName} seed={row.id} />
                   <div className="min-w-0">
@@ -202,7 +192,7 @@ export function StudentList({ rows, phoneRows, total, page, pageCount, loadedPag
 
       {/* Phân trang: số trang (máy tính bảng và máy tính), Xem thêm (điện thoại) */}
       {pageCount > 1 && (
-        <nav aria-label="Phân trang" className="mt-4 hidden flex-wrap items-center justify-between gap-3 min-[768px]:flex">
+        <nav aria-label="Phân trang" className="mt-3 hidden flex-wrap items-center justify-between gap-3 min-[768px]:flex">
           <small className="text-sm text-muted">Trang {page} / {pageCount}</small>
           <div className="flex items-center gap-1.5">
             <PageLink disabled={page <= 1} href={studentsHref({ ...filters, p: page - 1 })} label="Trang trước">‹</PageLink>

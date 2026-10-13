@@ -395,3 +395,12 @@ Mỗi lỗi gặp phải được ghi ở đây, theo mẫu dưới đây. Trư�
 - Cách xử lý tạm: Không thay đổi. Theo dõi nếu xuất hiện trong build hoặc khi đăng nhập thật.
 - Quy tắc phòng ngừa: Ghi nguyên văn cảnh báo khi gặp. Chỉ kết luận sau khi đối chiếu với npm run build và kiểm thử đầu cuối.
 - Đã áp dụng ở: ghi nhận chung, chưa có thay đổi mã.
+
+## E-043 · CSS mới thêm vào globals.css không có trong bản đang phục vụ (dev server)
+- Ngày: 2026-10-13
+- Khu vực: CSS / máy chủ phát triển (tái diễn E-020, E-027)
+- Triệu chứng: Thêm class `.scroll-quiet` vào `globals.css`, kiểm tra trên trình duyệt thì thanh cuộn vẫn hiện và `getComputedStyle` trả về `auto`. Tải file CSS mà trang đang dùng thì không thấy rule mới.
+- Nguyên nhân: Máy chủ phát triển giữ bản CSS biên dịch cũ sau khi sửa `globals.css`, nên rule mới không được phục vụ.
+- Cách sửa: Dừng máy chủ, xoá `.next`, chạy lại `npm run dev -- -p 3100`. Sau đó kiểm tra rule đã có trong CSS được phục vụ.
+- Quy tắc phòng ngừa: Sau khi sửa `globals.css` mà kiểm tra trình duyệt không khớp, lấy file CSS của trang (link rel="stylesheet") và tìm tên rule. Nếu không có, khởi động lại máy chủ trước khi kết luận sai về code.
+- Đã áp dụng ở: thêm `.scroll-quiet` và đổi bậc chữ trong `globals.css`.

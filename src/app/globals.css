@@ -90,19 +90,19 @@
   }
 }
 
-/* ---------- Thang cỡ chữ: máy tính (≥ 1200px) ---------- */
+/* ---------- Thang cỡ chữ: máy tính (1200–1679px) ---------- */
 :root {
-  --fs-2xs: 11px;
-  --fs-xs: 12px;
-  --fs-sm: 13px;
-  --fs-base: 14px;
-  --fs-md: 15px;
-  --fs-lg: 16px;
-  --fs-xl: 18px;
-  --fs-2xl: 22px;
-  --fs-3xl: 28px;
-  --fs-h1: 30px;
-  --fs-display: 60px;
+  --fs-2xs: 10px;
+  --fs-xs: 11px;
+  --fs-sm: 12px;
+  --fs-base: 13px;
+  --fs-md: 14px;
+  --fs-lg: 15px;
+  --fs-xl: 16px;
+  --fs-2xl: 20px;
+  --fs-3xl: 24px;
+  --fs-h1: 26px;
+  --fs-display: 56px;
   --fs-input: 15px;
 }
 
@@ -117,17 +117,17 @@
 /* ---------- Máy tính rộng (từ 1680px): chữ lớn hơn một bậc để không nhỏ trên màn lớn ---------- */
 @media (min-width: 1680px) {
   :root {
-    --fs-2xs: 12px;
-    --fs-xs: 13px;
-    --fs-sm: 14px;
-    --fs-base: 15px;
-    --fs-md: 16px;
-    --fs-lg: 17px;
-    --fs-xl: 19px;
-    --fs-2xl: 24px;
-    --fs-3xl: 30px;
-    --fs-h1: 34px;
-    --fs-display: 68px;
+    --fs-2xs: 11px;
+    --fs-xs: 12px;
+    --fs-sm: 13px;
+    --fs-base: 14px;
+    --fs-md: 15px;
+    --fs-lg: 16px;
+    --fs-xl: 18px;
+    --fs-2xl: 22px;
+    --fs-3xl: 28px;
+    --fs-h1: 30px;
+    --fs-display: 60px;
     --fs-input: 16px;
   }
 }
@@ -229,4 +229,15 @@
       transition: none !important;
     }
   }
+}
+
+/* Thanh cuộn của menu: ẩn khi không dùng, hiện khi rê chuột vào menu hoặc đang có tiêu điểm trong menu */
+.scroll-quiet {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  transition: scrollbar-color 0.2s;
+}
+.scroll-quiet:hover,
+.scroll-quiet:focus-within {
+  scrollbar-color: var(--muted) transparent;
 }

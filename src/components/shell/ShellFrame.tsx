@@ -1,5 +1,6 @@
 'use client';
 
+import { usePathname } from 'next/navigation';
 import { useEffect, useState, type ReactNode } from 'react';
 import type { NavGroup, NavItem } from '@/lib/nav';
 import { AppBar } from './AppBar';
@@ -20,6 +21,7 @@ type Props = {
 
 // Khung ứng dụng: thanh bên (web), ngăn kéo (máy tính bảng), thanh trên cùng, tab bar và bảng Tính năng (điện thoại)
 export function ShellFrame({ children, groups, tabs, badges, userName, userEmail, userRole, canSettings }: Props) {
+  const pathname = usePathname();
   const [navOpen, setNavOpen] = useState(false);
   const [featOpen, setFeatOpen] = useState(false);
 
@@ -36,14 +38,18 @@ export function ShellFrame({ children, groups, tabs, badges, userName, userEmail
   }, [navOpen, featOpen]);
 
   return (
-    <div className="grid min-h-screen min-[1200px]:grid-cols-[240px_minmax(0,1fr)]">
+    <div className="grid min-h-screen min-[1200px]:grid-cols-[208px_minmax(0,1fr)]">
       <Sidebar groups={groups} open={navOpen} onNavigate={() => setNavOpen(false)} />
 
       {navOpen && <div className="fixed inset-0 z-[55] bg-scrim" onClick={() => setNavOpen(false)} aria-hidden />}
 
-      <div className="flex min-w-0 flex-col">
+      <div className="flex min-w-0 flex-col min-[1200px]:h-screen">
         <AppBar userName={userName} userEmail={userEmail} userRole={userRole} canSettings={canSettings} onOpenMenu={() => setNavOpen(true)} />
-        <main className="mx-auto w-full min-w-0 max-w-[1360px] flex-1 min-[1680px]:max-w-[1640px] min-[2240px]:max-w-[1920px] px-8 pb-14 pt-7 max-[1199px]:px-6 max-[1199px]:pt-6 max-[1199px]:pb-12 max-[767px]:px-4 max-[767px]:pb-[calc(116px+var(--safe-b))] max-[767px]:pt-4">
+        {/* Máy tính (từ 1200px): nội dung cuộn trong khung này, thanh trên và menu đứng yên. Đổi trang thì về đầu khung (key theo đường dẫn). */}
+        <main
+          key={pathname}
+          className="mx-auto w-full min-w-0 max-w-[1360px] flex-1 min-[1680px]:max-w-[1640px] min-[2240px]:max-w-[1920px] px-6 pb-4 pt-3 max-[1199px]:px-5 max-[1199px]:pb-4 max-[1199px]:pt-3 max-[767px]:px-4 max-[767px]:pb-[calc(116px+var(--safe-b))] max-[767px]:pt-4 min-[1200px]:flex min-[1200px]:min-h-0 min-[1200px]:flex-col min-[1200px]:overflow-y-auto"
+        >
           {children}
         </main>
       </div>
