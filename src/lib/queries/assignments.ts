@@ -1,6 +1,8 @@
 // Truy vấn bài tập và bài nộp. Chỉ chạy trên server. Học sinh tính là đang học khi active hoặc trial.
 import { and, asc, eq, inArray, sql } from 'drizzle-orm';
 import { db } from '@/db/client';
+import type { CampusScope } from '@/lib/campus';
+import { campusCond } from '@/lib/queries/campuses';
 import { assignmentSubmissions, assignments, classes, students } from '@/db/schema';
 
 export type AssignmentRow = {
@@ -15,6 +17,8 @@ export type AssignmentRow = {
   done: number; // đã nộp hoặc đã chấm
   graded: number;
   overdue: boolean; // đã qua hạn và còn học sinh chưa nộp
+  lessonId: number | null; // bài giảng gắn với bài tập (P25)
+  lessonTitle: string | null;
 };
 
 const ENROLLED = sql`('active', 'trial')`;
@@ -24,9 +28,10 @@ export async function listAssignmentsOfClass(classId: number): Promise<Assignmen
   const nowMs = Date.now();
   const result = await db.execute<{
     id: number; class_id: number; class_name: string; title: string; description: string; due_at: Date; max_score: number;
-    enrolled: number; done: number; graded: number;
+    enrolled: number; done: number; graded: number; lesson_id: number | null; lesson_title: string | null;
   }>(sql`
     SELECT a.id, a.class_id, c.name AS class_name, a.title, a.description, a.due_at, a.max_score,
+      a.lesson_id, (SELECT l.title FROM lessons l WHERE l.id = a.lesson_id) AS lesson_title,
       (SELECT COUNT(*)::int FROM students s WHERE s.class_id = a.class_id AND s.status IN ${ENROLLED}) AS enrolled,
       (SELECT COUNT(*)::int FROM assignment_submissions sub JOIN students s ON s.id = sub.student_id
         WHERE sub.assignment_id = a.id AND s.status IN ${ENROLLED} AND sub.status IN ('submitted', 'graded')) AS done,
@@ -40,7 +45,10 @@ export async function listAssignmentsOfClass(classId: number): Promise<Assignmen
 }
 
 function toAssignmentRow(
-  r: { id: number; class_id: number; class_name: string; title: string; description: string; due_at: Date; max_score: number; enrolled: number; done: number; graded: number },
+  r: {
+    id: number; class_id: number; class_name: string; title: string; description: string; due_at: Date; max_score: number;
+    enrolled: number; done: number; graded: number; lesson_id: number | null; lesson_title: string | null;
+  },
   nowMs: number,
 ): AssignmentRow {
   const due = new Date(r.due_at);
@@ -56,6 +64,8 @@ function toAssignmentRow(
     done: r.done,
     graded: r.graded,
     overdue: due.getTime() < nowMs && r.enrolled - r.done > 0,
+    lessonId: r.lesson_id,
+    lessonTitle: r.lesson_title,
   };
 }
 
@@ -70,6 +80,8 @@ export async function getAssignmentBase(id: number) {
       description: assignments.description,
       dueAt: assignments.dueAt,
       maxScore: assignments.maxScore,
+      lessonId: assignments.lessonId,
+      campusId: classes.campusId,
     })
     .from(assignments)
     .innerJoin(classes, eq(classes.id, assignments.classId))
@@ -113,20 +125,22 @@ export async function listGradingRows(assignmentId: number, classId: number): Pr
 }
 
 // Bài quá hạn còn học sinh chưa nộp, trên tất cả các lớp. Dùng cho Tổng quan.
-export async function listOverdueAssignments(): Promise<AssignmentRow[]> {
+// Bài quá hạn trong cơ sở đang xem (scope null: mọi cơ sở)
+export async function listOverdueAssignments(scope: CampusScope): Promise<AssignmentRow[]> {
   const nowMs = Date.now();
   const result = await db.execute<{
     id: number; class_id: number; class_name: string; title: string; description: string; due_at: Date; max_score: number;
-    enrolled: number; done: number; graded: number;
+    enrolled: number; done: number; graded: number; lesson_id: number | null; lesson_title: string | null;
   }>(sql`
     SELECT a.id, a.class_id, c.name AS class_name, a.title, a.description, a.due_at, a.max_score,
+      a.lesson_id, (SELECT l.title FROM lessons l WHERE l.id = a.lesson_id) AS lesson_title,
       (SELECT COUNT(*)::int FROM students s WHERE s.class_id = a.class_id AND s.status IN ${ENROLLED}) AS enrolled,
       (SELECT COUNT(*)::int FROM assignment_submissions sub JOIN students s ON s.id = sub.student_id
         WHERE sub.assignment_id = a.id AND s.status IN ${ENROLLED} AND sub.status IN ('submitted', 'graded')) AS done,
       (SELECT COUNT(*)::int FROM assignment_submissions sub JOIN students s ON s.id = sub.student_id
         WHERE sub.assignment_id = a.id AND s.status IN ${ENROLLED} AND sub.status = 'graded') AS graded
     FROM assignments a JOIN classes c ON c.id = a.class_id
-    WHERE a.due_at < NOW()
+    WHERE a.due_at < NOW() AND ${campusCond(scope, sql`c.campus_id`)}
     ORDER BY a.due_at DESC
   `);
   return result.rows.map((r) => toAssignmentRow(r, nowMs)).filter((r) => r.overdue);

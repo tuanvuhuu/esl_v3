@@ -1,9 +1,10 @@
-import { connection } from 'next/server';
+﻿import { connection } from 'next/server';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import { PROFILE_TABS, StudentProfile, type ProfileTab } from '@/components/students/profile/StudentProfile';
 import { NoAccess } from '@/components/ui/NoAccess';
 import { listHistoryForStudent } from '@/lib/queries/learning';
+import { studentSkillHistory } from '@/lib/queries/skills';
 import { listStudentAssignments } from '@/lib/queries/assignments';
 import { listParentChoices } from '@/lib/queries/parents';
 import { getStudentDetail } from '@/lib/queries/students';
@@ -29,7 +30,7 @@ function ProfileSkeleton() {
   return (
     <section aria-busy="true" aria-label="Đang tải hồ sơ" className="flex flex-col gap-4">
       <div className="h-10 w-40 animate-pulse rounded-xl bg-stone" />
-      <div className="h-56 w-full animate-pulse rounded-[24px] bg-stone" />
+      <div className="h-56 w-full animate-pulse rounded-[var(--radius-panel)] bg-stone" />
     </section>
   );
 }
@@ -49,10 +50,11 @@ async function ProfileData({ params, searchParams }: { params: Promise<{ id: str
 
   const student = await getStudentDetail(id);
   if (!student) notFound();
-  const [history, assignments, parentChoices] = await Promise.all([
+  const [history, assignments, parentChoices, skills] = await Promise.all([
     listHistoryForStudent(id),
     listStudentAssignments(id),
     tab === 'phu-huynh' ? listParentChoices() : Promise.resolve([]),
+    tab === 'ky-nang' ? studentSkillHistory(id) : Promise.resolve(null),
   ]);
 
   return (
@@ -63,10 +65,12 @@ async function ProfileData({ params, searchParams }: { params: Promise<{ id: str
       history={history}
       assignments={assignments}
       parentChoices={parentChoices}
+      skills={skills}
       perms={{
         tuition: hasPermission(granted, 'tuition.manage'),
         parents: hasPermission(granted, 'parents.manage'),
         learning: hasPermission(granted, 'learning.manage'),
+        assignments: hasPermission(granted, 'assignments.manage'),
       }}
     />
   );

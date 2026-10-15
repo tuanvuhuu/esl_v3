@@ -31,12 +31,18 @@ describe('mergeHistory', () => {
 
 describe('filterHistory', () => {
   it('lọc theo loại', () => {
-    expect(filterHistory(items, { kind: 'payment' }).map((i) => i.id)).toEqual(['pay-1']);
+    expect(filterHistory(items, { kinds: ['payment'] }).map((i) => i.id)).toEqual(['pay-1']);
+  });
+  it('lọc theo nhiều loại', () => {
+    expect(filterHistory(items, { kinds: ['payment', 'note'] }).map((i) => i.id)).toEqual(['pay-1', 'evt-3']);
   });
   it('lọc theo lớp', () => {
-    expect(filterHistory(items, { classId: 3 }).map((i) => i.id)).toEqual(['evt-2']);
+    expect(filterHistory(items, { classIds: [3] }).map((i) => i.id)).toEqual(['evt-2']);
+  });
+  it('lọc theo nhiều lớp', () => {
+    expect(filterHistory(items, { classIds: [2, 3] })).toHaveLength(items.length);
   });
   it('không lọc khi để rỗng', () => {
-    expect(filterHistory(items, { kind: '', classId: null })).toHaveLength(items.length);
+    expect(filterHistory(items, { kinds: [], classIds: [] })).toHaveLength(items.length);
   });
 });

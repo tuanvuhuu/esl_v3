@@ -1,6 +1,7 @@
 // Validate bài tập và chấm điểm. Dùng ở server action.
 import { z } from 'zod';
 import { isRealIsoDate } from './student';
+import { CRITERIA_PER_ITEM, CRITERION_MAX_POINTS, ITEM_TYPES, SKILLS } from '@/lib/assignment-scoring';
 
 export const SUBMISSION_STATUSES = ['not_submitted', 'submitted', 'graded'] as const;
 export const SUBMISSION_LABELS: Record<(typeof SUBMISSION_STATUSES)[number], string> = {
@@ -25,6 +26,8 @@ export const assignmentFormSchema = z.object({
     .int('Điểm tối đa phải là số nguyên')
     .min(1, 'Điểm tối đa ít nhất là 1')
     .max(100, 'Điểm tối đa tối đa 100'),
+  // Bài giảng gắn với bài tập (không bắt buộc). Để trống là không gắn.
+  lessonId: z.string().trim().default(''),
 });
 
 export type AssignmentFormInput = z.infer<typeof assignmentFormSchema>;
@@ -38,3 +41,79 @@ export const gradingRowSchema = z
     feedback: z.string().trim().max(500, 'Nhận xét tối đa 500 ký tự').default(''),
   })
   .refine((v) => v.status !== 'graded' || v.score !== null, { message: 'Chấm điểm thì phải có điểm', path: ['score'] });
+
+// Câu hỏi trong bài (P22). Trắc nghiệm cần đúng một đáp án đúng; câu viết và nộp tệp không có đáp án.
+export const itemOptionSchema = z.object({
+  id: z.number().int().positive().nullable(),
+  label: z.string().trim().min(1, 'Đáp án không được để trống').max(300, 'Đáp án tối đa 300 ký tự'),
+  isCorrect: z.boolean(),
+});
+
+// Tiêu chí chấm của câu viết hoặc nộp tệp (P23). Điểm câu bằng tổng điểm tối đa các tiêu chí.
+export const criterionFormSchema = z.object({
+  id: z.number().int().positive().nullable(),
+  name: z.string().trim().min(1, 'Tên tiêu chí không được để trống').max(120, 'Tên tiêu chí tối đa 120 ký tự'),
+  maxPoints: z
+    .number({ error: 'Điểm tối đa của tiêu chí phải là số' })
+    .int('Điểm tối đa của tiêu chí phải là số nguyên')
+    .min(1, 'Điểm tối đa của tiêu chí ít nhất là 1')
+    .max(CRITERION_MAX_POINTS, `Điểm tối đa của tiêu chí tối đa ${CRITERION_MAX_POINTS}`),
+});
+
+export const itemFormSchema = z
+  .object({
+    id: z.number().int().positive().nullable(),
+    skill: z.enum(SKILLS, { error: 'Chọn kỹ năng cho câu này' }),
+    itemType: z.enum(ITEM_TYPES, { error: 'Chọn loại câu' }),
+    prompt: z.string().trim().max(2000, 'Nội dung câu hỏi tối đa 2000 ký tự').default(''),
+    passage: z.string().trim().max(8000, 'Đoạn đọc tối đa 8000 ký tự').default(''),
+    points: z.number({ error: 'Điểm phải là số' }).int('Điểm phải là số nguyên').min(1, 'Điểm ít nhất là 1').max(100, 'Điểm tối đa 100'),
+    audioFileId: z.number().int().positive().nullable(),
+    options: z.array(itemOptionSchema).max(6, 'Tối đa 6 đáp án'),
+    criteria: z.array(criterionFormSchema).max(CRITERIA_PER_ITEM, `Tối đa ${CRITERIA_PER_ITEM} tiêu chí một câu`).default([]),
+    // Câu chép từ ngân hàng (P24), để đếm số bài dùng câu đó
+    bankQuestionId: z.number().int().positive().nullable().default(null),
+  })
+  .superRefine((v, ctx) => {
+    if (!v.prompt && v.audioFileId === null) {
+      ctx.addIssue({ code: 'custom', path: ['prompt'], message: 'Nhập nội dung câu hỏi hoặc đính âm thanh' });
+    }
+    if (v.itemType === 'choice') {
+      if (v.options.length < 2) ctx.addIssue({ code: 'custom', path: ['options'], message: 'Trắc nghiệm cần ít nhất 2 đáp án' });
+      if (v.options.filter((o) => o.isCorrect).length !== 1) ctx.addIssue({ code: 'custom', path: ['options'], message: 'Chọn đúng một đáp án đúng' });
+      if (v.criteria.length > 0) ctx.addIssue({ code: 'custom', path: ['criteria'], message: 'Trắc nghiệm tự chấm nên không có tiêu chí' });
+    }
+  })
+  // Câu có tiêu chí: điểm câu lấy từ tổng điểm các tiêu chí, không nhập riêng
+  .transform((v) => (v.criteria.length > 0 ? { ...v, points: v.criteria.reduce((sum, c) => sum + c.maxPoints, 0) } : v));
+
+export const itemsPayloadSchema = z
+  .array(itemFormSchema)
+  .min(1, 'Bài tập cần ít nhất một câu hỏi')
+  .max(60, 'Tối đa 60 câu trong một bài')
+  .refine((items) => items.reduce((sum, i) => sum + i.points, 0) <= 100, { message: 'Tổng điểm các câu tối đa 100' });
+
+// Điểm một tiêu chí trong bài làm. Null là chưa chấm tiêu chí đó.
+export const criterionAnswerSchema = z.object({
+  criterionId: z.number().int().positive(),
+  points: z.number().int('Điểm phải là số nguyên').min(0, 'Điểm không âm').nullable(),
+});
+
+// Bài làm của một học sinh cho một câu. Điểm chỉ dùng cho câu viết và nộp tệp không có tiêu chí; trắc nghiệm tự chấm.
+export const answerRowSchema = z.object({
+  itemId: z.number().int().positive(),
+  selectedOptionId: z.number().int().positive().nullable(),
+  answerText: z.string().trim().max(4000, 'Bài viết tối đa 4000 ký tự').default(''),
+  fileId: z.number().int().positive().nullable(),
+  points: z.number().int('Điểm phải là số nguyên').min(0, 'Điểm không âm').nullable(),
+  comment: z.string().trim().max(500, 'Nhận xét tối đa 500 ký tự').default(''),
+  criterionPoints: z.array(criterionAnswerSchema).max(CRITERIA_PER_ITEM).default([]),
+});
+
+export const answersPayloadSchema = z.array(answerRowSchema).max(200, 'Tối đa 200 câu một lần');
+
+// Chấm chéo: điểm chấm lại của một câu (tổng câu) và nhận xét ngắn
+export const secondMarkSchema = z.object({
+  points: z.number({ error: 'Nhập điểm chấm lại' }).int('Điểm phải là số nguyên').min(0, 'Điểm không âm').max(100, 'Điểm tối đa 100'),
+  comment: z.string().trim().max(500, 'Nhận xét tối đa 500 ký tự').default(''),
+});

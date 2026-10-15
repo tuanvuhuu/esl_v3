@@ -3,7 +3,8 @@
 import { and, eq, ne } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { db } from '@/db/client';
-import { classSessions, teachers } from '@/db/schema';
+import { classes, classSessions, teachers } from '@/db/schema';
+import { teacherTeachesCampus } from '@/lib/queries/teachers';
 import { ForbiddenError, requirePermission, writeAudit } from '@/lib/authz';
 import { cancelReasonSchema, sessionFormSchema } from '@/lib/validation/class';
 import { fieldErrorsFrom, type ActionResult } from '@/lib/validation/student';
@@ -37,8 +38,17 @@ export async function updateSessionAction(id: number, _prev: ActionResult, formD
     if (session.status === 'cancelled') return { ok: false, message: 'Buổi này đã huỷ. Khôi phục trước khi sửa.' };
 
     const v = parsed.data;
-    const [teacher] = await db.select({ id: teachers.id }).from(teachers).where(eq(teachers.id, v.teacherId)).limit(1);
+    const [teacher] = await db.select({ id: teachers.id, staffRole: teachers.staffRole }).from(teachers).where(eq(teachers.id, v.teacherId)).limit(1);
     if (!teacher) return { ok: false, message: 'Giáo viên không tồn tại.', fieldErrors: { teacherId: 'Giáo viên không tồn tại' } };
+    // Trợ giảng không dạy buổi học: buổi chỉ do giáo viên chủ nhiệm hoặc giáo viên nước ngoài dạy
+    if (teacher.staffRole === 'assistant') {
+      return { ok: false, message: 'Trợ giảng không dạy buổi học. Chọn giáo viên.', fieldErrors: { teacherId: 'Chọn giáo viên, không chọn trợ giảng' } };
+    }
+    // Giáo viên của buổi học phải dạy ở cơ sở của lớp
+    const [cls] = await db.select({ campusId: classes.campusId }).from(classes).where(eq(classes.id, session.classId)).limit(1);
+    if (cls && !(await teacherTeachesCampus(v.teacherId, cls.campusId))) {
+      return { ok: false, message: 'Giáo viên này chưa dạy ở cơ sở của lớp.', fieldErrors: { teacherId: 'Giáo viên chưa dạy ở cơ sở này' } };
+    }
 
     const startsAt = new Date(`${v.date}T${v.startTime}:00+07:00`);
     const endsAt = new Date(`${v.date}T${v.endTime}:00+07:00`);

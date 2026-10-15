@@ -1,13 +1,13 @@
 # ESL Center: kế hoạch và tiến độ
 
-> **Tiến độ tổng: 68/68 task (100%)**
-> Cập nhật lần cuối: 2026-10-13. Còn một quyết định chờ người dùng (D5), không phải task.
+> **Tiến độ tổng: 105/111 task (95%)**
+> Cập nhật lần cuối: 2026-10-14. P15 còn 4 mục mở (15.3, 15.4, 15.6, 15.8). P16 xong, chờ người dùng trả lời 12 câu trong `docs/NGHIEN-CUU-GIANG-DAY.md`. Còn một quyết định chờ người dùng (D5), không phải task.
 
 Quy ước: `[x]` đã làm và đã kiểm chứng, `[ ]` chưa làm hoặc chưa kiểm chứng. Mỗi task đánh dấu kèm ngày và cách kiểm chứng. Quy tắc đầy đủ ở `CLAUDE.md` mục 5.
 
 Mỗi task UI phải làm cho cả **web** (từ 768px) và **điện thoại** (dưới 768px), theo `docs/DESIGN.md` và skill `esl-design-system`. Mỗi task thêm, sửa, xoá làm theo skill `esl-feature-crud`.
 
-Trạng thái: **schema 0002 đã áp dụng** (PostgreSQL 18 local, database `esl_center`). Toàn bộ module đã chạy trên DB thật. Kiểm chứng gồm: `npm run typecheck`, `npm run lint`, `npm run test` (89 test xanh), `npm run build`, và `npm run test:e2e` (23 kịch bản xanh, tự dọn dữ liệu thử). Hướng dẫn chạy và triển khai ở `README.md`.
+Trạng thái: **schema 0002 đã áp dụng** (PostgreSQL 18 local, database `esl_center`). Toàn bộ module đã chạy trên DB thật. Kiểm chứng gần nhất ngày 2026-10-14: `npm run typecheck` và `npm run lint` sạch; `npm run test` 117 test xanh; `npm run test:e2e` 52 kịch bản xanh (tự dọn dữ liệu thử; máy này dùng Chrome đã cài qua `E2E_CHROME_PATH`). Hướng dẫn chạy và triển khai ở `README.md`.
 
 ---
 
@@ -32,7 +32,7 @@ Trạng thái: **schema 0002 đã áp dụng** (PostgreSQL 18 local, database `e
 ## P2. Lõi giao diện và điều hướng
 
 - [x] **2.1** `globals.css`: token màu sáng và tối, thang cỡ chữ `--fs-*` ba breakpoint. *(2026-10-13, đo trên trình duyệt ở 390, 1024, 1440px)*
-- [x] **2.2** Font Plus Jakarta Sans bằng `next/font/google`, có tiếng Việt. *(2026-10-13)*
+- [x] **2.2** Font bằng `next/font/google`, có tiếng Việt. *(2026-10-13; đổi từ Plus Jakarta sang Be Vietnam Pro ngày 2026-10-14 theo lựa chọn của người dùng)*
 - [x] **2.3** Khung trang: sidebar web, ngăn kéo tablet, appbar, tab bar điện thoại lọc theo quyền, sheet "Tính năng" có huy hiệu. *(2026-10-13, E2E `layout.spec.ts` và `mobile.spec.ts`)*
 - [x] **2.4** Chuyển giao diện Sáng, Tối, Theo hệ thống, lưu `localStorage` khoá `esl-theme`. *(2026-10-13)*
 - [x] **2.5** Thành phần dùng chung: `Pill`, `Btn`, `ActIcon`, `RowMenu`, `ConfirmDialog`, `Modal`, `Sheet` (bộ lọc điện thoại), `Toast`, `Field`, `PageHeader`, `NoAccess`, `HistoryTimeline`. *(2026-10-13, mỗi thành phần có chỗ dùng trong module; không có Sheet ngoài bộ lọc)*
@@ -128,6 +128,135 @@ Trạng thái: **schema 0002 đã áp dụng** (PostgreSQL 18 local, database `e
 
 ---
 
+## P15. Chuẩn hoá giao diện theo trang Học sinh (còn 4 mục mở)
+
+Mục tiêu: trang `/hoc-sinh` là chuẩn. Mọi nút, ô nhập, ô chọn, chip, bảng, thẻ, bo góc và chiều cao lấy từ token trong `globals.css` và từ bộ thành phần dùng chung trong `src/components/ui`. Không viết kích thước riêng trong từng màn.
+
+Thứ tự ưu tiên theo người dùng: (1) Phụ huynh, Giáo viên hiển thị nhiều dữ liệu nhất; (2) Điểm danh, Lịch học giao diện mới; (3) các trang còn lại.
+
+- [x] **15.1** Token kích thước trong `globals.css`: `--ctl-h` 32px, `--ctl-h-touch` 44px, `--chip-h-touch` 36px, `--icon-h` 36px, `--icon-h-touch` 44px, `--radius-ctl` 12px, `--radius-panel` 24px. Kiểm chứng: đo computed style trên /hoc-sinh ở 1440px và 390px khớp token. *(2026-10-14, `chuan.spec`: nút, ô và chip đo đúng 32, 36 hoặc 44px; khung bo 24px ở 1440px và 390px.)*
+- [x] **15.2** Bộ thành phần dùng chung: `Btn`, `ActIcon`, `RowMenu`, `Chip`, `ChipGroup`, `Select`, `TextInput`, `Field`, `DataGrid`, `Pagination`, `Panel`, `Card`, `EmptyPanel`, `Modal`, `Sheet`, `ConfirmDialog`. Kiểm chứng: typecheck và lint sạch; mỗi thành phần có mục trong `docs/DESIGN.md`. *(2026-10-14: typecheck và lint sạch; DESIGN mục 8 liệt kê đủ 16 thành phần.)*
+- [ ] **15.3** Trang Học sinh (chuẩn tham chiếu) dựng từ bộ thành phần chung. Giao diện không đổi; đo kích thước trước và sau khớp nhau. *(Chưa đánh dấu: không có số đo trước khi dựng lại để so sánh. Số đo sau khớp token qua `chuan.spec` ở 1440px và 390px.)*
+- [ ] **15.4** Phụ huynh: bảng mật độ cao từ 768px với cột liên hệ, con, ghi chú; thẻ điện thoại gọn. Kiểm chứng: E2E thêm, sửa, xoá phụ huynh và chụp ảnh. *(Chưa đánh dấu: `catalog.spec.ts` có thêm (kiểm trùng số điện thoại) và xoá (chỉ gỡ liên kết), chưa có test sửa phụ huynh. Ảnh 1440px và 390px đã chụp và xem.)*
+- [x] **15.5** Giáo viên: bảng mật độ cao (liên hệ, kinh nghiệm, trạng thái, lớp đang dạy), chip lọc Tất cả / Đang dạy / Nghỉ phép có số đếm. Kiểm chứng: E2E đổi tên giáo viên và chặn xoá khi còn lớp. *(2026-10-14, `catalog.spec.ts`: đổi tên cập nhật ở lớp; còn lớp thì không xoá được.)*
+- [ ] **15.6** Điểm danh: giao diện mới gồm dải buổi học, thẻ tiến độ điểm danh có thanh tỉ lệ, lưới thẻ học sinh có điều khiển ba trạng thái, thanh hành động dính dưới trên điện thoại. Kiểm chứng: E2E "có mặt cả lớp" đếm đúng và chụp ảnh. *(Chưa đánh dấu: chưa có thanh hành động dính dưới trên điện thoại; nút "Có mặt cả lớp" và "Lưu điểm danh" nằm trong thẻ đầu trang. E2E `work.spec.ts` đếm đúng và ảnh 390px đã xem.)*
+- [x] **15.7** Lịch học: giao diện mới gồm lưới giờ theo tuần trên web (khối buổi đặt theo giờ thật, màu theo lớp) và danh sách theo ngày có thanh màu trên điện thoại. Kiểm chứng: chụp ảnh 1440px và 390px. *(2026-10-14: ảnh 1440px và 390px đã chụp. Sau khi sửa khối buổi trùng giờ (E-048), không còn khối nào cắt chữ ở 1440, 1366 và 1024px.)*
+- [ ] **15.8** Các trang còn lại chỉ dùng bộ thành phần chung: Lớp học, Bài tập và Chấm điểm, Học phí, Lịch sử học tập, Tài khoản và quyền, Cài đặt, Báo cáo, Tổng quan, Tính năng, Đăng nhập, mọi hộp thoại form, hồ sơ học sinh. *(Chưa đánh dấu: `chuan.spec` chưa đo hộp thoại form, trang Đăng nhập và hồ sơ học sinh.)*
+- [x] **15.9** Kiểm thử chuẩn `e2e/chuan.spec.ts`: ở 1440px và 390px đo mọi nút, chip, ô nhập, ô chọn có chiều cao đúng token; thẻ có bo góc đúng; tiêu đề cột bảng không đậm. Chặn lệch chuẩn về sau. *(2026-10-14, `chuan.spec.ts` 2/2 xanh ở 1440px và 390px.)*
+- [x] **15.10** Kiểm thử đầy đủ: `npm run typecheck`, `npm run lint`, `npm run test:e2e` toàn bộ; chụp ảnh các trang chính ở 1440px, 800px và 390px. *(2026-10-14: typecheck và lint sạch; `npm run test` 89/89; `npm run test:e2e` 39/39 xanh; ảnh 14 trang ở 390, 800 và 1440px chụp trước đợt sửa lịch học; không tràn ngang ở 360–2560px qua `layout.spec.ts`.)*
+- [x] **15.11** Cập nhật `docs/DESIGN.md` (mục chuẩn kích thước), `docs/ERROR-LOG.md` cho các lỗi gặp phải. *(2026-10-14: DESIGN mục 8 và mục 10 đã cập nhật; ERROR-LOG có E-043 đến E-049.)*
+- [x] **15.12** Lịch học: thanh điều hướng gộp một chỗ (`RangeNav`): `<` bên trái, nút khoảng ngày ở giữa hiện khoảng đang xem (ví dụ 19–25/10), `>` bên phải; bỏ nút Tuần này. Chọn khoảng bằng hai lần bấm (ngày đầu, ngày cuối); ngày trong khoảng tô nhạt, hai đầu tô đậm; dòng dưới ghi khoảng và số ngày. Khoảng dài hơn một tuần hiện danh sách theo ngày. Bảng nằm trong màn hình ở 360, 390, 768, 1024 và 1440px. Kiểm chứng: `e2e/lich.spec.ts` (8 test) và E2E đầy đủ xanh; Browser pane xác nhận thứ tự nút. *(2026-10-14)*
+- [x] **15.13** Ô chọn dùng chung `SelectPanel` (`src/components/ui/SelectPanel.tsx`) thay mọi combo trong app (16 file): chọn một thì bảng đóng sau khi chọn; chọn nhiều thì bảng mở, mỗi mục có ô đánh dấu. Không còn `<select>`, `Select` hay `FilterSelect`. Kiểm chứng: typecheck và lint sạch; E2E đầy đủ xanh; trang thử chọn một và chọn nhiều đã kiểm bằng E2E (đã xoá sau khi kiểm) và trên Browser pane. *(2026-10-14)*
+- [x] **15.14** Bộ lọc danh sách chọn nhiều: lớp và giáo viên (lịch học), lớp và học phí (học sinh, cả bảng Bộ lọc điện thoại), lớp và loại (lịch sử học tập), vai trò và trạng thái (tài khoản). Trên URL viết `cls=1,2`; danh sách rỗng là không lọc. Ô điều hướng (chọn lớp xem điểm danh, bài tập) và form vẫn chọn một. Kiểm chứng: `npm run test` 91/91 (gồm lọc nhiều loại và nhiều lớp); E2E đầy đủ xanh (gồm chọn nhiều lớp trên lịch và bộ lọc học sinh trên điện thoại). *(2026-10-14)*
+
+## P16. Nghiên cứu bài giảng, bài tập, bài tập về nhà, quiz, chấm điểm theo kỹ năng
+
+Nghiên cứu, không viết code. Làm khi P15 còn 4 mục mở vì không phụ thuộc code.
+
+- [x] **16.1** Đọc hiện trạng: schema bài tập và bài nộp, lịch sử học tập, màn Bài tập và Chấm điểm. Ghi rõ đã có gì, thiếu gì. *(2026-10-14: đọc `src/db/schema.ts`, `src/app/(app)/bai-tap/actions.ts`, `src/lib/queries/assignments.ts`, `GradingView.tsx`, DESIGN; kết quả ở mục 2 của tài liệu.)*
+- [x] **16.2** Tìm cách làm phổ biến: bài giảng và tài liệu, bài tập về nhà, quiz và thang điểm, chấm theo rubric từng kỹ năng (nghe, nói, đọc, viết). Ghi nguồn đã đọc. *(2026-10-14: bốn lượt tìm kiếm và một lần mở trang IELTS chính thức; nguồn ở mục 9 của tài liệu. Phần bài giảng và bài tập về nhà có ít nguồn tốt, đã ghi rõ.)*
+- [x] **16.3** Viết `docs/NGHIEN-CUU-GIANG-DAY.md`: mô hình dữ liệu đề xuất, luồng màn hình, các câu hỏi cần người dùng quyết định. Chưa viết code. *(2026-10-14: đã viết tài liệu, gồm 12 câu hỏi cho người dùng ở mục 8; chưa viết code, chưa tạo migration.)*
+
+## P17. Thông báo trên thanh đầu
+
+- [x] **17.1** Chuông thông báo: việc cần chú ý theo quyền (công nợ quá hạn, vắng từ hai buổi trở lên trong 7 ngày, bài tập quá hạn). Số trên chuông là tổng số việc, khớp với "Cần chú ý" ở Tổng quan. Cả ba nhóm đếm đủ, không bị cắt ở 5 hay 8 (E-053). Bấm chuông mở bảng; bấm một việc để mở trang của việc đó. Kiểm chứng: `e2e/thong-bao.spec.ts` 2/2 xanh; E2E đầy đủ 44/44 xanh; typecheck và lint sạch; ảnh bảng ở 1440px đã xem, ảnh 390px đã xem sau khi sửa lệch mép (E-052). *(2026-10-14)*
+
+## P18. Đa cơ sở (1 cơ sở - nhiều lớp)
+
+- [x] **18.1** Dữ liệu cơ sở: bảng `campuses`; lớp thuộc đúng một cơ sở (`classes.campus_id`); tên lớp duy nhất trong từng cơ sở. Migration 0003 gán mọi lớp cũ vào "Cơ sở chính". Kiểm chứng: typecheck và lint sạch; `npm run db:migrate` áp dụng; truy vấn chỉ đọc cho 1 cơ sở, 6 lớp, 0 lớp mồ côi. *(2026-10-14)*
+- [x] **18.2** Bộ chọn cơ sở trên thanh trên cùng (`SelectPanel` kiểu `bar`): "Tất cả cơ sở" hoặc một cơ sở, lưu trong cookie, mặc định là cơ sở đầu tiên. Lọc Tổng quan, chuông, số trên menu, Học sinh, Lớp học, Lịch học, Điểm danh, Bài tập, Lịch sử học tập, Học phí, Báo cáo. Kiểm chứng: `tests/unit/campus.test.ts`; `e2e/co-so.spec.ts` 2/2 xanh; ảnh thanh trên ở 390, 768, 1440px đã xem, 360px qua `layout.spec.ts`. *(2026-10-14)*
+- [x] **18.3** Màn Cơ sở (Hệ thống): thêm, sửa, xoá. Chặn xoá khi cơ sở còn lớp, còn giáo viên dạy, hoặc là cơ sở cuối cùng. Form lớp và form học sinh có ô Cơ sở; ô Lớp học của form học sinh chỉ hiện lớp của cơ sở đã chọn. Kiểm chứng: E2E 47/47 sau khi đổi form học sinh, ảnh form học sinh ở 1440px và 390px đã xem;  `e2e/catalog.spec.ts` "cơ sở: thêm, sửa tên, xoá..." xanh; ảnh trang Cơ sở ở 1440px đã xem. *(2026-10-14)*
+- [x] **18.4** Giáo viên dạy một hoặc nhiều cơ sở (`teacher_campuses`; migration 0004 gán giáo viên cũ vào cơ sở đầu tiên). Form giáo viên có ô cơ sở dạy. Form lớp chỉ hiện giáo viên dạy ở cơ sở đã chọn. Action lớp và đổi giáo viên của buổi học kiểm tra lại. Kiểm chứng: unit test 100/100; typecheck và lint sạch; E2E 47/47; ảnh trang Giáo viên và form lớp ở 1440px đã xem. *(2026-10-14)*
+- [ ] **18.5** Trợ giảng và bài giảng thuộc một hoặc nhiều cơ sở (D7). Trợ giảng đã có ở P20 (vai trò của nhân sự). Bài giảng chưa xây dựng.
+- [x] **18.6** Tài liệu: DESIGN mục 4, 7, 8, 10; ERROR-LOG E-054 đến E-056; `docs/NGHIEN-CUU-GIANG-DAY.md` có ghi chú quy tắc cơ sở. *(2026-10-14)*
+
+## P19. Phụ huynh: gán học sinh và hiển thị
+
+- [x] **19.1** Gán học sinh từ màn Phụ huynh (menu ⋯ và nút trên thẻ điện thoại): chọn nhiều học sinh có ô tìm, chọn quan hệ, tuỳ chọn đặt liên hệ chính. Học sinh đã liên kết được bỏ qua và báo lại. Cột học sinh trên bảng là cột động (Học sinh 1, 2, …, theo số con nhiều nhất, tối đa 4; ô dư ghi "+N học sinh khác"). Kiểm chứng: `tests/unit/parent-assign.test.ts` 4/4; `e2e/catalog.spec.ts` "phụ huynh: gán học sinh…" xanh; E2E 48/48; ảnh bảng ở 1440px và 1280px không tràn khung; hộp thoại gán và thẻ ở 390px đã xem. *(2026-10-14)*
+- [x] **19.2** Esc trong ô chọn đặt trong hộp thoại chỉ đóng ô chọn, không đóng hộp thoại (E-057). Kiểm chứng: kịch bản gán học sinh bấm Esc hai lần (lần đầu chỉ đóng ô chọn) xanh trong E2E 48/48. *(2026-10-14)*
+- [x] **19.3** Sửa tại ô trên bảng Phụ huynh (từ 1200px, khi có quyền): tên, email, số điện thoại, ghi chú sửa tại chỗ (Enter hoặc Ctrl+Enter lưu, Esc huỷ, rời ô thì lưu). Bấm tên học sinh để đổi quan hệ (lưu ngay), đặt liên hệ chính, hoặc gỡ liên kết (có xác nhận). Ô trống đầu tiên có "+ Thêm". Nút sửa tại ô cao 32px theo chuẩn ô điều khiển. Kiểm chứng: `tests/unit/parent-field.test.ts` 4/4; `e2e/catalog.spec.ts` "phụ huynh: sửa ghi chú tại ô..." xanh; `e2e/chuan.spec.ts` xanh sau khi đổi chiều cao; E2E 49/49; typecheck và lint sạch; ảnh bảng ở 1440px đã xem. *(2026-10-14)*
+- [x] **19.4** Phụ huynh chia trang 10 người mỗi trang (web). Điện thoại và máy tính bảng hẹp hiện thẻ, bấm "Xem thêm" để tiếp 10 người mỗi lần. Thân bảng cuộn trong khung, tiêu đề cột dính. Thêm 60 phụ huynh thử (ghi chú "Dữ liệu thử") vào DB dev. Kiểm chứng: `e2e/catalog.spec.ts` "phụ huynh: danh sách chia trang 10 người..." xanh; đo 1440px và 1200px: tiêu đề dính lệch 0px khi cuộn, nút ⋯ trong khung ở 1440px (E-058). *(2026-10-14)*
+- [x] **19.5** Đầu trang Phụ huynh giống Học sinh: đường dẫn, mô tả, hàng tìm kiếm có nút "Thêm phụ huynh" bên phải (điện thoại: "Thêm mới" cạnh ô tìm). Kiểm chứng: so ảnh chụp 1440px và 390px với trang Học sinh; E2E 50/50. *(2026-10-14)*
+- [x] **19.6** Bỏ avatar ở bảng và thẻ Học sinh, Phụ huynh. Tách cột: Phụ huynh có Họ tên, Email, Số điện thoại; Học sinh có Họ tên, Mã HS, Giới tính. Chân phân trang ẩn cùng mốc với bảng, không còn hiện trên thẻ điện thoại (E-059). Kiểm chứng: đo 1440px: bảng Phụ huynh vừa khít (1184/1184 px), bảng Học sinh không tràn ở 1440px và 1200px; 390px không có phân trang trên thẻ. Dưới 1440px bảng Phụ huynh cuộn ngang vì có bốn cột học sinh, chờ người dùng chọn cách giảm. *(2026-10-14)*
+- [x] **19.7** Ô trống để trống, không còn dấu "—". Gợi ý "+ Thêm", "Thêm email", "Thêm ghi chú" chỉ hiện khi rê chuột hoặc Tab vào ô; bấm vào ô trống là mở gán học sinh. Dữ liệu bấm được (tên học sinh, số điện thoại gọi được trên thẻ, "+ Thêm") có chữ xanh gạch chân, màu token `--link`. Kiểm chứng: Playwright đo "+ Thêm" độ mờ 0 khi chưa rê và 1 khi rê, màu rgb(29, 78, 216), có gạch chân; dấu "—" còn 0; tên học sinh trang Học sinh cũng xanh gạch chân. *(2026-10-14)*
+- [x] **19.8** Tên học sinh trong ô hiện đủ, chữ không đậm, xuống dòng khi dài (không còn "…"). Nhãn Bố, Mẹ có màu tím riêng (`--relation`), chữ thường. Nút tên học sinh có `data-link` nên `e2e/chuan.spec.ts` không đo chiều cao của nó (tên dài cao 42px, E-060). Kiểm chứng: Playwright "Dương Nhật Nam" xuống hai dòng, không bị cắt, nhãn có màu rgb(122, 90, 214); E2E 50/50 (lần cuối); typecheck và lint sạch. *(2026-10-14)*
+- [x] **19.9** Cột Thao tác dính mép phải khi bảng Phụ huynh cuộn ngang (DataGrid `stickyEnd`, nút ⋯ cách mép 16px). Menu ⋯ vẽ trên body, mở lên khi thiếu chỗ bên dưới, không bị khung bảng cắt (E-061). Kiểm chứng: đo 1200px khi cuộn tối đa: nút ⋯ trong khung, cách mép phải 16px; 1440px không cuộn; menu dòng cuối nằm trong màn hình 900px (đáy 727px); ảnh chụp 1200px đã xem; E2E 50/50; typecheck và lint sạch. *(2026-10-14)*
+
+## P20. Lớp học: giáo viên chủ nhiệm, trợ giảng, giáo viên nước ngoài
+
+- [x] **20.1** Vai trò nhân sự: cột `teachers.staff_role` (giáo viên, giáo viên nước ngoài, trợ giảng; migration 0005). Lớp có đủ ba vị trí bắt buộc: giáo viên chủ nhiệm (`teacher_id`, vai trò giáo viên), trợ giảng (`assistant_id`), giáo viên nước ngoài (`foreign_teacher_id`). Mỗi người chỉ vào đúng vị trí của vai trò mình và phải dạy ở cơ sở của lớp. Đổi vai trò bị chặn khi còn lớp giữ vị trí cũ. Dữ liệu dev: thêm 2 giáo viên nước ngoài, 2 trợ giảng, gán cho 6 lớp. Kiểm chứng: `tests/unit/class-validation.test.ts` 16/16 (lớp cần đủ ba vị trí, vai trò hợp lệ); `e2e/catalog.spec.ts` "tạo lớp..." và "thiếu trợ giảng hoặc giáo viên nước ngoài thì không tạo được" xanh; typecheck và lint sạch; E2E 51/51. *(2026-10-14)*
+- [x] **20.2** Hiển thị: thẻ lớp và trang chi tiết ghi GV chủ nhiệm, trợ giảng, GV nước ngoài; form lớp có ba ô chọn lọc theo vai trò và cơ sở; form giáo viên có ô Vai trò; trang Giáo viên ghi vai trò, và "Lớp đang dạy" gồm cả lớp giữ vị trí trợ giảng hoặc GV nước ngoài. Buổi học chỉ chọn giáo viên chủ nhiệm hoặc GV nước ngoài. Kiểm chứng: ảnh chụp 1440px trang Lớp học, form lớp, Giáo viên và chi tiết lớp đã xem. *(2026-10-14)*
+
+## P21. Giao diện: ô chọn co theo nội dung
+
+- [x] **21.1** Ô chọn lớp ở Bài tập và Điểm danh co theo chữ (`SelectPanel` prop `auto`), không còn kéo rộng hết khung (trước là 384px và 288px). Ô trong form giữ rộng hết khung (`block`). Kiểm chứng: Playwright đo ô "GT-A1 · Cơ sở chính" 163px ở Bài tập và 185px ở Điểm danh; ảnh đã xem; typecheck và lint sạch; E2E 51/51. *(2026-10-14)*
+
+## P22. Bài tập có câu hỏi: trắc nghiệm, trả lời viết, nộp tệp, bốn kỹ năng
+
+Nguồn: `docs/NGHIEN-CUU-GIANG-DAY.md` (P16) và yêu cầu của người dùng (2026-10-14). Phạm vi: câu hỏi nằm trong từng bài, bốn kỹ năng, tệp tải lên. Chưa làm: rubric, ngân hàng câu hỏi dùng chung, cổng học sinh (xem 22.7).
+
+- [x] **22.1** Schema và migration 0006: `assignment_items` (câu, kỹ năng, loại, điểm, đề, đoạn đọc, âm thanh), `assignment_item_options` (đáp án, đúng một), `submission_item_scores` (đáp án đã chọn, chữ, tệp, điểm, nhận xét), `uploaded_files` (tệp tải lên). Enum `skill` (nghe, nói, đọc, viết) và `item_type` (trắc nghiệm, trả lời viết, nộp tệp). Chỉ thêm bảng, không đổi bảng cũ. *(2026-10-14, migration 0006 áp dụng vào DB dev)*
+- [x] **22.2** Tính điểm thuần (`src/lib/assignment-scoring.ts`): điểm từng câu, trạng thái (chưa nộp, đã nộp, đã chấm), tổng điểm, điểm theo kỹ năng. Trắc nghiệm tự chấm; viết và nộp tệp chờ giáo viên cho điểm. *(2026-10-14, `tests/unit/assignment-scoring.test.ts` 7/7)*
+- [x] **22.3** Tệp tải lên: lưu trên ổ đĩa máy chủ `storage/uploads` với khoá ngẫu nhiên, giới hạn loại và cỡ (âm thanh 25 MB, tài liệu và ảnh 10 MB). Tải qua `GET /api/files/[id]`, cần quyền xem học sinh, trả kèm `nosniff` và CSP sandbox. *(2026-10-14, E2E tải tệp và link tải xuống xanh)*
+- [x] **22.4** Soạn câu hỏi trong bài (hộp "Soạn câu hỏi"): thêm, sắp xếp, xoá câu; kỹ năng, loại, điểm, nội dung, đoạn đọc, âm thanh, một đáp án đúng. Câu đã có bài làm không xoá được; đáp án đã chọn không bỏ được. Điểm tối đa của bài là tổng điểm các câu. *(2026-10-14, E2E `work.spec.ts` "bài tập có câu hỏi..." xanh)*
+- [x] **22.5** Chấm từng câu: bảng học sinh với tổng điểm, trạng thái, điểm theo kỹ năng; hộp "Chấm bài" cho đáp án đã chọn, bài viết, tệp bài nộp (giáo viên tải lên thay học sinh), điểm và nhận xét. Chấm hàng loạt bị chặn khi bài có câu. *(2026-10-14, E2E ra 9/10 điểm; ảnh 1440px và 390px đã xem)*
+- [x] **22.6** Bài cũ không có câu giữ nguyên bảng nhập điểm, có nút "Soạn câu hỏi" để chuyển sang bài có câu. *(2026-10-14, E2E cũ xanh)*
+- [ ] **22.7** Còn mở theo mục 8 của `docs/NGHIEN-CUU-GIANG-DAY.md`: rubric viết và nói (Q8), ngân hàng câu hỏi dùng chung (Q7), học sinh làm trực tuyến (Q3), bài giảng và tài liệu (P16 B), tab Kỹ năng trong hồ sơ và báo cáo lớp (P16 C), trình độ và ngưỡng lên lớp (Q5, Q11), dọn tệp không còn dùng (tệp tải lên rồi huỷ thì còn trên ổ đĩa).
+
+## P23. Tiêu chí chấm cho câu viết và nói; chấm chéo
+
+Nguồn: `docs/NGHIEN-CUU-GIANG-DAY.md` mục 3.1 (IELTS, chấm theo tiêu chí; chấm chéo khoảng 1 trên 5 bài). Quyết định: tiêu chí riêng của từng câu, có mẫu IELTS điền nhanh; điểm câu là tổng điểm các tiêu chí.
+
+- [x] **23.1** Schema: `assignment_item_criteria` (tiêu chí của câu), `submission_criterion_scores` (điểm theo tiêu chí), `submission_second_marks` (chấm chéo). Migration 0007. Thêm `assignment_submissions.graded_by_account_id` (migration 0008) để chặn người chấm lần đầu tự chấm lại. *(2026-10-14, cả hai migration áp dụng vào DB dev)*
+- [x] **23.2** Chấm theo tiêu chí trong hộp "Chấm bài"; soạn tiêu chí trong hộp "Soạn câu hỏi" với mẫu IELTS viết và nói (mỗi tiêu chí 5 điểm, tối đa 8 tiêu chí, mỗi tiêu chí tối đa 10). Điểm câu tự cộng theo tiêu chí; đủ tiêu chí mới tính là đã chấm. Xoá tiêu chí đã có điểm hoặc hạ điểm tối đa dưới điểm đã chấm thì bị chặn. *(2026-10-14, E2E "chấm theo tiêu chí IELTS" xanh)*
+- [x] **23.3** Chấm chéo: giáo viên khác chấm lại câu viết hoặc nộp tệp, mù (không thấy điểm lần đầu cho tới khi lưu); lệch từ 2 điểm trở lên hiện nhãn "Lệch … điểm" và cờ trong bảng. Người chấm lần đầu không chấm lại được. Điểm chính thức không đổi. *(2026-10-14, E2E xanh; kiểm: học vụ chấm lại lệch 3, admin bị chặn)*
+- [x] **23.4** Unit test tính điểm theo tiêu chí và độ lệch chấm chéo: `tests/unit/assignment-scoring.test.ts` 13 test xanh; E2E soạn tiêu chí, chấm, chấm lại trong `e2e/work.spec.ts`. *(2026-10-14)*
+
+## P24. Ngân hàng câu hỏi dùng chung
+
+Nguồn: mục 4.5 và câu 7 của tài liệu. Quyết định: dùng quyền `assignments.manage`; thêm vào bài là chép nội dung, sửa ngân hàng không đổi bài đã giao.
+
+- [x] **24.1** Bảng `questions`, `question_options`, `question_criteria` (migration 0009) và cột `assignment_items.bank_question_id`. Trang `/ngan-hang-cau-hoi` (lọc theo kỹ năng, thêm, sửa, xoá, số bài đang dùng; web là bảng, điện thoại là thẻ). Xoá câu trong ngân hàng được, vì bài đã chép nội dung và liên kết gỡ về trống. *(2026-10-14, E2E "ngân hàng câu hỏi" xanh)*
+- [x] **24.2** Trong bài: "Thêm từ ngân hàng" mở hộp chọn nhiều câu (lọc kỹ năng), chép vào danh sách soạn; lưu mới ghi vào bài. Nút "Ngân hàng câu hỏi" nằm ở đầu trang Bài tập. *(2026-10-14, E2E xanh)*
+- [x] **24.3** E2E: soạn câu trong ngân hàng, chép vào bài, ngân hàng hiện "1 bài", xoá câu không làm mất nội dung trong bài. Unit: `tests/unit/item-draft.test.ts` (7 test). *(2026-10-14)*
+
+## P25. Bài giảng và tài liệu
+
+Nguồn: mục 4.2 và 5 của tài liệu (P16 B). Quyết định: bài giảng thuộc lớp; tài liệu là link hoặc tệp tải lên; bài tập có thể gắn bài giảng; xoá bài giảng đang có bài tập gắn thì bị chặn.
+
+- [ ] **25.1** Bảng `lessons`, `lesson_materials`; trang bài giảng của lớp (thêm, sửa, xoá, tài liệu link và tệp).
+- [ ] **25.2** Gắn bài tập với bài giảng (chọn trong form bài tập, hiện trong danh sách bài).
+- [ ] **25.3** E2E tạo bài giảng, thêm tài liệu, gắn bài tập, chặn xoá.
+
+## P26. Kỹ năng trong hồ sơ và báo cáo lớp
+
+Nguồn: mục 5 (màn 5 và 6 của tài liệu, P16 C).
+
+- [x] **26.1** Tab "Kỹ năng" trong hồ sơ học sinh (`?tab=ky-nang`): điểm trung bình theo kỹ năng (tổng điểm đúng trên tổng điểm tối đa, chỉ bài đã chấm đủ), số bài, và điểm từng bài theo thời gian. *(2026-10-14, E2E "báo cáo kỹ năng" xanh)*
+- [x] **26.2** Báo cáo kỹ năng của lớp tại `/bao-cao-ky-nang?cls=`: học sinh × bốn kỹ năng, ô tô màu theo dải 80 / 60 / dưới 60 bằng token `bg-mint`, `bg-butter`, `bg-blush`, `bg-stone`. Web là bảng, điện thoại là thẻ. Nút mở từ trang Bài tập. *(2026-10-14, E2E xanh; số liệu khớp 100%, 85%, 65% trong bài kiểm)*
+- [x] **26.3** Unit test: `tests/unit/skill-stats.test.ts` (8 test: tổng hợp, phần trăm, dải màu, xu hướng). E2E mở báo cáo lớp và tab Kỹ năng của hồ sơ. *(2026-10-14)*
+
+## P27. Trình độ, ngưỡng và gợi ý lên trình độ
+
+Nguồn: câu 5 và 11 của tài liệu. Quyết định: trình độ CEFR sửa được trong Cài đặt; hệ thống gợi ý, giáo viên xác nhận mới ghi sự kiện.
+
+- [x] **27.1** Bảng `course_levels` (A1–C2 mặc định qua migration 0011, tên sửa được trong Cài đặt, mục "Trình độ và ngưỡng lên lớp"), `level_thresholds` (ngưỡng 70% từ A1 đến C1 cho từng kỹ năng; C2 không có ngưỡng). Cột `students.level_id` đã dùng (hồ sơ, tab Kỹ năng). Cột `classes.level_id` đã có trong schema nhưng form lớp chưa có ô chọn: **chưa hoàn thành phần lớp**. *(2026-10-14, migration 0011 áp dụng, dữ liệu mặc định kiểm bằng truy vấn)*
+- [x] **27.2** Gợi ý khi ba bài đã chấm gần nhất đều có và trung bình từng kỹ năng đạt ngưỡng của trình độ hiện tại; nếu chưa đủ thì nêu kỹ năng còn thiếu. Giáo viên bấm "Xác nhận lên …" thì mới đổi trình độ và ghi sự kiện `level_up` vào lịch sử. Đổi tay ghi `note`, hoặc `level_up` khi lên. *(2026-10-14, E2E xanh)*
+- [x] **27.3** Unit test quy tắc gợi ý: `tests/unit/level-rule.test.ts` (9 test). E2E "trình độ": dữ liệu ba bài tạo bằng SQL, xác nhận lên A2, kiểm sự kiện trong bảng, dọn dữ liệu. *(2026-10-14)*
+
+## P28. Cổng học sinh làm bài trực tuyến
+
+Nguồn: câu 3 của tài liệu. Quyết định: học sinh có tài khoản riêng gắn với hồ sơ; chỉ thấy bài của lớp mình; chỉ tải được tệp của chính mình hoặc tệp đề của bài đã giao.
+
+- [ ] **28.1** Vai trò học sinh; giáo viên tạo tài khoản học sinh và đặt lại mật khẩu từ hồ sơ.
+- [ ] **28.2** Khu học sinh (`/cua-toi`): bài của tôi, làm bài (trắc nghiệm, viết, nộp tệp), nộp bài.
+- [ ] **28.3** Kiểm quyền: học sinh không vào được màn của giáo viên; tệp và bài làm đúng chủ.
+- [ ] **28.4** Unit test quyền; E2E học sinh đăng nhập, nộp bài, giáo viên thấy bài nộp.
+
+## P29. Dọn tệp không còn dùng
+
+- [ ] **29.1** Xoá tệp tải lên không còn được tham chiếu và đã quá 24 giờ, cả trên ổ đĩa; nút chạy trong Cài đặt.
+
 ## Quyết định đã chốt
 
 | Mã | Quyết định | Lý do |
@@ -137,6 +266,8 @@ Trạng thái: **schema 0002 đã áp dụng** (PostgreSQL 18 local, database `e
 | D3 | Tiền lưu số nguyên VND. | Tránh sai số thập phân. |
 | D4 | Học phí dùng sổ thu cộng dồn, thay "đặt số đã đóng". | Có lịch sử thu, đối soát được. |
 | D5 | Tab thứ tư trên điện thoại là Điểm danh, thay Tính năng. | **Chờ người dùng xác nhận.** |
+| D6 | Cơ sở: một cơ sở có nhiều lớp (1 - nhiều). Mỗi lớp thuộc đúng một cơ sở. Học sinh, buổi học, điểm danh, bài tập, học phí đi theo lớp. Giáo viên dạy một hoặc nhiều cơ sở (liên kết nhiều - nhiều). Phụ huynh, tài khoản dùng chung. Cơ sở đang xem chọn trên thanh trên cùng, lưu trong cookie, mặc định là cơ sở đầu tiên, có "Tất cả cơ sở". | Đã chốt theo yêu cầu người dùng (2026-10-14). |
+| D7 | Trợ giảng và bài giảng có thể thuộc một hoặc nhiều cơ sở, theo cùng kiểu liên kết nhiều - nhiều như giáo viên. Hai mục này chưa có trong ứng dụng; khi xây dựng (P16 và việc tiếp theo) thì áp dụng quy tắc này. | Đã chốt theo yêu cầu người dùng (2026-10-14). Trợ giảng đã làm ở P20; bài giảng chưa làm. |
 | D6 | Thiết kế mới theo `docs/DESIGN.md`, bỏ thiết kế cam-xanh cũ. | Người dùng đã từ chối. |
 | D7 | Không commit khi chưa được yêu cầu. | `CLAUDE.md` mục 8. |
 | D8 | Mở rộng schema bằng migration mới, không sửa migration đã áp dụng. Dữ liệu mẫu seed lại bằng `db:seed:reset` (chỉ dev). | Đúng quy tắc `CLAUDE.md` mục 4. |
@@ -147,6 +278,8 @@ Trạng thái: **schema 0002 đã áp dụng** (PostgreSQL 18 local, database `e
 | D13 | Hồ sơ học sinh trên web là ngăn kéo (`?h=`), trên điện thoại là trang riêng. Không có Sửa, Xoá trong hồ sơ. | DESIGN mục 3 và 6. |
 | D14 | Hạn đóng học phí là ngày `dueDay` (cài đặt, 1–28) của tháng sau tháng khai giảng. Phí trễ hạn chỉ lưu, chưa tự cộng. | Quy tắc đơn giản, người dùng chỉnh được. |
 | D15 | Nhắc đóng và thông báo chỉ ghi nhận (nhật ký, cài đặt), chưa gửi SMS hay email. | Chưa có nhà cung cấp kênh gửi. |
+| D16 | Chuẩn kích thước lấy từ trang Học sinh: nút, ô nhập, ô chọn và chip cao 32px trên web, 44px trên điện thoại (chip điện thoại 36px). Nút icon và nút ⋯ cao 36px trên web, 44px trên điện thoại. Bo góc ô và nút 12px, thẻ và bảng 24px. | Người dùng chọn trang Học sinh làm chuẩn cho mọi trang. |
+| D17 | Bảng hiện từ 768px khi có tối đa 6 cột, từ 1200px khi nhiều cột hơn. Dưới mốc đó hiện thẻ. | Phụ huynh và Giáo viên cần hiển thị nhiều dữ liệu hơn trên màn vừa. |
 
 ## Việc cần người dùng làm
 

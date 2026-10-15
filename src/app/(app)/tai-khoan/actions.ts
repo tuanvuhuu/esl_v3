@@ -52,7 +52,7 @@ export async function loadAccountForm(id: number): Promise<{ ok: true; values: A
     if (!row) return { ok: false, message: 'Không tìm thấy tài khoản này.' };
     return {
       ok: true,
-      values: { fullName: row.fullName, email: row.email, role: row.role, status: row.status, teacherId: row.teacherId ? String(row.teacherId) : '' },
+      values: { fullName: row.fullName, email: row.email, role: row.role as Role, status: row.status, teacherId: row.teacherId ? String(row.teacherId) : '' },
     };
   } catch (error) {
     if (error instanceof ForbiddenError) return { ok: false, message: error.message };

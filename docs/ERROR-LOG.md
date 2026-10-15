@@ -404,3 +404,165 @@ Mỗi lỗi gặp phải được ghi ở đây, theo mẫu dưới đây. Trư�
 - Cách sửa: Dừng máy chủ, xoá `.next`, chạy lại `npm run dev -- -p 3100`. Sau đó kiểm tra rule đã có trong CSS được phục vụ.
 - Quy tắc phòng ngừa: Sau khi sửa `globals.css` mà kiểm tra trình duyệt không khớp, lấy file CSS của trang (link rel="stylesheet") và tìm tên rule. Nếu không có, khởi động lại máy chủ trước khi kết luận sai về code.
 - Đã áp dụng ở: thêm `.scroll-quiet` và đổi bậc chữ trong `globals.css`.
+
+## E-044 · Chữ trông mờ do ép khử răng cưa grayscale
+- Ngày: 2026-10-14
+- Khu vực: CSS / kết xuất phông
+- Triệu chứng: Người dùng (Windows) thấy chữ "mờ mờ", mảnh, nhất là chữ phụ và chữ nhỏ.
+- Nguyên nhân: `body { -webkit-font-smoothing: antialiased }` và class `antialiased` ở `<html>` ép khử răng cưa grayscale, làm chữ mảnh hơn. Trên Windows, bỏ nó đi để trình duyệt dùng ClearType (khử răng cưa subpixel) cho chữ nét, đậm hơn. Ngoài ra `--muted #958D7C` trên nền trắng tương phản thấp (~3.2:1, dưới AA) nên chữ phụ trông nhạt.
+- Cách sửa: Bỏ `-webkit-font-smoothing: antialiased` ở `body` và class `antialiased` ở `<html>`. Làm đậm `--muted` thành `#7C7462` (~4.3:1) và `--ink-2` thành `#544E40` ở chế độ sáng.
+- Quy tắc phòng ngừa: Không ép `-webkit-font-smoothing: antialiased` toàn trang. Màu chữ phụ trên nền sáng phải đạt tương phản tối thiểu ~4.3:1.
+- Đã áp dụng ở: `globals.css` (body, `--muted`, `--ink-2`), `layout.tsx` (bỏ class `antialiased`).
+
+## E-045 · Bảng dữ liệu không hiện trên máy tính vì lớp breakpoint được ghép lúc chạy
+- Ngày: 2026-10-14
+- Khu vực: Tailwind / bảng dùng chung (`src/components/ui/datagrid.tsx`)
+- Triệu chứng: Sau khi chuyển danh sách sang bảng dùng chung, máy tính không hiện bảng và không hiện thẻ. Trang Học phí chỉ còn chip và ô tìm kiếm. Trang Học sinh cũng mất bảng. Chụp snapshot thấy vùng nội dung trống. Không có lỗi console.
+- Nguyên nhân: Lớp hiển thị được ghép từ biến: `${bp}:block` với `bp = 'min-[1200px]'`. Tailwind quét mã nguồn theo tên lớp nguyên văn, nên không tạo CSS cho `min-[1200px]:block`. Bảng luôn bị `hidden`. Thẻ dùng `min-[1200px]:hidden` có sẵn ở chỗ khác nên bị ẩn trên máy tính, và cả hai đều trống.
+- Cách sửa: Viết nguyên văn mọi lớp theo breakpoint trong các hằng `TABLE_SHOW`, `TABLE_SHOW_FILL`, `BODY_FILL`, `CARDS_HIDE_ABOVE` (mỗi mốc một chuỗi đầy đủ). Không ghép chuỗi lúc chạy.
+- Quy tắc phòng ngừa: Lớp Tailwind phải xuất hiện nguyên văn trong mã nguồn. Không dựng `min-[...]:` hay `md:` từ biến. Kiểm tra bằng cách đo `getComputedStyle(el).display` ở đúng breakpoint sau khi đổi, không chỉ nhìn code.
+- Đã áp dụng ở: `datagrid.tsx`. Kiểm tra lại: `e2e/work.spec.ts` (học phí), `e2e/students.spec.ts`, ảnh chụp `/hoc-sinh` và `/hoc-phi` ở 1440px.
+
+## E-046 · Kiểm thử đầu cuối dựa vào vai trò của giao diện cũ (tab, bảng, ô chọn buổi)
+- Ngày: 2026-10-14
+- Khu vực: E2E (`e2e/work.spec.ts`, `e2e/students.spec.ts`)
+- Triệu chứng: Sau khi đổi Điểm danh sang dải buổi và lưới thẻ, ba kịch bản điểm danh lỗi: không tìm thấy ô "Chọn buổi học", không đếm được dòng bảng, không tìm thấy chữ "Có mặt N". Mục hồ sơ học sinh báo không có vùng navigation "Mục hồ sơ" khi đổi sang chip tab.
+- Nguyên nhân: Kiểm thử gắn vào cấu trúc DOM và vai trò của giao diện cũ. Mục hồ sơ là liên kết, không phải tab, nên dùng `role="tab"` là sai ngữ nghĩa.
+- Cách sửa: Mục hồ sơ dùng `<nav aria-label="Mục hồ sơ">` với chip liên kết (không có vai trò tab). Kiểm thử điểm danh chọn buổi bằng tab có ngày trong tên, đếm thẻ có `role="group"` tên "Điểm danh ...". Đoạn chữ "Có mặt N" nằm trong một phần tử nên khớp được.
+- Quy tắc phòng ngừa: Khi đổi giao diện, kiểm tra kịch bản E2E theo vai trò và tên hiển thị, sửa test cùng lúc với code. Với liên kết dùng `navigation` + `link`, không đổi sang `tab` nếu nội dung là đường dẫn.
+- Đã áp dụng ở: `StudentProfile.tsx`, `e2e/work.spec.ts`.
+
+## E-047 · Thanh cuộn của bảng trong màn lớn trước đây đè lên tiêu đề cột
+- Ngày: 2026-10-14
+- Khu vực: Bảng dùng chung (`datagrid.tsx`)
+- Triệu chứng: Khi bảng có nhiều dòng và được cố định chiều cao (`fill`), tiêu đề cột cuộn đi mất.
+- Nguyên nhân: Chỉ thân bảng có `overflow-y-auto` nhưng tiêu đề không dính; khi đặt tiêu đề ngoài vùng cuộn thì mất định vị.
+- Cách sửa: Tiêu đề cột nằm trong vùng cuộn của bảng với `sticky top-0 z-10 bg-surface`. Vùng cuộn đặt ở `role="table"` để sticky bám đúng khung.
+- Quy tắc phòng ngừa: Tiêu đề dính luôn nằm cùng vùng cuộn với các dòng dữ liệu.
+- Đã áp dụng ở: `datagrid.tsx`.
+
+## E-048 · Chữ khối buổi bị cắt khi hai buổi trùng giờ (lịch tuần)
+- Ngày: 2026-10-14
+- Khu vực: Lịch học (`src/components/schedule/ScheduleView.tsx`)
+- Triệu chứng: Khi hai buổi trùng giờ, mỗi khối chỉ rộng khoảng 55–65px. Giờ "17:00–18:00", tên lớp, giáo viên và nhãn trạng thái bị cắt bằng dấu ba chấm. Nhãn "Sắp học" bị đẩy ra ngoài khối. Buổi dưới 90 phút còn bị ẩn giáo viên và trạng thái, nên thông tin mất hẳn.
+- Nguyên nhân: Mọi dòng trong khối dùng `truncate`. Chiều cao một giờ 56px quá thấp cho bốn dòng. Nhãn trạng thái là `Pill` có đệm nên rộng hơn làn. Lưới có chiều rộng tối thiểu 760px nên làn còn hẹp hơn nữa.
+- Cách sửa: Bỏ `truncate`, cho chữ xuống dòng (`break-words`). Trạng thái thành chấm màu kèm chữ. Bỏ ngưỡng 90 phút, buổi nào cũng hiện đủ thông tin. Chiều cao một giờ 96px (`--cal-hour-h`). Lưới rộng tối thiểu 1100px, dưới mốc đó cuộn ngang trong khung. Làn cách nhau 4px.
+- Quy tắc phòng ngừa: Không cắt bằng `truncate` những nội dung cần đọc (giờ, tên lớp, trạng thái). Khi xếp khối theo giờ, tính trước chiều rộng làn khi hai buổi trùng giờ và chiều cao cần cho các dòng chữ. Đo `scrollHeight` và `scrollWidth` của từng khối ở 1440, 1366 và 1024px.
+- Đã áp dụng ở: `ScheduleView.tsx` (`CalendarBlock`, lưới), `globals.css` (`--cal-hour-h`). Kiểm tra bằng spec tạm đo mọi khối: không còn khối nào vượt, đã xoá spec sau khi đo.
+
+## E-049 · Đổi `--cal-hour-h` trong globals.css không có hiệu lực cho đến khi khởi động lại dev server (tái diễn E-043)
+- Ngày: 2026-10-14
+- Khu vực: CSS / máy chủ phát triển
+- Triệu chứng: Đổi `--cal-hour-h` từ 3.5rem sang 5.5rem, tải lại trang vẫn đo được giờ cao 56px. Lưới vẫn theo giá trị cũ dù file đã sửa.
+- Nguyên nhân: Giống E-043. Máy chủ phát triển không phục vụ token mới trong `globals.css`. Token được đọc qua `calc(... * var(--cal-hour-h))` nên lỗi nằm ẩn trong vị trí các khối.
+- Cách sửa: Dừng máy chủ, xoá `.next`, chạy lại `npm run dev -- -p 3100`. Trước khi đo khối, kiểm tra giá trị token của trang bằng `getComputedStyle(document.documentElement).getPropertyValue('--cal-hour-h')`.
+- Quy tắc phòng ngừa: Sau mỗi lần đổi token trong `globals.css`, khởi động lại máy chủ rồi đọc lại token bằng `getPropertyValue` trước khi tin kết quả đo. Không kết luận về bố cục khi chưa xác nhận token đã đổi.
+- Đã áp dụng ở: lịch học, sau hai lần khởi động lại máy chủ trong phiên 2026-10-14.
+
+## E-050 · E2E lịch chờ nút theo tên cũ đến hết thời gian của test sau khi đổi giao diện
+- Ngày: 2026-10-14
+- Khu vực: E2E (`e2e/lich.spec.ts`, `e2e/work.spec.ts`)
+- Triệu chứng: Lần chạy đầy đủ kéo dài trên 10 phút. Các test lịch chờ `getByRole('button', { name: 'Chọn ngày' })` đến hết thời gian của test rồi lỗi, trong khi trang vẫn hiển thị đúng ở trình duyệt.
+- Nguyên nhân: Nút đổi sang "Chọn khoảng ngày, đang xem …" và cách chọn đổi sang hai lần bấm, nhưng file test không được sửa cùng lúc nên test vẫn tìm tên cũ và không bao giờ khớp.
+- Cách sửa: Viết lại `e2e/lich.spec.ts` theo giao diện mới (hai lần bấm, nút hiện khoảng, bảng trong màn hình, chọn nhiều lớp). Đổi tên link trong `e2e/work.spec.ts` thành "Khoảng sau".
+- Quy tắc phòng ngừa: Khi đổi nhãn, tên nút hoặc luồng thao tác của giao diện, sửa test E2E trong cùng một thay đổi. Chạy riêng file E2E liên quan trước khi chạy toàn bộ, để lỗi lộ ra sớm thay vì chờ hết thời gian từng test.
+- Đã áp dụng ở: `e2e/lich.spec.ts`, `e2e/work.spec.ts`.
+
+## E-051 · Ô tìm trên thanh đầu giữ chữ cũ ("null") khi sang trang khác
+- Ngày: 2026-10-14
+- Khu vực: Thanh trên cùng (`src/components/shell/AppBar.tsx`)
+- Triệu chứng: Người dùng gõ "null" vào ô tìm trên thanh đầu, tìm thì sang trang Học sinh. Sang trang khác bằng thanh bên, chữ "null" vẫn nằm trong ô tìm.
+- Nguyên nhân: Ô tìm là trạng thái của `AppBar`, nằm trong layout nên không được tạo lại khi đổi trang. Trạng thái không gắn với `?q=` trên URL nên không bao giờ được xoá.
+- Cách sửa: Ô tìm lấy giá trị từ `?q=` khi đang ở `/hoc-sinh`, ở trang khác thì trống. Đồng bộ ngay trong lúc render khi URL đổi, không dùng setState trong effect (lint `react-hooks/set-state-in-effect` báo lỗi).
+- Quy tắc phòng ngừa: Trạng thái đặt trong layout phải được đồng bộ với URL hoặc xoá khi đổi trang. Không để ô tìm toàn cục giữ chữ của trang trước. Có test E2E cho việc chữ còn lại hay không khi sang trang khác (`e2e/topbar.spec.ts`).
+- Đã áp dụng ở: `src/components/shell/AppBar.tsx`, `e2e/topbar.spec.ts`, DESIGN mục 4.
+
+## E-052 · Bảng thông báo tràn khỏi mép trái trên điện thoại
+- Ngày: 2026-10-14
+- Khu vực: Chuông thông báo (`src/components/shell/NotificationBell.tsx`)
+- Triệu chứng: Trên 390px, bảng thông báo căn phải theo nút chuông nhưng nút nằm giữa thanh (còn ô tìm và các biểu tượng bên phải). Bảng bị tràn mép trái, mất chữ đầu dòng.
+- Nguyên nhân: Bảng đặt `absolute right-0` trong thanh đầu. Thanh đầu có `backdrop-blur`, nên định vị cố định bên trong thanh cũng không tham chiếu màn hình được.
+- Cách sửa: Đưa bảng ra `document.body` bằng portal. Đặt top, left, width tính từ vị trí nút và kẹp trong màn hình với mép 16px.
+- Quy tắc phòng ngừa: Bảng nổi trong thanh có backdrop-filter thì dùng portal và tính vị trí theo nút, không dùng `right-0` cho nút nằm giữa thanh. Kiểm tra bảng ở 390px sau khi đổi, không chỉ ở 1440px.
+- Đã áp dụng ở: `src/components/shell/NotificationBell.tsx`.
+
+## E-053 · Số học sinh vắng bị chặn ở 8, chuông và Tổng quan đếm thiếu
+- Ngày: 2026-10-14
+- Khu vực: Truy vấn `listFrequentAbsentees` (`src/lib/queries/dashboard.ts`), dùng cho Tổng quan và chuông thông báo.
+- Triệu chứng: Khi có hơn 8 học sinh đủ điều kiện vắng từ hai buổi trở lên trong 7 ngày, Tổng quan và chuông đều chỉ ghi 8. Tiêu đề "Cần chú ý (N)" cũng thiếu cùng số đó.
+- Nguyên nhân: Truy vấn có `LIMIT 8` để cắt danh sách hiển thị. Số đếm lấy từ `absentees.length` của chính danh sách đã cắt, nên bị chặn theo. Bài E2E so khớp chuông với Tổng quan vẫn qua vì hai bên cùng bị chặn, nên không bắt được lỗi này.
+- Cách sửa: Bỏ `LIMIT 8` khỏi truy vấn để hàm trả về đủ. Tổng quan tự cắt 8 dòng khi hiển thị (`absentees.slice(0, 8)`), bố cục giữ như cũ. Chuông cắt 5 dòng mỗi nhóm và có "Xem tất cả N mục".
+- Quy tắc phòng ngừa: Truy vấn trả về đủ dữ liệu, chỗ hiển thị tự cắt. Không đặt LIMIT trong truy vấn rồi lấy số đếm từ đó. Khi số đếm đi vào tiêu đề hoặc chuông, kiểm tra nó không lấy từ danh sách đã cắt.
+- Đã áp dụng ở: `src/lib/queries/dashboard.ts`, `src/app/(app)/tong-quan/page.tsx`.
+
+## E-054 · E2E không chạy được vì thiếu trình duyệt Playwright bản 1248
+- Ngày: 2026-10-14
+- Khu vực: Kiểm thử đầu cuối (`npm run test:e2e`) trên máy này
+- Triệu chứng: 33 kịch bản lỗi ngay khi mở trình duyệt với thông báo `browserType.launch: Executable doesn't exist at ...chromium_headless_shell-1248...`. 10 kịch bản không chạy. Không có lỗi nào trong mã.
+- Nguyên nhân: Cache Playwright trên máy chỉ có bản 1234, còn bản Playwright đang dùng cần bản 1248. Biến `E2E_CHROME_PATH` không được đặt.
+- Cách sửa: Đặt `E2E_CHROME_PATH` trỏ tới Chrome đã cài (`C:/Program Files/Google/Chrome/Application/chrome.exe`), hoặc chạy `npx playwright install chromium`.
+- Quy tắc phòng ngừa: Trước khi đọc kết quả E2E, kiểm tra log có dòng `N passed` và `EXIT=0`. Lệnh `echo` sau lệnh test luôn trả về 0, nên mã thoát của tác vụ nền không đủ để kết luận. Nếu mọi kịch bản lỗi cùng một lỗi trình duyệt thì đó là môi trường, không phải mã.
+- Đã áp dụng ở: lần chạy E2E sau đó, với `E2E_CHROME_PATH`.
+
+## E-055 · Kiểm thử bộ chọn cơ sở đọc cookie trước khi máy chủ ghi xong
+- Ngày: 2026-10-14
+- Khu vực: `e2e/co-so.spec.ts`
+- Triệu chứng: Sau khi chọn "Tất cả cơ sở", ô hiện đúng ngay. Tải lại trang thì ô quay về "Cơ sở chính".
+- Nguyên nhân: Ô đổi ngay nhờ `useOptimistic`, còn action đặt cookie chạy sau trên máy chủ. Lệnh tải lại đến trước khi trình duyệt nhận cookie mới. Máy chủ vẫn đúng: log có `setCampusAction("all")` chạy thành công.
+- Cách sửa: Trong kịch bản, chờ cookie `esl-campus` có giá trị `all` rồi mới tải lại.
+- Quy tắc phòng ngừa: Với lựa chọn lưu bằng cookie hoặc server action, kiểm thử chờ kết quả thật (cookie, dữ liệu) trước khi tải lại. Ô đổi ngay không chứng minh là đã lưu.
+- Đã áp dụng ở: `e2e/co-so.spec.ts`.
+
+## E-056 · Migration thêm cột bắt buộc vào bảng đã có dữ liệu
+- Ngày: 2026-10-14
+- Khu vực: Migration 0003 (cơ sở) và 0004 (giáo viên - cơ sở) trong `src/db/migrations`
+- Triệu chứng: `drizzle-kit generate` sinh `ALTER TABLE classes ADD COLUMN campus_id integer NOT NULL;`. Trên bảng đã có lớp, câu lệnh này lỗi vì không có giá trị mặc định.
+- Nguyên nhân: Drizzle chỉ sinh DDL theo schema, không biết phải gán dữ liệu cũ trước khi đặt NOT NULL.
+- Cách sửa: Sửa file SQL trước khi áp dụng (file chưa áp dụng nên được phép). Tạo cơ sở mặc định, thêm cột cho phép NULL, gán mọi lớp vào cơ sở đầu tiên, rồi mới đặt NOT NULL. Migration 0004 gán mọi giáo viên hiện có vào cơ sở đầu tiên bằng `INSERT ... SELECT`. Kiểm tra sau khi áp dụng: số liên kết bằng số giáo viên, không có giáo viên nào thiếu cơ sở.
+- Quy tắc phòng ngừa: Mỗi lần generate, đọc SQL trước. Cột NOT NULL mới trên bảng có dữ liệu phải có bước gán giá trị trước. Không sửa migration đã áp dụng (CLAUDE.md mục 4).
+- Đã áp dụng ở: `src/db/migrations/0003_co_so_mot_nhieu_lop.sql`, `src/db/migrations/0004_giao_vien_nhieu_co_so.sql`.
+
+## E-057 · Esc trong ô chọn đặt trong hộp thoại làm đóng cả hộp thoại
+- Ngày: 2026-10-14
+- Khu vực: `src/components/ui/SelectPanel.tsx`, `src/components/ui/Modal.tsx`
+- Triệu chứng: Mở ô chọn có tìm (ví dụ "Học sinh *" trong hộp thoại Gán học sinh), bấm một mục rồi nhấn Esc. Ô chọn đóng, nhưng cả hộp thoại cũng đóng và mất lựa chọn. E2E treo chờ nút Gán học sinh đã biến mất.
+- Nguyên nhân: Ô chọn xử lý Esc bằng `stopPropagation`, nhưng Modal lắng nghe Esc trên `document`. Trang này gắn sự kiện React ở `document`, nên hai trình lắng nghe cùng một nút và `stopPropagation` không chặn được Modal.
+- Cách sửa: Ô chọn gọi `preventDefault` khi xử lý Esc. Modal chỉ đóng khi Esc chưa được xử lý (`!e.defaultPrevented`).
+- Quy tắc phòng ngừa: Khi một thành phần con xử lý Esc, gọi `preventDefault` (không chỉ `stopPropagation`). Modal và các lớp nghe Esc trên `document` phải kiểm tra `defaultPrevented`. Kiểm thử hộp thoại có ô chọn phải thử Esc hai lần: lần đầu chỉ đóng ô chọn, lần sau mới đóng hộp thoại.
+- Đã áp dụng ở: `src/components/ui/SelectPanel.tsx`, `src/components/ui/Modal.tsx`, `e2e/catalog.spec.ts` (kịch bản gán học sinh).
+
+## E-058 · Bảng phụ huynh cắt nút ⋯ ở 1200–1440px và tiêu đề không dính khi cuộn
+- Ngày: 2026-10-14
+- Khu vực: `src/components/ui/datagrid.tsx`, trang Phụ huynh
+- Triệu chứng: Với 3 cột học sinh ở 1200px, bảng rộng 1022px trong khung 944px. Nút ⋯ nằm ngoài khung (mép phải x=1254, khung chỉ đến 1176), nên không bấm được. Khi cuộn trang, tiêu đề cột trôi khỏi màn hình (lệch -692px).
+- Nguyên nhân: Khung bảng đặt `overflow-hidden`, nên phần tràn bị cắt và không có thanh cuộn ngang. Tiêu đề chỉ dính khi bật `fill`, mà trang này chưa bật.
+- Cách sửa: `DataGrid` không `fill` cuộn ngang trong khung (`overflow-x-auto` trên thân bảng). Trang Phụ huynh bật `fill` và chia trang 10 người mỗi trang.
+- Quy tắc phòng ngừa: Đo bảng với số cột tối đa và ít nhất 50 dòng ở 1200px, không chỉ ở 1440px. Khung có `overflow-hidden` phải có cách cuộn ngang cho nội dung tràn. Tiêu đề dính chỉ hoạt động khi thân bảng là vùng cuộn.
+- Đã áp dụng ở: `src/components/ui/datagrid.tsx`, `src/components/parents/ParentList.tsx`, `src/components/ui/controls.tsx` (phân trang), `e2e/catalog.spec.ts` (kịch bản chia trang).
+
+## E-059 · Chân phân trang bảng Phụ huynh hiện trên thẻ điện thoại
+- Ngày: 2026-10-14
+- Khu vực: `src/components/parents/ParentList.tsx`
+- Triệu chứng: Ở 390px, dòng "Trang 1 / 7" và các số trang hiện ngay trên thẻ phụ huynh, dãy số tràn và cắt số "7" ở mép phải. Trang Học sinh không bị. Phát hiện khi đo (`pagerBottom` 335px, phân trang vẫn hiện) và xem ảnh chụp ở 390px sau đợt đổi đầu trang.
+- Nguyên nhân: `DataGrid` đặt `footer` ngoài khung bảng và không ẩn theo mốc của bảng. Trang Phụ huynh truyền `Pagination` trần, còn trang Học sinh bọc chân bảng bằng `hidden min-[768px]:block`.
+- Cách sửa: Bọc chân bảng bằng `footerShow`, cùng mốc với bảng: `hidden min-[1200px]:block` khi có nhiều cột học sinh, `hidden min-[768px]:block` khi chỉ có một cột. Đo lại ở 390px: phân trang không hiện.
+- Quy tắc phòng ngừa: Chân bảng (phân trang, ghi chú) phải có cùng mốc hiện với bảng. Mỗi lần đổi bảng, đo ở 390px xem có phần nào của bảng hoặc chân bảng hiện trên thẻ không.
+- Đã áp dụng ở: `src/components/parents/ParentList.tsx`.
+
+## E-060 · Tên học sinh xuống dòng làm nút cao 42px, chuẩn giao diện báo lỗi
+- Ngày: 2026-10-14
+- Khu vực: `src/components/parents/ParentList.tsx`, `e2e/chuan.spec.ts`
+- Triệu chứng: Sau khi tên học sinh hiện đủ (không cắt), `chuan.spec.ts` ở 1440px báo 7 nút trên /phu-huynh cao 42px, ví dụ "Dương Nhật Nam Bố". Chuẩn là 32px hoặc 36px.
+- Nguyên nhân: Nút tên học sinh chứa chữ có thể xuống hai dòng nên cao theo chữ. Bộ đo chỉ bỏ qua `data-card`, chưa có chỗ cho liên kết trong ô.
+- Cách sửa: Thêm `data-link="true"` cho nút tên học sinh. `chuan.spec.ts` bỏ qua `data-link` như `data-card`. Nút điều khiển (+ Thêm, Sửa, ⋯) vẫn được đo đủ. Ghi quy tắc vào DESIGN mục 8.
+- Quy tắc phòng ngừa: Nút có chữ có thể xuống dòng thì đặt `data-link`; nút điều khiển luôn 32px. Khi đổi chữ sang nhiều dòng, chạy `chuan.spec` trước khi báo xong.
+- Đã áp dụng ở: `src/components/parents/ParentList.tsx`, `e2e/chuan.spec.ts`, `docs/DESIGN.md`.
+
+## E-061 · Cột Thao tác bị đẩy khỏi khung khi bảng cuộn ngang, menu ⋯ dòng cuối bị cắt
+- Ngày: 2026-10-14
+- Khu vực: `src/components/ui/datagrid.tsx`, `src/components/ui/RowMenu.tsx`, `src/components/parents/ParentList.tsx`
+- Triệu chứng: Ở 1200–1439px, bảng Phụ huynh cuộn ngang. Khi cuộn sang phải, nút ⋯ sát mép khung hoặc ra ngoài. Menu ⋯ của dòng cuối vẽ xuống dưới khung bảng: đáy menu 909px, đáy khung 840px, màn hình 900px, nên không xem được các mục.
+- Nguyên nhân: (1) Cột Thao tác là cột cuối nên bị đẩy ra ngoài khi bảng cuộn ngang. (2) Menu của RowMenu là absolute trong khung cuộn, nên bị cắt ở đáy khung; dòng cuối mở xuống thì vượt khỏi khung.
+- Cách sửa: DataGrid có `stickyEnd`: cột cuối dính mép phải (`sticky right-0`, lề 16px), và dòng có `minWidth` bằng tổng cột để ô dính có khung bám. RowMenu vẽ menu bằng portal lên body, định vị theo nút, mở lên khi thiếu chỗ bên dưới, đóng khi cuộn hoặc đổi cỡ màn hình. Cột Ghi chú giảm min từ 110px xuống 104px để bảng vẫn vừa 1440px.
+- Quy tắc phòng ngừa: Bảng cuộn ngang có cột thao tác ở cuối thì đặt `stickyEnd`. Menu trong khung cuộn phải vẽ bằng portal, không absolute trong khung. Đo menu của dòng cuối ở màn hình cao 900px: đáy menu không được vượt màn hình.
+- Đã áp dụng ở: `src/components/ui/datagrid.tsx`, `src/components/ui/RowMenu.tsx`, `src/components/parents/ParentList.tsx`.

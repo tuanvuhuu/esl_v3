@@ -1,16 +1,24 @@
 // Truy vấn lớp học: danh sách, chi tiết, lựa chọn cho bộ lọc. Chỉ chạy trên server.
 import { asc, eq, sql } from 'drizzle-orm';
 import { db } from '@/db/client';
-import { classes, classSessions, students, teachers } from '@/db/schema';
+import { campuses, classes, classSessions, students, teachers } from '@/db/schema';
+import type { CampusScope } from '@/lib/campus';
 import { vnDateKey } from '@/lib/datetime';
 import { describeSchedule } from '@/lib/schedule';
+import { campusCond } from '@/lib/queries/campuses';
 
 export type ClassRow = {
   id: number;
   name: string;
   course: string;
+  campusId: number;
+  campusName: string;
   teacherId: number;
-  teacherName: string;
+  teacherName: string; // giáo viên chủ nhiệm
+  assistantId: number | null;
+  assistantName: string | null;
+  foreignTeacherId: number | null;
+  foreignTeacherName: string | null;
   schedule: string; // "T2 · T4 · T6 · 18:30–20:30"
   weekdays: string; // "T2,T4,T6"
   startTime: string;
@@ -25,31 +33,44 @@ export type ClassRow = {
 };
 
 type RawClass = {
-  id: number; name: string; course: string; teacher_id: number; teacher_name: string; weekdays: string; start_time: string;
-  end_time: string; room: string; fee: number; capacity: number; sessions_total: number; student_count: number;
-  sessions_done: number; next_at: Date | null;
+  id: number; name: string; course: string; campus_id: number; campus_name: string; teacher_id: number; teacher_name: string;
+  weekdays: string; start_time: string; end_time: string; room: string; fee: number; capacity: number; sessions_total: number;
+  student_count: number; sessions_done: number; next_at: Date | null;
+  assistant_id: number | null; assistant_name: string | null; foreign_teacher_id: number | null; foreign_name: string | null;
 };
 
-// Các lớp (hoặc một lớp nếu có id), kèm sĩ số, buổi đã học và buổi sắp tới
-async function selectClasses(id?: number): Promise<ClassRow[]> {
-  const where = id === undefined ? sql`TRUE` : sql`c.id = ${id}`;
+// Các lớp trong cơ sở đang xem (scope null: mọi cơ sở), hoặc một lớp nếu có id. 'any': không lọc theo cơ sở.
+// Kèm sĩ số, buổi đã học và buổi sắp tới.
+async function selectClasses(scope: CampusScope | 'any', id?: number): Promise<ClassRow[]> {
+  const byId = id === undefined ? sql`TRUE` : sql`c.id = ${id}`;
+  const byCampus = scope === 'any' ? sql`TRUE` : campusCond(scope, sql`c.campus_id`);
   const result = await db.execute<RawClass>(sql`
-    SELECT c.id, c.name, c.course, c.teacher_id, t.name AS teacher_name, c.weekdays, c.start_time, c.end_time,
-      c.room, c.fee, c.capacity, c.sessions_total,
+    SELECT c.id, c.name, c.course, c.campus_id, cp.name AS campus_name, c.teacher_id, t.name AS teacher_name,
+      c.assistant_id, a.name AS assistant_name, c.foreign_teacher_id, f.name AS foreign_name,
+      c.weekdays, c.start_time, c.end_time, c.room, c.fee, c.capacity, c.sessions_total,
       (SELECT COUNT(*)::int FROM students s WHERE s.class_id = c.id) AS student_count,
       (SELECT COUNT(*)::int FROM class_sessions cs WHERE cs.class_id = c.id AND cs.status = 'done') AS sessions_done,
       (SELECT MIN(cs.starts_at) FROM class_sessions cs WHERE cs.class_id = c.id AND cs.status = 'planned' AND cs.starts_at >= NOW()) AS next_at
     FROM classes c
     JOIN teachers t ON t.id = c.teacher_id
-    WHERE ${where}
-    ORDER BY c.name
+    LEFT JOIN teachers a ON a.id = c.assistant_id
+    LEFT JOIN teachers f ON f.id = c.foreign_teacher_id
+    JOIN campuses cp ON cp.id = c.campus_id
+    WHERE ${byId} AND ${byCampus}
+    ORDER BY c.name, c.id
   `);
   return result.rows.map((r) => ({
     id: r.id,
     name: r.name,
     course: r.course,
+    campusId: r.campus_id,
+    campusName: r.campus_name,
     teacherId: r.teacher_id,
     teacherName: r.teacher_name,
+    assistantId: r.assistant_id,
+    assistantName: r.assistant_name,
+    foreignTeacherId: r.foreign_teacher_id,
+    foreignTeacherName: r.foreign_name,
     schedule: describeSchedule(r.weekdays, r.start_time, r.end_time),
     weekdays: r.weekdays,
     startTime: r.start_time,
@@ -64,17 +85,20 @@ async function selectClasses(id?: number): Promise<ClassRow[]> {
   }));
 }
 
-export function listClasses(): Promise<ClassRow[]> {
-  return selectClasses();
+// Lớp trong cơ sở đang xem (scope null: mọi cơ sở)
+export function listClasses(scope: CampusScope): Promise<ClassRow[]> {
+  return selectClasses(scope);
 }
 
-// Danh sách lớp cho bộ lọc và chọn lớp
-export async function listClassChoices(): Promise<{ id: number; name: string; teacherName: string }[]> {
+// Danh sách lớp cho bộ lọc và chọn lớp, trong cơ sở đang xem. Kèm tên cơ sở để phân biệt khi xem tất cả.
+export async function listClassChoices(scope: CampusScope): Promise<{ id: number; name: string; teacherName: string; campusName: string; campusId: number }[]> {
   return db
-    .select({ id: classes.id, name: classes.name, teacherName: teachers.name })
+    .select({ id: classes.id, name: classes.name, teacherName: teachers.name, campusName: campuses.name, campusId: classes.campusId })
     .from(classes)
     .innerJoin(teachers, eq(teachers.id, classes.teacherId))
-    .orderBy(asc(classes.name));
+    .innerJoin(campuses, eq(campuses.id, classes.campusId))
+    .where(scope === null ? undefined : eq(classes.campusId, scope))
+    .orderBy(asc(classes.name), asc(campuses.id));
 }
 
 export type ClassDetail = ClassRow & {
@@ -90,7 +114,10 @@ export async function getClassForm(id: number) {
     .select({
       name: classes.name,
       course: classes.course,
+      campusId: classes.campusId,
       teacherId: classes.teacherId,
+      assistantId: classes.assistantId,
+      foreignTeacherId: classes.foreignTeacherId,
       room: classes.room,
       fee: classes.fee,
       capacity: classes.capacity,
@@ -103,7 +130,7 @@ export async function getClassForm(id: number) {
 
 // Chi tiết một lớp. Trả về null nếu không tồn tại.
 export async function getClassDetail(id: number): Promise<ClassDetail | null> {
-  const [row] = await selectClasses(id);
+  const [row] = await selectClasses('any', id);
   if (!row) return null;
 
   const studentRows = await db

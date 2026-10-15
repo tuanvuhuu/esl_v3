@@ -5,6 +5,8 @@ import type { ReactNode } from 'react';
 import { ArrowLeft, X } from 'lucide-react';
 import { HistoryTimeline } from '@/components/learning/HistoryTimeline';
 import { LearningEventButton } from '@/components/learning/LearningEventDialog';
+import { BTN_BASE, BTN_GHOST } from '@/components/ui/Btn';
+import { Chip } from '@/components/ui/controls';
 import { Avatar, Pill, ProgressBar, type Tone } from '@/components/ui/primitives';
 import { formatVND } from '@/lib/money';
 import { dateKeyLabel, vnDateTimeLabel } from '@/lib/datetime';
@@ -14,8 +16,12 @@ import { profileTabHref } from '@/lib/student-url';
 import type { StudentDetail } from '@/lib/queries/students';
 import type { StudentAssignmentRow } from '@/lib/queries/assignments';
 import { SUBMISSION_LABELS } from '@/lib/validation/assignment';
+import type { SkillHistory } from '@/lib/queries/skills';
 import { ProfileParents } from './ProfileParents';
+import { ProfileSkills } from './ProfileSkills';
+import { StudentAccountPanel } from './StudentAccountPanel';
 import { TuitionRemindButton } from './TuitionRemindButton';
+import { Panel } from '@/components/ui/surfaces';
 
 const STATUS_META: Record<StudentDetail['status'], { label: string; tone: Tone }> = {
   active: { label: 'Đang học', tone: 'mint' },
@@ -40,6 +46,7 @@ export const PROFILE_TABS = [
   { key: 'tong-quan', label: 'Tổng quan' },
   { key: 'phu-huynh', label: 'Phụ huynh' },
   { key: 'hoc-tap', label: 'Học tập' },
+  { key: 'ky-nang', label: 'Kỹ năng' },
 ] as const;
 
 export type ProfileTab = (typeof PROFILE_TABS)[number]['key'];
@@ -51,6 +58,7 @@ export function StudentProfile({
   history,
   assignments,
   parentChoices,
+  skills,
   perms,
   drawerClose,
 }: {
@@ -60,7 +68,8 @@ export function StudentProfile({
   history: HistoryItem[];
   assignments: StudentAssignmentRow[];
   parentChoices: { id: number; fullName: string; phone: string }[];
-  perms: { tuition: boolean; parents: boolean; learning: boolean };
+  skills: SkillHistory | null; // chỉ có khi đang mở tab Kỹ năng
+  perms: { tuition: boolean; parents: boolean; learning: boolean; assignments: boolean };
   drawerClose?: string;
 }) {
   const remaining = Math.max(0, student.sessionsTotal - student.sessionsDone);
@@ -88,9 +97,14 @@ export function StudentProfile({
         <HistoryTimeline items={history} />
       </Panel>
     );
+  } else if (tab === 'ky-nang') {
+    body = <ProfileSkills studentId={student.id} skills={skills} canManage={perms.learning} />;
   } else {
     body = (
       <div className="grid gap-4 min-[1200px]:grid-cols-2">
+        <div className="min-[1200px]:col-span-2">
+          <StudentAccountPanel studentId={student.id} code={student.code} hasAccount={student.hasAccount} canManage={perms.assignments} />
+        </div>
         <Panel title="Khoá học hiện tại">
           <b className="block text-md text-ink">{student.course}</b>
           <small className="block text-sm text-muted">Lớp {student.className} · {student.teacherName}</small>
@@ -109,7 +123,7 @@ export function StudentProfile({
             <Row label="Còn thiếu" value={formatVND(student.debt)} tone={student.debt > 0 ? 'text-blush-ink' : 'text-muted'} />
           </dl>
           <div className="mt-4 border-t border-line pt-3">
-            <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-muted">Lịch sử thu</h3>
+            <h3 className="mb-2 text-xs font-normal uppercase tracking-wider text-muted">Lịch sử thu</h3>
             {student.payments.length === 0 ? (
               <p className="text-sm text-muted">Chưa có khoản thu nào.</p>
             ) : (
@@ -180,7 +194,7 @@ export function StudentProfile({
                 <b className="block truncate text-base text-ink">{primary.fullName}</b>
                 <small className="text-sm text-muted">{PARENT_RELATION_LABELS[primary.relation]}</small>
               </div>
-              <a href={`tel:${primary.phone}`} className="shrink-0 rounded-xl border border-line bg-surface px-3 py-2 text-sm font-bold text-ink">{primary.phone}</a>
+              <a href={`tel:${primary.phone}`} className={`${BTN_BASE} ${BTN_GHOST} shrink-0`}>{primary.phone}</a>
             </div>
           ) : (
             <p className="text-sm text-muted">Chưa có phụ huynh.</p>
@@ -200,20 +214,20 @@ export function StudentProfile({
       {drawerClose ? (
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-lg font-extrabold text-ink">Hồ sơ học sinh</h2>
-          <Link href={drawerClose} aria-label="Đóng hồ sơ" className="grid size-10 place-items-center rounded-xl border border-line bg-surface text-ink-2">
+          <Link href={drawerClose} aria-label="Đóng hồ sơ" className="grid size-[var(--icon-h)] place-items-center rounded-[var(--radius-ctl)] border border-line bg-surface text-ink-2">
             <X className="size-4" aria-hidden />
           </Link>
         </div>
       ) : (
         <div className="flex items-center justify-between gap-3">
-          <Link href="/hoc-sinh" className="inline-flex h-10 items-center gap-2 rounded-xl border border-line bg-surface px-3.5 text-base font-bold text-ink">
+          <Link href="/hoc-sinh" className={`${BTN_BASE} ${BTN_GHOST}`}>
             <ArrowLeft className="size-4" aria-hidden />
             Danh sách
           </Link>
         </div>
       )}
 
-      <article className="rounded-[24px] bg-surface p-5 shadow-card max-[767px]:rounded-[20px] max-[767px]:p-4">
+      <Panel>
         <div className="flex items-start gap-4">
           <Avatar name={student.fullName} seed={student.id} size="lg" />
           <div className="min-w-0 flex-1">
@@ -230,29 +244,21 @@ export function StudentProfile({
           <Stat label="Chuyên cần" value={`${student.attendanceRate}%`} />
           <Stat label="Còn thiếu" value={student.debt > 0 ? formatVND(student.debt) : 'Không'} />
         </div>
-      </article>
+      </Panel>
 
-      <nav aria-label="Mục hồ sơ" className="flex gap-1.5 overflow-x-auto rounded-2xl bg-stone p-1.5">
-        {PROFILE_TABS.map((t) => {
-          const on = t.key === tab;
-          return (
-            <Link
-              key={t.key}
-              href={profileTabHref(base, t.key)}
-              scroll={false}
-              aria-current={on ? 'page' : undefined}
-              className={`inline-flex h-10 shrink-0 items-center rounded-xl px-3.5 text-base font-bold transition-colors ${on ? 'bg-surface text-ink shadow-card' : 'text-stone-ink hover:text-ink'}`}
-            >
-              {t.label}
-            </Link>
-          );
-        })}
+      {/* Mục hồ sơ là liên kết (mỗi mục một đường dẫn), nên dùng nav và chip liên kết, không dùng vai trò tab */}
+      <nav aria-label="Mục hồ sơ" className="flex flex-wrap items-center gap-2">
+        {PROFILE_TABS.map((t) => (
+          <Chip key={t.key} selected={t.key === tab} href={profileTabHref(base, t.key)}>
+            {t.label}
+          </Chip>
+        ))}
       </nav>
 
       {body}
 
       {perms.tuition && (
-        <div className="sticky bottom-0 -mx-1 rounded-[20px] bg-surface/90 p-3 shadow-card backdrop-blur-md">
+        <div className="sticky bottom-0 -mx-1 rounded-[var(--radius-panel)] bg-surface/90 p-3 shadow-card backdrop-blur-md">
           <TuitionRemindButton studentId={student.id} debt={student.debt} />
         </div>
       )}
@@ -260,17 +266,6 @@ export function StudentProfile({
   );
 }
 
-function Panel({ title, action, children }: { title: string; action?: ReactNode; children: ReactNode }) {
-  return (
-    <section className="rounded-[24px] bg-surface p-5 shadow-card max-[767px]:rounded-[20px] max-[767px]:p-4">
-      <header className="mb-3 flex items-center justify-between gap-3">
-        <h2 className="text-xs font-bold uppercase tracking-wider text-muted">{title}</h2>
-        {action}
-      </header>
-      {children}
-    </section>
-  );
-}
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (

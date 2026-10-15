@@ -2,6 +2,7 @@
 
 import { useTransition } from 'react';
 import { remindTuitionAction } from '@/app/(app)/hoc-phi/actions';
+import { BTN_BASE, BTN_PRIMARY } from '@/components/ui/Btn';
 import { Toast, useToast } from '@/components/ui/Toast';
 
 // Chân hồ sơ: nhắc học phí. Có ghi nhận vào nhật ký. Chưa gửi tin nhắn (xem Cài đặt, mục thông báo).
@@ -19,7 +20,7 @@ export function TuitionRemindButton({ studentId, debt }: { studentId: number; de
             notify(r.message ?? (r.ok ? 'Đã ghi nhắc' : 'Không ghi được'));
           })
         }
-        className="inline-flex h-11 w-full items-center justify-center rounded-xl bg-primary px-4 text-base font-bold text-on-primary disabled:opacity-40"
+        className={`${BTN_BASE} ${BTN_PRIMARY} w-full`}
       >
         {pending ? 'Đang ghi…' : debt > 0 ? 'Nhắc học phí' : 'Đã đóng đủ học phí'}
       </button>

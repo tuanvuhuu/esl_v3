@@ -22,6 +22,76 @@
       "when": 1791887112011,
       "tag": "0002_student_search_key",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791951697623,
+      "tag": "0003_co_so_mot_nhieu_lop",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791952839205,
+      "tag": "0004_giao_vien_nhieu_co_so",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791969867293,
+      "tag": "0005_vai_tro_nhan_su_lop",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791973196488,
+      "tag": "0006_cau_hoi_trong_bai_tap",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791975141105,
+      "tag": "0007_tieu_chi_va_cham_cheo",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1791975428143,
+      "tag": "0008_cham_cheo_nguoi_cham",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1791976065499,
+      "tag": "0009_ngan_hang_cau_hoi",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1791976412474,
+      "tag": "0010_bai_giang_tai_lieu",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1791977524339,
+      "tag": "0011_trinh_do_nguong",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1791978034854,
+      "tag": "0012_tai_khoan_hoc_sinh",
+      "breakpoints": true
     }
   ]
 }

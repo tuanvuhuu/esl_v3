@@ -8,6 +8,8 @@ export type ListParams = {
   n?: number; // số trang đã tải (điện thoại, nút Xem thêm)
   h?: string; // id học sinh đang mở trong ngăn kéo hồ sơ (máy tính)
   tab?: string; // tab trong hồ sơ: tong-quan | phu-huynh | hoc-tap
+  sort?: string;
+  order?: string;
 };
 
 export function studentsHref(params: ListParams): string {
@@ -20,6 +22,8 @@ export function studentsHref(params: ListParams): string {
   if (params.n && params.n > 1) sp.set('n', String(params.n));
   if (params.h) sp.set('h', params.h);
   if (params.h && params.tab && params.tab !== 'tong-quan') sp.set('tab', params.tab);
+  if (params.sort) sp.set('sort', params.sort);
+  if (params.sort && params.order) sp.set('order', params.order);
   const qs = sp.toString();
   return qs ? `/hoc-sinh?${qs}` : '/hoc-sinh';
 }

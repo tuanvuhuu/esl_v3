@@ -10,6 +10,7 @@ import {
   assignments,
   attendance,
   auditLogs,
+  campuses,
   centerSettings,
   classSessions,
   classes,
@@ -18,6 +19,7 @@ import {
   rolePermissions,
   studentParents,
   students,
+  teacherCampuses,
   teachers,
   tuitionPayments,
 } from './schema';
@@ -54,22 +56,28 @@ const PARENT_SEED = [
 const NOTES = ['', '', 'Cần hỗ trợ thêm phần Speaking', 'Phụ huynh muốn đổi lịch sang tối T7', 'Học tích cực, điểm Listening tốt', 'Đã đăng ký gia hạn khoá sau', 'Hay đi trễ, cần nhắc nhở'];
 const STATUS_POOL = ['active', 'active', 'active', 'trial', 'active', 'paused', 'active', 'active', 'finished', 'active', 'trial', 'active'] as const;
 
+// staffRole: teacher (giáo viên chủ nhiệm), foreign (giáo viên nước ngoài), assistant (trợ giảng)
 const TEACHER_SEED = [
-  { name: 'Cô Thu Hà', subject: 'IELTS', phone: '0901 000 101', years: 6, status: 'active', avatarTone: 'mint' },
-  { name: 'Thầy Minh Đức', subject: 'IELTS', phone: '0901 000 102', years: 9, status: 'active', avatarTone: 'butter' },
-  { name: 'Cô Hải Yến', subject: 'TOEIC', phone: '0901 000 103', years: 4, status: 'active', avatarTone: 'lav' },
-  { name: 'Thầy Quốc Bảo', subject: 'Giao tiếp', phone: '0901 000 104', years: 5, status: 'leave', avatarTone: 'blush' },
-  { name: 'Cô Ngọc Ánh', subject: 'Thiếu nhi', phone: '0901 000 105', years: 7, status: 'active', avatarTone: 'mint' },
+  { name: 'Cô Thu Hà', subject: 'IELTS', phone: '0901 000 101', years: 6, status: 'active', avatarTone: 'mint', staffRole: 'teacher' },
+  { name: 'Thầy Minh Đức', subject: 'IELTS', phone: '0901 000 102', years: 9, status: 'active', avatarTone: 'butter', staffRole: 'teacher' },
+  { name: 'Cô Hải Yến', subject: 'TOEIC', phone: '0901 000 103', years: 4, status: 'active', avatarTone: 'lav', staffRole: 'teacher' },
+  { name: 'Thầy Quốc Bảo', subject: 'Giao tiếp', phone: '0901 000 104', years: 5, status: 'leave', avatarTone: 'blush', staffRole: 'teacher' },
+  { name: 'Cô Ngọc Ánh', subject: 'Thiếu nhi', phone: '0901 000 105', years: 7, status: 'active', avatarTone: 'mint', staffRole: 'teacher' },
+  { name: 'Ms. Emily Carter', subject: 'Speaking', phone: '0901 000 201', years: 8, status: 'active', avatarTone: 'lav', staffRole: 'foreign' },
+  { name: 'Mr. Daniel Brooks', subject: 'IELTS Writing', phone: '0901 000 202', years: 10, status: 'active', avatarTone: 'butter', staffRole: 'foreign' },
+  { name: 'Cô Lan Anh', subject: 'Hỗ trợ lớp', phone: '0901 000 203', years: 2, status: 'active', avatarTone: 'mint', staffRole: 'assistant' },
+  { name: 'Cô Mai Thảo', subject: 'Hỗ trợ lớp', phone: '0901 000 204', years: 1, status: 'active', avatarTone: 'blush', staffRole: 'assistant' },
 ] as const;
 
 // weekdays: T2..T7, CN. Giờ theo định dạng HH:MM
+// teacher: giáo viên chủ nhiệm; assistant: trợ giảng; foreign: giáo viên nước ngoài
 const CLASS_SEED = [
-  { name: 'IELTS-K12', course: 'IELTS Foundation 5.5', teacher: 'Cô Thu Hà', weekdays: 'T2,T4,T6', startTime: '18:30', endTime: '20:30', sessionsTotal: 48, fee: 12_000_000, room: 'P.201', capacity: 20 },
-  { name: 'IELTS-K14', course: 'IELTS Intensive 6.5', teacher: 'Thầy Minh Đức', weekdays: 'T3,T5,T7', startTime: '19:00', endTime: '21:00', sessionsTotal: 60, fee: 15_000_000, room: 'P.203', capacity: 18 },
-  { name: 'TOEIC-T2', course: 'TOEIC 600+', teacher: 'Cô Hải Yến', weekdays: 'T2,T4', startTime: '17:30', endTime: '19:00', sessionsTotal: 36, fee: 6_800_000, room: 'P.105', capacity: 22 },
-  { name: 'GT-A1', course: 'Giao tiếp cơ bản', teacher: 'Thầy Quốc Bảo', weekdays: 'T7,CN', startTime: '09:00', endTime: '11:00', sessionsTotal: 24, fee: 4_500_000, room: 'P.110', capacity: 16 },
-  { name: 'KIDS-S1', course: 'Starters (Thiếu nhi)', teacher: 'Cô Ngọc Ánh', weekdays: 'T3,T5', startTime: '16:00', endTime: '17:30', sessionsTotal: 40, fee: 5_200_000, room: 'P.301', capacity: 14 },
-  { name: 'KIDS-M1', course: 'Movers (Thiếu nhi)', teacher: 'Cô Ngọc Ánh', weekdays: 'T2,T4,T6', startTime: '17:00', endTime: '18:00', sessionsTotal: 40, fee: 5_600_000, room: 'P.302', capacity: 14 },
+  { name: 'IELTS-K12', course: 'IELTS Foundation 5.5', teacher: 'Cô Thu Hà', assistant: 'Cô Lan Anh', foreign: 'Ms. Emily Carter', weekdays: 'T2,T4,T6', startTime: '18:30', endTime: '20:30', sessionsTotal: 48, fee: 12_000_000, room: 'P.201', capacity: 20 },
+  { name: 'IELTS-K14', course: 'IELTS Intensive 6.5', teacher: 'Thầy Minh Đức', assistant: 'Cô Mai Thảo', foreign: 'Mr. Daniel Brooks', weekdays: 'T3,T5,T7', startTime: '19:00', endTime: '21:00', sessionsTotal: 60, fee: 15_000_000, room: 'P.203', capacity: 18 },
+  { name: 'TOEIC-T2', course: 'TOEIC 600+', teacher: 'Cô Hải Yến', assistant: 'Cô Lan Anh', foreign: 'Mr. Daniel Brooks', weekdays: 'T2,T4', startTime: '17:30', endTime: '19:00', sessionsTotal: 36, fee: 6_800_000, room: 'P.105', capacity: 22 },
+  { name: 'GT-A1', course: 'Giao tiếp cơ bản', teacher: 'Thầy Quốc Bảo', assistant: 'Cô Mai Thảo', foreign: 'Ms. Emily Carter', weekdays: 'T7,CN', startTime: '09:00', endTime: '11:00', sessionsTotal: 24, fee: 4_500_000, room: 'P.110', capacity: 16 },
+  { name: 'KIDS-S1', course: 'Starters (Thiếu nhi)', teacher: 'Cô Ngọc Ánh', assistant: 'Cô Lan Anh', foreign: 'Ms. Emily Carter', weekdays: 'T3,T5', startTime: '16:00', endTime: '17:30', sessionsTotal: 40, fee: 5_200_000, room: 'P.301', capacity: 14 },
+  { name: 'KIDS-M1', course: 'Movers (Thiếu nhi)', teacher: 'Cô Ngọc Ánh', assistant: 'Cô Mai Thảo', foreign: 'Mr. Daniel Brooks', weekdays: 'T2,T4,T6', startTime: '17:00', endTime: '18:00', sessionsTotal: 40, fee: 5_600_000, room: 'P.302', capacity: 14 },
 ] as const;
 
 const ACCOUNT_SEED = [
@@ -118,8 +126,8 @@ function sessionsFor(cls: { id: number; teacherId: number; room: string; weekday
 async function resetAppData() {
   await db.execute(sql`TRUNCATE TABLE
     audit_logs, learning_events, assignment_submissions, assignments, class_sessions,
-    student_parents, parents, tuition_payments, attendance, students, classes,
-    accounts, teachers, role_permissions, center_settings
+    student_parents, parents, tuition_payments, attendance, students, classes, campuses,
+    accounts, teachers, teacher_campuses, role_permissions, center_settings
     RESTART IDENTITY CASCADE`);
   console.log('Đã xoá dữ liệu cũ (--reset).');
 }
@@ -138,17 +146,26 @@ async function main() {
   }
 
   await db.transaction(async (tx) => {
-    // Giáo viên và lớp
+    // Cơ sở, giáo viên và lớp. Mọi lớp mẫu thuộc cơ sở chính.
+    const [mainCampus] = await tx
+      .insert(campuses)
+      .values({ name: 'Cơ sở chính', address: 'Số 1, đường mẫu, quận demo' })
+      .returning({ id: campuses.id });
     const insertedTeachers = await tx.insert(teachers).values(TEACHER_SEED.map((t) => ({ ...t }))).returning({ id: teachers.id, name: teachers.name });
+    // Giáo viên mẫu đều dạy ở cơ sở chính
+    await tx.insert(teacherCampuses).values(insertedTeachers.map((t) => ({ teacherId: t.id, campusId: mainCampus.id })));
     const teacherId = new Map(insertedTeachers.map((t) => [t.name, t.id]));
 
     const insertedClasses = await tx
       .insert(classes)
       .values(
         CLASS_SEED.map((c) => ({
+          campusId: mainCampus.id,
           name: c.name,
           course: c.course,
           teacherId: teacherId.get(c.teacher)!,
+          assistantId: teacherId.get(c.assistant)!,
+          foreignTeacherId: teacherId.get(c.foreign)!,
           schedule: `${c.weekdays.replace(/,/g, ' · ')} · ${c.startTime}–${c.endTime}`,
           weekdays: c.weekdays,
           startTime: c.startTime,

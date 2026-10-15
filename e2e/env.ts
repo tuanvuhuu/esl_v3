@@ -25,4 +25,5 @@ export function devPassword(): string {
 
 export const ADMIN = 'admin@esl-center.vn';
 export const ACCOUNTANT = 'ngoc.ketoan@esl-center.vn';
+export const ACADEMIC = 'trang.giaovu@esl-center.vn';
 export const TEACHER_THU_HA = 'thu.ha@esl-center.vn';

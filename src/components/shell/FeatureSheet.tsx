@@ -22,14 +22,14 @@ export function FeatureSheet({ open, groups, badges, onClose }: { open: boolean;
             <b className="text-xl text-ink">Tính năng</b>
             <Link href="/tinh-nang" onClick={onClose} className="text-sm font-bold text-ink-2 underline underline-offset-4">Xem tất cả</Link>
           </div>
-          <button type="button" onClick={onClose} aria-label="Đóng" className="grid size-10 place-items-center rounded-xl border border-line bg-surface text-ink-2">
+          <button type="button" onClick={onClose} aria-label="Đóng" className="grid size-[var(--icon-h-touch)] place-items-center rounded-[var(--radius-ctl)] border border-line bg-surface text-ink-2 min-[768px]:size-[var(--icon-h)]">
             <X className="size-4" aria-hidden />
           </button>
         </div>
         <div className="flex-1 overflow-y-auto pb-[calc(16px+var(--safe-b))]">
           {groups.map((group) => (
             <section key={group.id} className="mb-4">
-              <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-muted">{group.title}</h2>
+              <h2 className="mb-3 text-xs font-normal uppercase tracking-wider text-muted">{group.title}</h2>
               <div className="grid grid-cols-4 gap-x-1 gap-y-4">
                 {group.items.map((item) => {
                   const Icon = NAV_ICONS[item.icon];

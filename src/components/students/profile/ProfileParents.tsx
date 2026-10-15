@@ -7,9 +7,12 @@ import { addParentLinkAction, setPrimaryParentAction, unlinkParentAction } from 
 import { PARENT_RELATION_LABELS } from '@/lib/parent-labels';
 import type { ActionResult } from '@/lib/validation/student';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { Field, FORM_BTN_CANCEL, FORM_BTN_SUBMIT, inputClass } from '@/components/ui/Field';
+import { BTN_BASE, BTN_DANGER, BTN_GHOST } from '@/components/ui/Btn';
+import { EmptyPanel } from '@/components/ui/surfaces';
+import { Field, FORM_BTN_CANCEL, FORM_BTN_SUBMIT, inputClass, FormFooter } from '@/components/ui/Field';
+import { SelectPanel } from '@/components/ui/SelectPanel';
 import { Modal } from '@/components/ui/Modal';
-import { EmptyState, Pill } from '@/components/ui/primitives';
+import { Pill, Alert } from '@/components/ui/primitives';
 import { Toast, useToast } from '@/components/ui/Toast';
 
 export type ProfileParent = {
@@ -67,11 +70,11 @@ export function ProfileParents({
   return (
     <div className="flex flex-col gap-3">
       {parents.length === 0 ? (
-        <div className="rounded-[20px] bg-surface"><EmptyState title="Chưa có phụ huynh" hint="Thêm phụ huynh để gọi khi cần." /></div>
+        <EmptyPanel title="Chưa có phụ huynh" hint="Thêm phụ huynh để gọi khi cần." />
       ) : (
         <ul className="flex flex-col gap-3">
           {parents.map((p) => (
-            <li key={p.id} className="flex flex-col gap-3 rounded-[18px] bg-bg p-4">
+            <li key={p.id} className="flex flex-col gap-3 rounded-[var(--radius-panel)] bg-bg p-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <b className="block truncate text-base text-ink">{p.fullName}</b>
@@ -79,19 +82,19 @@ export function ProfileParents({
                 </div>
                 {p.isPrimary && <Pill tone="butter">Liên hệ chính</Pill>}
               </div>
-              <a href={`tel:${p.phone}`} className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-surface text-base font-bold text-ink">
+              <a href={`tel:${p.phone}`} className={`${BTN_BASE} ${BTN_GHOST}`}>
                 <Phone className="size-4" aria-hidden />
                 Gọi {p.phone}
               </a>
               {canManage && (
                 <div className="flex flex-wrap gap-2">
                   {!p.isPrimary && (
-                    <button type="button" onClick={() => setPrimary(p)} disabled={pending} className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-line bg-surface px-3 text-sm font-bold text-ink disabled:opacity-40">
+                    <button type="button" onClick={() => setPrimary(p)} disabled={pending} className={`${BTN_BASE} ${BTN_GHOST}`}>
                       <Star className="size-4" aria-hidden />
                       Đặt liên hệ chính
                     </button>
                   )}
-                  <button type="button" onClick={() => setUnlinking(p)} disabled={pending} className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-blush-ink bg-surface px-3 text-sm font-bold text-blush-ink disabled:opacity-40">
+                  <button type="button" onClick={() => setUnlinking(p)} disabled={pending} className={`${BTN_BASE} ${BTN_DANGER}`}>
                     <Unlink className="size-4" aria-hidden />
                     Gỡ liên kết
                   </button>
@@ -103,7 +106,7 @@ export function ProfileParents({
       )}
 
       {canManage && (
-        <button type="button" onClick={() => setAdding(true)} className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-line bg-surface text-base font-bold text-ink">
+        <button type="button" onClick={() => setAdding(true)} className={`${BTN_BASE} ${BTN_GHOST}`}>
           <Plus className="size-4" aria-hidden />
           Thêm phụ huynh
         </button>
@@ -168,15 +171,18 @@ function AddParentDialog({
     <Modal open title="Thêm phụ huynh" subtitle="Chọn người đã có, hoặc nhập người mới." onClose={onClose} labelledBy="add-parent-title">
       <form onSubmit={submit} noValidate className="grid grid-cols-1 gap-3.5 pb-2 min-[768px]:grid-cols-2 min-[768px]:gap-x-4">
         {state.message && !state.ok && (
-          <div role="alert" className="col-span-full rounded-xl bg-blush px-3.5 py-2.5 text-base font-semibold text-blush-ink">{state.message}</div>
+          <Alert className="col-span-full">{state.message}</Alert>
         )}
         <Field label="Phụ huynh *" error={errors.parentId} wide>
-          <select name="parentId" value={parentId} onChange={(e) => setParentId(e.target.value)} className={inputClass(errors.parentId)}>
-            {choices.map((c) => (
-              <option key={c.id} value={c.id}>{c.fullName} · {c.phone}</option>
-            ))}
-            <option value="">Người mới</option>
-          </select>
+          <SelectPanel
+            name="parentId"
+            label="Phụ huynh *"
+            value={parentId}
+            onChange={setParentId}
+            options={[...choices.map((c) => ({ value: String(c.id), label: `${c.fullName} · ${c.phone}` })), { value: '', label: 'Người mới' }]}
+            error={!!errors.parentId}
+            block
+          />
         </Field>
         {isNew && (
           <>
@@ -195,14 +201,14 @@ function AddParentDialog({
             ))}
           </select>
         </Field>
-        <label className="flex min-w-0 items-center gap-2.5 self-end pb-2.5 text-sm font-bold text-ink-2">
+        <label className="flex min-w-0 items-center gap-2.5 self-end pb-2.5 text-sm font-normal text-ink-2">
           <input name="isPrimary" type="checkbox" className="size-4 accent-[var(--primary-deep)]" />
           Đặt làm liên hệ chính
         </label>
-        <div className="col-span-full mt-1 flex justify-end gap-2.5 max-[767px]:[&>button]:flex-1">
+        <FormFooter className="col-span-full">
           <button type="button" onClick={onClose} className={FORM_BTN_CANCEL}>Huỷ</button>
           <button type="submit" disabled={pending} className={FORM_BTN_SUBMIT}>{pending ? 'Đang thêm…' : 'Thêm vào hồ sơ'}</button>
-        </div>
+        </FormFooter>
       </form>
     </Modal>
   );

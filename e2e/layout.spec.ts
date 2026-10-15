@@ -29,21 +29,24 @@ const ROUTES = [
   '/tai-khoan?tab=nhat-ky',
 ];
 
+// Mỗi độ rộng là một kịch bản riêng và chỉ đọc, nên chạy song song.
 test.describe('bố cục không tràn ngang', () => {
-  test('mọi màn hình ở 360 đến 2560px', async ({ page }) => {
-    await login(page, ADMIN);
-    const failures: string[] = [];
-    for (const width of WIDTHS) {
+  test.describe.configure({ mode: 'parallel' });
+
+  for (const width of WIDTHS) {
+    test(`mọi màn hình ở ${width}px`, async ({ page }) => {
+      await login(page, ADMIN);
       await page.setViewportSize({ width, height: 820 });
+      const failures: string[] = [];
       for (const route of ROUTES) {
+        // Không chờ networkidle: thêm khoảng 0,5 giây mỗi trang, không cần cho việc đo độ rộng
         await page.goto(route, { waitUntil: 'load' });
-        await page.waitForLoadState('networkidle').catch(() => undefined);
         const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
-        if (overflow > 0) failures.push(`${width}px ${route}: tràn ${overflow}px`);
+        if (overflow > 0) failures.push(`${route}: tràn ${overflow}px`);
       }
-    }
-    expect(failures, failures.join('\n')).toEqual([]);
-  });
+      expect(failures, failures.join('\n')).toEqual([]);
+    });
+  }
 });
 
 test.describe('thanh tab điện thoại theo quyền', () => {

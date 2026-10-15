@@ -1,21 +1,30 @@
 'use client';
 
-import { startTransition, useActionState, type FormEvent } from 'react';
+import { startTransition, useActionState, useState, type FormEvent } from 'react';
 import { createClassAction, updateClassAction, type ClassCoreValues } from '@/app/(app)/lop-hoc/actions';
 import { WEEKDAY_CODES, WEEKDAY_CODE_LABELS } from '@/lib/validation/class';
+import type { StaffRole } from '@/lib/validation/teacher';
 import type { ActionResult } from '@/lib/validation/student';
-import { Field, FORM_BTN_CANCEL, FORM_BTN_SUBMIT, inputClass } from '@/components/ui/Field';
+import { Field, FORM_BTN_CANCEL, FORM_BTN_SUBMIT, inputClass, FormFooter } from '@/components/ui/Field';
+import { SelectPanel } from '@/components/ui/SelectPanel';
+import { Alert } from '@/components/ui/primitives';
 
-export type TeacherChoice = { id: number; name: string; subject: string };
+// staffRole: vị trí người này có thể giữ (chủ nhiệm, giáo viên nước ngoài, trợ giảng). campusIds: các cơ sở người này dạy.
+// Form lớp chỉ cho chọn đúng vai trò và người dạy ở cơ sở của lớp.
+export type TeacherChoice = { id: number; name: string; subject: string; staffRole: StaffRole; campusIds: number[] };
+export type CampusChoice = { id: number; name: string };
 
 const INITIAL: ActionResult = { ok: false };
 
 // Form tạo lớp (có lịch học) và sửa lớp (chỉ ô chung). Lịch học đổi theo từng buổi ở màn Lịch học.
+// Tạo lớp thì cơ sở mặc định là cơ sở đang xem (defaultCampusId).
 export function ClassForm({
   mode,
   classId,
   initial,
   teachers,
+  campuses,
+  defaultCampusId,
   defaultStartDate,
   onDone,
   onCancel,
@@ -24,11 +33,41 @@ export function ClassForm({
   classId?: number;
   initial?: ClassCoreValues;
   teachers: TeacherChoice[];
+  campuses: CampusChoice[];
+  defaultCampusId: number;
   defaultStartDate: string;
   onDone: (message: string) => void;
   onCancel: () => void;
 }) {
-  const values: ClassCoreValues = initial ?? { name: '', course: '', teacherId: '', room: '', fee: 0, capacity: 15 };
+  const values: ClassCoreValues = initial ?? {
+    name: '',
+    course: '',
+    campusId: String(defaultCampusId),
+    teacherId: '',
+    assistantId: '',
+    foreignTeacherId: '',
+    room: '',
+    fee: 0,
+    capacity: 15,
+  };
+  // Chọn cơ sở trước. Giáo viên chỉ hiện khi dạy ở cơ sở đó; đổi cơ sở thì bỏ giáo viên không dạy ở cơ sở mới.
+  const [campusId, setCampusId] = useState(values.campusId);
+  const [teacherId, setTeacherId] = useState(values.teacherId);
+  const [assistantId, setAssistantId] = useState(values.assistantId);
+  const [foreignTeacherId, setForeignTeacherId] = useState(values.foreignTeacherId);
+  // Mỗi vị trí chỉ hiện người đúng vai trò và dạy ở cơ sở đang chọn
+  const optionsOf = (role: StaffRole, campus: string) => teachers.filter((t) => t.staffRole === role && t.campusIds.includes(Number(campus)));
+  const teacherOptions = optionsOf('teacher', campusId);
+  const assistantOptions = optionsOf('assistant', campusId);
+  const foreignOptions = optionsOf('foreign', campusId);
+  // Đổi cơ sở thì bỏ người không còn dạy ở cơ sở mới, đúng vai trò của vị trí đó
+  function chooseCampus(next: string) {
+    setCampusId(next);
+    if (!optionsOf('teacher', next).some((t) => String(t.id) === teacherId)) setTeacherId('');
+    if (!optionsOf('assistant', next).some((t) => String(t.id) === assistantId)) setAssistantId('');
+    if (!optionsOf('foreign', next).some((t) => String(t.id) === foreignTeacherId)) setForeignTeacherId('');
+  }
+
   const [state, formAction, pending] = useActionState<ActionResult, FormData>(async (prev, formData) => {
     const result = mode === 'edit' && classId ? await updateClassAction(classId, prev, formData) : await createClassAction(prev, formData);
     if (result.ok) onDone(result.message ?? 'Đã lưu');
@@ -48,22 +87,58 @@ export function ClassForm({
   return (
     <form onSubmit={submit} noValidate className="grid grid-cols-1 gap-3.5 min-[768px]:grid-cols-2 min-[768px]:gap-x-4">
       {state.message && !state.ok && (
-        <div role="alert" className="col-span-full rounded-xl bg-blush px-3.5 py-2.5 text-base font-semibold text-blush-ink">{state.message}</div>
+        <Alert className="col-span-full">{state.message}</Alert>
       )}
 
+      <Field label="Cơ sở *" error={errors.campusId} hint="Mỗi lớp thuộc đúng một cơ sở">
+        <SelectPanel
+          name="campusId"
+          label="Cơ sở *"
+          value={campusId}
+          onChange={chooseCampus}
+          options={campuses.map((c) => ({ value: String(c.id), label: c.name }))}
+          error={!!errors.campusId}
+          block
+        />
+      </Field>
       <Field label="Mã lớp *" error={errors.name} hint="VD: IELTS-K15">
         <input name="name" defaultValue={values.name} autoComplete="off" className={inputClass(errors.name)} />
       </Field>
       <Field label="Khoá học *" error={errors.course}>
         <input name="course" defaultValue={values.course} placeholder="VD: IELTS Foundation 6.0" autoComplete="off" className={inputClass(errors.course)} />
       </Field>
-      <Field label="Giáo viên *" error={errors.teacherId}>
-        <select name="teacherId" defaultValue={values.teacherId} className={inputClass(errors.teacherId)}>
-          <option value="">Chọn giáo viên</option>
-          {teachers.map((t) => (
-            <option key={t.id} value={t.id}>{t.name} · {t.subject}</option>
-          ))}
-        </select>
+      <Field label="Giáo viên chủ nhiệm *" error={errors.teacherId} hint={teacherOptions.length === 0 ? 'Cơ sở này chưa có giáo viên. Thêm ở màn Giáo viên.' : undefined}>
+        <SelectPanel
+          name="teacherId"
+          label="Giáo viên chủ nhiệm *"
+          value={teacherId}
+          onChange={setTeacherId}
+          options={[{ value: '', label: 'Chọn giáo viên' }, ...teacherOptions.map((t) => ({ value: String(t.id), label: `${t.name} · ${t.subject}` }))]}
+          error={!!errors.teacherId}
+          block
+        />
+      </Field>
+      <Field label="Trợ giảng *" error={errors.assistantId} hint={assistantOptions.length === 0 ? 'Cơ sở này chưa có trợ giảng. Thêm ở màn Giáo viên, chọn vai trò Trợ giảng.' : undefined}>
+        <SelectPanel
+          name="assistantId"
+          label="Trợ giảng *"
+          value={assistantId}
+          onChange={setAssistantId}
+          options={[{ value: '', label: 'Chọn trợ giảng' }, ...assistantOptions.map((t) => ({ value: String(t.id), label: `${t.name} · ${t.subject}` }))]}
+          error={!!errors.assistantId}
+          block
+        />
+      </Field>
+      <Field label="Giáo viên nước ngoài *" error={errors.foreignTeacherId} hint={foreignOptions.length === 0 ? 'Cơ sở này chưa có giáo viên nước ngoài. Thêm ở màn Giáo viên, chọn vai trò Giáo viên nước ngoài.' : undefined}>
+        <SelectPanel
+          name="foreignTeacherId"
+          label="Giáo viên nước ngoài *"
+          value={foreignTeacherId}
+          onChange={setForeignTeacherId}
+          options={[{ value: '', label: 'Chọn giáo viên nước ngoài' }, ...foreignOptions.map((t) => ({ value: String(t.id), label: `${t.name} · ${t.subject}` }))]}
+          error={!!errors.foreignTeacherId}
+          block
+        />
       </Field>
       <Field label="Phòng" error={errors.room}>
         <input name="room" defaultValue={values.room} placeholder="VD: P.201" autoComplete="off" className={inputClass(errors.room)} />
@@ -78,12 +153,12 @@ export function ClassForm({
       {isCreate ? (
         <>
           <fieldset className="col-span-full flex flex-col gap-2">
-            <legend className="mb-1.5 text-sm font-bold text-ink-2">Ngày học trong tuần *</legend>
+            <legend className="mb-1.5 text-sm font-normal text-ink-2">Ngày học trong tuần *</legend>
             <div className="flex flex-wrap gap-2">
               {WEEKDAY_CODES.map((code) => (
                 <label key={code} className="cursor-pointer" title={WEEKDAY_CODE_LABELS[code]}>
                   <input type="checkbox" name="weekdays" value={code} className="peer sr-only" />
-                  <span className="inline-flex h-10 min-w-12 items-center justify-center rounded-xl border border-line bg-surface px-3 text-sm font-bold text-ink-2 peer-checked:border-primary-deep peer-checked:bg-primary peer-checked:text-on-primary peer-focus-visible:outline-2 peer-focus-visible:outline-primary-deep">
+                  <span className="inline-flex h-[var(--ctl-h)] min-w-[var(--ctl-h)] items-center justify-center rounded-full border border-line bg-surface px-3 text-sm font-semibold text-ink-2 max-[767px]:h-[var(--ctl-h-touch)] peer-checked:border-primary-deep peer-checked:bg-primary peer-checked:text-on-primary peer-focus-visible:outline-2 peer-focus-visible:outline-primary-deep">
                     {code}
                   </span>
                 </label>
@@ -106,17 +181,17 @@ export function ClassForm({
           </Field>
         </>
       ) : (
-        <p className="col-span-full rounded-[18px] bg-lav px-4 py-3 text-base leading-relaxed text-lav-ink">
+        <p className="col-span-full rounded-[var(--radius-ctl)] bg-lav px-3 py-2.5 text-sm leading-relaxed text-lav-ink">
           Lịch tuần và số buổi không đổi ở đây. Muốn đổi giờ, ngày hoặc huỷ một buổi, làm ở màn Lịch học.
         </p>
       )}
 
-      <div className="col-span-full mt-1 flex justify-end gap-2.5 max-[767px]:[&>button]:flex-1">
+      <FormFooter className="col-span-full">
         <button type="button" onClick={onCancel} className={FORM_BTN_CANCEL}>Huỷ</button>
         <button type="submit" disabled={pending} className={FORM_BTN_SUBMIT}>
           {pending ? 'Đang lưu…' : isCreate ? 'Tạo lớp' : 'Lưu thay đổi'}
         </button>
-      </div>
+      </FormFooter>
     </form>
   );
 }

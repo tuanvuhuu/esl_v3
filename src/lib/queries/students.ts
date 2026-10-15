@@ -1,17 +1,38 @@
 // Truy vấn đọc danh sách và hồ sơ học sinh. Chỉ chạy trên server.
 // Tiền, điểm danh và phụ huynh được tổng hợp ngay trong SQL, tham số hoá an toàn.
-import { sql } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { db } from '@/db/client';
+import { accounts } from '@/db/schema';
+import type { CampusScope } from '@/lib/campus';
+import { campusCond } from '@/lib/queries/campuses';
 import { normalizeSearch } from '@/lib/text';
 
-export type TuitionFilter = 'all' | 'paid' | 'partial' | 'unpaid';
+// Học phí và lớp chọn nhiều: danh sách rỗng nghĩa là không lọc
+export type TuitionFilter = 'paid' | 'partial' | 'unpaid';
 export type StatusFilter = 'all' | 'active' | 'trial' | 'paused' | 'finished';
+
+export type StudentSortField =
+  | 'name'
+  | 'code'
+  | 'gender'
+  | 'class'
+  | 'progress'
+  | 'attendance'
+  | 'tuition'
+  | 'status';
+
+export type SortOrder = 'asc' | 'desc';
+
+export type StudentSort = {
+  field: StudentSortField;
+  order: SortOrder;
+};
 
 export type StudentListFilters = {
   q: string;
   status: StatusFilter;
-  classId: number | null;
-  tuition: TuitionFilter;
+  classIds: number[];
+  tuitions: TuitionFilter[];
 };
 
 export type StudentRow = {
@@ -40,9 +61,9 @@ export type StudentListResult = {
   statusCounts: Record<StatusFilter, number>;
 };
 
-// Mệnh đề WHERE từ bộ lọc. Tìm kiếm không dấu, và cả mã học sinh hoặc số điện thoại phụ huynh.
-function whereClause(f: StudentListFilters) {
-  const parts = [sql`TRUE`];
+// Mệnh đề WHERE từ bộ lọc và cơ sở đang xem. Tìm kiếm không dấu, và cả mã học sinh hoặc số điện thoại phụ huynh.
+function whereClause(f: StudentListFilters, scope: CampusScope) {
+  const parts = [sql`TRUE`, campusCond(scope, sql`b.campus_id`)];
   const q = normalizeSearch(f.q);
   if (q) {
     const like = `%${q}%`;
@@ -53,9 +74,56 @@ function whereClause(f: StudentListFilters) {
     );
   }
   if (f.status !== 'all') parts.push(sql`b.status = ${f.status}`);
-  if (f.classId) parts.push(sql`b.class_id = ${f.classId}`);
-  if (f.tuition !== 'all') parts.push(sql`b.tuition = ${f.tuition}`);
+  if (f.classIds.length) parts.push(sql`b.class_id IN (${sql.join(f.classIds.map((id) => sql`${id}`), sql`, `)})`);
+  if (f.tuitions.length) parts.push(sql`b.tuition IN (${sql.join(f.tuitions.map((t) => sql`${t}`), sql`, `)})`);
   return sql.join(parts, sql` AND `);
+}
+
+function orderClause(sort?: StudentSort) {
+  if (!sort) return sql`b.id ASC`;
+
+  const isDesc = sort.order === 'desc';
+
+  switch (sort.field) {
+    case 'name':
+      return isDesc ? sql`b.full_name DESC, b.id DESC` : sql`b.full_name ASC, b.id ASC`;
+
+    case 'code':
+      return isDesc ? sql`b.id DESC` : sql`b.id ASC`;
+
+    case 'gender':
+      return isDesc
+        ? sql`b.gender DESC, b.full_name ASC, b.id ASC`
+        : sql`b.gender ASC, b.full_name ASC, b.id ASC`;
+
+    case 'class':
+      return isDesc
+        ? sql`b.class_name DESC, b.teacher_name DESC, b.id DESC`
+        : sql`b.class_name ASC, b.teacher_name ASC, b.id ASC`;
+
+    case 'progress':
+      return isDesc
+        ? sql`(COALESCE(b.sessions_done::float / NULLIF(b.sessions_total, 0), 0)) DESC, b.sessions_done DESC, b.id DESC`
+        : sql`(COALESCE(b.sessions_done::float / NULLIF(b.sessions_total, 0), 0)) ASC, b.sessions_done ASC, b.id ASC`;
+
+    case 'attendance':
+      return isDesc
+        ? sql`(CASE WHEN b.att_total > 0 THEN ((b.att_total - b.att_absent)::float / b.att_total) ELSE 1.0 END) DESC, b.id DESC`
+        : sql`(CASE WHEN b.att_total > 0 THEN ((b.att_total - b.att_absent)::float / b.att_total) ELSE 1.0 END) ASC, b.id ASC`;
+
+    case 'tuition':
+      return isDesc
+        ? sql`CASE b.tuition WHEN 'unpaid' THEN 1 WHEN 'partial' THEN 2 WHEN 'paid' THEN 3 END ASC, GREATEST(0, b.fee - b.paid) DESC, b.id DESC`
+        : sql`CASE b.tuition WHEN 'paid' THEN 1 WHEN 'partial' THEN 2 WHEN 'unpaid' THEN 3 END ASC, GREATEST(0, b.fee - b.paid) ASC, b.id ASC`;
+
+    case 'status':
+      return isDesc
+        ? sql`CASE b.status WHEN 'finished' THEN 1 WHEN 'paused' THEN 2 WHEN 'trial' THEN 3 WHEN 'active' THEN 4 END ASC, b.id DESC`
+        : sql`CASE b.status WHEN 'active' THEN 1 WHEN 'trial' THEN 2 WHEN 'paused' THEN 3 WHEN 'finished' THEN 4 END ASC, b.id ASC`;
+
+    default:
+      return sql`b.id ASC`;
+  }
 }
 
 const BASE_CTE = sql`
@@ -77,7 +145,7 @@ const BASE_CTE = sql`
   base AS (
     SELECT
       s.id, s.full_name, s.search_key, s.gender, s.status, s.class_id, s.sessions_done,
-      c.name AS class_name, c.sessions_total, c.fee,
+      c.name AS class_name, c.campus_id, c.sessions_total, c.fee,
       t.name AS teacher_name,
       COALESCE(paid.paid, 0) AS paid,
       COALESCE(att.total, 0) AS att_total,
@@ -120,14 +188,21 @@ type RawRow = {
   total_count: number;
 };
 
-export async function listStudents(filters: StudentListFilters, page: { limit: number; offset: number }): Promise<StudentListResult> {
-  const where = whereClause(filters);
+// Học sinh trong cơ sở đang xem (scope null: mọi cơ sở)
+export async function listStudents(
+  filters: StudentListFilters,
+  page: { limit: number; offset: number },
+  scope: CampusScope,
+  sort?: StudentSort,
+): Promise<StudentListResult> {
+  const where = whereClause(filters, scope);
+  const order = orderClause(sort);
   const result = await db.execute<RawRow>(sql`
     ${BASE_CTE}
     SELECT b.*, COUNT(*) OVER()::int AS total_count
     FROM base b
     WHERE ${where}
-    ORDER BY b.id
+    ORDER BY ${order}
     LIMIT ${page.limit} OFFSET ${page.offset}
   `);
 
@@ -135,7 +210,7 @@ export async function listStudents(filters: StudentListFilters, page: { limit: n
     ${BASE_CTE}
     SELECT b.status, COUNT(*)::int AS n
     FROM base b
-    WHERE ${whereClause({ ...filters, status: 'all' })}
+    WHERE ${whereClause({ ...filters, status: 'all' }, scope)}
     GROUP BY b.status
   `);
 
@@ -172,19 +247,32 @@ export async function listStudents(filters: StudentListFilters, page: { limit: n
   };
 }
 
-export async function listClassOptions(): Promise<{ id: number; name: string; course: string; teacherName: string; fee: number }[]> {
-  const result = await db.execute<{ id: number; name: string; course: string; teacher_name: string; fee: number }>(sql`
-    SELECT c.id, c.name, c.course, t.name AS teacher_name, c.fee
-    FROM classes c JOIN teachers t ON t.id = c.teacher_id
-    ORDER BY c.name
+// Lớp cho bộ lọc và form học sinh, trong cơ sở đang xem. Kèm tên cơ sở để phân biệt khi xem tất cả.
+export async function listClassOptions(scope: CampusScope): Promise<{ id: number; name: string; course: string; teacherName: string; fee: number; campusId: number; campusName: string }[]> {
+  const result = await db.execute<{ id: number; name: string; course: string; teacher_name: string; fee: number; campus_id: number; campus_name: string }>(sql`
+    SELECT c.id, c.name, c.course, t.name AS teacher_name, c.fee, c.campus_id, cp.name AS campus_name
+    FROM classes c
+    JOIN teachers t ON t.id = c.teacher_id
+    JOIN campuses cp ON cp.id = c.campus_id
+    WHERE ${campusCond(scope, sql`c.campus_id`)}
+    ORDER BY c.name, c.id
   `);
-  return result.rows.map((r) => ({ id: r.id, name: r.name, course: r.course, teacherName: r.teacher_name, fee: r.fee }));
+  return result.rows.map((r) => ({
+    id: r.id,
+    name: r.name,
+    course: r.course,
+    teacherName: r.teacher_name,
+    fee: r.fee,
+    campusId: r.campus_id,
+    campusName: r.campus_name,
+  }));
 }
 
 export type StudentDetail = {
   id: number;
   code: string;
   fullName: string;
+  hasAccount: boolean; // đã có tài khoản học sinh để đăng nhập làm bài (P28)
   gender: 'male' | 'female';
   dob: string;
   startDate: string;
@@ -244,10 +332,12 @@ export async function getStudentDetail(id: number): Promise<StudentDetail | null
     ORDER BY sp.is_primary DESC, p.id
   `);
 
+  const [account] = await db.select({ id: accounts.id }).from(accounts).where(eq(accounts.studentId, id)).limit(1);
   return {
     id: row.id,
     code: `HS-${String(row.id).padStart(4, '0')}`,
     fullName: row.full_name,
+    hasAccount: !!account,
     gender: row.gender,
     dob: row.dob,
     startDate: row.start_date,

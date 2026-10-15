@@ -2,29 +2,32 @@
 
 import { Pencil, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { Btn } from '@/components/ui/Btn';
 import { useClassDialogs } from './useClassDialogs';
-import type { TeacherChoice } from './ClassForm';
+import type { CampusChoice, TeacherChoice } from './ClassForm';
 
 // Nút Sửa và Xoá ở đầu trang chi tiết lớp. Xoá xong thì về danh sách lớp.
-export function ClassDetailActions({ classId, name, studentCount, teachers, canManage }: {
+export function ClassDetailActions({ classId, name, studentCount, teachers, campuses, defaultCampusId, canManage }: {
   classId: number;
   name: string;
   studentCount: number;
   teachers: TeacherChoice[];
+  campuses: CampusChoice[];
+  defaultCampusId: number;
   canManage: boolean;
 }) {
   const router = useRouter();
-  const dlg = useClassDialogs({ teachers, onDeleted: () => router.push('/lop-hoc') });
+  const dlg = useClassDialogs({ teachers, campuses, defaultCampusId, onDeleted: () => router.push('/lop-hoc') });
   return (
     <>
-      <button type="button" onClick={() => dlg.openEdit(classId)} disabled={!canManage} className="inline-flex h-10 items-center gap-2 rounded-xl border border-line bg-surface px-4 text-base font-bold text-ink disabled:opacity-40 max-[767px]:h-11">
+      <Btn onClick={() => dlg.openEdit(classId)} disabled={!canManage}>
         <Pencil className="size-4" aria-hidden />
         Sửa lớp
-      </button>
-      <button type="button" onClick={() => dlg.askDelete({ id: classId, name, studentCount })} disabled={!canManage} className="inline-flex h-10 items-center gap-2 rounded-xl border border-blush-ink bg-surface px-4 text-base font-bold text-blush-ink disabled:opacity-40 max-[767px]:h-11">
+      </Btn>
+      <Btn variant="danger" onClick={() => dlg.askDelete({ id: classId, name, studentCount })} disabled={!canManage}>
         <Trash2 className="size-4" aria-hidden />
         Xoá lớp
-      </button>
+      </Btn>
       {dlg.dialogs}
     </>
   );

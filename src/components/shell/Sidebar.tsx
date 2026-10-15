@@ -104,7 +104,7 @@ export function Sidebar({ groups, open, onNavigate }: { groups: NavGroup[]; open
                 aria-expanded={!isCollapsed}
                 disabled={searching}
                 onClick={() => toggle(group.id)}
-                className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1 text-left text-sm font-bold text-ink transition-colors hover:bg-stone disabled:cursor-default disabled:hover:bg-transparent"
+                className="flex min-h-8 w-full items-center gap-2 rounded-lg px-2.5 py-1 text-left text-sm font-bold text-ink transition-colors hover:bg-stone disabled:cursor-default disabled:hover:bg-transparent"
               >
                 <span className="flex-1">{group.title}</span>
                 {isCollapsed && hasActive && <span className="size-1.5 rounded-full bg-primary-deep" aria-label="Có mục đang mở" />}

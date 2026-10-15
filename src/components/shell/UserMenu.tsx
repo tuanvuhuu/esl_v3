@@ -34,13 +34,13 @@ export function UserMenu({ name, email, role, canSettings }: { name: string; ema
         aria-expanded={open}
         aria-label="Tài khoản"
         onClick={() => setOpen((o) => !o)}
-        className="grid size-10 place-items-center rounded-xl border border-line bg-surface text-ink-2 transition-colors hover:border-ink-2 hover:text-ink"
+        className="grid size-[var(--icon-h)] place-items-center rounded-[var(--radius-ctl)] border border-line bg-surface text-ink-2 transition-colors hover:border-ink-2 hover:text-ink"
       >
         <User className="size-[18px]" aria-hidden />
       </button>
 
       {open && (
-        <div role="menu" aria-label="Tài khoản" className="absolute right-0 top-[calc(100%+10px)] z-[90] w-[min(284px,calc(100vw-32px))] rounded-2xl border border-line bg-surface p-2.5 shadow-lift">
+        <div role="menu" aria-label="Tài khoản" className="absolute right-0 top-[calc(100%+10px)] z-[90] w-[min(284px,calc(100vw-32px))] rounded-[var(--radius-panel)] border border-line bg-surface p-2.5 shadow-lift">
           <div className="flex items-center gap-3 border-b border-line px-2 pb-3 pt-2">
             <span className="grid size-10 shrink-0 place-items-center rounded-full bg-butter text-sm font-bold text-butter-ink">{initials}</span>
             <div className="min-w-0">

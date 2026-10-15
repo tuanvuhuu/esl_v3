@@ -1,19 +1,50 @@
 'use client';
 
 // Thông báo ngắn sau khi lưu hoặc xoá. Tự tắt sau vài giây. Dùng hook useToast trong component cha.
-import { useCallback, useEffect, useState } from 'react';
+// Trạng thái giữ ở mức module, không ở state của component: khi trang làm mới sau khi lưu làm dựng lại cây giao diện,
+// thông báo vẫn còn hiện (E-062).
+import { useCallback, useSyncExternalStore } from 'react';
+
+type ToastState = { text: string } | null;
+
+let state: ToastState = null;
+let timer: ReturnType<typeof setTimeout> | undefined;
+const listeners = new Set<() => void>();
+
+function emit() {
+  listeners.forEach((listener) => listener());
+}
+
+function subscribe(listener: () => void) {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+}
+
+function getSnapshot(): ToastState {
+  return state;
+}
+
+function getServerSnapshot(): ToastState {
+  return null;
+}
+
+function show(text: string, durationMs: number) {
+  state = { text };
+  emit();
+  if (timer !== undefined) clearTimeout(timer);
+  timer = setTimeout(() => {
+    state = null;
+    timer = undefined;
+    emit();
+  }, durationMs);
+}
 
 export function useToast(durationMs = 3200) {
-  const [message, setMessage] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!message) return;
-    const t = window.setTimeout(() => setMessage(null), durationMs);
-    return () => window.clearTimeout(t);
-  }, [message, durationMs]);
-
-  const notify = useCallback((text: string) => setMessage(text), []);
-  return { message, notify };
+  const current = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  const notify = useCallback((text: string) => show(text, durationMs), [durationMs]);
+  return { message: current?.text ?? null, notify };
 }
 
 export function Toast({ message }: { message: string | null }) {

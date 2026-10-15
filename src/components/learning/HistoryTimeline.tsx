@@ -20,7 +20,7 @@ const KIND_TONE: Record<HistoryKind, Tone> = {
 export function HistoryTimeline({ items, showStudent = false }: { items: HistoryItem[]; showStudent?: boolean }) {
   if (items.length === 0) {
     return (
-      <div className="rounded-[20px] bg-surface">
+      <div className="rounded-[var(--radius-panel)] bg-surface shadow-card">
         <EmptyState title="Chưa có lịch sử học tập" hint="Điểm danh, bài tập, học phí và ghi chú sẽ hiện ở đây." />
       </div>
     );

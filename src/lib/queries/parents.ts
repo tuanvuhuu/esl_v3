@@ -1,7 +1,7 @@
 // Truy vấn phụ huynh và liên kết với học sinh. Chỉ chạy trên server.
 import { asc, eq } from 'drizzle-orm';
 import { db } from '@/db/client';
-import { parents, studentParents, students } from '@/db/schema';
+import { campuses, classes, parents, studentParents, students } from '@/db/schema';
 
 export type ParentRow = {
   id: number;
@@ -43,6 +43,18 @@ export async function listParents(): Promise<ParentRow[]> {
 // Danh sách chọn phụ huynh cho form học sinh
 export async function listParentChoices(): Promise<{ id: number; fullName: string; phone: string }[]> {
   return db.select({ id: parents.id, fullName: parents.fullName, phone: parents.phone }).from(parents).orderBy(asc(parents.fullName));
+}
+
+// Học sinh để chọn khi gán cho phụ huynh. Kèm lớp và cơ sở để phân biệt học sinh trùng tên.
+export type StudentChoice = { id: number; fullName: string; className: string; campusName: string };
+
+export async function listStudentChoicesForParents(): Promise<StudentChoice[]> {
+  return db
+    .select({ id: students.id, fullName: students.fullName, className: classes.name, campusName: campuses.name })
+    .from(students)
+    .innerJoin(classes, eq(classes.id, students.classId))
+    .innerJoin(campuses, eq(campuses.id, classes.campusId))
+    .orderBy(asc(students.fullName), asc(students.id));
 }
 
 export async function getParent(id: number) {

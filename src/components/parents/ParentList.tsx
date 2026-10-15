@@ -1,24 +1,52 @@
 'use client';
 
-import { Pencil, Phone, Plus, Trash2, Users } from 'lucide-react';
+import { Pencil, Phone, Plus, Search, Trash2, Users } from 'lucide-react';
 import Link from 'next/link';
 import { useCallback, useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { deleteParentAction, loadParentForm, type ParentFormValues } from '@/app/(app)/phu-huynh/actions';
-import type { ParentRow } from '@/lib/queries/parents';
+import type { ParentRow, StudentChoice } from '@/lib/queries/parents';
 import { PARENT_RELATION_LABELS } from '@/lib/parent-labels';
 import { normalizeSearch } from '@/lib/text';
+import { sortRows } from '@/lib/sort';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Modal } from '@/components/ui/Modal';
-import { PageHeader } from '@/components/ui/PageHeader';
+import { PageCrumbs } from '@/components/shell/PageCrumbs';
 import { RowMenu, type RowMenuItem } from '@/components/ui/RowMenu';
-import { Avatar, EmptyState } from '@/components/ui/primitives';
+import { Avatar } from '@/components/ui/primitives';
+import { Card, EmptyPanel } from '@/components/ui/surfaces';
 import { Toast, useToast } from '@/components/ui/Toast';
+import { DataGrid, type GridColumn, type GridSort } from '@/components/ui/datagrid';
+import { Btn, BTN_BASE, BTN_GHOST } from '@/components/ui/Btn';
+import { Pagination, TextInput } from '@/components/ui/controls';
 import { ParentForm } from './ParentForm';
 
-export function ParentList({ parents, canManage }: { parents: ParentRow[]; canManage: boolean }) {
+const PAGE_SIZE = 10;
+
+const COLUMNS: GridColumn<ParentRow>[] = [
+  { key: 'fullName', label: 'Phụ huynh', width: 'minmax(200px,1.6fr)', sortable: true },
+  { key: 'phone', label: 'Số điện thoại', width: 'minmax(130px,1fr)', sortable: true },
+  {
+    key: 'children',
+    label: 'Con',
+    width: 'minmax(200px,2fr)',
+    sortable: true,
+    sortValue: (r) => r.children.map((c) => c.studentName).join(', '),
+  },
+  { key: 'actions', label: 'Thao tác', width: '44px', align: 'end', srOnly: true },
+];
+
+export function ParentList(props: {
+  parents: ParentRow[];
+  students?: StudentChoice[];
+  canManage: boolean;
+}) {
+  const { parents, canManage } = props;
   const router = useRouter();
   const [q, setQ] = useState('');
+  const [page, setPage] = useState(1);
+  const [phoneCount, setPhoneCount] = useState(PAGE_SIZE);
+  const [sort, setSort] = useState<GridSort | null>(null);
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<{ id: number; values: ParentFormValues } | null>(null);
   const [toDelete, setToDelete] = useState<ParentRow | null>(null);
@@ -29,10 +57,38 @@ export function ParentList({ parents, canManage }: { parents: ParentRow[]; canMa
   const shown = useMemo(
     () =>
       needle
-        ? parents.filter((p) => normalizeSearch(`${p.fullName} ${p.phone} ${p.children.map((c) => c.studentName).join(' ')}`).includes(needle))
+        ? parents.filter((p) =>
+            normalizeSearch(`${p.fullName} ${p.phone} ${p.children.map((c) => c.studentName).join(' ')}`).includes(needle),
+          )
         : parents,
     [parents, needle],
   );
+
+  const sorted = useMemo(() => {
+    if (!sort) return shown;
+    const col = COLUMNS.find((c) => c.key === sort.column);
+    return sortRows(shown, sort.column, sort.direction, col?.sortValue);
+  }, [shown, sort]);
+
+  const pageCount = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
+  const currentPage = Math.min(page, pageCount);
+  const pagedRows = useMemo(
+    () => sorted.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
+    [sorted, currentPage],
+  );
+  const phoneRows = useMemo(() => sorted.slice(0, phoneCount), [sorted, phoneCount]);
+  const hasMorePhone = phoneCount < sorted.length;
+
+  const handleSort = useCallback((columnKey: string) => {
+    setSort((prev: GridSort | null) => {
+      if (prev?.column === columnKey) {
+        if (prev.direction === 'asc') return { column: columnKey, direction: 'desc' };
+        return null;
+      }
+      return { column: columnKey, direction: 'asc' };
+    });
+    setPage(1);
+  }, []);
 
   const onDone = useCallback(
     (text: string) => {
@@ -74,107 +130,138 @@ export function ParentList({ parents, canManage }: { parents: ParentRow[]; canMa
       : `${toDelete.fullName} sẽ bị xoá. Không có học sinh nào liên kết.`
     : '';
 
-  return (
-    <section className="flex flex-col">
-      <PageHeader
-        crumbs={['Đào tạo', 'Phụ huynh']}
-        title="Phụ huynh"
-        subtitle={`${parents.length} phụ huynh. Xoá phụ huynh chỉ gỡ liên kết, học sinh vẫn được giữ lại.`}
-        actions={
-          canManage && (
-            <button type="button" onClick={() => setCreating(true)} className="inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-base font-bold text-on-primary max-[767px]:h-11">
-              <Plus className="size-4" aria-hidden />
-              Thêm phụ huynh
-            </button>
-          )
-        }
-      />
-
-      <div className="mb-4 flex flex-wrap items-center gap-3">
-        <label className="min-w-0 flex-1">
-          <span className="sr-only">Tìm phụ huynh</span>
-          <input
-            type="search"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Tìm theo tên, số điện thoại hoặc tên con"
-            className="h-11 w-full rounded-[14px] border border-line bg-surface px-3.5 text-input text-ink outline-none placeholder:text-muted focus:border-primary-deep"
-          />
-        </label>
-        <small className="text-sm text-muted">{shown.length} trên {parents.length} phụ huynh</small>
-      </div>
-
-      {shown.length === 0 ? (
-        <div className="rounded-[24px] bg-surface shadow-card">
-          <EmptyState title="Không có phụ huynh phù hợp" hint="Thử từ khoá khác hoặc thêm phụ huynh mới." />
-        </div>
-      ) : (
-        <>
-          {/* Máy tính bảng và máy tính: bảng */}
-          <div className="hidden overflow-hidden rounded-[24px] bg-surface shadow-card min-[768px]:block">
-            <div role="table" aria-label="Danh sách phụ huynh">
-              <div role="row" className="grid grid-cols-[minmax(200px,1.6fr)_minmax(130px,1fr)_minmax(200px,2fr)_44px] gap-x-3 border-b border-line px-4 py-2.5 text-xs font-semibold text-muted">
-                <span role="columnheader">Phụ huynh</span>
-                <span role="columnheader">Số điện thoại</span>
-                <span role="columnheader">Con</span>
-                <span role="columnheader" className="sr-only">Thao tác</span>
-              </div>
-              {shown.map((row) => (
-                <div key={row.id} role="row" className="grid grid-cols-[minmax(200px,1.6fr)_minmax(130px,1fr)_minmax(200px,2fr)_44px] items-center gap-x-3 border-b border-line px-4 py-3.5 last:border-0 hover:bg-row-hover">
-                  <div role="cell" className="flex min-w-0 items-center gap-3">
-                    <Avatar name={row.fullName} seed={row.id} />
-                    <div className="min-w-0">
-                      <b className="block truncate text-base text-ink">{row.fullName}</b>
-                      <small className="block truncate text-xs text-muted">{row.email || 'Chưa có email'}</small>
-                    </div>
-                  </div>
-                  <div role="cell">
-                    <a href={`tel:${row.phone}`} className="inline-flex items-center gap-1.5 text-base font-bold text-ink hover:underline">
-                      <Phone className="size-3.5" aria-hidden />
-                      {row.phone}
-                    </a>
-                  </div>
-                  <div role="cell" className="flex min-w-0 flex-wrap gap-1.5">
-                    <ChildChips row={row} />
-                  </div>
-                  <div role="cell" className="flex justify-end">
-                    <RowMenu label={`Thao tác với ${row.fullName}`} items={menuItems(row)} />
-                  </div>
-                </div>
-              ))}
+  const cell = (row: ParentRow, key: string) => {
+    switch (key) {
+      case 'fullName':
+        return (
+          <div className="flex min-w-0 items-center gap-3">
+            <Avatar name={row.fullName} seed={row.id} />
+            <div className="min-w-0">
+              <b className="block truncate text-base text-ink">{row.fullName}</b>
+              <small className="block truncate text-xs text-muted">{row.email || 'Chưa có email'}</small>
             </div>
           </div>
+        );
+      case 'phone':
+        return (
+          <a href={`tel:${row.phone}`} className="inline-flex items-center gap-1.5 text-base font-bold text-ink hover:underline">
+            <Phone className="size-3.5" aria-hidden />
+            {row.phone}
+          </a>
+        );
+      case 'children':
+        return (
+          <div className="flex min-w-0 flex-wrap gap-1.5">
+            <ChildChips row={row} />
+          </div>
+        );
+      case 'actions':
+        return (
+          <div className="flex justify-end">
+            <RowMenu label={`Thao tác với ${row.fullName}`} items={menuItems(row)} />
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
 
-          {/* Điện thoại: thẻ, hai nút có chữ */}
+  return (
+    <section className="flex flex-col">
+      {/* Tiêu đề trang chuẩn như trang Học sinh: thanh breadcrumbs, h1 sr-only trên desktop */}
+      <header className="mb-4 flex flex-wrap items-end justify-between gap-4 max-[767px]:mb-3">
+        <div className="min-w-0">
+          <PageCrumbs crumbs={['Đào tạo', 'Phụ huynh']} />
+          <h1 className="text-h1 font-extrabold leading-tight tracking-tight text-ink min-[768px]:sr-only">Phụ huynh</h1>
+          <p className="mt-1 text-base text-muted max-[767px]:mt-1.5 max-[767px]:text-sm">
+            {parents.length} phụ huynh. Xoá phụ huynh chỉ gỡ liên kết, học sinh vẫn được giữ lại.
+          </p>
+        </div>
+      </header>
+
+      {/* Thanh điều khiển: tìm kiếm và nút Thêm phụ huynh đồng bộ kích thước chuẩn (32px máy tính, 44px điện thoại) */}
+      <div className="mb-4 flex flex-col gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-1 items-center gap-3 min-w-0">
+            <div className="relative min-w-0 flex-1 min-[768px]:max-w-sm">
+              <label htmlFor="parent-search" className="sr-only">Tìm phụ huynh</label>
+              <TextInput
+                id="parent-search"
+                type="search"
+                value={q}
+                onChange={(e) => {
+                  setQ(e.target.value);
+                  setPage(1);
+                  setPhoneCount(PAGE_SIZE);
+                }}
+                placeholder="Tìm theo tên, SĐT hoặc tên con"
+                autoComplete="off"
+                className="pl-8 [&::-webkit-search-cancel-button]:hidden"
+              />
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted" aria-hidden />
+            </div>
+            <span className="hidden text-sm text-muted whitespace-nowrap min-[768px]:inline">
+              Đang hiển thị {sorted.length === 0 ? 0 : `${(currentPage - 1) * PAGE_SIZE + 1}–${Math.min(currentPage * PAGE_SIZE, sorted.length)}`} trên {sorted.length} phụ huynh
+            </span>
+          </div>
+
+          {canManage && (
+            <Btn variant="primary" onClick={() => setCreating(true)} className="shrink-0">
+              <Plus className="size-4" aria-hidden />
+              Thêm phụ huynh
+            </Btn>
+          )}
+        </div>
+
+        <p className="text-sm text-muted min-[768px]:hidden">
+          {sorted.length === 0 ? 'Không có phụ huynh phù hợp.' : `Đang hiển thị ${phoneRows.length} trên ${sorted.length} phụ huynh`}
+        </p>
+      </div>
+
+      {sorted.length === 0 ? (
+        <EmptyPanel title="Không có phụ huynh phù hợp" hint="Thử từ khoá khác hoặc thêm phụ huynh mới." />
+      ) : (
+        <>
+          <DataGrid
+            label="Danh sách phụ huynh"
+            columns={COLUMNS}
+            rows={pagedRows}
+            rowKey={(r) => r.id}
+            cell={cell}
+            from="md"
+            sort={sort}
+            onSort={handleSort}
+            footer={
+              pageCount > 1 ? (
+                <div className="hidden min-[768px]:block">
+                  <Pagination page={currentPage} pageCount={pageCount} onPage={setPage} label="Phân trang" />
+                </div>
+              ) : undefined
+            }
+          />
+
+          {/* Điện thoại: thẻ dùng Card chuẩn, hai nút Sửa / Xoá chuẩn */}
           <div className="flex flex-col gap-3 min-[768px]:hidden">
-            {shown.map((row) => (
-              <article key={row.id} className="flex flex-col gap-3 rounded-[20px] border border-line bg-surface p-3.5 shadow-card">
-                <div className="flex items-start gap-3">
-                  <Avatar name={row.fullName} seed={row.id} />
-                  <div className="min-w-0 flex-1">
-                    <b className="block truncate text-base text-ink">{row.fullName}</b>
-                    <a href={`tel:${row.phone}`} className="mt-0.5 inline-flex items-center gap-1.5 text-sm font-bold text-ink">
-                      <Phone className="size-3.5" aria-hidden />
-                      {row.phone}
-                    </a>
-                  </div>
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  <ChildChips row={row} />
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <button type="button" onClick={() => openEdit(row)} disabled={!canManage} className="flex h-11 items-center justify-center gap-1.5 rounded-xl border border-line bg-surface text-sm font-bold text-ink disabled:opacity-40">
-                    <Pencil className="size-4" aria-hidden />
-                    Sửa
-                  </button>
-                  <button type="button" onClick={() => setToDelete(row)} disabled={!canManage} className="flex h-11 items-center justify-center gap-1.5 rounded-xl border border-blush-ink bg-surface text-sm font-bold text-blush-ink disabled:opacity-40">
-                    <Trash2 className="size-4" aria-hidden />
-                    Xoá
-                  </button>
-                </div>
-              </article>
+            {phoneRows.map((row) => (
+              <ParentCard
+                key={row.id}
+                row={row}
+                canManage={canManage}
+                onEdit={() => openEdit(row)}
+                onDelete={() => setToDelete(row)}
+              />
             ))}
           </div>
+
+          {hasMorePhone && (
+            <button
+              type="button"
+              onClick={() => setPhoneCount((n) => n + PAGE_SIZE)}
+              className={`${BTN_BASE} ${BTN_GHOST} mt-3 w-full min-[768px]:hidden`}
+            >
+              Xem thêm {Math.min(PAGE_SIZE, sorted.length - phoneRows.length)} phụ huynh (còn {sorted.length - phoneRows.length})
+            </button>
+          )}
         </>
       )}
 
@@ -197,6 +284,46 @@ export function ParentList({ parents, canManage }: { parents: ParentRow[]; canMa
         onCancel={() => setToDelete(null)}
       />
     </section>
+  );
+}
+
+function ParentCard({
+  row,
+  canManage,
+  onEdit,
+  onDelete,
+}: {
+  row: ParentRow;
+  canManage: boolean;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  return (
+    <Card>
+      <div className="flex items-start gap-3">
+        <Avatar name={row.fullName} seed={row.id} />
+        <div className="min-w-0 flex-1">
+          <b className="block truncate text-base text-ink">{row.fullName}</b>
+          <a href={`tel:${row.phone}`} className="mt-0.5 inline-flex items-center gap-1.5 text-sm font-bold text-ink hover:underline">
+            <Phone className="size-3.5" aria-hidden />
+            {row.phone}
+          </a>
+        </div>
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        <ChildChips row={row} />
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <Btn block onClick={onEdit} disabled={!canManage}>
+          <Pencil className="size-4" aria-hidden />
+          Sửa
+        </Btn>
+        <Btn block variant="danger" onClick={onDelete} disabled={!canManage}>
+          <Trash2 className="size-4" aria-hidden />
+          Xoá
+        </Btn>
+      </div>
+    </Card>
   );
 }
 

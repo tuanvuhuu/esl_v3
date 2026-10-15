@@ -1,7 +1,9 @@
-import { connection } from 'next/server';
+﻿import { connection } from 'next/server';
 import { Suspense } from 'react';
 import { AttendanceView } from '@/components/attendance/AttendanceView';
 import { NoAccess } from '@/components/ui/NoAccess';
+import { getCampusContext } from '@/lib/campus-context';
+import { withCampusNames } from '@/lib/campus';
 import { hasPermission } from '@/lib/permissions';
 import { listRoster } from '@/lib/queries/attendance';
 import { listClassChoices } from '@/lib/queries/classes';
@@ -34,8 +36,8 @@ function AttendanceSkeleton() {
   return (
     <section aria-busy="true" aria-label="Đang tải điểm danh" className="flex flex-col gap-4">
       <div className="h-9 w-48 animate-pulse rounded-xl bg-stone" />
-      <div className="h-11 w-full animate-pulse rounded-xl bg-stone" />
-      <div className="h-[360px] w-full animate-pulse rounded-[24px] bg-stone" />
+      <div className="h-[var(--ctl-h)] w-full animate-pulse rounded-[var(--radius-ctl)] bg-stone" />
+      <div className="h-[360px] w-full animate-pulse rounded-[var(--radius-panel)] bg-stone" />
     </section>
   );
 }
@@ -46,7 +48,8 @@ async function AttendanceData({ searchParams }: { searchParams: Promise<SearchPa
   const granted = new Set(await getCurrentPermissions());
   if (!hasPermission(granted, 'attendance.record')) return <NoAccess title="Điểm danh" />;
 
-  const classes = await listClassChoices();
+  const { scope } = await getCampusContext();
+  const classes = withCampusNames(await listClassChoices(scope), scope === null);
   if (classes.length === 0) {
     return <AttendanceView classes={[]} classId={0} sessions={[]} session={null} roster={[]} canRecord />;
   }

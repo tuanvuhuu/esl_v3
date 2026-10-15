@@ -14,11 +14,32 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { RowMenu, type RowMenuItem } from '@/components/ui/RowMenu';
 import { Avatar, EmptyState, Pill, type Tone } from '@/components/ui/primitives';
 import { Toast, useToast } from '@/components/ui/Toast';
-import { TeacherForm } from './TeacherForm';
+import { DataGrid, type GridColumn } from '@/components/ui/datagrid';
+import { TeacherForm, type CampusChoice } from './TeacherForm';
+import { Panel, Card } from '@/components/ui/surfaces';
 
 const STATUS_TONE: Record<TeacherRow['status'], Tone> = { active: 'mint', leave: 'butter' };
 
-export function TeacherList({ teachers, canManage }: { teachers: TeacherRow[]; canManage: boolean }) {
+const COLUMNS: GridColumn<TeacherRow>[] = [
+  { key: 'name', label: 'Giáo viên', width: 'minmax(200px,1.5fr)' },
+  { key: 'subject', label: 'Chuyên môn', width: 'minmax(140px,1.1fr)' },
+  { key: 'years', label: 'Kinh nghiệm', width: 'minmax(110px,0.9fr)', sortValue: (r) => r.years },
+  { key: 'status', label: 'Trạng thái', width: 'minmax(110px,0.9fr)', sortValue: (r) => r.status },
+  { key: 'classes', label: 'Lớp đang dạy', width: 'minmax(180px,1.8fr)', sortValue: (r) => r.classes.length },
+  { key: 'actions', label: 'Thao tác', width: '44px', align: 'end', srOnly: true },
+];
+
+export function TeacherList({
+  teachers,
+  campuses = [],
+  defaultCampusId = 0,
+  canManage,
+}: {
+  teachers: TeacherRow[];
+  campuses?: CampusChoice[];
+  defaultCampusId?: number;
+  canManage: boolean;
+}) {
   const router = useRouter();
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<{ id: number; values: TeacherFormValues } | null>(null);
@@ -69,6 +90,99 @@ export function TeacherList({ teachers, canManage }: { teachers: TeacherRow[]; c
 
   const teaching = teachers.filter((t) => t.status === 'active').length;
 
+  const cell = (row: TeacherRow, key: string) => {
+    switch (key) {
+      case 'name':
+        return (
+          <div className="flex min-w-0 items-center gap-3">
+            <Avatar name={row.name} seed={row.id} />
+            <div className="min-w-0">
+              <b className="block truncate text-base text-ink">{row.name}</b>
+              <a href={`tel:${row.phone.replace(/\s/g, '')}`} className="inline-flex items-center gap-1 text-xs text-muted hover:text-ink">
+                <Phone className="size-3" aria-hidden />
+                {row.phone}
+              </a>
+            </div>
+          </div>
+        );
+      case 'subject':
+        return <span className="text-sm font-semibold text-ink">{row.subject}</span>;
+      case 'years':
+        return <span className="text-sm text-ink-2">{row.years} năm</span>;
+      case 'status':
+        return <Pill tone={STATUS_TONE[row.status]}>{TEACHER_STATUS_LABELS[row.status]}</Pill>;
+      case 'classes':
+        return (
+          <div className="flex min-w-0 flex-wrap gap-1.5">
+            {row.classes.length === 0 ? (
+              <small className="text-xs text-muted">Chưa dạy lớp nào</small>
+            ) : (
+              row.classes.map((c) => (
+                <Link key={c.id} href={`/lop-hoc/${c.id}`} className="rounded-full bg-bg px-2.5 py-0.5 text-xs font-bold text-ink hover:underline">
+                  {c.name}
+                </Link>
+              ))
+            )}
+          </div>
+        );
+      case 'actions':
+        return (
+          <div className="flex justify-end">
+            <RowMenu label={`Thao tác với ${row.name}`} items={menuItems(row)} />
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
+  const card = (row: TeacherRow) => (
+    <Card>
+      <div className="flex items-start gap-3">
+        <Avatar name={row.name} seed={row.id} size="lg" />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-2">
+            <b className="min-w-0 truncate text-lg text-ink">{row.name}</b>
+            <div className="hidden min-[768px]:block">
+              <RowMenu label={`Thao tác với ${row.name}`} items={menuItems(row)} />
+            </div>
+          </div>
+          <small className="block truncate text-sm text-muted">{row.subject} · {row.years} năm kinh nghiệm</small>
+          <div className="mt-1.5 flex flex-wrap items-center gap-2">
+            <Pill tone={STATUS_TONE[row.status]}>{TEACHER_STATUS_LABELS[row.status]}</Pill>
+            <a href={`tel:${row.phone.replace(/\s/g, '')}`} className="inline-flex items-center gap-1.5 text-sm font-semibold text-ink-2">
+              <Phone className="size-3.5" aria-hidden />
+              {row.phone}
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap gap-1.5 rounded-xl bg-bg px-3 py-2.5">
+        {row.classes.length === 0 ? (
+          <small className="text-sm text-muted">Chưa dạy lớp nào</small>
+        ) : (
+          row.classes.map((c) => (
+            <Link key={c.id} href={`/lop-hoc/${c.id}`} className="rounded-full bg-surface px-2.5 py-1 text-sm font-bold text-ink hover:underline">
+              {c.name}
+            </Link>
+          ))
+        )}
+      </div>
+
+      <div className="grid grid-cols-2 gap-2 min-[768px]:hidden">
+        <Btn block onClick={() => openEdit(row)} disabled={!canManage}>
+          <Pencil className="size-4" aria-hidden />
+          Sửa
+        </Btn>
+        <Btn block variant="danger" onClick={() => askDelete(row)} disabled={!canManage}>
+          <Trash2 className="size-4" aria-hidden />
+          Xoá
+        </Btn>
+      </div>
+    </Card>
+  );
+
   return (
     <section className="flex flex-col">
       <PageHeader
@@ -77,77 +191,36 @@ export function TeacherList({ teachers, canManage }: { teachers: TeacherRow[]; c
         subtitle={`${teachers.length} giáo viên, ${teaching} đang dạy. Đổi tên giáo viên sẽ cập nhật ở các lớp.`}
         actions={
           canManage && (
-            <button type="button" onClick={() => setCreating(true)} className="inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-base font-bold text-on-primary max-[767px]:h-11">
+            <Btn variant="primary" onClick={() => setCreating(true)}>
               <Plus className="size-4" aria-hidden />
               Thêm giáo viên
-            </button>
+            </Btn>
           )
         }
       />
 
-      {teachers.length === 0 ? (
-        <div className="rounded-[24px] bg-surface shadow-card">
-          <EmptyState title="Chưa có giáo viên nào" hint="Thêm giáo viên trước khi tạo lớp học." />
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 gap-3 min-[768px]:grid-cols-2 min-[768px]:gap-4 min-[1200px]:grid-cols-3">
-          {teachers.map((row) => (
-            <article key={row.id} className="flex flex-col gap-3 rounded-[20px] border border-line bg-surface p-3.5 shadow-card min-[768px]:p-4">
-              <div className="flex items-start gap-3">
-                <Avatar name={row.name} seed={row.id} size="lg" />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-start justify-between gap-2">
-                    <b className="min-w-0 truncate text-lg text-ink">{row.name}</b>
-                    <div className="hidden min-[768px]:block">
-                      <RowMenu label={`Thao tác với ${row.name}`} items={menuItems(row)} />
-                    </div>
-                  </div>
-                  <small className="block truncate text-sm text-muted">{row.subject} · {row.years} năm kinh nghiệm</small>
-                  <div className="mt-1.5 flex flex-wrap items-center gap-2">
-                    <Pill tone={STATUS_TONE[row.status]}>{TEACHER_STATUS_LABELS[row.status]}</Pill>
-                    <a href={`tel:${row.phone.replace(/\s/g, '')}`} className="inline-flex items-center gap-1.5 text-sm font-semibold text-ink-2">
-                      <Phone className="size-3.5" aria-hidden />
-                      {row.phone}
-                    </a>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap gap-1.5 rounded-xl bg-bg px-3 py-2.5">
-                {row.classes.length === 0 ? (
-                  <small className="text-sm text-muted">Chưa dạy lớp nào</small>
-                ) : (
-                  row.classes.map((c) => (
-                    <Link key={c.id} href={`/lop-hoc/${c.id}`} className="rounded-full bg-surface px-2.5 py-1 text-sm font-bold text-ink hover:underline">
-                      {c.name}
-                    </Link>
-                  ))
-                )}
-              </div>
-
-              {/* Điện thoại: hai nút có chữ, bằng nhau */}
-              <div className="grid grid-cols-2 gap-2 min-[768px]:hidden">
-                <Btn block onClick={() => openEdit(row)} disabled={!canManage}>
-                  <Pencil className="size-4" aria-hidden />
-                  Sửa
-                </Btn>
-                <Btn block variant="danger" onClick={() => askDelete(row)} disabled={!canManage}>
-                  <Trash2 className="size-4" aria-hidden />
-                  Xoá
-                </Btn>
-              </div>
-            </article>
-          ))}
-        </div>
-      )}
+      <DataGrid
+        label="Danh sách giáo viên"
+        columns={COLUMNS}
+        rows={teachers}
+        rowKey={(t) => t.id}
+        cell={cell}
+        card={card}
+        from="md"
+        empty={
+          <Panel padded={false}>
+            <EmptyState title="Chưa có giáo viên nào" hint="Thêm giáo viên trước khi tạo lớp học." />
+          </Panel>
+        }
+      />
 
       <Toast message={message} />
 
       <Modal open={creating} title="Thêm giáo viên" subtitle="Các trường có dấu * là bắt buộc." onClose={() => setCreating(false)} labelledBy="teacher-create-title">
-        <TeacherForm mode="create" onDone={onDone} onCancel={() => setCreating(false)} />
+        <TeacherForm mode="create" campuses={campuses} defaultCampusId={defaultCampusId} onDone={onDone} onCancel={() => setCreating(false)} />
       </Modal>
       <Modal open={!!editing} title="Sửa giáo viên" subtitle="Các trường có dấu * là bắt buộc." onClose={() => setEditing(null)} labelledBy="teacher-edit-title">
-        {editing && <TeacherForm mode="edit" teacherId={editing.id} initial={editing.values} onDone={onDone} onCancel={() => setEditing(null)} />}
+        {editing && <TeacherForm mode="edit" teacherId={editing.id} initial={editing.values} campuses={campuses} defaultCampusId={defaultCampusId} onDone={onDone} onCancel={() => setEditing(null)} />}
       </Modal>
 
       <ConfirmDialog

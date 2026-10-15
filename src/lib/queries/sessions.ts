@@ -1,7 +1,8 @@
 // Truy vấn buổi học (class_sessions). Chỉ chạy trên server.
-import { and, asc, eq, gte, lt } from 'drizzle-orm';
+import { and, asc, eq, gte, inArray, lt } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { classes, classSessions, teachers } from '@/db/schema';
+import type { CampusScope } from '@/lib/campus';
 import { vnDateKey, vnTimeLabel } from '@/lib/datetime';
 
 export type SessionRow = {
@@ -71,16 +72,19 @@ const selectSession = () =>
     .innerJoin(classes, eq(classes.id, classSessions.classId))
     .innerJoin(teachers, eq(teachers.id, classSessions.teacherId));
 
-// Buổi học trong khoảng [from, to), có thể lọc theo lớp hoặc giáo viên
+// Buổi học trong khoảng [from, to) của cơ sở đang xem (scope null: mọi cơ sở).
+// Có thể lọc theo nhiều lớp hoặc nhiều giáo viên. Danh sách rỗng nghĩa là không lọc.
 export async function listSessionsBetween(
   from: Date,
   to: Date,
-  filter: { classId?: number | null; teacherId?: number | null } = {},
+  scope: CampusScope,
+  filter: { classIds?: number[]; teacherIds?: number[] } = {},
 ): Promise<SessionRow[]> {
   const now = new Date();
   const conditions = [gte(classSessions.startsAt, from), lt(classSessions.startsAt, to)];
-  if (filter.classId) conditions.push(eq(classSessions.classId, filter.classId));
-  if (filter.teacherId) conditions.push(eq(classSessions.teacherId, filter.teacherId));
+  if (scope !== null) conditions.push(eq(classes.campusId, scope));
+  if (filter.classIds?.length) conditions.push(inArray(classSessions.classId, filter.classIds));
+  if (filter.teacherIds?.length) conditions.push(inArray(classSessions.teacherId, filter.teacherIds));
   const rows = await selectSession().where(and(...conditions)).orderBy(asc(classSessions.startsAt));
   return rows.map((r) => toRow(r, now));
 }

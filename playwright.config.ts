@@ -13,7 +13,7 @@ export default defineConfig({
   testMatch: /.*\.spec\.ts/,
   timeout: 180_000,
   expect: { timeout: 15_000 },
-  workers: 1, // các kịch bản ghi dữ liệu chung, chạy lần lượt
+  workers: 4, // spec chỉ đọc chạy song song; spec ghi dữ liệu xếp chuỗi (xem projects)
   globalTeardown: './e2e/global-teardown.ts', // dọn dữ liệu thử "E2E" sau mỗi lần chạy
   fullyParallel: false,
   reporter: [['list']],
@@ -29,5 +29,13 @@ export default defineConfig({
     reuseExistingServer: true,
     timeout: 180_000,
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  // Spec chỉ đọc (bố cục, thanh tab, đăng nhập) chạy song song với chuỗi spec ghi dữ liệu.
+  // Các spec ghi dữ liệu nối tiếp qua dependencies để không tranh nhau bản ghi dùng chung.
+  projects: [
+    // Mọi spec không thuộc chuỗi ghi dữ liệu (students, catalog, work) là spec chỉ đọc, chạy song song
+    { name: 'read', testMatch: /^(?!.*[\\/](students|catalog|work)\.spec\.ts$).*\.spec\.ts$/, use: { ...devices['Desktop Chrome'] } },
+    { name: 'students', testMatch: /students\.spec\.ts/, use: { ...devices['Desktop Chrome'] } },
+    { name: 'catalog', testMatch: /catalog\.spec\.ts/, dependencies: ['students'], use: { ...devices['Desktop Chrome'] } },
+    { name: 'work', testMatch: /work\.spec\.ts/, dependencies: ['catalog'], use: { ...devices['Desktop Chrome'] } },
+  ],
 });

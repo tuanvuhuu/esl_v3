@@ -1,12 +1,16 @@
 'use client';
 
-import Link from 'next/link';
+import { Filter, Users } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { startTransition, useOptimistic, useState, type CSSProperties } from 'react';
 import type { SessionRow } from '@/lib/queries/sessions';
-import { addDaysKey, dateKeyLabel, weekdayLabel, weekdayOfKey } from '@/lib/datetime';
+import { addDaysKey, dateKeyLabel, daysBetweenKeys, weekdayLabel, weekdayOfKey, weekStartKey } from '@/lib/datetime';
+import { listParam } from '@/lib/list-param';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { EmptyState, Pill, type Tone } from '@/components/ui/primitives';
+import { SelectPanel } from '@/components/ui/SelectPanel';
+import { Pill, type Tone } from '@/components/ui/primitives';
+import { EmptyPanel } from '@/components/ui/surfaces';
+import { RangeNav } from './RangeNav';
 import { SessionDialog } from './SessionDialog';
 
 export type ScheduleFilters = { cls: string; teacher: string };
@@ -19,8 +23,53 @@ export function sessionState(s: SessionRow): { label: string; tone: Tone } {
   return { label: 'Sắp học', tone: 'mint' };
 }
 
+// Màu nền và viền theo lớp (năm màu nhẹ, cố định theo id lớp). Chữ luôn là màu chữ chính.
+const CLASS_TONE: { bg: string; edge: string }[] = [
+  { bg: 'bg-mint', edge: 'border-mint-ink' },
+  { bg: 'bg-lav', edge: 'border-lav-ink' },
+  { bg: 'bg-butter', edge: 'border-butter-ink' },
+  { bg: 'bg-blush', edge: 'border-blush-ink' },
+  { bg: 'bg-stone', edge: 'border-stone-ink' },
+];
+const toneOf = (classId: number) => CLASS_TONE[Math.abs(classId) % CLASS_TONE.length];
+
+// Phút trong ngày theo giờ Việt Nam (UTC+7) của một mốc thời gian
+function minutesOfDay(iso: string): number {
+  const vn = new Date(new Date(iso).getTime() + 7 * 3_600_000);
+  return vn.getUTCHours() * 60 + vn.getUTCMinutes();
+}
+
+// Xếp các buổi trùng giờ trong một ngày thành nhiều làn để không đè lên nhau
+function placeLanes(list: SessionRow[]): { s: SessionRow; start: number; end: number; lane: number; lanes: number }[] {
+  const items = list
+    .map((s) => ({ s, start: minutesOfDay(s.startsAt), end: minutesOfDay(s.endsAt) }))
+    .sort((a, b) => a.start - b.start || a.end - b.end);
+  const laneEnds: number[] = [];
+  const placed = items.map((it) => {
+    let lane = laneEnds.findIndex((end) => end <= it.start);
+    if (lane === -1) {
+      lane = laneEnds.length;
+      laneEnds.push(it.end);
+    } else {
+      laneEnds[lane] = it.end;
+    }
+    return { ...it, lane, lanes: 0 };
+  });
+  const total = Math.max(1, laneEnds.length);
+  return placed.map((p) => ({ ...p, lanes: total }));
+}
+
+// Lưới giờ: cột giờ và độ rộng tối thiểu của mỗi ngày (px). Lưới chỉ dùng khi khoảng có tối đa 7 ngày.
+const TIME_COL = '3.5rem';
+const TIME_COL_PX = 56;
+const DAY_COL_MIN_PX = 150;
+// Danh sách theo ngày: trên điện thoại luôn hiện; trên máy tính chỉ hiện khi khoảng dài hơn 7 ngày.
+const AGENDA_PHONE = 'flex flex-col gap-5 min-[768px]:hidden';
+const AGENDA_ALL = 'flex flex-col gap-5';
+
 export function ScheduleView({
-  weekStart,
+  rangeFrom,
+  rangeTo,
   sessions,
   classes,
   teachers,
@@ -28,9 +77,9 @@ export function ScheduleView({
   canManage,
   prevHref,
   nextHref,
-  todayHref,
 }: {
-  weekStart: string;
+  rangeFrom: string;
+  rangeTo: string;
   sessions: SessionRow[];
   classes: { id: number; name: string }[];
   teachers: { id: number; name: string; subject: string }[];
@@ -38,101 +87,161 @@ export function ScheduleView({
   canManage: boolean;
   prevHref: string;
   nextHref: string;
-  todayHref: string;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState<SessionRow | null>(null);
 
-  const days = Array.from({ length: 7 }, (_, i) => addDaysKey(weekStart, i));
+  // Các ngày trong khoảng đang xem, từ ngày bắt đầu đến ngày kết thúc
+  const days = Array.from({ length: daysBetweenKeys(rangeFrom, rangeTo) + 1 }, (_, i) => addDaysKey(rangeFrom, i));
+  const longRange = days.length > 7;
+  const isWeek = days.length === 7 && weekStartKey(rangeFrom) === rangeFrom;
   const byDay = new Map<string, SessionRow[]>(days.map((d) => [d, []]));
   for (const s of sessions) byDay.get(s.dateKey)?.push(s);
 
-  // Đổi bộ lọc: giữ tuần đang xem, thay lớp hoặc giáo viên
+  // Khung giờ của lịch: từ giờ sớm nhất đến giờ muộn nhất, tối thiểu tám giờ
+  const starts = sessions.map((s) => minutesOfDay(s.startsAt));
+  const ends = sessions.map((s) => minutesOfDay(s.endsAt));
+  const hourStart = starts.length ? Math.floor(Math.min(...starts) / 60) : 7;
+  let hourEnd = ends.length ? Math.ceil(Math.max(...ends) / 60) : 21;
+  if (hourEnd - hourStart < 8) hourEnd = Math.min(24, hourStart + 8);
+  const hours = Array.from({ length: hourEnd - hourStart }, (_, i) => hourStart + i);
+  const gridHeight = `calc(${hours.length} * var(--cal-hour-h))`;
+  const hourTop = (h: number) => `calc(${h - hourStart} * var(--cal-hour-h))`;
+
+  // Lớp và giáo viên hiện ngay khi chọn, không chờ trang tải lại (chọn liên tiếp không mất mục)
+  const [clsView, setClsView] = useOptimistic(filters.cls);
+  const [teacherView, setTeacherView] = useOptimistic(filters.teacher);
+
+  // Đổi bộ lọc: giữ khoảng ngày đang xem, thay lớp hoặc giáo viên
   function applyFilter(next: Partial<ScheduleFilters>) {
-    const f = { ...filters, ...next };
-    const params = new URLSearchParams({ w: weekStart });
-    if (f.cls) params.set('cls', f.cls);
-    if (f.teacher) params.set('teacher', f.teacher);
+    const f = { cls: next.cls ?? clsView, teacher: next.teacher ?? teacherView };
+    startTransition(() => {
+      setClsView(f.cls);
+      setTeacherView(f.teacher);
+      const params = new URLSearchParams({ w: rangeFrom, to: rangeTo });
+      if (f.cls) params.set('cls', f.cls);
+      if (f.teacher) params.set('teacher', f.teacher);
+      router.push(`/lich-hoc?${params.toString()}`, { scroll: false });
+    });
+  }
+
+  // Chọn khoảng ngày trên lịch: giữ bộ lọc
+  function pickRange(from: string, to: string) {
+    const params = new URLSearchParams({ w: from, to });
+    if (clsView) params.set('cls', clsView);
+    if (teacherView) params.set('teacher', teacherView);
     router.push(`/lich-hoc?${params.toString()}`, { scroll: false });
   }
 
+  const subtitle = isWeek
+    ? `Tuần ${dateKeyLabel(rangeFrom)} – ${dateKeyLabel(rangeTo)}. Bấm vào buổi để xem hoặc sửa.`
+    : `Từ ${dateKeyLabel(rangeFrom)} đến ${dateKeyLabel(rangeTo)} (${days.length} ngày). Bấm vào buổi để xem hoặc sửa.`;
+
   return (
     <section className="flex flex-col">
-      <PageHeader
-        crumbs={['Đào tạo', 'Lịch học']}
-        title="Lịch học"
-        subtitle={`Tuần ${dateKeyLabel(weekStart)} – ${dateKeyLabel(days[6])}. Bấm vào buổi để xem hoặc sửa.`}
-      />
+      <PageHeader crumbs={['Đào tạo', 'Lịch học']} title="Lịch học" subtitle={subtitle} />
 
       <div className="mb-4 flex flex-wrap items-center gap-2">
-        <div className="flex items-center gap-1.5">
-          <Link href={prevHref} scroll={false} aria-label="Tuần trước" className="grid h-10 w-10 place-items-center rounded-xl border border-line bg-surface text-lg font-bold text-ink">‹</Link>
-          <Link href={todayHref} scroll={false} className="inline-flex h-10 items-center rounded-xl border border-line bg-surface px-4 text-base font-bold text-ink">Tuần này</Link>
-          <Link href={nextHref} scroll={false} aria-label="Tuần sau" className="grid h-10 w-10 place-items-center rounded-xl border border-line bg-surface text-lg font-bold text-ink">›</Link>
-        </div>
-        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 max-[767px]:w-full">
-          <select
-            aria-label="Lọc theo lớp"
-            value={filters.cls}
-            onChange={(e) => applyFilter({ cls: e.target.value })}
-            className="h-10 min-w-0 flex-1 rounded-xl border border-line bg-surface px-3 text-base font-semibold text-ink max-[767px]:h-11 min-[768px]:flex-none"
-          >
-            <option value="">Mọi lớp</option>
-            {classes.map((c) => (
-              <option key={c.id} value={c.id}>{c.name}</option>
-            ))}
-          </select>
-          <select
-            aria-label="Lọc theo giáo viên"
-            value={filters.teacher}
-            onChange={(e) => applyFilter({ teacher: e.target.value })}
-            className="h-10 min-w-0 flex-1 rounded-xl border border-line bg-surface px-3 text-base font-semibold text-ink max-[767px]:h-11 min-[768px]:flex-none"
-          >
-            <option value="">Mọi giáo viên</option>
-            {teachers.map((t) => (
-              <option key={t.id} value={t.id}>{t.name}</option>
-            ))}
-          </select>
+        <RangeNav from={rangeFrom} to={rangeTo} prevHref={prevHref} nextHref={nextHref} onPick={pickRange} />
+        <div className="flex min-w-0 flex-wrap items-center gap-2 max-[767px]:w-full min-[768px]:flex-1">
+          <SelectPanel
+            multiple
+            label="Lọc theo lớp"
+            icon={<Users className="size-3.5 text-muted" aria-hidden />}
+            values={listParam(clsView)}
+            onChange={(vs) => applyFilter({ cls: vs.join(',') })}
+            options={classes.map((c) => ({ value: String(c.id), label: c.name }))}
+            placeholder="Mọi lớp"
+            className="min-w-0 flex-1 min-[768px]:flex-none"
+          />
+          <SelectPanel
+            multiple
+            label="Lọc theo giáo viên"
+            icon={<Filter className="size-3.5 text-muted" aria-hidden />}
+            values={listParam(teacherView)}
+            onChange={(vs) => applyFilter({ teacher: vs.join(',') })}
+            options={teachers.map((t) => ({ value: String(t.id), label: t.name }))}
+            placeholder="Mọi giáo viên"
+            className="min-w-0 flex-1 min-[768px]:flex-none"
+          />
         </div>
       </div>
 
       {sessions.length === 0 ? (
-        <div className="rounded-[24px] bg-surface shadow-card">
-          <EmptyState title="Không có buổi học nào trong tuần này" hint="Đổi bộ lọc hoặc sang tuần khác." />
-        </div>
+        <EmptyPanel title="Không có buổi học nào trong khoảng này" hint="Đổi bộ lọc hoặc chọn khoảng ngày khác." />
       ) : (
         <>
-          {/* Máy tính bảng và máy tính: bảng tuần, mỗi ngày một cột. Cột cuộn ngang trong khung khi màn hẹp. */}
-          <div className="hidden overflow-x-auto rounded-[24px] bg-surface p-3 shadow-card min-[768px]:block">
-            <div className="grid min-w-[840px] grid-cols-7 gap-2">
-              {days.map((day) => {
-                const list = byDay.get(day) ?? [];
-                return (
-                  <div key={day} className="flex min-w-0 flex-col gap-2">
-                    <header className="rounded-xl bg-bg px-2.5 py-2 text-center">
-                      <b className="block text-sm text-ink">{weekdayLabel(weekdayOfKey(day))}</b>
-                      <small className="text-xs text-muted">{dateKeyLabel(day).slice(0, 5)} · {list.length} buổi</small>
-                    </header>
-                    {list.length === 0 && <div className="rounded-xl border border-dashed border-line px-2 py-6 text-center text-xs text-muted">Trống</div>}
-                    {list.map((s) => (
-                      <SessionBlock key={s.id} session={s} onOpen={() => setOpen(s)} />
+          {/* Máy tính bảng và máy tính: lưới giờ, mỗi ngày một cột. Chỉ dùng khi khoảng có tối đa 7 ngày. */}
+          {!longRange && (
+            <div className="hidden overflow-hidden rounded-[var(--radius-panel)] bg-surface shadow-card min-[768px]:block">
+              <div className="overflow-x-auto">
+                <div style={{ minWidth: `${TIME_COL_PX + days.length * DAY_COL_MIN_PX}px` }}>
+                  {/* Tiêu đề ngày */}
+                  <div className="grid border-b border-line" style={{ gridTemplateColumns: `${TIME_COL} repeat(${days.length}, minmax(0, 1fr))` }}>
+                    <div />
+                    {days.map((day) => (
+                      <div key={day} className="px-2 py-2.5 text-center">
+                        <b className="block text-sm font-bold text-ink">{weekdayLabel(weekdayOfKey(day))}</b>
+                        <small className="text-xs text-muted">{dateKeyLabel(day).slice(0, 5)} · {(byDay.get(day) ?? []).length} buổi</small>
+                      </div>
                     ))}
                   </div>
-                );
-              })}
-            </div>
-          </div>
 
-          {/* Điện thoại: danh sách dọc theo ngày, ngày không có buổi thì bỏ qua */}
-          <div className="flex flex-col gap-4 min-[768px]:hidden">
+                  {/* Lưới giờ */}
+                  <div className="grid" style={{ gridTemplateColumns: `${TIME_COL} repeat(${days.length}, minmax(0, 1fr))` }}>
+                    <div className="relative" style={{ height: gridHeight }}>
+                      {hours.map((h) => (
+                        <span key={h} className="absolute right-2 -translate-y-1/2 text-xs tabular-nums text-muted" style={{ top: hourTop(h) }}>
+                          {String(h).padStart(2, '0')}:00
+                        </span>
+                      ))}
+                    </div>
+                    {days.map((day) => (
+                      <div key={day} className="relative border-l border-line" style={{ height: gridHeight }}>
+                        {hours.map((h) => (
+                          <div key={h} className="absolute inset-x-0 border-t border-line" style={{ top: hourTop(h) }} />
+                        ))}
+                        {placeLanes(byDay.get(day) ?? []).map((p) => (
+                          <CalendarBlock
+                            key={p.s.id}
+                            placed={p}
+                            style={{
+                              top: `calc(${(p.start - hourStart * 60) / 60} * var(--cal-hour-h) + 2px)`,
+                              height: `calc(${(p.end - p.start) / 60} * var(--cal-hour-h) - 4px)`,
+                              left: `calc(${(p.lane / p.lanes) * 100}% + 2px)`,
+                              width: `calc(${100 / p.lanes}% - 4px)`,
+                            }}
+                            onOpen={() => setOpen(p.s)}
+                          />
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Điện thoại: lịch theo ngày, có trục thời gian; ngày không có buổi thì bỏ qua. Khoảng dài hơn một tuần: hiện cả trên máy tính. */}
+          <div className={longRange ? AGENDA_ALL : AGENDA_PHONE}>
             {days.filter((d) => (byDay.get(d) ?? []).length > 0).map((day) => (
-              <section key={day} aria-label={`Buổi học ${dateKeyLabel(day)}`} className="flex flex-col gap-2">
-                <h2 className="text-sm font-extrabold uppercase tracking-wide text-muted">
-                  {weekdayLabel(weekdayOfKey(day))} · {dateKeyLabel(day)}
-                </h2>
-                {(byDay.get(day) ?? []).map((s) => (
-                  <SessionBlock key={s.id} session={s} onOpen={() => setOpen(s)} wide />
-                ))}
+              <section key={day} aria-label={`Buổi học ${dateKeyLabel(day)}`} className="flex flex-col gap-3">
+                <header className="flex items-center gap-3">
+                  <span className="grid size-11 shrink-0 place-items-center rounded-[var(--radius-ctl)] bg-primary text-base font-extrabold text-on-primary">
+                    {day.slice(8, 10)}
+                  </span>
+                  <div>
+                    <h2 className="text-base font-bold text-ink">{weekdayLabel(weekdayOfKey(day))}</h2>
+                    <small className="text-xs text-muted">{dateKeyLabel(day)} · {(byDay.get(day) ?? []).length} buổi</small>
+                  </div>
+                </header>
+                <ul className="ml-[1.15rem] flex flex-col gap-2.5 border-l-2 border-line pl-4">
+                  {(byDay.get(day) ?? []).map((s) => (
+                    <li key={s.id}>
+                      <AgendaCard session={s} onOpen={() => setOpen(s)} />
+                    </li>
+                  ))}
+                </ul>
               </section>
             ))}
           </div>
@@ -144,21 +253,52 @@ export function ScheduleView({
   );
 }
 
-function SessionBlock({ session: s, onOpen, wide = false }: { session: SessionRow; onOpen: () => void; wide?: boolean }) {
+// Khối một buổi trên lưới tuần. Luôn hiện đủ giờ, lớp, giáo viên và trạng thái.
+// Khi buổi trùng giờ làn hẹp, chữ xuống dòng chứ không cắt.
+function CalendarBlock({ placed, style, onOpen }: { placed: { s: SessionRow; start: number; end: number }; style: CSSProperties; onOpen: () => void }) {
+  const s = placed.s;
   const state = sessionState(s);
   const cancelled = s.status === 'cancelled';
+  const tone = toneOf(s.classId);
+  // Chấm màu theo trạng thái, chữ trạng thái vẫn hiện ngay bên cạnh
+  const dot = state.tone === 'mint' ? 'bg-mint-ink' : state.tone === 'butter' ? 'bg-butter-ink' : state.tone === 'blush' ? 'bg-blush-ink' : 'bg-stone-ink';
   return (
     <button
       type="button"
+      data-card="true"
       onClick={onOpen}
-      className={`flex w-full flex-col gap-1 rounded-xl border border-line bg-surface px-2.5 py-2 text-left transition-colors hover:border-ink-2 ${wide ? 'px-3.5 py-3' : ''} ${cancelled ? 'opacity-70' : ''}`}
+      style={style}
+      className={`absolute flex flex-col overflow-hidden rounded-[var(--radius-ctl)] border-l-4 px-1 py-0.5 text-left leading-tight transition-shadow hover:shadow-card ${tone.bg} ${tone.edge} ${cancelled ? 'opacity-60' : ''}`}
     >
-      <span className={`text-sm font-extrabold text-ink ${cancelled ? 'line-through' : ''}`}>{s.timeLabel}</span>
-      <span className={`truncate text-sm font-bold text-ink ${cancelled ? 'line-through' : ''}`}>{s.className}</span>
-      <span className="truncate text-xs text-muted">{s.teacherName}{s.room ? ` · ${s.room}` : ''}</span>
-      <span className="mt-0.5">
-        <Pill tone={state.tone}>{state.label}</Pill>
+      <span className={`text-2xs font-bold tabular-nums tracking-tight text-ink ${cancelled ? 'line-through' : ''}`}>{s.timeLabel}</span>
+      <span className={`break-words text-xs font-bold text-ink ${cancelled ? 'line-through' : ''}`}>{s.className}</span>
+      <span className="break-words text-2xs text-ink-2">{s.teacherName}{s.room ? ` · ${s.room}` : ''}</span>
+      <span className="mt-auto flex items-center gap-1 pt-0.5 text-2xs text-ink-2">
+        <span aria-hidden className={`size-1.5 shrink-0 rounded-full ${dot}`} />
+        {state.label}
       </span>
+    </button>
+  );
+}
+
+// Thẻ một buổi trong lịch theo ngày (điện thoại)
+function AgendaCard({ session: s, onOpen }: { session: SessionRow; onOpen: () => void }) {
+  const state = sessionState(s);
+  const cancelled = s.status === 'cancelled';
+  const tone = toneOf(s.classId);
+  return (
+    <button
+      type="button"
+      data-card="true"
+      onClick={onOpen}
+      className={`flex w-full flex-col gap-1 rounded-[var(--radius-ctl)] border-l-4 px-3 py-2.5 text-left transition-colors ${tone.bg} ${tone.edge} ${cancelled ? 'opacity-70' : ''}`}
+    >
+      <div className="flex items-center justify-between gap-2">
+        <span className={`text-sm font-extrabold tabular-nums text-ink ${cancelled ? 'line-through' : ''}`}>{s.timeLabel}</span>
+        <Pill tone={state.tone}>{state.label}</Pill>
+      </div>
+      <span className={`truncate text-base font-bold text-ink ${cancelled ? 'line-through' : ''}`}>{s.className}</span>
+      <span className="truncate text-xs text-ink-2">{s.teacherName}{s.room ? ` · ${s.room}` : ''}</span>
       {cancelled && s.cancelReason && <small className="text-xs text-blush-ink">Lý do: {s.cancelReason}</small>}
     </button>
   );

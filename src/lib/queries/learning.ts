@@ -1,6 +1,8 @@
 // Truy vấn lịch sử học tập gộp từ điểm danh, bài đã chấm, học phí và sự kiện học tập. Chỉ chạy trên server.
 import { sql } from 'drizzle-orm';
 import { db } from '@/db/client';
+import type { CampusScope } from '@/lib/campus';
+import { campusCond } from '@/lib/queries/campuses';
 import { mergeHistory, type HistoryItem, type HistoryKind } from '@/lib/learning-history';
 
 type RawHistory = {
@@ -73,13 +75,14 @@ export async function listHistoryForStudent(studentId: number): Promise<HistoryI
   return mergeHistory(result.rows.map(toItem));
 }
 
-// Lịch sử của mọi học sinh, mới nhất trước. Lọc lớp và loại làm ở lớp giao diện.
-export async function listHistoryAll(): Promise<HistoryItem[]> {
+// Lịch sử của học sinh trong cơ sở đang xem (scope null: mọi cơ sở), mới nhất trước. Lọc lớp và loại làm ở lớp giao diện.
+export async function listHistoryAll(scope: CampusScope): Promise<HistoryItem[]> {
   const result = await db.execute<RawHistory>(sql`
     SELECT h.*, s.full_name, c.name AS class_name
     FROM (${SOURCES}) h
     JOIN students s ON s.id = h.student_id
     JOIN classes c ON c.id = h.class_id
+    WHERE ${campusCond(scope, sql`c.campus_id`)}
     ORDER BY h.at DESC, h.id DESC
     LIMIT 400
   `);

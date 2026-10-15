@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { formatVND, formatVNDShort, remainingDebt, tuitionState } from '@/lib/money';
 import { parseStudentCode, studentCode } from '@/lib/student-code';
+import { studentsHref } from '@/lib/student-url';
 import { normalizeSearch } from '@/lib/text';
 
 describe('formatVND', () => {
@@ -74,5 +75,16 @@ describe('normalizeSearch', () => {
   it('tìm được khi gõ không dấu', () => {
     const name = normalizeSearch('Phạm Thu Hương');
     expect(name.includes(normalizeSearch('thu huong'))).toBe(true);
+  });
+});
+
+describe('studentsHref', () => {
+  it('tạo đường dẫn có sort và order', () => {
+    expect(studentsHref({ sort: 'name', order: 'asc' })).toBe('/hoc-sinh?sort=name&order=asc');
+    expect(studentsHref({ sort: 'tuition', order: 'desc', p: 2 })).toBe('/hoc-sinh?p=2&sort=tuition&order=desc');
+  });
+
+  it('giữ bộ lọc kèm sort', () => {
+    expect(studentsHref({ q: 'Anh', status: 'active', sort: 'attendance', order: 'asc' })).toBe('/hoc-sinh?q=Anh&status=active&sort=attendance&order=asc');
   });
 });

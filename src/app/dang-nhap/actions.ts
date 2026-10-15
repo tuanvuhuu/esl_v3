@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { db } from '@/db/client';
 import { accounts, auditLogs } from '@/db/schema';
 import { verifyPassword } from '@/lib/auth/password';
+import { parseStudentCode } from '@/lib/student-code';
 import { ROLE_CODES, type Role } from '@/lib/permissions';
 import { startSession } from '@/lib/session';
 import { fieldErrorsFrom, type ActionResult } from '@/lib/validation/student';
@@ -19,7 +20,13 @@ const loginSchema = z.object({
 // Thông báo lỗi không cho biết email có tồn tại hay không.
 async function authenticate(email: string, password: string): Promise<{ ok: true; accountId: number } | { ok: false; message: string }> {
   try {
-    const [row] = await db.select().from(accounts).where(eq(accounts.email, email.toLowerCase())).limit(1);
+    // Học sinh đăng nhập bằng mã học sinh (HS-0001), giáo viên và nhân viên bằng email
+    const studentId = parseStudentCode(email);
+    const [row] = await db
+      .select()
+      .from(accounts)
+      .where(studentId !== null ? eq(accounts.studentId, studentId) : eq(accounts.email, email.toLowerCase()))
+      .limit(1);
     const passwordOk = await verifyPassword(password, row?.passwordHash);
     if (!row || !passwordOk) return { ok: false, message: 'Email hoặc mật khẩu không đúng.' };
     if (row.status !== 'active') return { ok: false, message: 'Tài khoản đang bị khoá. Liên hệ quản trị để mở lại.' };

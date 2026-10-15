@@ -5,11 +5,14 @@ import { useRouter } from 'next/navigation';
 import { cancelSessionAction, restoreSessionAction, updateSessionAction } from '@/app/(app)/lich-hoc/actions';
 import type { SessionRow } from '@/lib/queries/sessions';
 import type { ActionResult } from '@/lib/validation/student';
+import { BTN_BASE, BTN_DANGER, BTN_GHOST } from '@/components/ui/Btn';
 import { Field, FORM_BTN_SUBMIT, inputClass } from '@/components/ui/Field';
+import { SelectPanel } from '@/components/ui/SelectPanel';
 import { Modal } from '@/components/ui/Modal';
 import { Toast, useToast } from '@/components/ui/Toast';
-import { Pill } from '@/components/ui/primitives';
+import { Pill, Alert } from '@/components/ui/primitives';
 import { sessionState } from './ScheduleView';
+import { Notice } from '@/components/ui/surfaces';
 
 const INITIAL: ActionResult = { ok: false };
 
@@ -56,11 +59,11 @@ export function SessionDialog({
             </div>
 
             {session.status === 'done' && (
-              <p className="rounded-[18px] bg-stone px-4 py-3 text-base text-stone-ink">Buổi này đã học xong nên không sửa được. Điểm danh xem ở màn Điểm danh.</p>
+              <Notice>Buổi này đã học xong nên không sửa được. Điểm danh xem ở màn Điểm danh.</Notice>
             )}
 
             {session.status === 'cancelled' && (
-              <div className="flex flex-col gap-3 rounded-[18px] bg-blush px-4 py-3">
+              <div className="flex flex-col gap-3 rounded-[var(--radius-ctl)] bg-blush px-3 py-2.5">
                 <p className="text-base text-blush-ink">Lý do huỷ: {session.cancelReason || 'Không ghi lý do'}</p>
                 {canManage && <RestoreButton id={session.id} onDone={finish} onError={notify} />}
               </div>
@@ -74,7 +77,7 @@ export function SessionDialog({
             )}
 
             {session.status === 'planned' && !canManage && (
-              <p className="rounded-[18px] bg-stone px-4 py-3 text-base text-stone-ink">Bạn không có quyền sửa lịch học.</p>
+              <Notice>Bạn không có quyền sửa lịch học.</Notice>
             )}
           </div>
         )}
@@ -102,17 +105,20 @@ function EditSessionForm({ session, teachers, onDone }: { session: SessionRow; t
   return (
     <form onSubmit={submit} noValidate className="grid grid-cols-1 gap-3.5 min-[768px]:grid-cols-2 min-[768px]:gap-x-4">
       {state.message && !state.ok && (
-        <div role="alert" className="col-span-full rounded-xl bg-blush px-3.5 py-2.5 text-base font-semibold text-blush-ink">{state.message}</div>
+        <Alert className="col-span-full">{state.message}</Alert>
       )}
       <Field label="Ngày học *" error={errors.date}>
         <input name="date" type="date" defaultValue={session.dateKey} className={inputClass(errors.date)} />
       </Field>
       <Field label="Giáo viên *" error={errors.teacherId}>
-        <select name="teacherId" defaultValue={String(session.teacherId)} className={inputClass(errors.teacherId)}>
-          {teachers.map((t) => (
-            <option key={t.id} value={t.id}>{t.name} · {t.subject}</option>
-          ))}
-        </select>
+        <SelectPanel
+          name="teacherId"
+          label="Giáo viên *"
+          defaultValue={String(session.teacherId)}
+          options={teachers.map((t) => ({ value: String(t.id), label: `${t.name} · ${t.subject}` }))}
+          error={!!errors.teacherId}
+          block
+        />
       </Field>
       <Field label="Giờ bắt đầu *" error={errors.startTime}>
         <input name="startTime" type="time" defaultValue={start} className={inputClass(errors.startTime)} />
@@ -150,8 +156,8 @@ function CancelSessionForm({ id, onDone }: { id: number; onDone: (m: string) => 
   }
 
   return (
-    <div className="flex flex-col gap-2.5 rounded-[18px] border border-line px-4 py-3.5">
-      <label className="flex flex-col gap-1.5 text-sm font-bold text-ink-2">
+    <div className="flex flex-col gap-2.5 rounded-[var(--radius-ctl)] border border-line px-3 py-3">
+      <label className="flex flex-col gap-1.5 text-sm font-normal text-ink-2">
         Huỷ buổi này (ghi lý do)
         <input
           value={reason}
@@ -162,7 +168,7 @@ function CancelSessionForm({ id, onDone }: { id: number; onDone: (m: string) => 
         {error && <span className="text-sm font-semibold text-blush-ink">{error}</span>}
       </label>
       <div className="flex justify-end">
-        <button type="button" onClick={cancel} disabled={pending} className="h-11 rounded-xl border border-blush-ink bg-surface px-5 text-base font-bold text-blush-ink disabled:opacity-50">
+        <button type="button" onClick={cancel} disabled={pending} className={`${BTN_BASE} ${BTN_DANGER}`}>
           {pending ? 'Đang huỷ…' : 'Huỷ buổi học'}
         </button>
       </div>
@@ -180,7 +186,7 @@ function RestoreButton({ id, onDone, onError }: { id: number; onDone: (m: string
     });
   }
   return (
-    <button type="button" onClick={restore} disabled={pending} className="inline-flex h-11 w-fit items-center rounded-xl bg-surface px-4 text-base font-bold text-ink disabled:opacity-50">
+    <button type="button" onClick={restore} disabled={pending} className={`${BTN_BASE} ${BTN_GHOST} w-fit`}>
       {pending ? 'Đang khôi phục…' : 'Khôi phục buổi học'}
     </button>
   );

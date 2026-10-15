@@ -1,4 +1,4 @@
-import Link from 'next/link';
+﻿import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 import { Suspense } from 'react';
@@ -9,10 +9,12 @@ import { Avatar, EmptyState, Pill, ProgressBar, type Tone } from '@/components/u
 import { formatVND } from '@/lib/money';
 import { dateKeyLabel, vnDateTimeLabel } from '@/lib/datetime';
 import { hasPermission } from '@/lib/permissions';
+import { getCampusContext } from '@/lib/campus-context';
 import { getClassDetail } from '@/lib/queries/classes';
 import { listAssignmentsOfClass } from '@/lib/queries/assignments';
 import { listTeacherChoices } from '@/lib/queries/teachers';
 import { getCurrentPermissions } from '@/lib/session';
+import { Panel } from '@/components/ui/surfaces';
 
 const STATUS_META: Record<'active' | 'trial' | 'paused' | 'finished', { label: string; tone: Tone }> = {
   active: { label: 'Đang học', tone: 'mint' },
@@ -33,7 +35,7 @@ function ClassSkeleton() {
   return (
     <section aria-busy="true" aria-label="Đang tải lớp học" className="flex flex-col gap-4">
       <div className="h-9 w-64 animate-pulse rounded-xl bg-stone" />
-      <div className="h-[360px] animate-pulse rounded-[24px] bg-stone" />
+      <div className="h-[360px] animate-pulse rounded-[var(--radius-panel)] bg-stone" />
     </section>
   );
 }
@@ -48,7 +50,12 @@ async function ClassData({ params }: { params: Promise<{ id: string }> }) {
   const granted = new Set(await getCurrentPermissions());
   if (!hasPermission(granted, 'students.view')) return <NoAccess title="Lớp học" />;
 
-  const [cls, teachers, assignments] = await Promise.all([getClassDetail(id), listTeacherChoices(), listAssignmentsOfClass(id)]);
+  const [cls, teachers, assignments, { campuses, scope }] = await Promise.all([
+    getClassDetail(id),
+    listTeacherChoices(null),
+    listAssignmentsOfClass(id),
+    getCampusContext(),
+  ]);
   if (!cls) notFound();
 
   return (
@@ -62,7 +69,9 @@ async function ClassData({ params }: { params: Promise<{ id: string }> }) {
             classId={cls.id}
             name={cls.name}
             studentCount={cls.studentCount}
-            teachers={teachers.map((t) => ({ id: t.id, name: t.name, subject: t.subject }))}
+            teachers={teachers.map((t) => ({ id: t.id, name: t.name, subject: t.subject, staffRole: t.staffRole, campusIds: t.campusIds }))}
+            campuses={campuses}
+            defaultCampusId={scope ?? campuses[0]?.id ?? 0}
             canManage={hasPermission(granted, 'classes.manage')}
           />
         }
@@ -73,8 +82,12 @@ async function ClassData({ params }: { params: Promise<{ id: string }> }) {
         <div className="flex flex-col gap-4">
           <Panel title="Thông tin lớp">
             <dl className="grid grid-cols-[120px_minmax(0,1fr)] gap-x-4 gap-y-2.5 text-base max-[767px]:grid-cols-[104px_minmax(0,1fr)] max-[767px]:text-sm">
-              <dt className="text-muted">Giáo viên</dt>
+              <dt className="text-muted">GV chủ nhiệm</dt>
               <dd className="font-bold text-ink">{cls.teacherName}</dd>
+              <dt className="text-muted">Trợ giảng</dt>
+              <dd className="text-ink">{cls.assistantName ?? <span className="text-muted">Chưa có</span>}</dd>
+              <dt className="text-muted">GV nước ngoài</dt>
+              <dd className="text-ink">{cls.foreignTeacherName ?? <span className="text-muted">Chưa có</span>}</dd>
               <dt className="text-muted">Lịch học</dt>
               <dd className="font-bold text-ink">{cls.schedule}</dd>
               <dt className="text-muted">Ngày khai giảng</dt>
@@ -163,14 +176,3 @@ async function ClassData({ params }: { params: Promise<{ id: string }> }) {
   );
 }
 
-function Panel({ title, action, children }: { title: string; action?: React.ReactNode; children: React.ReactNode }) {
-  return (
-    <section className="rounded-[24px] bg-surface p-5 shadow-card max-[767px]:p-4">
-      <header className="mb-3 flex items-center justify-between gap-3">
-        <h2 className="text-lg font-extrabold text-ink">{title}</h2>
-        {action}
-      </header>
-      {children}
-    </section>
-  );
-}

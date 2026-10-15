@@ -8,7 +8,7 @@ import { cache } from 'react';
 import { db } from '@/db/client';
 import { accounts, rolePermissions } from '@/db/schema';
 import { readSession, signSession } from './auth/token';
-import { PERMISSIONS, ROLE_LABELS, type Permission, type Role } from './permissions';
+import { ACCOUNT_ROLE_LABELS, PERMISSIONS, type AccountRole, type Permission } from './permissions';
 
 export const SESSION_COOKIE = 'esl_session';
 const SESSION_HOURS = 12;
@@ -17,9 +17,10 @@ export type CurrentAccount = {
   id: number;
   fullName: string;
   email: string;
-  role: Role;
+  role: AccountRole;
   roleLabel: string;
   teacherId: number | null;
+  studentId: number | null; // hồ sơ học sinh gắn với tài khoản học sinh (P28)
 };
 
 function sessionSecret(): string {
@@ -41,12 +42,12 @@ export const getCurrentAccount = cache(async (): Promise<CurrentAccount | null> 
   if (!accountId) return null;
 
   const [row] = await db
-    .select({ id: accounts.id, fullName: accounts.fullName, email: accounts.email, role: accounts.role, status: accounts.status, teacherId: accounts.teacherId })
+    .select({ id: accounts.id, fullName: accounts.fullName, email: accounts.email, role: accounts.role, status: accounts.status, teacherId: accounts.teacherId, studentId: accounts.studentId })
     .from(accounts)
     .where(eq(accounts.id, accountId))
     .limit(1);
   if (!row || row.status !== 'active') return null;
-  return { id: row.id, fullName: row.fullName, email: row.email, role: row.role, roleLabel: ROLE_LABELS[row.role], teacherId: row.teacherId };
+  return { id: row.id, fullName: row.fullName, email: row.email, role: row.role, roleLabel: ACCOUNT_ROLE_LABELS[row.role], teacherId: row.teacherId, studentId: row.studentId };
 });
 
 // Quyền của tài khoản đang đăng nhập. Không đăng nhập thì không có quyền nào.

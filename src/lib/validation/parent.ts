@@ -40,3 +40,27 @@ export const parentLinkSchema = z
   });
 
 export type ParentLinkInput = z.infer<typeof parentLinkSchema>;
+
+// Gán một phụ huynh cho nhiều học sinh cùng lúc, từ màn Phụ huynh. Form gửi nhiều ô cùng tên.
+export const parentAssignSchema = z.object({
+  studentIds: z
+    .array(z.coerce.number({ error: 'Chọn học sinh' }).int('Chọn học sinh').positive('Chọn học sinh'), { error: 'Chọn ít nhất một học sinh' })
+    .min(1, 'Chọn ít nhất một học sinh'),
+  relation: z.enum(PARENT_RELATIONS, { error: 'Chọn quan hệ với học sinh' }),
+  isPrimary: z.boolean(),
+});
+
+export type ParentAssignInput = z.infer<typeof parentAssignSchema>;
+
+// Các ô của phụ huynh sửa được tại chỗ trên bảng. Mỗi ô dùng đúng quy tắc của form đầy đủ.
+export const PARENT_EDITABLE_FIELDS = ['fullName', 'phone', 'email', 'note'] as const;
+export type ParentEditableField = (typeof PARENT_EDITABLE_FIELDS)[number];
+
+export function parentFieldValue(field: ParentEditableField, value: string): { ok: true; value: string } | { ok: false; message: string } {
+  const r = parentFormSchema.shape[field].safeParse(value);
+  if (r.success) return { ok: true, value: r.data };
+  return { ok: false, message: r.error.issues[0]?.message ?? 'Giá trị không hợp lệ' };
+}
+
+// Quan hệ của học sinh với phụ huynh
+export const parentRelationSchema = z.enum(PARENT_RELATIONS, { error: 'Chọn quan hệ với học sinh' });

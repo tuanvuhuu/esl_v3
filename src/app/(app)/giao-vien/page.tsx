@@ -1,6 +1,7 @@
-import { Suspense } from 'react';
+﻿import { Suspense } from 'react';
 import { TeacherList } from '@/components/teachers/TeacherList';
 import { NoAccess } from '@/components/ui/NoAccess';
+import { getCampusContext } from '@/lib/campus-context';
 import { hasPermission } from '@/lib/permissions';
 import { listTeachers } from '@/lib/queries/teachers';
 import { getCurrentPermissions } from '@/lib/session';
@@ -19,9 +20,9 @@ function TeachersSkeleton() {
     <section aria-busy="true" aria-label="Đang tải giáo viên" className="flex flex-col gap-4">
       <div className="h-9 w-48 animate-pulse rounded-xl bg-stone" />
       <div className="grid grid-cols-1 gap-3 min-[768px]:grid-cols-2 min-[1200px]:grid-cols-3">
-        <div className="h-[200px] animate-pulse rounded-[20px] bg-stone" />
-        <div className="h-[200px] animate-pulse rounded-[20px] bg-stone" />
-        <div className="h-[200px] animate-pulse rounded-[20px] bg-stone" />
+        <div className="h-[200px] animate-pulse rounded-[var(--radius-panel)] bg-stone" />
+        <div className="h-[200px] animate-pulse rounded-[var(--radius-panel)] bg-stone" />
+        <div className="h-[200px] animate-pulse rounded-[var(--radius-panel)] bg-stone" />
       </div>
     </section>
   );
@@ -30,6 +31,15 @@ function TeachersSkeleton() {
 async function TeachersData() {
   const granted = new Set(await getCurrentPermissions());
   if (!hasPermission(granted, 'students.view')) return <NoAccess title="Giáo viên" />;
-  const teachers = await listTeachers();
-  return <TeacherList teachers={teachers} canManage={hasPermission(granted, 'teachers.manage')} />;
+  // Giáo viên dạy ở cơ sở đang xem (scope null: tất cả). Ô chọn cơ sở dạy lấy danh sách cơ sở đầy đủ.
+  const { campuses, scope } = await getCampusContext();
+  const teachers = await listTeachers(scope);
+  return (
+    <TeacherList
+      teachers={teachers}
+      campuses={campuses}
+      defaultCampusId={scope ?? campuses[0]?.id ?? 0}
+      canManage={hasPermission(granted, 'teachers.manage')}
+    />
+  );
 }

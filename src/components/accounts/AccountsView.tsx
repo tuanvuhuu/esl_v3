@@ -1,7 +1,6 @@
 'use client';
 
 import { Check, History, Lock, LockOpen, Pencil, Plus, ShieldCheck, Trash2, Users } from 'lucide-react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState, useTransition } from 'react';
 import {
@@ -18,12 +17,34 @@ import { Modal } from '@/components/ui/Modal';
 import { RowMenu, type RowMenuItem } from '@/components/ui/RowMenu';
 import { PageCrumbs } from '@/components/shell/PageCrumbs';
 import { ActIcon } from '@/components/ui/ActIcon';
-import { Avatar, EmptyState, Pill, type Tone } from '@/components/ui/primitives';
+import { Avatar, EmptyState, Pill, type Tone, Alert } from '@/components/ui/primitives';
+import { DataGrid, type GridColumn } from '@/components/ui/datagrid';
 import { AccountForm, type TeacherOption } from './AccountForm';
+import { Toast } from '@/components/ui/Toast';
+import { EmptyPanel, Panel, Card } from '@/components/ui/surfaces';
+import { Btn } from '@/components/ui/Btn';
+import { Chip, ChipGroup, TextInput } from '@/components/ui/controls';
+import { SelectPanel } from '@/components/ui/SelectPanel';
 
 export type TabKey = 'nguoi-dung' | 'phan-quyen' | 'nhat-ky';
 
 const ROLE_TONE: Record<Role, Tone> = { admin: 'butter', academic: 'mint', teacher: 'lav', accountant: 'stone' };
+
+const ACCOUNT_COLUMNS: GridColumn<AccountRow>[] = [
+  { key: 'name', label: 'Thành viên', width: 'minmax(150px,2fr)', sortValue: (r) => r.fullName },
+  { key: 'role', label: 'Vai trò', width: 'minmax(124px,1fr)', sortValue: (r) => r.roleLabel },
+  { key: 'link', label: 'Liên kết', width: 'minmax(88px,1fr)', sortValue: (r) => r.teacherName ?? '' },
+  { key: 'last', label: 'Đăng nhập gần nhất', width: 'minmax(120px,1.1fr)', sortValue: (r) => r.lastLoginAt ?? '' },
+  { key: 'status', label: 'Trạng thái', width: 'minmax(96px,1fr)', sortValue: (r) => r.status },
+  { key: 'actions', label: 'Thao tác', width: '44px', align: 'end', srOnly: true },
+];
+
+const AUDIT_COLUMNS: GridColumn<AuditRow>[] = [
+  { key: 'time', label: 'Thời điểm', width: '136px', sortValue: (a) => a.createdAt },
+  { key: 'action', label: 'Thao tác', width: '112px', sortValue: (a) => a.action },
+  { key: 'summary', label: 'Nội dung', width: 'minmax(0,1fr)' },
+  { key: 'actor', label: 'Người thực hiện', width: '120px', sortValue: (a) => a.accountName ?? '' },
+];
 
 type Props = {
   tab: TabKey;
@@ -54,19 +75,17 @@ export function AccountsView({ tab, accounts, total, filters, teachers, matrix, 
         </div>
       </header>
 
-      <nav role="tablist" aria-label="Mục" className="flex gap-1.5 overflow-x-auto rounded-2xl bg-stone p-1.5">
+      <ChipGroup tabs label="Mục" className="overflow-x-auto">
         {TABS.map((t) => {
           const Icon = t.icon;
-          const on = t.key === tab;
           return (
-            <Link key={t.key} href={`/tai-khoan${t.key === 'nguoi-dung' ? '' : `?tab=${t.key}`}`} role="tab" aria-selected={on} scroll={false}
-              className={`flex h-10 shrink-0 items-center gap-2 rounded-xl px-3.5 text-base font-bold transition-colors ${on ? 'bg-surface text-ink shadow-card' : 'text-stone-ink hover:text-ink'}`}>
+            <Chip key={t.key} tab selected={t.key === tab} href={`/tai-khoan${t.key === 'nguoi-dung' ? '' : `?tab=${t.key}`}`}>
               <Icon className="size-4" aria-hidden />
               {t.label}
-            </Link>
+            </Chip>
           );
         })}
-      </nav>
+      </ChipGroup>
 
       {tab === 'nguoi-dung' && <UsersTab accounts={accounts} total={total} filters={filters} teachers={teachers} canManage={canManage} />}
       {tab === 'phan-quyen' && <PermissionsTab matrix={matrix} canManage={isAdmin} />}
@@ -149,113 +168,113 @@ function UsersTab({ accounts, total, filters, teachers, canManage }: { accounts:
     ];
   };
 
+  const accountCell = (row: AccountRow, key: string) => {
+    switch (key) {
+      case 'name':
+        return (
+          <div className="flex min-w-0 items-center gap-3">
+            <Avatar name={row.fullName} seed={row.id} />
+            <div className="min-w-0">
+              <b className="block truncate text-base text-ink">{row.fullName}</b>
+              <small className="block truncate text-xs text-muted">{row.email}</small>
+            </div>
+          </div>
+        );
+      case 'role':
+        return <Pill tone={ROLE_TONE[row.role]}>{row.roleLabel}</Pill>;
+      case 'link':
+        return <div className="min-w-0 truncate text-sm text-ink-2">{row.teacherName ?? '—'}</div>;
+      case 'last':
+        return <div className="whitespace-nowrap text-sm tabular-nums text-ink-2">{row.lastLoginAt ? formatTime(row.lastLoginAt) : 'Chưa đăng nhập'}</div>;
+      case 'status':
+        return <Pill tone={row.status === 'active' ? 'mint' : 'blush'}>{row.status === 'active' ? 'Hoạt động' : 'Tạm khoá'}</Pill>;
+      case 'actions':
+        return (
+          <div className="flex justify-end">
+            <RowMenu label={`Thao tác với ${row.fullName}`} items={menuItems(row)} />
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
+  const accountCard = (row: AccountRow) => (
+    <Card>
+      <div className="flex items-start gap-3">
+        <Avatar name={row.fullName} seed={row.id} />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-2">
+            <b className="min-w-0 truncate text-base text-ink">{row.fullName}</b>
+            <Pill tone={row.status === 'active' ? 'mint' : 'blush'}>{row.status === 'active' ? 'Hoạt động' : 'Tạm khoá'}</Pill>
+          </div>
+          <small className="block truncate text-xs text-muted">{row.email}</small>
+        </div>
+      </div>
+      <div className="flex items-center justify-between gap-2">
+        <Pill tone={ROLE_TONE[row.role]}>{row.roleLabel}</Pill>
+        {row.teacherName && <small className="truncate text-xs text-muted">{row.teacherName}</small>}
+      </div>
+      <div className="flex justify-end gap-2">
+        <ActIcon label={`Sửa ${row.fullName}`} onClick={() => openEdit(row)} disabled={!canManage}>
+          <Pencil className="size-4" aria-hidden />
+        </ActIcon>
+        <ActIcon label={`Xoá ${row.fullName}`} danger onClick={() => setToDelete(row)} disabled={!canManage || row.role === 'admin'}>
+          <Trash2 className="size-4" aria-hidden />
+        </ActIcon>
+      </div>
+    </Card>
+  );
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-3">
         <form method="get" action="/tai-khoan" role="search" className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
-          <input
-            name="q"
-            type="search"
-            defaultValue={filters.q}
-            placeholder="Tìm theo tên hoặc email"
-            className="h-11 min-w-0 flex-1 rounded-[14px] border border-line bg-surface px-3.5 text-input text-ink outline-none placeholder:text-muted focus:border-primary-deep"
+          <TextInput name="q" type="search" defaultValue={filters.q} placeholder="Tìm theo tên hoặc email" className="flex-1" />
+          <SelectPanel
+            name="role"
+            label="Vai trò"
+            auto
+            defaultValue={filters.role}
+            options={[{ value: '', label: 'Mọi vai trò' }, ...ROLE_CODES.map((r) => ({ value: r, label: ROLE_LABELS[r] }))]}
           />
-          <select name="role" defaultValue={filters.role} className="h-11 rounded-[14px] border border-line bg-surface px-3 text-base font-semibold text-ink">
-            <option value="">Mọi vai trò</option>
-            {ROLE_CODES.map((r) => (
-              <option key={r} value={r}>{ROLE_LABELS[r]}</option>
-            ))}
-          </select>
-          <select name="status" defaultValue={filters.status} className="h-11 rounded-[14px] border border-line bg-surface px-3 text-base font-semibold text-ink">
-            <option value="">Mọi trạng thái</option>
-            <option value="active">Hoạt động</option>
-            <option value="locked">Tạm khoá</option>
-          </select>
-          <button type="submit" className="h-11 rounded-[14px] bg-stone px-4 text-base font-bold text-ink">Lọc</button>
+          <SelectPanel
+            name="status"
+            label="Trạng thái"
+            auto
+            defaultValue={filters.status}
+            options={[
+              { value: '', label: 'Mọi trạng thái' },
+              { value: 'active', label: 'Hoạt động' },
+              { value: 'locked', label: 'Tạm khoá' },
+            ]}
+          />
+          <Btn type="submit" variant="ghost">Lọc</Btn>
         </form>
         {canManage && (
-          <button type="button" onClick={() => setCreating(true)} className="inline-flex h-11 items-center gap-2 rounded-[14px] bg-primary px-4 text-base font-bold text-on-primary">
+          <Btn variant="primary" onClick={() => setCreating(true)}>
             <Plus className="size-4" aria-hidden />
             Mời thành viên
-          </button>
+          </Btn>
         )}
       </div>
 
       <p className="text-sm text-muted">{accounts.length} trên {total} tài khoản</p>
 
-      {accounts.length === 0 ? (
-        <div className="rounded-[24px] bg-surface shadow-card"><EmptyState title="Không có tài khoản phù hợp" hint="Thử đổi bộ lọc hoặc từ khoá." /></div>
-      ) : (
-        <>
-          {/* Máy tính: bảng, thao tác qua nút ⋯ */}
-          <div className="hidden overflow-hidden rounded-[24px] bg-surface shadow-card min-[768px]:block">
-            <div role="table" aria-label="Danh sách tài khoản">
-              <div role="row" className="grid grid-cols-[minmax(150px,2fr)_minmax(124px,1fr)_minmax(88px,1fr)_minmax(120px,1.1fr)_minmax(96px,1fr)_44px] gap-x-3 border-b border-line px-4 py-2.5 text-xs font-semibold text-muted">
-                <span role="columnheader">Thành viên</span>
-                <span role="columnheader">Vai trò</span>
-                <span role="columnheader">Liên kết</span>
-                <span role="columnheader">Đăng nhập gần nhất</span>
-                <span role="columnheader">Trạng thái</span>
-                <span role="columnheader" className="sr-only">Thao tác</span>
-              </div>
-              {accounts.map((row) => (
-                <div key={row.id} role="row" className="grid grid-cols-[minmax(150px,2fr)_minmax(124px,1fr)_minmax(88px,1fr)_minmax(120px,1.1fr)_minmax(96px,1fr)_44px] items-center gap-x-3 border-b border-line px-4 py-3.5 last:border-0 hover:bg-row-hover">
-                  <div role="cell" className="flex min-w-0 items-center gap-3">
-                    <Avatar name={row.fullName} seed={row.id} />
-                    <div className="min-w-0">
-                      <b className="block truncate text-base text-ink">{row.fullName}</b>
-                      <small className="block truncate text-xs text-muted">{row.email}</small>
-                    </div>
-                  </div>
-                  <div role="cell"><Pill tone={ROLE_TONE[row.role]}>{row.roleLabel}</Pill></div>
-                  <div role="cell" className="min-w-0 truncate text-sm text-ink-2">{row.teacherName ?? '—'}</div>
-                  <div role="cell" className="whitespace-nowrap text-sm tabular-nums text-ink-2">{row.lastLoginAt ? formatTime(row.lastLoginAt) : 'Chưa đăng nhập'}</div>
-                  <div role="cell"><Pill tone={row.status === 'active' ? 'mint' : 'blush'}>{row.status === 'active' ? 'Hoạt động' : 'Tạm khoá'}</Pill></div>
-                  <div role="cell" className="flex justify-end">
-                    <RowMenu label={`Thao tác với ${row.fullName}`} items={menuItems(row)} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+      <DataGrid
+        label="Danh sách tài khoản"
+        columns={ACCOUNT_COLUMNS}
+        rows={accounts}
+        rowKey={(r) => r.id}
+        cell={accountCell}
+        card={accountCard}
+        from="md"
+        empty={
+          <EmptyPanel title="Không có tài khoản phù hợp" hint="Thử đổi bộ lọc hoặc từ khoá." />
+        }
+      />
 
-          {/* Điện thoại: thẻ, thao tác bằng icon Sửa và Xoá */}
-          <div className="flex flex-col gap-3 min-[768px]:hidden">
-            {accounts.map((row) => (
-              <article key={row.id} className="flex flex-col gap-3 rounded-[20px] border border-line bg-surface p-3.5 shadow-card">
-                <div className="flex items-start gap-3">
-                  <Avatar name={row.fullName} seed={row.id} />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-start justify-between gap-2">
-                      <b className="min-w-0 truncate text-base text-ink">{row.fullName}</b>
-                      <Pill tone={row.status === 'active' ? 'mint' : 'blush'}>{row.status === 'active' ? 'Hoạt động' : 'Tạm khoá'}</Pill>
-                    </div>
-                    <small className="block truncate text-xs text-muted">{row.email}</small>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between gap-2">
-                  <Pill tone={ROLE_TONE[row.role]}>{row.roleLabel}</Pill>
-                  {row.teacherName && <small className="truncate text-xs text-muted">{row.teacherName}</small>}
-                </div>
-                <div className="flex justify-end gap-2">
-                  <ActIcon label={`Sửa ${row.fullName}`} onClick={() => openEdit(row)} disabled={!canManage}>
-                    <Pencil className="size-4" aria-hidden />
-                  </ActIcon>
-                  <ActIcon label={`Xoá ${row.fullName}`} danger onClick={() => setToDelete(row)} disabled={!canManage || row.role === 'admin'}>
-                    <Trash2 className="size-4" aria-hidden />
-                  </ActIcon>
-                </div>
-              </article>
-            ))}
-          </div>
-        </>
-      )}
-
-      {message && (
-        <div role="status" className="fixed inset-x-0 bottom-[calc(96px+var(--safe-b))] z-[95] mx-auto w-fit max-w-[calc(100%-32px)] rounded-full border border-line bg-surface px-4 py-2.5 text-center text-base font-semibold text-ink shadow-lift min-[768px]:bottom-6">
-          {message}
-        </div>
-      )}
+      <Toast message={message} />
 
       <Modal open={creating} title="Mời thành viên" subtitle="Các trường có dấu * là bắt buộc." onClose={() => setCreating(false)} labelledBy="account-create-title">
         <AccountForm mode="create" teachers={teachers} onDone={onDone} onCancel={() => setCreating(false)} />
@@ -297,20 +316,20 @@ function PermissionsTab({ matrix, canManage }: { matrix: RoleMatrix; canManage: 
   return (
     <div className="flex flex-col gap-3">
       <p className="text-sm text-muted">Đánh dấu những việc mỗi vai trò được làm. Quản trị luôn giữ quyền quản lý tài khoản và cài đặt.</p>
-      {notice && <div role="status" className="rounded-xl bg-blush px-4 py-2.5 text-base font-semibold text-blush-ink">{notice}</div>}
+      {notice && <Alert>{notice}</Alert>}
 
       {/* Máy tính: ma trận đầy đủ */}
-      <div className="hidden overflow-hidden rounded-[24px] bg-surface shadow-card min-[768px]:block">
+      <Panel padded={false} className="hidden overflow-hidden min-[768px]:block">
         <div role="table" aria-label="Ma trận quyền" className="grid grid-cols-[minmax(220px,2fr)_repeat(4,minmax(90px,1fr))]">
-          <div role="columnheader" className="border-b border-line px-4 py-3 text-xs font-bold uppercase tracking-wider text-muted">Quyền</div>
+          <div role="columnheader" className="border-b border-line px-4 py-3 text-xs font-normal text-muted">Quyền</div>
           {ROLE_CODES.map((r) => (
-            <div key={r} role="columnheader" className="border-b border-line px-2 py-3 text-center text-sm font-bold text-ink">{ROLE_LABELS[r]}</div>
+            <div key={r} role="columnheader" className="border-b border-line px-2 py-3 text-center text-sm font-normal text-ink">{ROLE_LABELS[r]}</div>
           ))}
           {PERMISSIONS.map((p) => (
             <PermissionCells key={p.key} label={p.label} permission={p.key} matrix={matrix} isLocked={isLocked} canManage={canManage} onToggle={toggle} pending={pending} />
           ))}
         </div>
-      </div>
+      </Panel>
 
       {/* Điện thoại: chọn vai trò rồi bật tắt từng quyền */}
       <PhonePermissions matrix={matrix} canManage={canManage} isLocked={isLocked} onToggle={toggle} pending={pending} />
@@ -363,14 +382,13 @@ function PhonePermissions({ matrix, canManage, isLocked, onToggle, pending }: {
   const [role, setRole] = useState<Role>('academic');
   return (
     <div className="flex flex-col gap-3 min-[768px]:hidden">
-      <div role="tablist" aria-label="Chọn vai trò" className="flex gap-1.5 overflow-x-auto">
+      <ChipGroup tabs label="Chọn vai trò" className="overflow-x-auto">
         {ROLE_CODES.map((r) => (
-          <button key={r} type="button" role="tab" aria-selected={r === role} onClick={() => setRole(r)}
-            className={`h-10 shrink-0 rounded-full px-3.5 text-sm font-bold ${r === role ? 'bg-primary text-on-primary' : 'bg-stone text-stone-ink'}`}>
+          <Chip key={r} tab selected={r === role} onClick={() => setRole(r)}>
             {ROLE_LABELS[r]}
-          </button>
+          </Chip>
         ))}
-      </div>
+      </ChipGroup>
       <ul className="flex flex-col gap-2">
         {PERMISSIONS.map((p) => {
           const granted = matrix[role][p.key];
@@ -383,7 +401,7 @@ function PhonePermissions({ matrix, canManage, isLocked, onToggle, pending }: {
                 aria-checked={granted}
                 disabled={locked || pending}
                 onClick={() => onToggle(role, p.key, !granted)}
-                className="flex min-h-12 w-full items-center justify-between gap-3 rounded-[14px] border border-line bg-surface px-3.5 py-2.5 text-left disabled:opacity-50"
+                className="flex min-h-12 w-full items-center justify-between gap-3 rounded-[var(--radius-ctl)] border border-line bg-surface px-3.5 py-2.5 text-left disabled:opacity-50"
               >
                 <span className="text-base font-semibold text-ink">{p.label}</span>
                 <span className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${granted ? 'bg-accent' : 'bg-stone'}`} aria-hidden>
@@ -412,39 +430,46 @@ const ACTION_LABEL: Record<string, string> = {
 };
 
 function AuditTab({ audit }: { audit: AuditRow[] }) {
-  if (audit.length === 0) return <div className="rounded-[24px] bg-surface shadow-card"><EmptyState title="Chưa có hoạt động nào" /></div>;
-  return (
-    <div className="overflow-hidden rounded-[24px] bg-surface shadow-card">
-      {/* Máy tính: bảng, nội dung được xuống dòng để không mất thông tin */}
-      <div role="table" aria-label="Nhật ký hoạt động" className="hidden min-[768px]:block">
-        <div role="row" className="grid grid-cols-[136px_112px_minmax(0,1fr)_120px] gap-x-3 border-b border-line px-4 py-2.5 text-xs font-semibold text-muted">
-          <span role="columnheader">Thời điểm</span>
-          <span role="columnheader">Thao tác</span>
-          <span role="columnheader">Nội dung</span>
-          <span role="columnheader">Người thực hiện</span>
-        </div>
-        {audit.map((a) => (
-          <div key={a.id} role="row" className="grid grid-cols-[136px_112px_minmax(0,1fr)_120px] items-center gap-x-3 border-b border-line px-4 py-3 last:border-0">
-            <div role="cell" className="whitespace-nowrap text-sm tabular-nums text-ink-2">{formatTime(a.createdAt)}</div>
-            <div role="cell"><Pill tone="stone">{ACTION_LABEL[a.action] ?? a.action}</Pill></div>
-            <div role="cell" className="min-w-0 text-base text-ink">{a.summary}</div>
-            <div role="cell" className="min-w-0 truncate text-sm text-ink-2">{a.accountName ?? 'Hệ thống'}</div>
-          </div>
-        ))}
+  const cell = (a: AuditRow, key: string) => {
+    switch (key) {
+      case 'time':
+        return <div className="whitespace-nowrap text-sm tabular-nums text-ink-2">{formatTime(a.createdAt)}</div>;
+      case 'action':
+        return <Pill tone="stone">{ACTION_LABEL[a.action] ?? a.action}</Pill>;
+      case 'summary':
+        return <div className="min-w-0 text-base text-ink">{a.summary}</div>;
+      case 'actor':
+        return <div className="min-w-0 truncate text-sm text-ink-2">{a.accountName ?? 'Hệ thống'}</div>;
+      default:
+        return null;
+    }
+  };
+
+  const card = (a: AuditRow) => (
+    <Card><div className="flex items-start gap-3">
+      <span className="mt-0.5 shrink-0"><Pill tone="stone">{ACTION_LABEL[a.action] ?? a.action}</Pill></span>
+      <div className="min-w-0 flex-1">
+        <p className="text-base text-ink">{a.summary}</p>
+        <small className="text-xs text-muted">{a.accountName ?? 'Hệ thống'} · {formatTime(a.createdAt)}</small>
       </div>
-      {/* Điện thoại: danh sách */}
-      <ul className="divide-y divide-line min-[768px]:hidden">
-        {audit.map((a) => (
-          <li key={a.id} className="flex items-start gap-3 px-4 py-3">
-            <span className="mt-0.5 shrink-0"><Pill tone="stone">{ACTION_LABEL[a.action] ?? a.action}</Pill></span>
-            <div className="min-w-0 flex-1">
-              <p className="text-base text-ink">{a.summary}</p>
-              <small className="text-xs text-muted">{a.accountName ?? 'Hệ thống'} · {formatTime(a.createdAt)}</small>
-            </div>
-          </li>
-        ))}
-      </ul>
-    </div>
+    </div></Card>
+  );
+
+  return (
+    <DataGrid
+      label="Nhật ký hoạt động"
+      columns={AUDIT_COLUMNS}
+      rows={audit}
+      rowKey={(a) => a.id}
+      cell={cell}
+      card={card}
+      from="md"
+      empty={
+        <Panel padded={false}>
+          <EmptyState title="Chưa có hoạt động nào" />
+        </Panel>
+      }
+    />
   );
 }
 

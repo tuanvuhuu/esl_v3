@@ -3,12 +3,14 @@
 import { and, eq, ne, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { db } from '@/db/client';
-import { attendance, classes, classSessions, students, teachers } from '@/db/schema';
+import { attendance, campuses, classes, classSessions, students, teachers } from '@/db/schema';
 import { ForbiddenError, requirePermission, writeAudit } from '@/lib/authz';
 import { getClassForm } from '@/lib/queries/classes';
+import { teacherTeachesCampus } from '@/lib/queries/teachers';
 import { describeSchedule, generateSessions, joinWeekdays } from '@/lib/schedule';
 import { classCoreSchema, classCreateSchema, WEEKDAY_CODES } from '@/lib/validation/class';
 import { fieldErrorsFrom, type ActionResult } from '@/lib/validation/student';
+import type { StaffRole } from '@/lib/validation/teacher';
 
 function errorResult(error: unknown): ActionResult {
   if (error instanceof ForbiddenError) return { ok: false, message: error.message };
@@ -26,21 +28,46 @@ function sortWeekdays(codes: readonly string[]): string {
   return joinWeekdays(WEEKDAY_CODES.filter((c) => codes.includes(c)));
 }
 
-async function nameTaken(name: string, exceptId: number | null): Promise<boolean> {
-  const where = exceptId ? and(eq(classes.name, name), ne(classes.id, exceptId)) : eq(classes.name, name);
+// Mã lớp duy nhất trong từng cơ sở: hai cơ sở có thể cùng có lớp "IELTS-K15"
+async function nameTaken(campusId: number, name: string, exceptId: number | null): Promise<boolean> {
+  const sameCampus = and(eq(classes.campusId, campusId), eq(classes.name, name));
+  const where = exceptId ? and(sameCampus, ne(classes.id, exceptId)) : sameCampus;
   const [row] = await db.select({ id: classes.id }).from(classes).where(where).limit(1);
   return !!row;
 }
 
-async function teacherExists(id: number): Promise<boolean> {
-  const [row] = await db.select({ id: teachers.id }).from(teachers).where(eq(teachers.id, id)).limit(1);
+// Người được chọn vào một vị trí của lớp: đúng vai trò và dạy ở cơ sở của lớp
+async function fitsSlot(id: number, role: StaffRole, campusId: number): Promise<boolean> {
+  const [row] = await db.select({ id: teachers.id }).from(teachers).where(and(eq(teachers.id, id), eq(teachers.staffRole, role))).limit(1);
+  return !!row && (await teacherTeachesCampus(id, campusId));
+}
+
+// Ba vị trí của lớp: giáo viên chủ nhiệm, trợ giảng, giáo viên nước ngoài. Trả về lỗi đầu tiên, hoặc null nếu đủ và đúng.
+async function slotErrors(v: { campusId: number; teacherId: number; assistantId: number; foreignTeacherId: number }): Promise<ActionResult | null> {
+  if (!(await fitsSlot(v.teacherId, 'teacher', v.campusId))) {
+    return { ok: false, message: 'Giáo viên chủ nhiệm phải là giáo viên dạy ở cơ sở này.', fieldErrors: { teacherId: 'Chọn giáo viên dạy ở cơ sở này' } };
+  }
+  if (!(await fitsSlot(v.assistantId, 'assistant', v.campusId))) {
+    return { ok: false, message: 'Trợ giảng phải là trợ giảng dạy ở cơ sở này.', fieldErrors: { assistantId: 'Chọn trợ giảng dạy ở cơ sở này' } };
+  }
+  if (!(await fitsSlot(v.foreignTeacherId, 'foreign', v.campusId))) {
+    return { ok: false, message: 'Giáo viên nước ngoài phải dạy ở cơ sở này.', fieldErrors: { foreignTeacherId: 'Chọn giáo viên nước ngoài dạy ở cơ sở này' } };
+  }
+  return null;
+}
+
+async function campusExists(id: number): Promise<boolean> {
+  const [row] = await db.select({ id: campuses.id }).from(campuses).where(eq(campuses.id, id)).limit(1);
   return !!row;
 }
 
 export type ClassCoreValues = {
   name: string;
   course: string;
-  teacherId: string;
+  campusId: string;
+  teacherId: string; // giáo viên chủ nhiệm
+  assistantId: string;
+  foreignTeacherId: string;
   room: string;
   fee: number;
   capacity: number;
@@ -55,8 +82,12 @@ export async function createClassAction(_prev: ActionResult, formData: FormData)
       return { ok: false, message: 'Vui lòng kiểm tra lại các ô được đánh dấu.', fieldErrors: fieldErrorsFrom(parsed.error) };
     }
     const v = parsed.data;
-    if (await nameTaken(v.name, null)) return { ok: false, message: 'Mã lớp này đã có.', fieldErrors: { name: 'Mã lớp này đã có' } };
-    if (!(await teacherExists(v.teacherId))) return { ok: false, message: 'Giáo viên không tồn tại.', fieldErrors: { teacherId: 'Giáo viên không tồn tại' } };
+    if (!(await campusExists(v.campusId))) return { ok: false, message: 'Cơ sở không tồn tại.', fieldErrors: { campusId: 'Cơ sở không tồn tại' } };
+    if (await nameTaken(v.campusId, v.name, null)) {
+      return { ok: false, message: 'Mã lớp này đã có ở cơ sở này.', fieldErrors: { name: 'Mã lớp này đã có ở cơ sở này' } };
+    }
+    const slotError = await slotErrors(v);
+    if (slotError) return slotError;
 
     const weekdays = sortWeekdays(v.weekdays);
     let generated;
@@ -70,9 +101,12 @@ export async function createClassAction(_prev: ActionResult, formData: FormData)
       const [created] = await tx
         .insert(classes)
         .values({
+          campusId: v.campusId,
           name: v.name,
           course: v.course,
           teacherId: v.teacherId,
+          assistantId: v.assistantId,
+          foreignTeacherId: v.foreignTeacherId,
           schedule: describeSchedule(weekdays, v.startTime, v.endTime),
           weekdays,
           startTime: v.startTime,
@@ -116,13 +150,28 @@ export async function updateClassAction(id: number, _prev: ActionResult, formDat
     const v = parsed.data;
     const current = await getClassForm(id);
     if (!current) return { ok: false, message: 'Không tìm thấy lớp này. Có thể đã bị xoá.' };
-    if (await nameTaken(v.name, id)) return { ok: false, message: 'Mã lớp này đã có.', fieldErrors: { name: 'Mã lớp này đã có' } };
-    if (!(await teacherExists(v.teacherId))) return { ok: false, message: 'Giáo viên không tồn tại.', fieldErrors: { teacherId: 'Giáo viên không tồn tại' } };
+    if (!(await campusExists(v.campusId))) return { ok: false, message: 'Cơ sở không tồn tại.', fieldErrors: { campusId: 'Cơ sở không tồn tại' } };
+    if (await nameTaken(v.campusId, v.name, id)) {
+      return { ok: false, message: 'Mã lớp này đã có ở cơ sở này.', fieldErrors: { name: 'Mã lớp này đã có ở cơ sở này' } };
+    }
+    const slotError = await slotErrors(v);
+    if (slotError) return slotError;
 
     await db.transaction(async (tx) => {
       await tx
         .update(classes)
-        .set({ name: v.name, course: v.course, teacherId: v.teacherId, room: v.room, fee: v.fee, capacity: v.capacity, updatedAt: new Date() })
+        .set({
+          campusId: v.campusId,
+          name: v.name,
+          course: v.course,
+          teacherId: v.teacherId,
+          assistantId: v.assistantId,
+          foreignTeacherId: v.foreignTeacherId,
+          room: v.room,
+          fee: v.fee,
+          capacity: v.capacity,
+          updatedAt: new Date(),
+        })
         .where(eq(classes.id, id));
       if (v.teacherId !== current.teacherId || v.room !== current.room) {
         await tx
@@ -151,7 +200,17 @@ export async function loadClassForm(id: number): Promise<{ ok: true; values: Cla
     if (!row) return { ok: false, message: 'Không tìm thấy lớp này. Có thể đã bị xoá.' };
     return {
       ok: true,
-      values: { name: row.name, course: row.course, teacherId: String(row.teacherId), room: row.room, fee: row.fee, capacity: row.capacity },
+      values: {
+        name: row.name,
+        course: row.course,
+        campusId: String(row.campusId),
+        teacherId: String(row.teacherId),
+        assistantId: row.assistantId ? String(row.assistantId) : '',
+        foreignTeacherId: row.foreignTeacherId ? String(row.foreignTeacherId) : '',
+        room: row.room,
+        fee: row.fee,
+        capacity: row.capacity,
+      },
     };
   } catch (error) {
     if (error instanceof ForbiddenError) return { ok: false, message: error.message };

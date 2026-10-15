@@ -1,13 +1,21 @@
 'use server';
 
-import { and, eq, ne } from 'drizzle-orm';
+import { and, eq, inArray, ne } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { db } from '@/db/client';
 import { parents, studentParents, students } from '@/db/schema';
 import { ForbiddenError, requirePermission, writeAudit } from '@/lib/authz';
 import { getParent } from '@/lib/queries/parents';
 import { PARENT_RELATION_LABELS } from '@/lib/parent-labels';
-import { parentFormSchema, parentLinkSchema } from '@/lib/validation/parent';
+import {
+  PARENT_EDITABLE_FIELDS,
+  parentAssignSchema,
+  parentFieldValue,
+  parentFormSchema,
+  parentLinkSchema,
+  parentRelationSchema,
+  type ParentEditableField,
+} from '@/lib/validation/parent';
 import { fieldErrorsFrom, type ActionResult } from '@/lib/validation/student';
 
 function errorResult(error: unknown): ActionResult {
@@ -179,6 +187,129 @@ export async function unlinkParentAction(studentId: number, parentId: number): P
     await writeAudit({ action: 'unlink', entity: 'student', entityId: studentId, summary: `Gỡ liên kết ${parent?.fullName ?? parentId} khỏi học sinh` });
     revalidateParentPages(studentId);
     return { ok: true, message: 'Đã gỡ liên kết. Học sinh và phụ huynh vẫn được giữ lại.' };
+  } catch (error) {
+    return errorResult(error);
+  }
+}
+
+// Gán một phụ huynh cho nhiều học sinh, từ màn Phụ huynh. Học sinh đã liên kết hoặc không còn tồn tại thì bỏ qua và báo lại.
+// Chọn liên hệ chính thì người này thay liên hệ chính cũ của từng học sinh.
+export async function assignStudentsAction(parentId: number, _prev: ActionResult, formData: FormData): Promise<ActionResult> {
+  try {
+    await requirePermission('parents.manage');
+    const parsed = parentAssignSchema.safeParse({
+      studentIds: formData.getAll('studentIds'),
+      relation: formData.get('relation'),
+      isPrimary: formData.get('isPrimary') === 'on',
+    });
+    if (!parsed.success) {
+      return { ok: false, message: 'Vui lòng kiểm tra lại các ô được đánh dấu.', fieldErrors: fieldErrorsFrom(parsed.error) };
+    }
+    const v = parsed.data;
+    const parent = await getParent(parentId);
+    if (!parent) return { ok: false, message: 'Không tìm thấy phụ huynh này. Có thể đã bị xoá.' };
+
+    const requested = [...new Set(v.studentIds)];
+    const alreadyLinked = new Set(
+      (await db.select({ studentId: studentParents.studentId }).from(studentParents).where(eq(studentParents.parentId, parentId))).map((r) => r.studentId),
+    );
+    const toLink = requested.filter((id) => !alreadyLinked.has(id));
+    const found = toLink.length
+      ? await db.select({ id: students.id, fullName: students.fullName }).from(students).where(inArray(students.id, toLink))
+      : [];
+    if (found.length === 0) {
+      return {
+        ok: false,
+        message: 'Không có học sinh nào để gán: các học sinh đã chọn đã liên kết hoặc không còn tồn tại.',
+        fieldErrors: { studentIds: 'Đã liên kết hoặc không còn tồn tại' },
+      };
+    }
+
+    await db.transaction(async (tx) => {
+      for (const s of found) {
+        if (v.isPrimary) await tx.update(studentParents).set({ isPrimary: false, updatedAt: new Date() }).where(eq(studentParents.studentId, s.id));
+        await tx.insert(studentParents).values({ studentId: s.id, parentId, relation: v.relation, isPrimary: v.isPrimary });
+      }
+    });
+    for (const s of found) await ensurePrimary(s.id);
+    await writeAudit({
+      action: 'link',
+      entity: 'parent',
+      entityId: parentId,
+      summary: `Gán ${parent.fullName} (${PARENT_RELATION_LABELS[v.relation]}) cho ${found.length} học sinh`,
+    });
+    revalidateParentPages();
+    const skipped = requested.length - found.length;
+    return {
+      ok: true,
+      message:
+        skipped > 0
+          ? `Đã gán ${found.length} học sinh cho ${parent.fullName}. Bỏ qua ${skipped} học sinh đã liên kết hoặc không còn tồn tại.`
+          : `Đã gán ${found.length} học sinh cho ${parent.fullName}`,
+    };
+  } catch (error) {
+    return errorResult(error);
+  }
+}
+
+const FIELD_LABEL: Record<ParentEditableField, string> = {
+  fullName: 'tên',
+  phone: 'số điện thoại',
+  email: 'email',
+  note: 'ghi chú',
+};
+
+// Sửa một ô của phụ huynh ngay trên bảng (tên, số điện thoại, email, ghi chú). Kiểm tra giống form đầy đủ.
+export async function updateParentFieldAction(id: number, field: ParentEditableField, value: string): Promise<ActionResult> {
+  try {
+    await requirePermission('parents.manage');
+    if (!PARENT_EDITABLE_FIELDS.includes(field)) return { ok: false, message: 'Ô này không sửa được.' };
+    const checked = parentFieldValue(field, value);
+    if (!checked.ok) return { ok: false, message: checked.message, fieldErrors: { [field]: checked.message } };
+    const row = await getParent(id);
+    if (!row) return { ok: false, message: 'Không tìm thấy phụ huynh này. Có thể đã bị xoá.' };
+    if (field === 'phone' && (await phoneTakenBy(checked.value, id))) {
+      return { ok: false, message: 'Số điện thoại này đã có phụ huynh khác.', fieldErrors: { phone: 'Số điện thoại này đã có phụ huynh khác' } };
+    }
+    const patch =
+      field === 'fullName'
+        ? { fullName: checked.value }
+        : field === 'phone'
+          ? { phone: checked.value }
+          : field === 'email'
+            ? { email: checked.value }
+            : { note: checked.value };
+    await db.update(parents).set({ ...patch, updatedAt: new Date() }).where(eq(parents.id, id));
+    await writeAudit({ action: 'update', entity: 'parent', entityId: id, summary: `Sửa ${FIELD_LABEL[field]} của ${row.fullName}` });
+    revalidateParentPages();
+    return { ok: true, message: 'Đã lưu' };
+  } catch (error) {
+    return errorResult(error);
+  }
+}
+
+// Đổi quan hệ của một học sinh với phụ huynh, ngay trên bảng
+export async function setLinkRelationAction(studentId: number, parentId: number, relation: string): Promise<ActionResult> {
+  try {
+    await requirePermission('parents.manage');
+    const parsed = parentRelationSchema.safeParse(relation);
+    if (!parsed.success) return { ok: false, message: 'Quan hệ không hợp lệ.' };
+    const [link] = await db
+      .select({ id: studentParents.id })
+      .from(studentParents)
+      .where(and(eq(studentParents.studentId, studentId), eq(studentParents.parentId, parentId)))
+      .limit(1);
+    if (!link) return { ok: false, message: 'Liên kết này không còn tồn tại.' };
+    await db.update(studentParents).set({ relation: parsed.data, updatedAt: new Date() }).where(eq(studentParents.id, link.id));
+    const parent = await getParent(parentId);
+    await writeAudit({
+      action: 'update',
+      entity: 'student',
+      entityId: studentId,
+      summary: `Đổi quan hệ của ${parent?.fullName ?? parentId} thành ${PARENT_RELATION_LABELS[parsed.data]}`,
+    });
+    revalidateParentPages(studentId);
+    return { ok: true, message: 'Đã đổi quan hệ' };
   } catch (error) {
     return errorResult(error);
   }

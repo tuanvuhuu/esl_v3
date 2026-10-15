@@ -45,3 +45,6 @@ next-env.d.ts
 /playwright-report/
 /playwright/.cache/
 /.playwright-mcp/
+
+# Tệp tải lên (đề bài có âm thanh, bài nộp của học sinh): dữ liệu thật, không đưa vào kho mã
+/storage/

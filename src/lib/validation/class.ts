@@ -15,8 +15,9 @@ export const WEEKDAY_CODE_LABELS: Record<(typeof WEEKDAY_CODES)[number], string>
 
 const TIME = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
-// Ô chung: có thể sửa sau khi tạo lớp
+// Ô chung: có thể sửa sau khi tạo lớp. Mỗi lớp thuộc đúng một cơ sở.
 export const classCoreSchema = z.object({
+  campusId: z.coerce.number({ error: 'Vui lòng chọn cơ sở' }).int('Cơ sở không hợp lệ').positive('Vui lòng chọn cơ sở'),
   name: z
     .string({ error: 'Vui lòng nhập mã lớp' })
     .trim()
@@ -27,7 +28,13 @@ export const classCoreSchema = z.object({
     .trim()
     .min(2, 'Vui lòng nhập tên khoá học')
     .max(120, 'Tên khoá học tối đa 120 ký tự'),
-  teacherId: z.coerce.number({ error: 'Vui lòng chọn giáo viên' }).int('Giáo viên không hợp lệ').positive('Vui lòng chọn giáo viên'),
+  // Lớp cần đủ ba vị trí: giáo viên chủ nhiệm (vai trò giáo viên), trợ giảng, giáo viên nước ngoài
+  teacherId: z.coerce.number({ error: 'Vui lòng chọn giáo viên chủ nhiệm' }).int('Giáo viên không hợp lệ').positive('Vui lòng chọn giáo viên chủ nhiệm'),
+  assistantId: z.coerce.number({ error: 'Vui lòng chọn trợ giảng' }).int('Trợ giảng không hợp lệ').positive('Vui lòng chọn trợ giảng'),
+  foreignTeacherId: z.coerce
+    .number({ error: 'Vui lòng chọn giáo viên nước ngoài' })
+    .int('Giáo viên không hợp lệ')
+    .positive('Vui lòng chọn giáo viên nước ngoài'),
   room: z.string().trim().max(40, 'Phòng tối đa 40 ký tự').default(''),
   fee: z.coerce
     .number({ error: 'Học phí phải là số' })

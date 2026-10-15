@@ -1,5 +1,5 @@
 // Truy vấn tài khoản, ma trận quyền và nhật ký hoạt động. Chỉ chạy trên server.
-import { asc, desc, eq } from 'drizzle-orm';
+import { asc, desc, eq, ne } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { accounts, auditLogs, rolePermissions, teachers } from '@/db/schema';
 import { PERMISSIONS, ROLE_CODES, ROLE_LABELS, type Permission, type Role } from '@/lib/permissions';
@@ -30,14 +30,15 @@ export async function listAccounts(): Promise<AccountRow[]> {
     })
     .from(accounts)
     .leftJoin(teachers, eq(teachers.id, accounts.teacherId))
+    .where(ne(accounts.role, 'student'))
     .orderBy(asc(accounts.id));
 
   return rows.map((r) => ({
     id: r.id,
     fullName: r.fullName,
     email: r.email,
-    role: r.role,
-    roleLabel: ROLE_LABELS[r.role],
+    role: r.role as Role,
+    roleLabel: ROLE_LABELS[r.role as Role],
     status: r.status,
     teacherId: r.teacherId,
     teacherName: r.teacherName,
@@ -63,6 +64,8 @@ export async function getRoleMatrix(): Promise<RoleMatrix> {
     ROLE_CODES.map((role) => [role, Object.fromEntries(PERMISSIONS.map((p) => [p.key, false])) as Record<Permission, boolean>]),
   ) as RoleMatrix;
   for (const row of rows) {
+    // Vai trò học sinh không có ma trận quyền; dòng của vai trò đó (nếu có) bị bỏ qua
+    if (row.role === 'student') continue;
     if (row.permission in matrix[row.role]) matrix[row.role][row.permission as Permission] = row.granted;
   }
   return matrix;

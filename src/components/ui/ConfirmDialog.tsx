@@ -1,9 +1,10 @@
 'use client';
 
+// Hộp xác nhận trước khi xoá. Nút Huỷ được focus mặc định. Khi bị chặn, chỉ có nút Đã hiểu.
 import { useEffect, useRef, type ReactNode } from 'react';
 import { Trash2, Info } from 'lucide-react';
+import { Btn } from './Btn';
 
-// Hộp xác nhận trước khi xoá. Nút Huỷ được focus mặc định. Khi bị chặn, chỉ có nút Đã hiểu.
 export function ConfirmDialog({ open, title, text, confirmLabel, blocked = false, pending = false, onConfirm, onCancel }: {
   open: boolean;
   title: string;
@@ -30,27 +31,27 @@ export function ConfirmDialog({ open, title, text, confirmLabel, blocked = false
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-scrim p-4" onMouseDown={(e) => { if (e.target === e.currentTarget && !pending) onCancel(); }}>
-      <div role="alertdialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-text" className="flex w-[min(380px,100%)] flex-col items-center gap-2 rounded-[24px] bg-surface px-6 pb-5 pt-7 text-center shadow-lift">
-        <span className={`mb-1 grid size-13 place-items-center rounded-[18px] ${blocked ? 'bg-primary-soft text-ink' : 'bg-blush text-blush-ink'}`}>
-          {blocked ? <Info className="size-6" aria-hidden /> : <Trash2 className="size-6" aria-hidden />}
+      <div role="alertdialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-text" className="flex w-[min(380px,100%)] flex-col items-center gap-2 rounded-[var(--radius-panel)] bg-surface px-6 pb-5 pt-7 text-center shadow-lift">
+        <span className={`mb-1 grid size-12 place-items-center rounded-[var(--radius-ctl)] ${blocked ? 'bg-primary-soft text-ink' : 'bg-blush text-blush-ink'}`}>
+          {blocked ? <Info className="size-5" aria-hidden /> : <Trash2 className="size-5" aria-hidden />}
         </span>
-        <h2 id="confirm-title" className="text-xl font-extrabold text-ink">{title}</h2>
-        <p id="confirm-text" className="text-base leading-relaxed text-ink-2">{text}</p>
+        <h2 id="confirm-title" className="text-lg font-extrabold text-ink">{title}</h2>
+        <p id="confirm-text" className="text-sm leading-relaxed text-ink-2">{text}</p>
         <div className="mt-3 flex w-full gap-2.5">
           {!blocked && (
-            <button ref={cancelRef} type="button" onClick={onCancel} disabled={pending} className="flex h-11 flex-1 items-center justify-center rounded-xl border border-line bg-surface text-base font-bold text-ink disabled:opacity-50">
+            <Btn ref={cancelRef} block onClick={onCancel} disabled={pending}>
               Huỷ
-            </button>
+            </Btn>
           )}
-          <button
+          <Btn
             ref={okRef}
-            type="button"
+            block
+            variant={blocked ? 'primary' : 'danger'}
             onClick={blocked ? onCancel : onConfirm}
             disabled={pending}
-            className={`flex h-11 flex-1 items-center justify-center rounded-xl text-base font-bold disabled:opacity-60 ${blocked ? 'bg-primary text-on-primary' : 'bg-blush text-blush-ink'}`}
           >
             {blocked ? 'Đã hiểu' : pending ? 'Đang xoá…' : confirmLabel}
-          </button>
+          </Btn>
         </div>
       </div>
     </div>

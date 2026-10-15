@@ -4,7 +4,7 @@ import { and, eq, inArray, max, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { db } from '@/db/client';
-import { assignmentSubmissions, assignments, classes, students } from '@/db/schema';
+import { assignmentItems, assignmentSubmissions, assignments, classes, lessonCampuses, students } from '@/db/schema';
 import { ForbiddenError, requirePermission, writeAudit } from '@/lib/authz';
 import { getAssignmentBase } from '@/lib/queries/assignments';
 import { assignmentFormSchema, gradingRowSchema, SUBMISSION_LABELS } from '@/lib/validation/assignment';
@@ -36,7 +36,22 @@ export type AssignmentFormValues = {
   dueDate: string;
   dueTime: string;
   maxScore: number;
+  lessonId: string; // '' là không gắn bài giảng
 };
+
+// Bài giảng gắn với bài tập phải dùng ở cơ sở của lớp. Trả về mã bài giảng hoặc null khi không gắn.
+async function resolveLesson(raw: string, campusId: number): Promise<{ ok: true; lessonId: number | null } | { ok: false; message: string; field: string }> {
+  if (raw === '') return { ok: true, lessonId: null };
+  const lessonId = Number(raw);
+  if (!Number.isInteger(lessonId) || lessonId <= 0) return { ok: false, message: 'Bài giảng không hợp lệ.', field: 'lessonId' };
+  const [row] = await db
+    .select({ lessonId: lessonCampuses.lessonId })
+    .from(lessonCampuses)
+    .where(and(eq(lessonCampuses.lessonId, lessonId), eq(lessonCampuses.campusId, campusId)))
+    .limit(1);
+  if (!row) return { ok: false, message: 'Bài giảng này không dùng ở cơ sở của lớp.', field: 'lessonId' };
+  return { ok: true, lessonId };
+}
 
 export async function createAssignmentAction(_prev: ActionResult, formData: FormData): Promise<ActionResult> {
   try {
@@ -46,12 +61,14 @@ export async function createAssignmentAction(_prev: ActionResult, formData: Form
       return { ok: false, message: 'Vui lòng kiểm tra lại các ô được đánh dấu.', fieldErrors: fieldErrorsFrom(parsed.error) };
     }
     const v = parsed.data;
-    const [cls] = await db.select({ id: classes.id, name: classes.name }).from(classes).where(eq(classes.id, v.classId)).limit(1);
+    const [cls] = await db.select({ id: classes.id, name: classes.name, campusId: classes.campusId }).from(classes).where(eq(classes.id, v.classId)).limit(1);
     if (!cls) return { ok: false, message: 'Lớp này không tồn tại.', fieldErrors: { classId: 'Lớp này không tồn tại' } };
+    const lesson = await resolveLesson(v.lessonId, cls.campusId);
+    if (!lesson.ok) return { ok: false, message: lesson.message, fieldErrors: { [lesson.field]: lesson.message } };
 
     const [created] = await db
       .insert(assignments)
-      .values({ classId: v.classId, title: v.title, description: v.description, dueAt: dueAtFrom(v.dueDate, v.dueTime), maxScore: v.maxScore })
+      .values({ classId: v.classId, title: v.title, description: v.description, dueAt: dueAtFrom(v.dueDate, v.dueTime), maxScore: v.maxScore, lessonId: lesson.lessonId })
       .returning({ id: assignments.id });
     await writeAudit({ action: 'create', entity: 'assignment', entityId: created.id, summary: `Tạo bài tập ${v.title} cho lớp ${cls.name}` });
     revalidateAssignments(v.classId);
@@ -76,14 +93,24 @@ export async function updateAssignmentAction(id: number, _prev: ActionResult, fo
       .select({ score: max(assignmentSubmissions.score) })
       .from(assignmentSubmissions)
       .where(eq(assignmentSubmissions.assignmentId, id));
+    // Bài có câu hỏi: điểm tối đa phải bằng tổng điểm các câu
+    const itemRows = await db.select({ points: assignmentItems.points }).from(assignmentItems).where(eq(assignmentItems.assignmentId, id));
+    if (itemRows.length > 0) {
+      const itemTotal = itemRows.reduce((sum, r) => sum + r.points, 0);
+      if (v.maxScore !== itemTotal) {
+        return { ok: false, message: `Bài có câu hỏi nên điểm tối đa là tổng điểm các câu (${itemTotal}).`, fieldErrors: { maxScore: `Phải bằng ${itemTotal}` } };
+      }
+    }
     const topScore = Number(top?.score ?? 0);
     if (v.maxScore < topScore) {
       return { ok: false, message: `Điểm tối đa không được thấp hơn điểm đã chấm (${topScore}).`, fieldErrors: { maxScore: `Tối thiểu ${topScore}` } };
     }
+    const lesson = await resolveLesson(v.lessonId, base.campusId);
+    if (!lesson.ok) return { ok: false, message: lesson.message, fieldErrors: { [lesson.field]: lesson.message } };
 
     await db
       .update(assignments)
-      .set({ title: v.title, description: v.description, dueAt: dueAtFrom(v.dueDate, v.dueTime), maxScore: v.maxScore, updatedAt: new Date() })
+      .set({ title: v.title, description: v.description, dueAt: dueAtFrom(v.dueDate, v.dueTime), maxScore: v.maxScore, lessonId: lesson.lessonId, updatedAt: new Date() })
       .where(eq(assignments.id, id));
     await writeAudit({ action: 'update', entity: 'assignment', entityId: id, summary: `Sửa bài tập ${v.title}` });
     revalidateAssignments(base.classId, id);
@@ -108,6 +135,7 @@ export async function loadAssignmentForm(id: number): Promise<{ ok: true; values
         dueDate: due.slice(0, 10),
         dueTime: due.slice(11, 16),
         maxScore: base.maxScore,
+        lessonId: base.lessonId === null ? '' : String(base.lessonId),
       },
     };
   } catch (error) {
@@ -143,6 +171,8 @@ export async function saveSubmissionsAction(
     await requirePermission('assignments.manage');
     const base = await getAssignmentBase(assignmentId);
     if (!base) return { ok: false, message: 'Không tìm thấy bài tập này. Có thể đã bị xoá.' };
+    const withItems = await db.select({ id: assignmentItems.id }).from(assignmentItems).where(eq(assignmentItems.assignmentId, assignmentId)).limit(1);
+    if (withItems.length > 0) return { ok: false, message: 'Bài này có câu hỏi, nên chấm từng câu trong bảng chi tiết.' };
     const parsed = batchSchema.safeParse(rows);
     if (!parsed.success) return { ok: false, message: parsed.error.issues[0]?.message ?? 'Dữ liệu chấm điểm không hợp lệ' };
 

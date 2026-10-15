@@ -1,4 +1,4 @@
-import Link from 'next/link';
+﻿import Link from 'next/link';
 import { connection } from 'next/server';
 import { Suspense, type ReactNode } from 'react';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -8,10 +8,12 @@ import { addDaysKey, dateKeyLabel, todayKeyVN, vnDateTimeLabel, vnDayBounds, wee
 import { hasPermission } from '@/lib/permissions';
 import { listOverdueAssignments } from '@/lib/queries/assignments';
 import { listClasses } from '@/lib/queries/classes';
+import { getCampusContext } from '@/lib/campus-context';
 import { getDashboardStats, listFrequentAbsentees } from '@/lib/queries/dashboard';
 import { listSessionsBetween } from '@/lib/queries/sessions';
 import { listInvoices } from '@/lib/queries/tuition';
 import { getCurrentPermissions } from '@/lib/session';
+import { Panel } from '@/components/ui/surfaces';
 
 // Tổng quan: số liệu đang học, chuyên cần, công nợ, và những việc cần chú ý hôm nay. Tất cả từ DB.
 export default function DashboardPage() {
@@ -27,12 +29,12 @@ function DashboardSkeleton() {
     <section aria-busy="true" aria-label="Đang tải tổng quan" className="flex flex-col gap-4">
       <div className="h-9 w-56 animate-pulse rounded-xl bg-stone" />
       <div className="grid grid-cols-2 gap-3 min-[768px]:grid-cols-4">
-        <div className="h-24 animate-pulse rounded-[20px] bg-stone" />
-        <div className="h-24 animate-pulse rounded-[20px] bg-stone" />
-        <div className="h-24 animate-pulse rounded-[20px] bg-stone" />
-        <div className="h-24 animate-pulse rounded-[20px] bg-stone" />
+        <div className="h-24 animate-pulse rounded-[var(--radius-panel)] bg-stone" />
+        <div className="h-24 animate-pulse rounded-[var(--radius-panel)] bg-stone" />
+        <div className="h-24 animate-pulse rounded-[var(--radius-panel)] bg-stone" />
+        <div className="h-24 animate-pulse rounded-[var(--radius-panel)] bg-stone" />
       </div>
-      <div className="h-[260px] animate-pulse rounded-[24px] bg-stone" />
+      <div className="h-[260px] animate-pulse rounded-[var(--radius-panel)] bg-stone" />
     </section>
   );
 }
@@ -45,20 +47,23 @@ async function DashboardData() {
   const canTuition = hasPermission(granted, 'tuition.manage');
   const canAssignments = hasPermission(granted, 'assignments.manage') || canStudents;
 
+  // Số liệu theo cơ sở đang xem (scope null: tất cả cơ sở)
+  const { scope } = await getCampusContext();
   const dayStart = vnDayBounds(today).start;
   const dayEnd = vnDayBounds(addDaysKey(today, 1)).start;
   const [stats, sessionsToday, classes, overdueInvoices, absentees, overdueAssignments] = await Promise.all([
-    getDashboardStats(today),
-    canStudents ? listSessionsBetween(dayStart, dayEnd) : Promise.resolve([]),
-    canStudents ? listClasses() : Promise.resolve([]),
-    canTuition ? listInvoices(today, '', 'overdue') : Promise.resolve(null),
-    canStudents ? listFrequentAbsentees(today) : Promise.resolve([]),
-    canAssignments ? listOverdueAssignments() : Promise.resolve([]),
+    getDashboardStats(today, scope),
+    canStudents ? listSessionsBetween(dayStart, dayEnd, scope) : Promise.resolve([]),
+    canStudents ? listClasses(scope) : Promise.resolve([]),
+    canTuition ? listInvoices(today, '', 'overdue', scope) : Promise.resolve(null),
+    canStudents ? listFrequentAbsentees(today, scope) : Promise.resolve([]),
+    canAssignments ? listOverdueAssignments(scope) : Promise.resolve([]),
   ]);
 
   const debtTotal = overdueInvoices?.totalDebt ?? 0;
   const topDebts = overdueInvoices ? [...overdueInvoices.rows].sort((a, b) => b.debt - a.debt).slice(0, 5) : [];
-  const attentionCount = topDebts.length + absentees.length + overdueAssignments.length;
+  // Đếm đủ mọi học sinh nợ quá hạn, không chỉ năm người hiện trong danh sách. Khớp với số trên chuông thông báo.
+  const attentionCount = (overdueInvoices?.counts.overdue ?? 0) + absentees.length + overdueAssignments.length;
   const weekday = weekdayLabel(weekdayOfKey(today));
 
   return (
@@ -77,7 +82,8 @@ async function DashboardData() {
       </div>
 
       {canStudents && (
-        <div className="grid gap-5 min-[1200px]:grid-cols-2">
+        <div className="grid grid-cols-1 gap-5 min-[1200px]:grid-cols-2">
+          {/* grid-cols-1 = minmax(0, 1fr): cột không bị đẩy rộng theo chữ không xuống dòng (truncate) */}
           {/* Cần chú ý */}
           <Panel title={`Cần chú ý (${attentionCount})`}>
             {attentionCount === 0 ? (
@@ -93,7 +99,7 @@ async function DashboardData() {
                 )}
                 {absentees.length > 0 && (
                   <Group title="Vắng từ hai buổi trở lên trong 7 ngày">
-                    {absentees.map((a) => (
+                    {absentees.slice(0, 8).map((a) => (
                       <Item key={a.studentId} href={`/hoc-sinh/${a.studentId}`} title={a.fullName} meta={a.className} right={<Pill tone="blush">{a.absences} buổi vắng</Pill>} />
                     ))}
                   </Group>
@@ -152,9 +158,9 @@ async function DashboardData() {
       )}
 
       {!canStudents && (
-        <div className="rounded-[24px] bg-surface shadow-card">
+        <Panel padded={false}>
           <EmptyState title="Chào mừng đến ESL Center" hint="Chọn một mục ở thanh bên hoặc tab bên dưới để bắt đầu." />
-        </div>
+        </Panel>
       )}
     </section>
   );
@@ -162,30 +168,19 @@ async function DashboardData() {
 
 function Stat({ label, value, hint, tone }: { label: string; value: string; hint?: string; tone?: string }) {
   return (
-    <div className="min-w-0 rounded-[20px] bg-surface p-4 shadow-card min-[768px]:p-5">
-      <small className="block truncate text-xs font-semibold text-muted min-[768px]:text-sm">{label}</small>
+    <div className="min-w-0 rounded-[var(--radius-panel)] bg-surface p-4 shadow-card min-[768px]:p-5">
+      <small className="block truncate text-xs font-normal text-muted min-[768px]:text-sm">{label}</small>
       <b className={`mt-1 block truncate text-xl font-extrabold min-[768px]:text-2xl ${tone ?? 'text-ink'}`}>{value}</b>
       {hint && <small className="mt-0.5 block text-xs text-muted">{hint}</small>}
     </div>
   );
 }
 
-function Panel({ title, action, children }: { title: string; action?: ReactNode; children: ReactNode }) {
-  return (
-    <section className="rounded-[24px] bg-surface p-5 shadow-card max-[767px]:p-4">
-      <header className="mb-3 flex items-center justify-between gap-3">
-        <h2 className="text-lg font-extrabold text-ink">{title}</h2>
-        {action}
-      </header>
-      {children}
-    </section>
-  );
-}
 
 function Group({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div>
-      <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-muted">{title}</h3>
+      <h3 className="mb-2 text-xs font-normal uppercase tracking-wider text-muted">{title}</h3>
       <ul className="flex flex-col divide-y divide-line">{children}</ul>
     </div>
   );

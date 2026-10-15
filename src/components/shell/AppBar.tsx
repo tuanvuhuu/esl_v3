@@ -1,9 +1,12 @@
 'use client';
 
-import { Bell, Menu, Search } from 'lucide-react';
+import { Menu, Search } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
+import type { CampusOption, CampusScope } from '@/lib/campus';
+import { CampusPicker } from './CampusPicker';
+import { NotificationBell } from './NotificationBell';
 import { useCrumbs } from './PageCrumbs';
 import { ThemeMenu } from './ThemeMenu';
 import { UserMenu } from './UserMenu';
@@ -13,15 +16,27 @@ type Props = {
   userEmail: string;
   userRole: string;
   canSettings: boolean;
+  campuses: CampusOption[];
+  campusScope: CampusScope;
   onOpenMenu: () => void; // chỉ dùng ở máy tính bảng (ngăn kéo menu)
 };
 
-// Thanh trên cùng: menu (máy tính bảng), tìm kiếm (phím /), chuông, giao diện, tài khoản.
-export function AppBar({ userName, userEmail, userRole, canSettings, onOpenMenu }: Props) {
+// Thanh trên cùng: menu (máy tính bảng), tìm kiếm (phím /), cơ sở, chuông, giao diện, tài khoản.
+export function AppBar({ userName, userEmail, userRole, canSettings, campuses, campusScope, onOpenMenu }: Props) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const inputRef = useRef<HTMLInputElement>(null);
-  const [query, setQuery] = useState('');
   const crumbs = useCrumbs();
+
+  // Ô tìm chỉ hiện chữ khi đang ở trang Học sinh (lấy từ ?q=). Sang trang khác thì ô trống, không để chữ cũ nằm lại.
+  const urlQuery = pathname === '/hoc-sinh' ? (searchParams.get('q') ?? '') : '';
+  const [query, setQuery] = useState(urlQuery);
+  const [seenUrlQuery, setSeenUrlQuery] = useState(urlQuery);
+  if (urlQuery !== seenUrlQuery) {
+    setSeenUrlQuery(urlQuery);
+    setQuery(urlQuery);
+  }
 
   // Phím "/" đưa con trỏ vào ô tìm kiếm khi không đang gõ ở ô khác
   useEffect(() => {
@@ -48,7 +63,7 @@ export function AppBar({ userName, userEmail, userRole, canSettings, onOpenMenu 
         type="button"
         onClick={onOpenMenu}
         aria-label="Mở menu"
-        className="grid size-10 shrink-0 place-items-center rounded-xl border border-line bg-surface text-ink-2 hover:border-ink-2 hover:text-ink min-[1200px]:hidden max-[767px]:hidden"
+        className="grid size-[var(--icon-h)] shrink-0 place-items-center rounded-[var(--radius-ctl)] border border-line bg-surface text-ink-2 hover:border-ink-2 hover:text-ink min-[1200px]:hidden max-[767px]:hidden"
       >
         <Menu className="size-[18px]" aria-hidden />
       </button>
@@ -67,7 +82,7 @@ export function AppBar({ userName, userEmail, userRole, canSettings, onOpenMenu 
         ))}
       </nav>
 
-      <form onSubmit={onSearch} role="search" className="flex h-10 w-80 max-w-full items-center gap-2 rounded-xl border border-line bg-surface pl-3 pr-2.5 focus-within:border-primary-deep focus-within:shadow-[0_0_0_3px_rgba(240,183,58,0.2)] max-[1199px]:w-70 max-[767px]:hidden">
+      <form onSubmit={onSearch} role="search" className="flex h-[var(--ctl-h)] w-80 max-w-full items-center gap-2 rounded-[var(--radius-ctl)] border border-line bg-surface pl-2.5 pr-2 focus-within:border-primary-deep focus-within:shadow-[0_0_0_3px_rgba(240,183,58,0.2)] max-[1199px]:w-70 max-[767px]:hidden">
         <Search className="size-4 shrink-0 text-muted" aria-hidden />
         <label htmlFor="global-search" className="sr-only">Tìm học sinh</label>
         <input
@@ -89,20 +104,14 @@ export function AppBar({ userName, userEmail, userRole, canSettings, onOpenMenu 
         type="button"
         onClick={() => router.push('/hoc-sinh')}
         aria-label="Tìm học sinh"
-        className="hidden size-10 shrink-0 place-items-center rounded-xl border border-line bg-surface text-ink-2 max-[767px]:grid"
+        className="hidden size-[var(--icon-h-touch)] shrink-0 place-items-center rounded-[var(--radius-ctl)] border border-line bg-surface text-ink-2 max-[767px]:grid"
       >
         <Search className="size-[18px]" aria-hidden />
       </button>
 
-      <button
-        type="button"
-        aria-label="Thông báo"
-        onClick={() => {}}
-        className="relative grid size-10 shrink-0 place-items-center rounded-xl border border-line bg-surface text-ink-2 hover:border-ink-2 hover:text-ink"
-      >
-        <Bell className="size-[18px]" aria-hidden />
-        <span className="absolute right-2.5 top-2.5 size-1.5 rounded-full bg-primary-deep ring-2 ring-surface" aria-hidden />
-      </button>
+      <CampusPicker campuses={campuses} scope={campusScope} />
+
+      <NotificationBell />
 
       <ThemeMenu />
       <UserMenu name={userName} email={userEmail} role={userRole} canSettings={canSettings} />

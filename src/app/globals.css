@@ -1,4 +1,4 @@
-@import "tailwindcss";
+﻿@import "tailwindcss";
 
 /* ============================================================
    Token thiết kế ESL Center. Nguồn chuẩn: docs/DESIGN.md.
@@ -7,35 +7,47 @@
 
 /* ---------- Bảng màu: sáng (mặc định) ---------- */
 :root {
-  --bg: #FBF8F1;
+  --bg: #FFFFFF;
   --surface: #FFFFFF;
   --ink: #2F2A1F;
-  --ink-2: #5A5344;
-  --muted: #958D7C;
+  --ink-2: #4A4538;
+  --muted: #6E6755;
   --line: #ECE6D8;
   --stone: #F1ECE0;
   --stone-ink: #6B6453;
-  --primary: #FFD976;
-  --primary-deep: #F0B73A;
-  --primary-soft: #FFF4D6;
+  --primary: #FFC933;
+  --primary-deep: #EDA400;
+  --primary-soft: #FFF1CC;
   --on-primary: #2F2A1F;
-  --accent: #4E9F7A;
-  --mint: #DDF0E4;
-  --mint-ink: #2E6B4E;
-  --lav: #E6EFD9;
-  --lav-ink: #4A6A2A;
-  --butter: #FFF0C4;
-  --butter-ink: #7A5A00;
-  --blush: #F6DFD2;
-  --blush-ink: #8C4A2E;
-  --row-hover: #FDFAF3;
-  --bar-bg: rgba(251, 248, 241, 0.92);
+  --accent: #159E5E;
+  --mint: #C5F0D6;
+  --mint-ink: #0C7A42;
+  --lav: #D8EEBA;
+  --lav-ink: #44700D;
+  --butter: #FFE59C;
+  --butter-ink: #8A6200;
+  --blush: #FBD2BD;
+  --blush-ink: #B83E18;
+  --row-hover: #FBF8F1;
+  --link: #1D4ED8; /* liên kết: chữ xanh dương có gạch chân, đạt AA trên nền trắng */
+  --relation: #7A5AD6; /* nhãn quan hệ (Bố, Mẹ): tím, khác màu chữ xanh của tên */
+  --bar-bg: rgba(255, 255, 255, 0.92);
   --glass: rgba(255, 255, 255, 0.94);
   --scrim: rgba(47, 42, 31, 0.3);
-  --shadow: 0 1px 2px rgba(47, 42, 31, 0.04), 0 14px 34px -22px rgba(47, 42, 31, 0.28);
+  --shadow: 0 0 0 1px var(--line), 0 1px 2px rgba(47, 42, 31, 0.04), 0 14px 34px -22px rgba(47, 42, 31, 0.28);
   --lift: 0 30px 80px -30px rgba(47, 42, 31, 0.45);
   --safe-b: env(safe-area-inset-bottom, 0px);
   color-scheme: light;
+
+  /* Kích thước chuẩn, lấy từ trang Học sinh (DESIGN mục 8). Mọi nút, ô, chip, nút icon và bo góc đều đọc từ đây. */
+  --ctl-h: 2rem; /* 32px: nút chữ, ô nhập, ô chọn, chip trên máy tính */
+  --ctl-h-touch: 2.75rem; /* 44px: ô và nút trên điện thoại */
+  --chip-h-touch: 2.25rem; /* 36px: chip trên điện thoại */
+  --icon-h: 2.25rem; /* 36px: nút icon và nút ⋯ trên máy tính */
+  --icon-h-touch: 2.75rem; /* 44px: nút icon trên điện thoại */
+  --radius-ctl: 0.75rem; /* 12px: nút, ô nhập, ô chọn */
+  --radius-panel: 1.5rem; /* 24px: thẻ, bảng, khung */
+  --cal-hour-h: 6rem; /* 96px: chiều cao một giờ trên lưới lịch tuần, đủ chỗ cho giờ, lớp, giáo viên và trạng thái khi buổi trùng giờ */
 }
 
 /* ---------- Bảng màu: tối ---------- */
@@ -62,10 +74,12 @@
   --blush: #3A2A20;
   --blush-ink: #F0BFA5;
   --row-hover: #2A251C;
+  --link: #7DB3FF;
+  --relation: #B8A2F0;
   --bar-bg: rgba(23, 19, 14, 0.92);
   --glass: rgba(34, 29, 22, 0.94);
   --scrim: rgba(0, 0, 0, 0.55);
-  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 14px 34px -22px rgba(0, 0, 0, 0.7);
+  --shadow: 0 0 0 1px var(--line), 0 1px 2px rgba(0, 0, 0, 0.3), 0 14px 34px -22px rgba(0, 0, 0, 0.7);
   --lift: 0 30px 80px -30px rgba(0, 0, 0, 0.75);
   color-scheme: dark;
 }
@@ -86,7 +100,104 @@
     --primary-soft: #3B3320;
     --on-primary: #2A2316;
     --row-hover: #2A251C;
+    --link: #7DB3FF;
+    --relation: #B8A2F0;
     color-scheme: dark;
+  }
+}
+
+/* ============================================================
+   Màu chủ đề (accent): đổi màu nhấn toàn app qua data-accent.
+   Mặc định là vàng mật (không có data-accent). Mỗi màu đặt lại
+   --primary, --primary-deep, --primary-soft, --on-primary cho
+   cả chế độ sáng và tối. Chọn ở menu Giao diện (ThemeMenu).
+   ============================================================ */
+
+/* Xanh lá */
+:root[data-accent="green"] {
+  --primary: #7FD6A6;
+  --primary-deep: #2E9E68;
+  --primary-soft: #E3F4EC;
+  --on-primary: #15402B;
+}
+:root[data-theme="dark"][data-accent="green"] {
+  --primary: #5FC98F;
+  --primary-deep: #4FBF88;
+  --primary-soft: #1F3A2C;
+  --on-primary: #0E2419;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"])[data-accent="green"] {
+    --primary: #5FC98F;
+    --primary-deep: #4FBF88;
+    --primary-soft: #1F3A2C;
+    --on-primary: #0E2419;
+  }
+}
+
+/* Xanh dương */
+:root[data-accent="blue"] {
+  --primary: #9CC0FB;
+  --primary-deep: #3B7BE0;
+  --primary-soft: #E8F0FD;
+  --on-primary: #16305C;
+}
+:root[data-theme="dark"][data-accent="blue"] {
+  --primary: #6FA2F2;
+  --primary-deep: #5A8CE8;
+  --primary-soft: #1E2C47;
+  --on-primary: #0E1A33;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"])[data-accent="blue"] {
+    --primary: #6FA2F2;
+    --primary-deep: #5A8CE8;
+    --primary-soft: #1E2C47;
+    --on-primary: #0E1A33;
+  }
+}
+
+/* Tím */
+:root[data-accent="violet"] {
+  --primary: #C3AEF2;
+  --primary-deep: #7A5AD6;
+  --primary-soft: #EFEAFB;
+  --on-primary: #2E1D5C;
+}
+:root[data-theme="dark"][data-accent="violet"] {
+  --primary: #A98CEC;
+  --primary-deep: #9070DE;
+  --primary-soft: #2A2342;
+  --on-primary: #170E33;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"])[data-accent="violet"] {
+    --primary: #A98CEC;
+    --primary-deep: #9070DE;
+    --primary-soft: #2A2342;
+    --on-primary: #170E33;
+  }
+}
+
+/* Hồng */
+:root[data-accent="rose"] {
+  --primary: #F3A9C4;
+  --primary-deep: #D1557F;
+  --primary-soft: #FBEAF1;
+  --on-primary: #5C1D37;
+}
+:root[data-theme="dark"][data-accent="rose"] {
+  --primary: #E88FB2;
+  --primary-deep: #D86E96;
+  --primary-soft: #3A2230;
+  --on-primary: #330E1F;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"])[data-accent="rose"] {
+    --primary: #E88FB2;
+    --primary-deep: #D86E96;
+    --primary-soft: #3A2230;
+    --on-primary: #330E1F;
   }
 }
 
@@ -152,7 +263,7 @@
 
 /* ---------- Ánh xạ sang Tailwind: dùng được text-base, bg-surface, text-ink... ---------- */
 @theme inline {
-  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-sans: var(--font-be-vietnam), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 
   --color-bg: var(--bg);
   --color-surface: var(--surface);
@@ -176,6 +287,8 @@
   --color-blush: var(--blush);
   --color-blush-ink: var(--blush-ink);
   --color-row-hover: var(--row-hover);
+  --color-link: var(--link);
+  --color-relation: var(--relation);
 
   --text-2xs: var(--fs-2xs);
   --text-xs: var(--fs-xs);
@@ -204,7 +317,8 @@
     color: var(--ink);
     font-size: var(--fs-base);
     font-variant-numeric: tabular-nums;
-    -webkit-font-smoothing: antialiased;
+    /* Để hệ điều hành tự khử răng cưa (ClearType trên Windows) cho chữ nét hơn.
+       Không ép grayscale antialiasing vì làm chữ mảnh và mờ. */
     transition: background-color 0.3s, color 0.3s;
   }
   button,

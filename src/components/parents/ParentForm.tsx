@@ -3,7 +3,8 @@
 import { startTransition, useActionState, type FormEvent } from 'react';
 import { createParentAction, updateParentAction, type ParentFormValues } from '@/app/(app)/phu-huynh/actions';
 import type { ActionResult } from '@/lib/validation/student';
-import { Field, FORM_BTN_CANCEL, FORM_BTN_SUBMIT, inputClass } from '@/components/ui/Field';
+import { Field, FORM_BTN_CANCEL, FORM_BTN_SUBMIT, inputClass, textareaClass, FormFooter } from '@/components/ui/Field';
+import { Alert } from '@/components/ui/primitives';
 
 const EMPTY: ParentFormValues = { fullName: '', phone: '', email: '', note: '' };
 const INITIAL: ActionResult = { ok: false };
@@ -40,7 +41,7 @@ export function ParentForm({
   return (
     <form onSubmit={submit} noValidate className="grid grid-cols-1 gap-3.5 min-[768px]:grid-cols-2 min-[768px]:gap-x-4">
       {state.message && !state.ok && (
-        <div role="alert" className="col-span-full rounded-xl bg-blush px-3.5 py-2.5 text-base font-semibold text-blush-ink">{state.message}</div>
+        <Alert className="col-span-full">{state.message}</Alert>
       )}
       <Field label="Họ và tên *" error={errors.fullName}>
         <input name="fullName" defaultValue={values.fullName} placeholder="VD: Nguyễn Văn Hùng" autoComplete="off" className={inputClass(errors.fullName)} />
@@ -52,14 +53,14 @@ export function ParentForm({
         <input name="email" type="email" defaultValue={values.email} autoComplete="off" className={inputClass(errors.email)} />
       </Field>
       <Field label="Ghi chú" error={errors.note} wide>
-        <textarea name="note" defaultValue={values.note} rows={3} placeholder="Giờ liên hệ thuận tiện, lưu ý…" className={`${inputClass(errors.note)} h-auto py-2.5`} />
+        <textarea name="note" defaultValue={values.note} rows={3} placeholder="Giờ liên hệ thuận tiện, lưu ý…" className={textareaClass(errors.note)} />
       </Field>
-      <div className="col-span-full mt-1 flex justify-end gap-2.5 max-[767px]:[&>button]:flex-1">
+      <FormFooter className="col-span-full">
         <button type="button" onClick={onCancel} className={FORM_BTN_CANCEL}>Huỷ</button>
         <button type="submit" disabled={pending} className={FORM_BTN_SUBMIT}>
           {pending ? 'Đang lưu…' : mode === 'edit' ? 'Lưu thay đổi' : 'Lưu phụ huynh'}
         </button>
-      </div>
+      </FormFooter>
     </form>
   );
 }

@@ -6,9 +6,12 @@ import { addLearningEventAction } from '@/app/(app)/lich-su-hoc-tap/actions';
 import { LEARNING_EVENT_LABELS, LEARNING_EVENT_TYPES } from '@/lib/validation/learning';
 import { todayKeyVN } from '@/lib/datetime';
 import type { ActionResult } from '@/lib/validation/student';
-import { Field, FORM_BTN_CANCEL, FORM_BTN_SUBMIT, inputClass } from '@/components/ui/Field';
+import { BTN_BASE, BTN_PRIMARY } from '@/components/ui/Btn';
+import { Field, FORM_BTN_CANCEL, FORM_BTN_SUBMIT, inputClass, textareaClass, FormFooter } from '@/components/ui/Field';
+import { SelectPanel } from '@/components/ui/SelectPanel';
 import { Modal } from '@/components/ui/Modal';
 import { Toast, useToast } from '@/components/ui/Toast';
+import { Alert } from '@/components/ui/primitives';
 
 const INITIAL: ActionResult = { ok: false };
 
@@ -18,7 +21,7 @@ export function LearningEventButton({ studentId, studentName }: { studentId: num
   const { message, notify } = useToast();
   return (
     <>
-      <button type="button" onClick={() => setOpen(true)} className="inline-flex h-10 items-center rounded-xl bg-primary px-4 text-base font-bold text-on-primary">
+      <button type="button" onClick={() => setOpen(true)} className={`${BTN_BASE} ${BTN_PRIMARY}`}>
         Thêm ghi chú
       </button>
       <Toast message={message} />
@@ -50,14 +53,17 @@ function EventDialog({ studentId, studentName, onClose, onDone }: { studentId: n
     <Modal open title={`Thêm vào lịch sử · ${studentName}`} subtitle="Ghi chú, thăng cấp, kiểm tra hoặc đổi trạng thái. Các ô có dấu * là bắt buộc." onClose={onClose} labelledBy="learning-event-title">
       <form onSubmit={submit} noValidate className="grid grid-cols-1 gap-3.5 pb-2 min-[768px]:grid-cols-2 min-[768px]:gap-x-4">
         {state.message && !state.ok && (
-          <div role="alert" className="col-span-full rounded-xl bg-blush px-3.5 py-2.5 text-base font-semibold text-blush-ink">{state.message}</div>
+          <Alert className="col-span-full">{state.message}</Alert>
         )}
         <Field label="Loại *" error={errors.eventType}>
-          <select name="eventType" defaultValue="note" className={inputClass(errors.eventType)}>
-            {LEARNING_EVENT_TYPES.map((t) => (
-              <option key={t} value={t}>{LEARNING_EVENT_LABELS[t]}</option>
-            ))}
-          </select>
+          <SelectPanel
+            name="eventType"
+            label="Loại *"
+            defaultValue="note"
+            options={LEARNING_EVENT_TYPES.map((t) => ({ value: t, label: LEARNING_EVENT_LABELS[t] }))}
+            error={!!errors.eventType}
+            block
+          />
         </Field>
         <Field label="Ngày *" error={errors.occurredDate}>
           <input name="occurredDate" type="date" defaultValue={todayKeyVN()} className={inputClass(errors.occurredDate)} />
@@ -66,12 +72,12 @@ function EventDialog({ studentId, studentName, onClose, onDone }: { studentId: n
           <input name="title" placeholder="VD: Lên Band 6.0 · Ghi chú: cần luyện phát âm" autoComplete="off" className={inputClass(errors.title)} />
         </Field>
         <Field label="Chi tiết" error={errors.detail} wide>
-          <textarea name="detail" rows={3} className={`${inputClass(errors.detail)} h-auto py-2.5`} />
+          <textarea name="detail" rows={3} className={textareaClass(errors.detail)} />
         </Field>
-        <div className="col-span-full mt-1 flex justify-end gap-2.5 max-[767px]:[&>button]:flex-1">
+        <FormFooter className="col-span-full">
           <button type="button" onClick={onClose} className={FORM_BTN_CANCEL}>Huỷ</button>
           <button type="submit" disabled={pending} className={FORM_BTN_SUBMIT}>{pending ? 'Đang ghi…' : 'Ghi vào lịch sử'}</button>
-        </div>
+        </FormFooter>
       </form>
     </Modal>
   );

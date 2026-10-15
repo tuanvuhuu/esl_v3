@@ -8,17 +8,31 @@ import type { InvoiceFilter, InvoiceRow, PaymentRow } from '@/lib/queries/tuitio
 import { formatVND } from '@/lib/money';
 import { dateKeyLabel } from '@/lib/datetime';
 import type { ActionResult } from '@/lib/validation/student';
-import { Field, FORM_BTN_CANCEL, FORM_BTN_SUBMIT, inputClass } from '@/components/ui/Field';
+import { Field, FORM_BTN_CANCEL, FORM_BTN_SUBMIT, inputClass, FormFooter } from '@/components/ui/Field';
 import { Modal } from '@/components/ui/Modal';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { Pill, type Tone } from '@/components/ui/primitives';
+import { Pill, type Tone, Alert } from '@/components/ui/primitives';
 import { Toast, useToast } from '@/components/ui/Toast';
+import { DataGrid, type GridColumn } from '@/components/ui/datagrid';
+import { EmptyPanel, Card } from '@/components/ui/surfaces';
+import { Btn } from '@/components/ui/Btn';
+import { Chip, ChipGroup, TextInput } from '@/components/ui/controls';
 
 const STATE_META: Record<InvoiceRow['state'], { label: string; tone: Tone }> = {
   paid: { label: 'Đã đóng', tone: 'mint' },
   partial: { label: 'Còn nợ', tone: 'butter' },
   unpaid: { label: 'Chưa đóng', tone: 'blush' },
 };
+
+const COLUMNS: GridColumn<InvoiceRow>[] = [
+  { key: 'fullName', label: 'Học sinh', width: 'minmax(180px,1.6fr)' },
+  { key: 'fee', label: 'Học phí', width: 'minmax(110px,1fr)' },
+  { key: 'paid', label: 'Đã thu', width: 'minmax(110px,1fr)' },
+  { key: 'debt', label: 'Còn nợ', width: 'minmax(110px,1fr)' },
+  { key: 'due', label: 'Hạn đóng', width: 'minmax(120px,1fr)', sortValue: (r) => r.dueDate },
+  { key: 'status', label: 'Trạng thái', width: 'minmax(110px,1fr)', sortValue: (r) => r.state },
+  { key: 'actions', label: 'Thao tác', width: '44px', align: 'end', srOnly: true },
+];
 
 const FILTERS: { key: InvoiceFilter; label: string }[] = [
   { key: 'all', label: 'Tất cả' },
@@ -67,6 +81,73 @@ export function TuitionView({
     });
   }
 
+  const cell = (r: InvoiceRow, key: string) => {
+    switch (key) {
+      case 'fullName':
+        return (
+          <div className="min-w-0">
+            <Link href={`/hoc-sinh/${r.id}`} className="block truncate text-base font-bold text-ink hover:underline">{r.fullName}</Link>
+            <small className="block truncate text-xs text-muted">{r.code} · {r.className}</small>
+          </div>
+        );
+      case 'fee':
+        return <span className="text-base text-ink">{formatVND(r.fee)}</span>;
+      case 'paid':
+        return <span className="text-base text-ink">{formatVND(r.paid)}</span>;
+      case 'debt':
+        return <span className={`text-base font-bold ${r.debt > 0 ? 'text-blush-ink' : 'text-muted'}`}>{formatVND(r.debt)}</span>;
+      case 'due':
+        return (
+          <div className="text-sm">
+            <span className="text-ink-2">{dateKeyLabel(r.dueDate)}</span>
+            {r.overdue && <span className="ml-1.5"><Pill tone="blush">Quá hạn</Pill></span>}
+          </div>
+        );
+      case 'status':
+        return <Pill tone={STATE_META[r.state].tone}>{STATE_META[r.state].label}</Pill>;
+      case 'actions':
+        return (
+          <div className="flex justify-end gap-1.5">
+            {canManage && r.debt > 0 && (
+              <>
+                <button type="button" onClick={() => setPaying(r)} className="h-9 rounded-lg border border-line bg-surface px-2.5 text-sm font-bold text-ink">Ghi thu</button>
+                <button type="button" onClick={() => remind(r)} disabled={pending} className="h-9 rounded-lg border border-line bg-surface px-2.5 text-sm font-bold text-ink disabled:opacity-40">Nhắc</button>
+              </>
+            )}
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
+  const card = (r: InvoiceRow) => (
+    <Card>
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <Link href={`/hoc-sinh/${r.id}`} className="block truncate text-base font-bold text-ink">{r.fullName}</Link>
+          <small className="block truncate text-xs text-muted">{r.code} · {r.className}</small>
+        </div>
+        <div className="flex shrink-0 flex-col items-end gap-1">
+          <Pill tone={STATE_META[r.state].tone}>{STATE_META[r.state].label}</Pill>
+          {r.overdue && <Pill tone="blush">Quá hạn</Pill>}
+        </div>
+      </div>
+      <div className="grid grid-cols-3 gap-2 rounded-xl bg-bg px-3 py-2.5 text-center">
+        <div><small className="block text-xs text-muted">Học phí</small><b className="text-sm text-ink">{formatVND(r.fee)}</b></div>
+        <div><small className="block text-xs text-muted">Đã thu</small><b className="text-sm text-ink">{formatVND(r.paid)}</b></div>
+        <div><small className="block text-xs text-muted">Còn nợ</small><b className={`text-sm ${r.debt > 0 ? 'text-blush-ink' : 'text-ink'}`}>{formatVND(r.debt)}</b></div>
+      </div>
+      <small className="text-sm text-ink-2">Hạn đóng {dateKeyLabel(r.dueDate)}</small>
+      {canManage && r.debt > 0 && (
+        <div className="grid grid-cols-2 gap-2">
+          <Btn block variant="primary" onClick={() => setPaying(r)}>Ghi thu</Btn>
+          <Btn block onClick={() => remind(r)} disabled={pending}>Nhắc đóng</Btn>
+        </div>
+      )}
+    </Card>
+  );
+
   return (
     <section className="flex flex-col">
       <PageHeader
@@ -75,20 +156,13 @@ export function TuitionView({
         subtitle={`Hạn đóng là ngày đến hạn trong Cài đặt của tháng sau tháng khai giảng. Còn phải thu ${formatVND(totalDebt)}.`}
       />
 
-      <div className="mb-4 flex flex-wrap items-center gap-2">
+      <ChipGroup label="Lọc học phí" className="mb-4">
         {FILTERS.map((f) => (
-          <button
-            key={f.key}
-            type="button"
-            onClick={() => go({ f: f.key })}
-            aria-pressed={filter === f.key}
-            className={`inline-flex h-10 items-center gap-2 rounded-xl border px-3.5 text-base font-bold transition-colors ${filter === f.key ? 'border-primary-deep bg-primary text-on-primary' : 'border-line bg-surface text-ink-2 hover:text-ink'}`}
-          >
+          <Chip key={f.key} selected={filter === f.key} count={counts[f.key]} onClick={() => go({ f: f.key })}>
             {f.label}
-            <span className="rounded-full bg-surface/70 px-2 text-xs text-ink">{counts[f.key]}</span>
-          </button>
+          </Chip>
         ))}
-      </div>
+      </ChipGroup>
 
       <form
         role="search"
@@ -98,90 +172,26 @@ export function TuitionView({
         }}
         className="mb-4 flex items-center gap-2"
       >
-        <input
+        <TextInput
           type="search"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Tìm học sinh theo tên hoặc mã HS-"
-          className="h-11 min-w-0 flex-1 rounded-[14px] border border-line bg-surface px-3.5 text-input text-ink outline-none placeholder:text-muted focus:border-primary-deep"
+          className="flex-1"
         />
-        <button type="submit" className="h-11 rounded-[14px] bg-stone px-4 text-base font-bold text-ink">Tìm</button>
+        <Btn type="submit" variant="ghost">Tìm</Btn>
       </form>
 
-      {rows.length === 0 ? (
-        <div className="rounded-[24px] bg-surface px-4 py-14 text-center text-base text-muted shadow-card">Không có học sinh phù hợp với bộ lọc này.</div>
-      ) : (
-        <>
-          {/* Máy tính bảng và máy tính: bảng hoá đơn */}
-          <div className="hidden overflow-hidden rounded-[24px] bg-surface shadow-card min-[768px]:block">
-            <div role="table" aria-label="Hoá đơn học phí">
-              <div role="row" className="grid grid-cols-[minmax(180px,1.6fr)_minmax(110px,1fr)_minmax(110px,1fr)_minmax(110px,1fr)_minmax(120px,1fr)_minmax(110px,1fr)_44px] gap-x-3 border-b border-line px-4 py-2.5 text-xs font-semibold text-muted">
-                <span role="columnheader">Học sinh</span>
-                <span role="columnheader">Học phí</span>
-                <span role="columnheader">Đã thu</span>
-                <span role="columnheader">Còn nợ</span>
-                <span role="columnheader">Hạn đóng</span>
-                <span role="columnheader">Trạng thái</span>
-                <span role="columnheader" className="sr-only">Thao tác</span>
-              </div>
-              {rows.map((r) => (
-                <div key={r.id} role="row" className="grid grid-cols-[minmax(180px,1.6fr)_minmax(110px,1fr)_minmax(110px,1fr)_minmax(110px,1fr)_minmax(120px,1fr)_minmax(110px,1fr)_44px] items-center gap-x-3 border-b border-line px-4 py-3 last:border-0">
-                  <div role="cell" className="min-w-0">
-                    <Link href={`/hoc-sinh/${r.id}`} className="block truncate text-base font-bold text-ink hover:underline">{r.fullName}</Link>
-                    <small className="block truncate text-xs text-muted">{r.code} · {r.className}</small>
-                  </div>
-                  <span role="cell" className="text-base text-ink">{formatVND(r.fee)}</span>
-                  <span role="cell" className="text-base text-ink">{formatVND(r.paid)}</span>
-                  <span role="cell" className={`text-base font-bold ${r.debt > 0 ? 'text-blush-ink' : 'text-muted'}`}>{formatVND(r.debt)}</span>
-                  <div role="cell" className="text-sm">
-                    <span className="text-ink-2">{dateKeyLabel(r.dueDate)}</span>
-                    {r.overdue && <span className="ml-1.5"><Pill tone="blush">Quá hạn</Pill></span>}
-                  </div>
-                  <div role="cell"><Pill tone={STATE_META[r.state].tone}>{STATE_META[r.state].label}</Pill></div>
-                  <div role="cell" className="flex justify-end gap-1.5">
-                    {canManage && r.debt > 0 && (
-                      <>
-                        <button type="button" onClick={() => setPaying(r)} className="h-9 rounded-lg border border-line bg-surface px-2.5 text-sm font-bold text-ink">Ghi thu</button>
-                        <button type="button" onClick={() => remind(r)} disabled={pending} className="h-9 rounded-lg border border-line bg-surface px-2.5 text-sm font-bold text-ink disabled:opacity-40">Nhắc</button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Điện thoại: thẻ, hai nút có chữ, bằng nhau */}
-          <div className="flex flex-col gap-3 min-[768px]:hidden">
-            {rows.map((r) => (
-              <article key={r.id} className="flex flex-col gap-3 rounded-[20px] border border-line bg-surface p-3.5 shadow-card">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <Link href={`/hoc-sinh/${r.id}`} className="block truncate text-base font-bold text-ink">{r.fullName}</Link>
-                    <small className="block truncate text-xs text-muted">{r.code} · {r.className}</small>
-                  </div>
-                  <div className="flex shrink-0 flex-col items-end gap-1">
-                    <Pill tone={STATE_META[r.state].tone}>{STATE_META[r.state].label}</Pill>
-                    {r.overdue && <Pill tone="blush">Quá hạn</Pill>}
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 gap-2 rounded-xl bg-bg px-3 py-2.5 text-center">
-                  <div><small className="block text-xs text-muted">Học phí</small><b className="text-sm text-ink">{formatVND(r.fee)}</b></div>
-                  <div><small className="block text-xs text-muted">Đã thu</small><b className="text-sm text-ink">{formatVND(r.paid)}</b></div>
-                  <div><small className="block text-xs text-muted">Còn nợ</small><b className={`text-sm ${r.debt > 0 ? 'text-blush-ink' : 'text-ink'}`}>{formatVND(r.debt)}</b></div>
-                </div>
-                <small className="text-sm text-ink-2">Hạn đóng {dateKeyLabel(r.dueDate)}</small>
-                {canManage && r.debt > 0 && (
-                  <div className="grid grid-cols-2 gap-2">
-                    <button type="button" onClick={() => setPaying(r)} className="flex h-11 items-center justify-center rounded-xl bg-primary text-sm font-bold text-on-primary">Ghi thu</button>
-                    <button type="button" onClick={() => remind(r)} disabled={pending} className="flex h-11 items-center justify-center rounded-xl border border-line bg-surface text-sm font-bold text-ink disabled:opacity-40">Nhắc đóng</button>
-                  </div>
-                )}
-              </article>
-            ))}
-          </div>
-        </>
-      )}
+      <DataGrid
+        label="Hoá đơn học phí"
+        columns={COLUMNS}
+        rows={rows}
+        rowKey={(r) => r.id}
+        cell={cell}
+        card={card}
+        from="md"
+        empty={<EmptyPanel title="Không có học sinh phù hợp với bộ lọc này." />}
+      />
 
       {paying && <PaymentDialog row={paying} onClose={() => setPaying(null)} onDone={(m) => { setPaying(null); notify(m); router.refresh(); }} />}
       <Toast message={message} />
@@ -224,7 +234,7 @@ function PaymentDialog({ row, onClose, onDone }: { row: InvoiceRow; onClose: () 
       <div className="flex flex-col gap-4 pb-2">
         <form onSubmit={submit} noValidate className="grid grid-cols-1 gap-3.5 min-[768px]:grid-cols-2 min-[768px]:gap-x-4">
           {state.message && !state.ok && (
-            <div role="alert" className="col-span-full rounded-xl bg-blush px-3.5 py-2.5 text-base font-semibold text-blush-ink">{state.message}</div>
+            <Alert className="col-span-full">{state.message}</Alert>
           )}
           <Field label="Số tiền thu (VND) *" error={errors.amount} hint={`Tối đa ${formatVND(row.debt)}`}>
             <input name="amount" type="number" inputMode="numeric" min={1} max={row.debt} step={1} defaultValue={row.debt} className={inputClass(errors.amount)} />
@@ -232,10 +242,10 @@ function PaymentDialog({ row, onClose, onDone }: { row: InvoiceRow; onClose: () 
           <Field label="Ghi chú" error={errors.note}>
             <input name="note" placeholder="VD: Đóng tiền mặt" autoComplete="off" className={inputClass(errors.note)} />
           </Field>
-          <div className="col-span-full flex justify-end gap-2.5 max-[767px]:[&>button]:flex-1">
+          <FormFooter className="col-span-full">
             <button type="button" onClick={onClose} className={FORM_BTN_CANCEL}>Huỷ</button>
             <button type="submit" disabled={pending} className={FORM_BTN_SUBMIT}>{pending ? 'Đang ghi…' : 'Ghi nhận thu'}</button>
-          </div>
+          </FormFooter>
         </form>
 
         <div className="border-t border-line pt-3">

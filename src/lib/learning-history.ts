@@ -38,11 +38,11 @@ export function mergeHistory(items: HistoryItem[]): HistoryItem[] {
   });
 }
 
-// Lọc theo loại và theo lớp. Chuỗi rỗng nghĩa là không lọc.
-export function filterHistory(items: HistoryItem[], filter: { classId?: number | null; kind?: HistoryKind | '' }): HistoryItem[] {
+// Lọc theo nhiều loại và nhiều lớp. Danh sách rỗng nghĩa là không lọc.
+export function filterHistory(items: HistoryItem[], filter: { classIds?: number[]; kinds?: HistoryKind[] }): HistoryItem[] {
   return items.filter((i) => {
-    if (filter.kind && i.kind !== filter.kind) return false;
-    if (filter.classId && i.classId !== filter.classId) return false;
+    if (filter.kinds?.length && !filter.kinds.includes(i.kind)) return false;
+    if (filter.classIds?.length && !filter.classIds.includes(i.classId)) return false;
     return true;
   });
 }

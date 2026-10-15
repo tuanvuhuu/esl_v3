@@ -1,6 +1,7 @@
 // Ánh xạ khoá icon trong lib/nav.ts sang icon thật của lucide-react. Chỉ dùng ở phía client.
 import type { LucideIcon } from 'lucide-react';
 import {
+  Building2,
   BookOpen,
   CalendarDays,
   ChartColumn,
@@ -10,6 +11,7 @@ import {
   History,
   House,
   IdCard,
+  Library,
   Settings,
   ShieldCheck,
   Users,
@@ -26,9 +28,11 @@ export const NAV_ICONS: Record<IconKey, LucideIcon> = {
   idcard: IdCard,
   check: ClipboardCheck,
   clipboard: ClipboardList,
+  library: Library,
   history: History,
   wallet: Wallet,
   chart: ChartColumn,
+  building: Building2,
   settings: Settings,
   shield: ShieldCheck,
 };

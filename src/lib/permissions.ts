@@ -5,12 +5,17 @@
 export const ROLE_CODES = ['admin', 'academic', 'teacher', 'accountant'] as const;
 export type Role = (typeof ROLE_CODES)[number];
 
+// Vai trò của mọi tài khoản trong bảng accounts. Học sinh đăng nhập làm bài (P28), không nằm trong ma trận quyền.
+export const STUDENT_ROLE = 'student';
+export type AccountRole = Role | typeof STUDENT_ROLE;
+
 export const ROLE_LABELS: Record<Role, string> = {
   admin: 'Quản trị',
   academic: 'Giáo vụ',
   teacher: 'Giáo viên',
   accountant: 'Kế toán',
 };
+export const ACCOUNT_ROLE_LABELS: Record<AccountRole, string> = { ...ROLE_LABELS, student: 'Học sinh' };
 
 export const PERMISSIONS = [
   { key: 'students.view', label: 'Xem danh sách học sinh' },

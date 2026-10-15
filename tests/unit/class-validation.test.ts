@@ -8,7 +8,10 @@ import { fieldErrorsFrom } from '@/lib/validation/student';
 const createOk = {
   name: 'IELTS-K20',
   course: 'IELTS Foundation',
+  campusId: '1',
   teacherId: '1',
+  assistantId: '2',
+  foreignTeacherId: '3',
   room: 'P.201',
   fee: '12000000',
   capacity: '15',
@@ -25,6 +28,23 @@ describe('lớp học', () => {
     expect(v.teacherId).toBe(1);
     expect(v.fee).toBe(12_000_000);
     expect(v.sessionsTotal).toBe(24);
+  });
+  it('mỗi lớp phải thuộc đúng một cơ sở', () => {
+    expect(classCreateSchema.parse(createOk).campusId).toBe(1);
+    expect(classCreateSchema.safeParse({ ...createOk, campusId: '' }).success).toBe(false);
+    expect(classCoreSchema.safeParse({ ...createOk, campusId: '0' }).success).toBe(false);
+  });
+  it('lớp cần đủ giáo viên chủ nhiệm, trợ giảng và giáo viên nước ngoài', () => {
+    expect(classCreateSchema.safeParse({ ...createOk, teacherId: '' }).success).toBe(false);
+    expect(classCreateSchema.safeParse({ ...createOk, assistantId: '' }).success).toBe(false);
+    expect(classCreateSchema.safeParse({ ...createOk, foreignTeacherId: '' }).success).toBe(false);
+    const r = classCreateSchema.safeParse({ ...createOk, assistantId: '', foreignTeacherId: '' });
+    expect(r.success).toBe(false);
+    if (!r.success) {
+      const errors = fieldErrorsFrom(r.error);
+      expect(errors.assistantId).toBe('Vui lòng chọn trợ giảng');
+      expect(errors.foreignTeacherId).toBe('Vui lòng chọn giáo viên nước ngoài');
+    }
   });
   it('bắt buộc chọn ít nhất một ngày học', () => {
     const r = classCreateSchema.safeParse({ ...createOk, weekdays: [] });
@@ -53,9 +73,21 @@ describe('lớp học', () => {
 
 describe('giáo viên', () => {
   it('số điện thoại gồm 10 số bắt đầu bằng 0, bỏ khoảng trắng', () => {
-    const v = teacherFormSchema.parse({ name: 'Cô Thu Hà', subject: 'IELTS', phone: '0901 000 101', years: '6', status: 'active' });
+    const v = teacherFormSchema.parse({ name: 'Cô Thu Hà', subject: 'IELTS', phone: '0901 000 101', years: '6', status: 'active', staffRole: 'teacher', campusIds: ['1'] });
     expect(v.phone).toBe('0901000101');
-    expect(teacherFormSchema.safeParse({ name: 'Cô Thu Hà', subject: 'IELTS', phone: '1901000101', years: '6', status: 'active' }).success).toBe(false);
+    expect(teacherFormSchema.safeParse({ name: 'Cô Thu Hà', subject: 'IELTS', phone: '1901000101', years: '6', status: 'active', staffRole: 'teacher', campusIds: ['1'] }).success).toBe(false);
+  });
+  it('giáo viên dạy ở một hoặc nhiều cơ sở, nhưng phải có ít nhất một', () => {
+    const base = { name: 'Cô Thu Hà', subject: 'IELTS', phone: '0901000101', years: '6', status: 'active', staffRole: 'teacher' };
+    expect(teacherFormSchema.parse({ ...base, campusIds: ['1'] }).campusIds).toEqual([1]);
+    expect(teacherFormSchema.parse({ ...base, campusIds: ['1', '2'] }).campusIds).toEqual([1, 2]);
+    expect(teacherFormSchema.safeParse({ ...base, campusIds: [] }).success).toBe(false);
+  });
+  it('vai trò nhân sự chỉ là giáo viên, giáo viên nước ngoài hoặc trợ giảng', () => {
+    const base = { name: 'Ms. Emily Carter', subject: 'Speaking', phone: '0901000201', years: '8', status: 'active', campusIds: ['1'] };
+    expect(teacherFormSchema.parse({ ...base, staffRole: 'foreign' }).staffRole).toBe('foreign');
+    expect(teacherFormSchema.parse({ ...base, staffRole: 'assistant' }).staffRole).toBe('assistant');
+    expect(teacherFormSchema.safeParse({ ...base, staffRole: 'manager' }).success).toBe(false);
   });
 });
 

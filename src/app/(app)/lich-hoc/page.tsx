@@ -2,7 +2,10 @@ import { connection } from 'next/server';
 import { Suspense } from 'react';
 import { ScheduleView } from '@/components/schedule/ScheduleView';
 import { NoAccess } from '@/components/ui/NoAccess';
-import { addDaysKey, todayKeyVN, vnDayBounds, weekStartKey } from '@/lib/datetime';
+import { getCampusContext } from '@/lib/campus-context';
+import { withCampusNames } from '@/lib/campus';
+import { addDaysKey, daysBetweenKeys, todayKeyVN, vnDayBounds, weekStartKey } from '@/lib/datetime';
+import { idListParam } from '@/lib/list-param';
 import { hasPermission } from '@/lib/permissions';
 import { listClassChoices } from '@/lib/queries/classes';
 import { listSessionsBetween } from '@/lib/queries/sessions';
@@ -10,21 +13,25 @@ import { listTeacherChoices } from '@/lib/queries/teachers';
 import { getCurrentPermissions } from '@/lib/session';
 import { isRealIsoDate } from '@/lib/validation/student';
 
+// Khoảng ngày xem tối đa 62 ngày, để danh sách không quá dài
+const MAX_SPAN_DAYS = 62;
+
 type SearchParams = Record<string, string | string[] | undefined>;
 
 function first(value: string | string[] | undefined): string {
   return (Array.isArray(value) ? value[0] : value) ?? '';
 }
 
-// Đường dẫn lịch giữ nguyên bộ lọc, chỉ đổi tuần
-function scheduleHref(week: string, cls: string, teacher: string): string {
-  const params = new URLSearchParams({ w: week });
+// Đường dẫn lịch giữ nguyên bộ lọc, đổi khoảng ngày (w là ngày bắt đầu, to là ngày kết thúc).
+// Lớp và giáo viên viết trên URL dạng "1,2".
+function scheduleHref(from: string, to: string, cls: string, teacher: string): string {
+  const params = new URLSearchParams({ w: from, to });
   if (cls) params.set('cls', cls);
   if (teacher) params.set('teacher', teacher);
   return `/lich-hoc?${params.toString()}`;
 }
 
-// Lịch học theo tuần. Tuần, lớp và giáo viên nằm trên URL.
+// Lịch học. Khoảng ngày, lớp và giáo viên nằm trên URL.
 export default function SchedulePage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   return (
     <Suspense fallback={<ScheduleSkeleton />}>
@@ -37,8 +44,8 @@ function ScheduleSkeleton() {
   return (
     <section aria-busy="true" aria-label="Đang tải lịch học" className="flex flex-col gap-4">
       <div className="h-9 w-56 animate-pulse rounded-xl bg-stone" />
-      <div className="h-10 w-full max-w-md animate-pulse rounded-xl bg-stone" />
-      <div className="h-[420px] w-full animate-pulse rounded-[24px] bg-stone" />
+      <div className="h-[var(--ctl-h)] w-full max-w-md animate-pulse rounded-[var(--radius-ctl)] bg-stone" />
+      <div className="h-[420px] w-full animate-pulse rounded-[var(--radius-panel)] bg-stone" />
     </section>
   );
 }
@@ -51,32 +58,47 @@ async function ScheduleData({ searchParams }: { searchParams: Promise<SearchPara
   if (!hasPermission(granted, 'students.view')) return <NoAccess title="Lịch học" />;
 
   const wRaw = first(sp.w);
+  const toRaw = first(sp.to);
   const today = todayKeyVN();
-  const week = weekStartKey(wRaw && isRealIsoDate(wRaw) ? wRaw : today);
-  const clsRaw = first(sp.cls);
-  const teacherRaw = first(sp.teacher);
-  const cls = /^\d+$/.test(clsRaw) ? clsRaw : '';
-  const teacher = /^\d+$/.test(teacherRaw) ? teacherRaw : '';
+  const thisWeek = weekStartKey(today);
+  const hasW = wRaw !== '' && isRealIsoDate(wRaw);
+  const hasTo = toRaw !== '' && isRealIsoDate(toRaw);
+  // w là ngày bắt đầu, to là ngày kết thúc. Chỉ có w thì lấy tuần chứa w. Không có cả hai thì lấy tuần này.
+  let from = hasW ? weekStartKey(wRaw) : thisWeek;
+  let to = addDaysKey(from, 6);
+  if (hasW && hasTo && toRaw >= wRaw) {
+    from = wRaw;
+    to = toRaw;
+  }
+  if (daysBetweenKeys(from, to) >= MAX_SPAN_DAYS) to = addDaysKey(from, MAX_SPAN_DAYS - 1);
+  const span = daysBetweenKeys(from, to) + 1;
 
-  const from = vnDayBounds(week).start;
-  const to = vnDayBounds(addDaysKey(week, 7)).start;
-  const [sessions, classes, teachers] = await Promise.all([
-    listSessionsBetween(from, to, { classId: cls ? Number(cls) : null, teacherId: teacher ? Number(teacher) : null }),
-    listClassChoices(),
-    listTeacherChoices(),
+  // Lớp và giáo viên chọn nhiều. Danh sách rỗng nghĩa là không lọc.
+  const classIds = idListParam(sp.cls);
+  const teacherIds = idListParam(sp.teacher);
+  const cls = classIds.join(',');
+  const teacher = teacherIds.join(',');
+
+  const startAt = vnDayBounds(from).start;
+  const endAt = vnDayBounds(addDaysKey(to, 1)).start;
+  const { scope } = await getCampusContext();
+  const [sessions, classOptions, teachers] = await Promise.all([
+    listSessionsBetween(startAt, endAt, scope, { classIds, teacherIds }),
+    listClassChoices(scope),
+    listTeacherChoices(scope),
   ]);
+  const classes = withCampusNames(classOptions, scope === null);
 
   return (
     <ScheduleView
-      weekStart={week}
+      rangeFrom={from}
+      rangeTo={to}
       sessions={sessions}
       classes={classes.map((c) => ({ id: c.id, name: c.name }))}
-      teachers={teachers.map((t) => ({ id: t.id, name: t.name, subject: t.subject }))}
+      teachers={teachers.filter((t) => t.staffRole !== 'assistant').map((t) => ({ id: t.id, name: t.name, subject: t.subject }))}
       filters={{ cls, teacher }}
       canManage={hasPermission(granted, 'classes.manage')}
-      prevHref={scheduleHref(addDaysKey(week, -7), cls, teacher)}
-      nextHref={scheduleHref(addDaysKey(week, 7), cls, teacher)}
-      todayHref={scheduleHref(today, cls, teacher)}
-    />
+      prevHref={scheduleHref(addDaysKey(from, -span), addDaysKey(to, -span), cls, teacher)}
+      nextHref={scheduleHref(addDaysKey(from, span), addDaysKey(to, span), cls, teacher)}    />
   );
 }

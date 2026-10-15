@@ -1,6 +1,8 @@
 // Truy vấn học phí và báo cáo doanh thu. Chỉ chạy trên server.
 import { eq, sql } from 'drizzle-orm';
 import { db } from '@/db/client';
+import type { CampusScope } from '@/lib/campus';
+import { campusCond } from '@/lib/queries/campuses';
 import { centerSettings, tuitionPayments } from '@/db/schema';
 import { debtOf, dueDateFor, isOverdue, tuitionState, type TuitionState } from '@/lib/tuition';
 import { normalizeSearch } from '@/lib/text';
@@ -28,7 +30,8 @@ export async function getDueDay(): Promise<number> {
 }
 
 // Hoá đơn học phí của mọi học sinh: học phí lớp, số đã thu, còn nợ, hạn đóng, quá hạn.
-export async function listInvoices(todayKey: string, q: string, filter: InvoiceFilter): Promise<{ rows: InvoiceRow[]; counts: Record<InvoiceFilter, number>; totalDebt: number }> {
+// Học phí của học sinh trong cơ sở đang xem (scope null: mọi cơ sở). Số đếm và tổng nợ tính trên cơ sở đó.
+export async function listInvoices(todayKey: string, q: string, filter: InvoiceFilter, scope: CampusScope): Promise<{ rows: InvoiceRow[]; counts: Record<InvoiceFilter, number>; totalDebt: number }> {
   const dueDay = await getDueDay();
   const result = await db.execute<{
     id: number; full_name: string; search_key: string; status: InvoiceRow['status']; start_date: string; class_name: string;
@@ -43,6 +46,7 @@ export async function listInvoices(todayKey: string, q: string, filter: InvoiceF
       SELECT student_id, SUM(amount)::int AS paid, MAX(paid_at) AS last_paid
       FROM tuition_payments GROUP BY student_id
     ) p ON p.student_id = s.id
+    WHERE ${campusCond(scope, sql`c.campus_id`)}
     ORDER BY s.full_name
   `);
 
@@ -102,20 +106,25 @@ export type RevenueReport = {
 };
 
 // Doanh thu một tháng theo lớp, và xu hướng sáu tháng
-export async function getRevenueReport(month: string, monthsBack: string[]): Promise<RevenueReport> {
+// Doanh thu trong cơ sở đang xem (scope null: mọi cơ sở)
+export async function getRevenueReport(month: string, monthsBack: string[], scope: CampusScope): Promise<RevenueReport> {
   const byClassRows = await db.execute<{ class_id: number; name: string; total: number; n: number }>(sql`
     SELECT c.id AS class_id, c.name, SUM(tp.amount)::int AS total, COUNT(tp.id)::int AS n
     FROM tuition_payments tp
     JOIN students s ON s.id = tp.student_id
     JOIN classes c ON c.id = s.class_id
     WHERE to_char(tp.paid_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'YYYY-MM') = ${month}
+      AND ${campusCond(scope, sql`c.campus_id`)}
     GROUP BY c.id, c.name
     ORDER BY total DESC, c.name
   `);
   const trendRows = await db.execute<{ month: string; total: number }>(sql`
-    SELECT to_char(paid_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'YYYY-MM') AS month, SUM(amount)::int AS total
-    FROM tuition_payments
-    WHERE to_char(paid_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'YYYY-MM') IN (${sql.join(monthsBack.map((m) => sql`${m}`), sql`, `)})
+    SELECT to_char(tp.paid_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'YYYY-MM') AS month, SUM(tp.amount)::int AS total
+    FROM tuition_payments tp
+    JOIN students s ON s.id = tp.student_id
+    JOIN classes c ON c.id = s.class_id
+    WHERE to_char(tp.paid_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'YYYY-MM') IN (${sql.join(monthsBack.map((m) => sql`${m}`), sql`, `)})
+      AND ${campusCond(scope, sql`c.campus_id`)}
     GROUP BY 1
   `);
   const trendMap = new Map(trendRows.rows.map((r) => [r.month, r.total]));

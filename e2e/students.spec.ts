@@ -30,7 +30,8 @@ test.describe('học sinh: thêm, sửa, xoá', () => {
     await rowMenu(page, `Thao tác với ${name}`).click();
     await page.getByRole('menuitem', { name: 'Sửa' }).click();
     const edit = dialogById(page, 'edit-title');
-    await edit.getByLabel('Lớp học *').selectOption({ label: 'TOEIC-T2 — TOEIC 600+' });
+    await edit.getByRole('button', { name: 'Lớp học *' }).click();
+    await edit.getByRole('option', { name: 'TOEIC-T2 — TOEIC 600+' }).click();
     await edit.getByRole('button', { name: 'Lưu thay đổi' }).click();
     await expectToast(page, `Đã chuyển ${name} sang TOEIC-T2`);
 

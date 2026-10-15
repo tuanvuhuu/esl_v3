@@ -1,0 +1,2 @@
+ALTER TABLE "assignment_submissions" ADD COLUMN "graded_by_account_id" integer;--> statement-breakpoint
+ALTER TABLE "assignment_submissions" ADD CONSTRAINT "assignment_submissions_graded_by_account_id_accounts_id_fk" FOREIGN KEY ("graded_by_account_id") REFERENCES "public"."accounts"("id") ON DELETE set null ON UPDATE no action;

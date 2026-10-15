@@ -8,12 +8,22 @@ import { todayKeyVN } from '@/lib/datetime';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Modal } from '@/components/ui/Modal';
 import { Toast, useToast } from '@/components/ui/Toast';
-import { ClassForm, type TeacherChoice } from './ClassForm';
+import { ClassForm, type CampusChoice, type TeacherChoice } from './ClassForm';
 
 export type ClassTarget = { id: number; name: string; studentCount: number };
 
 // onDeleted: trang chi tiết truyền vào để chuyển về danh sách. Trang danh sách để mặc định là làm mới dữ liệu.
-export function useClassDialogs({ teachers, onDeleted }: { teachers: TeacherChoice[]; onDeleted?: () => void }) {
+export function useClassDialogs({
+  teachers,
+  campuses,
+  defaultCampusId,
+  onDeleted,
+}: {
+  teachers: TeacherChoice[];
+  campuses: CampusChoice[];
+  defaultCampusId: number;
+  onDeleted?: () => void;
+}) {
   const router = useRouter();
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<{ id: number; values: ClassCoreValues } | null>(null);
@@ -65,10 +75,30 @@ export function useClassDialogs({ teachers, onDeleted }: { teachers: TeacherChoi
     <>
       <Toast message={message} />
       <Modal open={creating} title="Tạo lớp học" subtitle="Các trường có dấu * là bắt buộc. Hệ thống sẽ sinh sẵn các buổi học." onClose={() => setCreating(false)} labelledBy="class-create-title">
-        <ClassForm mode="create" teachers={teachers} defaultStartDate={todayKeyVN()} onDone={onDone} onCancel={() => setCreating(false)} />
+        <ClassForm
+          mode="create"
+          teachers={teachers}
+          campuses={campuses}
+          defaultCampusId={defaultCampusId}
+          defaultStartDate={todayKeyVN()}
+          onDone={onDone}
+          onCancel={() => setCreating(false)}
+        />
       </Modal>
       <Modal open={!!editing} title="Sửa lớp học" subtitle="Các trường có dấu * là bắt buộc." onClose={() => setEditing(null)} labelledBy="class-edit-title">
-        {editing && <ClassForm mode="edit" classId={editing.id} initial={editing.values} teachers={teachers} defaultStartDate="" onDone={onDone} onCancel={() => setEditing(null)} />}
+        {editing && (
+          <ClassForm
+            mode="edit"
+            classId={editing.id}
+            initial={editing.values}
+            teachers={teachers}
+            campuses={campuses}
+            defaultCampusId={defaultCampusId}
+            defaultStartDate=""
+            onDone={onDone}
+            onCancel={() => setEditing(null)}
+          />
+        )}
       </Modal>
       <ConfirmDialog
         open={!!toDelete}

@@ -2,6 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import { useEffect, useState, type ReactNode } from 'react';
+import type { CampusOption, CampusScope } from '@/lib/campus';
 import type { NavGroup, NavItem } from '@/lib/nav';
 import { AppBar } from './AppBar';
 import { FeatureSheet } from './FeatureSheet';
@@ -13,6 +14,8 @@ type Props = {
   groups: NavGroup[]; // đã lọc theo quyền
   tabs: NavItem[]; // tab bar điện thoại, đã lọc theo quyền
   badges: Record<string, number>; // số việc chờ của từng màn, cho bảng Tính năng
+  campuses: CampusOption[]; // các cơ sở, cho bộ chọn trên thanh trên cùng
+  campusScope: CampusScope; // cơ sở đang xem (null: tất cả)
   userName: string;
   userEmail: string;
   userRole: string;
@@ -20,7 +23,7 @@ type Props = {
 };
 
 // Khung ứng dụng: thanh bên (web), ngăn kéo (máy tính bảng), thanh trên cùng, tab bar và bảng Tính năng (điện thoại)
-export function ShellFrame({ children, groups, tabs, badges, userName, userEmail, userRole, canSettings }: Props) {
+export function ShellFrame({ children, groups, tabs, badges, campuses, campusScope, userName, userEmail, userRole, canSettings }: Props) {
   const pathname = usePathname();
   const [navOpen, setNavOpen] = useState(false);
   const [featOpen, setFeatOpen] = useState(false);
@@ -44,7 +47,15 @@ export function ShellFrame({ children, groups, tabs, badges, userName, userEmail
       {navOpen && <div className="fixed inset-0 z-[55] bg-scrim" onClick={() => setNavOpen(false)} aria-hidden />}
 
       <div className="flex min-w-0 flex-col min-[1200px]:h-screen">
-        <AppBar userName={userName} userEmail={userEmail} userRole={userRole} canSettings={canSettings} onOpenMenu={() => setNavOpen(true)} />
+        <AppBar
+          userName={userName}
+          userEmail={userEmail}
+          userRole={userRole}
+          canSettings={canSettings}
+          campuses={campuses}
+          campusScope={campusScope}
+          onOpenMenu={() => setNavOpen(true)}
+        />
         {/* Máy tính (từ 1200px): nội dung cuộn trong khung này, thanh trên và menu đứng yên. Đổi trang thì về đầu khung (key theo đường dẫn). */}
         <main
           key={pathname}
