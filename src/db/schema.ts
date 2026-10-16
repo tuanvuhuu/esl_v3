@@ -588,6 +588,23 @@ export const accounts = pgTable(
   (t) => [uniqueIndex('accounts_email_key').on(t.email), uniqueIndex('accounts_student_key').on(t.studentId)],
 );
 
+// Cơ sở mà tài khoản được làm việc (P32). Quản trị không cần dòng nào: luôn thấy mọi cơ sở.
+// Tài khoản khác chỉ đọc và ghi dữ liệu của các cơ sở có trong bảng này.
+export const accountCampuses = pgTable(
+  'account_campuses',
+  {
+    id: serial('id').primaryKey(),
+    accountId: integer('account_id')
+      .notNull()
+      .references(() => accounts.id, { onDelete: 'cascade' }),
+    campusId: integer('campus_id')
+      .notNull()
+      .references(() => campuses.id, { onDelete: 'cascade' }),
+    ...timestamps,
+  },
+  (t) => [uniqueIndex('account_campuses_pair_key').on(t.accountId, t.campusId), index('account_campuses_campus_idx').on(t.campusId)],
+);
+
 // Quyền theo vai trò, do quản trị chỉnh trong màn Tài khoản & quyền
 export const rolePermissions = pgTable(
   'role_permissions',

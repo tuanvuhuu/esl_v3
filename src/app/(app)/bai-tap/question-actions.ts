@@ -16,6 +16,7 @@ import {
   uploadedFiles,
 } from '@/db/schema';
 import { ForbiddenError, requirePermission, writeAudit } from '@/lib/authz';
+import { requireAssignmentAccess, requireStudentAccess } from '@/lib/campus-access';
 import { markGap, storedScore, summarizeSubmission, type ScoringAnswer } from '@/lib/assignment-scoring';
 import { getAssignmentBase } from '@/lib/queries/assignments';
 import { listItemGradingRows, listItemsOfAssignment, toScoringItems, type AssignmentItem } from '@/lib/queries/assignment-items';
@@ -55,6 +56,7 @@ export type ItemInput = {
 export async function saveAssignmentItemsAction(assignmentId: number, input: ItemInput[]): Promise<ActionResult> {
   try {
     await requirePermission('assignments.manage');
+    await requireAssignmentAccess(assignmentId);
     const base = await getAssignmentBase(assignmentId);
     if (!base) return { ok: false, message: 'Không tìm thấy bài tập này. Có thể đã bị xoá.' };
     const parsed = itemsPayloadSchema.safeParse(input);
@@ -220,6 +222,8 @@ export type AnswerInput = {
 export async function saveStudentAnswersAction(assignmentId: number, studentId: number, input: AnswerInput[]): Promise<ActionResult> {
   try {
     await requirePermission('assignments.manage');
+    await requireAssignmentAccess(assignmentId);
+    await requireStudentAccess(studentId);
     const account = await getCurrentAccount();
     const base = await getAssignmentBase(assignmentId);
     if (!base) return { ok: false, message: 'Không tìm thấy bài tập này. Có thể đã bị xoá.' };
@@ -340,6 +344,8 @@ export async function saveStudentAnswersAction(assignmentId: number, studentId: 
 export async function saveSecondMarkAction(assignmentId: number, studentId: number, itemId: number, input: { points: number; comment: string }): Promise<ActionResult> {
   try {
     await requirePermission('assignments.manage');
+    await requireAssignmentAccess(assignmentId);
+    await requireStudentAccess(studentId);
     const account = await getCurrentAccount();
     if (!account) return { ok: false, message: 'Cần đăng nhập để chấm lại.' };
     const base = await getAssignmentBase(assignmentId);

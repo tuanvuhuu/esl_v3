@@ -180,7 +180,9 @@ async function loadSnapshot(q: Q) {
 }
 
 // Đọc toàn bộ file thành kế hoạch. Không ghi gì vào DB.
-export async function planImport(rawRows: RawRow[], q: Q = db): Promise<ImportPlan> {
+// allowedCampusIds: cơ sở tài khoản được làm việc (null = mọi cơ sở). Dòng thuộc cơ sở khác hoặc tạo cơ sở mới thì báo lỗi (P32).
+export async function planImport(rawRows: RawRow[], q: Q = db, allowedCampusIds: number[] | null = null): Promise<ImportPlan> {
+  const inScope = (campusId: number) => allowedCampusIds === null || allowedCampusIds.includes(campusId);
   const snap = await loadSnapshot(q);
   const campusPlans = new Map<string, CampusPlan>();
   const staffPlans = new Map<string, StaffPlan>();
@@ -210,6 +212,7 @@ export async function planImport(rawRows: RawRow[], q: Q = db): Promise<ImportPl
     if (result.errors.length > 0) continue;
 
     const campus = planCampus(parsed, result);
+    if (result.errors.length > 0) continue;
     const classPlan = planClass(parsed, campus, result);
     if (!classPlan || result.errors.length > 0) continue;
     const studentPlan = planStudent(parsed, classPlan, result);
@@ -231,6 +234,8 @@ export async function planImport(rawRows: RawRow[], q: Q = db): Promise<ImportPl
       return existingPlan;
     }
     const found = snap.campusByKey.get(k);
+    if (found && !inScope(found.id)) result.errors.push(`Bạn không làm việc ở ${found.name}, không nhập được vào cơ sở này.`);
+    if (!found && allowedCampusIds !== null) result.errors.push(`Chưa có cơ sở ${row.campus.name}. Chỉ quản trị làm việc ở mọi cơ sở mới thêm được cơ sở mới.`);
     const plan: CampusPlan = {
       key: k,
       id: found?.id ?? null,
@@ -283,12 +288,17 @@ export async function planImport(rawRows: RawRow[], q: Q = db): Promise<ImportPl
       }
       const set: StaffPlan['set'] = {};
       if (input.name !== '' && input.name !== found.name) set.name = input.name;
+      const teachesInScope = [...(snap.teacherCampusIds.get(found.id) ?? [])].some(inScope);
       if (input.phone && digits(found.phone) !== input.phone) {
         if (snap.teachers.some((t) => t.id !== found!.id && digits(t.phone) === input.phone)) {
           result.errors.push(`SĐT ${input.phone} đã thuộc một giáo viên khác.`);
           return null;
         }
         set.phone = input.phone;
+      }
+      if (Object.keys(set).length > 0 && !teachesInScope) {
+        result.errors.push(`${found.name} chỉ dạy ở cơ sở khác, bạn không sửa được họ tên hoặc SĐT của người này.`);
+        return null;
       }
       plan = {
         key: `t:${found.id}`,
@@ -454,8 +464,14 @@ export async function planImport(rawRows: RawRow[], q: Q = db): Promise<ImportPl
         result.errors.push(`Không có học sinh ${studentCode(s.id)}. Để trống mã để thêm học sinh mới.`);
         return null;
       }
+      const ownCampus = snap.classById.get(found.classId)?.campusId;
+      if (ownCampus !== undefined && !inScope(ownCampus)) {
+        result.errors.push(`Học sinh ${studentCode(s.id)} học ở cơ sở bạn không làm việc.`);
+        return null;
+      }
     } else if (s.fullName && s.dob) {
-      const same = snap.studentsByNameDob.get(`${key(s.fullName)}|${s.dob}`) ?? [];
+      // Chỉ so với học sinh ở cơ sở trong phạm vi, để không lộ học sinh của cơ sở khác
+      const same = (snap.studentsByNameDob.get(`${key(s.fullName)}|${s.dob}`) ?? []).filter((x) => inScope(snap.classById.get(x.classId)?.campusId ?? -1));
       if (same.length > 1) {
         result.errors.push(`Có ${same.length} học sinh tên ${s.fullName} sinh cùng ngày. Ghi Mã HS để chọn đúng.`);
         return null;

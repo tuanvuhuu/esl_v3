@@ -4,6 +4,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { accounts, students } from '@/db/schema';
 import { ForbiddenError, requirePermission, writeAudit } from '@/lib/authz';
+import { requireStudentAccess } from '@/lib/campus-access';
 import { DEFAULT_PASSWORD, hashPassword } from '@/lib/auth/password';
 import { studentLoginEmail } from '@/lib/student-account';
 import { studentCode } from '@/lib/student-code';
@@ -21,6 +22,7 @@ function errorResult(error: unknown): IssuedPassword {
 export async function createStudentAccountAction(studentId: number): Promise<IssuedPassword> {
   try {
     await requirePermission('assignments.manage');
+    await requireStudentAccess(studentId);
     const [student] = await db.select({ id: students.id, fullName: students.fullName }).from(students).where(eq(students.id, studentId)).limit(1);
     if (!student) return { ok: false, message: 'Học sinh này không còn tồn tại.' };
     const [existing] = await db.select({ id: accounts.id }).from(accounts).where(eq(accounts.studentId, studentId)).limit(1);
@@ -46,6 +48,7 @@ export async function createStudentAccountAction(studentId: number): Promise<Iss
 export async function resetStudentPasswordAction(studentId: number): Promise<IssuedPassword> {
   try {
     await requirePermission('assignments.manage');
+    await requireStudentAccess(studentId);
     const [account] = await db.select({ id: accounts.id }).from(accounts).where(eq(accounts.studentId, studentId)).limit(1);
     if (!account) return { ok: false, message: 'Học sinh này chưa có tài khoản. Tạo tài khoản trước.' };
 

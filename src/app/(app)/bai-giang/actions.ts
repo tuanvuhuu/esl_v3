@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { db } from '@/db/client';
 import { assignments, classes, lessonCampuses, lessonMaterials, lessons, uploadedFiles } from '@/db/schema';
 import { ForbiddenError, requirePermission, writeAudit } from '@/lib/authz';
+import { CAMPUS_FORBIDDEN, getAllowedCampusIds, requireLessonAccess } from '@/lib/campus-access';
 import { campusesExist } from '@/lib/queries/campuses';
 import { countAssignmentsOfLesson } from '@/lib/queries/lessons';
 import { getCurrentAccount } from '@/lib/session';
@@ -29,10 +30,18 @@ export type MaterialInput = { kind: string; title: string; url: string; fileId: 
 export async function saveLessonAction(id: number | null, input: LessonInput): Promise<ActionResult> {
   try {
     await requirePermission('assignments.manage');
+    if (id !== null) await requireLessonAccess(id);
     const parsed = lessonFormSchema.safeParse(input);
     if (!parsed.success) return { ok: false, message: parsed.error.issues[0]?.message ?? 'Bài giảng không hợp lệ' };
     const v = parsed.data;
     const campusIds = [...new Set(v.campusIds)];
+    // Tài khoản bị giới hạn chỉ đổi các cơ sở trong phạm vi; cơ sở ngoài phạm vi giữ nguyên như cũ
+    const allowedCampuses = await getAllowedCampusIds();
+    if (allowedCampuses !== null) {
+      const existing = id === null ? [] : (await db.select({ campusId: lessonCampuses.campusId }).from(lessonCampuses).where(eq(lessonCampuses.lessonId, id))).map((r) => r.campusId);
+      if (campusIds.some((c) => !allowedCampuses.includes(c) && !existing.includes(c))) throw new ForbiddenError(CAMPUS_FORBIDDEN);
+      for (const c of existing) if (!allowedCampuses.includes(c) && !campusIds.includes(c)) campusIds.push(c);
+    }
     if (!(await campusesExist(campusIds))) return { ok: false, message: 'Có cơ sở không còn tồn tại. Tải lại trang rồi thử lại.' };
 
     if (id !== null) {
@@ -82,6 +91,7 @@ export async function saveLessonAction(id: number | null, input: LessonInput): P
 export async function deleteLessonAction(id: number): Promise<ActionResult> {
   try {
     await requirePermission('assignments.manage');
+    await requireLessonAccess(id);
     const [found] = await db.select({ id: lessons.id, title: lessons.title }).from(lessons).where(eq(lessons.id, id)).limit(1);
     if (!found) return { ok: false, message: 'Bài giảng này không còn tồn tại.' };
     const linked = await countAssignmentsOfLesson(id);
@@ -101,6 +111,7 @@ export async function deleteLessonAction(id: number): Promise<ActionResult> {
 export async function saveMaterialAction(lessonId: number, input: MaterialInput): Promise<ActionResult> {
   try {
     await requirePermission('assignments.manage');
+    await requireLessonAccess(lessonId);
     const parsed = materialFormSchema.safeParse(input);
     if (!parsed.success) return { ok: false, message: parsed.error.issues[0]?.message ?? 'Tài liệu không hợp lệ' };
     const v = parsed.data;
@@ -132,6 +143,8 @@ export async function saveMaterialAction(lessonId: number, input: MaterialInput)
 export async function deleteMaterialAction(id: number): Promise<ActionResult> {
   try {
     await requirePermission('assignments.manage');
+    const [owner] = await db.select({ lessonId: lessonMaterials.lessonId }).from(lessonMaterials).where(eq(lessonMaterials.id, id)).limit(1);
+    if (owner) await requireLessonAccess(owner.lessonId);
     const [found] = await db.select({ id: lessonMaterials.id, title: lessonMaterials.title }).from(lessonMaterials).where(eq(lessonMaterials.id, id)).limit(1);
     if (!found) return { ok: false, message: 'Tài liệu này đã bị xoá.' };
     await db.delete(lessonMaterials).where(eq(lessonMaterials.id, id));

@@ -15,6 +15,7 @@ import { listAssignmentsOfClass } from '@/lib/queries/assignments';
 import { listTeacherChoices } from '@/lib/queries/teachers';
 import { getCurrentPermissions } from '@/lib/session';
 import { Panel } from '@/components/ui/surfaces';
+import { passes, requireClassAccess } from '@/lib/campus-access';
 
 const STATUS_META: Record<'active' | 'trial' | 'paused' | 'finished', { label: string; tone: Tone }> = {
   active: { label: 'Đang học', tone: 'mint' },
@@ -48,6 +49,8 @@ async function ClassData({ params }: { params: Promise<{ id: string }> }) {
   const id = Number(raw);
 
   const granted = new Set(await getCurrentPermissions());
+  // Lớp ở cơ sở ngoài phạm vi: coi như không có (P32)
+  if (!(await passes(() => requireClassAccess(Number(raw))))) notFound();
   if (!hasPermission(granted, 'students.view')) return <NoAccess title="Lớp học" />;
 
   const [cls, teachers, assignments, { campuses, scope }] = await Promise.all([

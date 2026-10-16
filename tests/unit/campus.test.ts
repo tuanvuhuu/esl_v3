@@ -8,6 +8,12 @@ describe('resolveCampusScope: cơ sở đang xem lấy từ cookie', () => {
     expect(resolveCampusScope('all', ids)).toBeNull();
   });
 
+  it('tài khoản bị giới hạn theo cơ sở: "all" không dùng được, lấy cơ sở đầu tiên trong phạm vi; cơ sở ngoài phạm vi bị bỏ', () => {
+    expect(resolveCampusScope('all', [7], false)).toBe(7);
+    expect(resolveCampusScope('3', [7], false)).toBe(7);
+    expect(resolveCampusScope('7', [3, 7], false)).toBe(7);
+  });
+
   it('id hợp lệ trong danh sách thì dùng đúng cơ sở đó', () => {
     expect(resolveCampusScope('7', ids)).toBe(7);
   });

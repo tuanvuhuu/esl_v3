@@ -2,6 +2,7 @@
 import { asc, eq } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { campuses, classes, parents, studentParents, students } from '@/db/schema';
+import { getAllowedCampusIds } from '@/lib/campus-access';
 
 export type ParentRow = {
   id: number;
@@ -12,8 +13,31 @@ export type ParentRow = {
   children: { studentId: number; studentName: string; relation: 'father' | 'mother' | 'guardian' | 'other'; isPrimary: boolean }[];
 };
 
-// Tất cả phụ huynh kèm các con. Tìm kiếm không dấu làm ở lớp giao diện (dữ liệu nhỏ).
+// Liên kết phụ huynh - học sinh kèm cơ sở của học sinh, để lọc theo phạm vi tài khoản (P32)
+async function linksWithCampus() {
+  return db
+    .select({ parentId: studentParents.parentId, campusId: classes.campusId })
+    .from(studentParents)
+    .innerJoin(students, eq(students.id, studentParents.studentId))
+    .innerJoin(classes, eq(classes.id, students.classId));
+}
+
+// Phụ huynh thấy được: chưa gắn học sinh nào, hoặc có ít nhất một con học ở cơ sở trong phạm vi
+async function visibleParentIds(): Promise<Set<number> | null> {
+  const allowed = await getAllowedCampusIds();
+  if (allowed === null) return null;
+  const links = await linksWithCampus();
+  const linked = new Set(links.map((l) => l.parentId));
+  const visible = new Set(links.filter((l) => allowed.includes(l.campusId)).map((l) => l.parentId));
+  const all = await db.select({ id: parents.id }).from(parents);
+  for (const p of all) if (!linked.has(p.id)) visible.add(p.id);
+  return visible;
+}
+
+// Phụ huynh kèm các con (chỉ các con trong phạm vi). Tìm kiếm không dấu làm ở lớp giao diện (dữ liệu nhỏ).
 export async function listParents(): Promise<ParentRow[]> {
+  const allowed = await getAllowedCampusIds();
+  const visible = await visibleParentIds();
   const [parentRows, linkRows] = await Promise.all([
     db.select().from(parents).orderBy(asc(parents.fullName)),
     db
@@ -23,38 +47,44 @@ export async function listParents(): Promise<ParentRow[]> {
         studentName: students.fullName,
         relation: studentParents.relation,
         isPrimary: studentParents.isPrimary,
+        campusId: classes.campusId,
       })
       .from(studentParents)
       .innerJoin(students, eq(students.id, studentParents.studentId))
+      .innerJoin(classes, eq(classes.id, students.classId))
       .orderBy(asc(students.fullName)),
   ]);
-  return parentRows.map((p) => ({
+  return parentRows.filter((p) => visible === null || visible.has(p.id)).map((p) => ({
     id: p.id,
     fullName: p.fullName,
     phone: p.phone,
     email: p.email,
     note: p.note,
     children: linkRows
-      .filter((l) => l.parentId === p.id)
+      .filter((l) => l.parentId === p.id && (allowed === null || allowed.includes(l.campusId)))
       .map((l) => ({ studentId: l.studentId, studentName: l.studentName, relation: l.relation, isPrimary: l.isPrimary })),
   }));
 }
 
 // Danh sách chọn phụ huynh cho form học sinh
 export async function listParentChoices(): Promise<{ id: number; fullName: string; phone: string }[]> {
-  return db.select({ id: parents.id, fullName: parents.fullName, phone: parents.phone }).from(parents).orderBy(asc(parents.fullName));
+  const visible = await visibleParentIds();
+  const rows = await db.select({ id: parents.id, fullName: parents.fullName, phone: parents.phone }).from(parents).orderBy(asc(parents.fullName));
+  return visible === null ? rows : rows.filter((r) => visible.has(r.id));
 }
 
 // Học sinh để chọn khi gán cho phụ huynh. Kèm lớp và cơ sở để phân biệt học sinh trùng tên.
 export type StudentChoice = { id: number; fullName: string; className: string; campusName: string };
 
 export async function listStudentChoicesForParents(): Promise<StudentChoice[]> {
-  return db
-    .select({ id: students.id, fullName: students.fullName, className: classes.name, campusName: campuses.name })
+  const allowed = await getAllowedCampusIds();
+  const rows = await db
+    .select({ id: students.id, fullName: students.fullName, className: classes.name, campusName: campuses.name, campusId: classes.campusId })
     .from(students)
     .innerJoin(classes, eq(classes.id, students.classId))
     .innerJoin(campuses, eq(campuses.id, classes.campusId))
     .orderBy(asc(students.fullName), asc(students.id));
+  return rows.filter((r) => allowed === null || allowed.includes(r.campusId)).map((r) => ({ id: r.id, fullName: r.fullName, className: r.className, campusName: r.campusName }));
 }
 
 export async function getParent(id: number) {

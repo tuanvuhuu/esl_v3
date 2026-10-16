@@ -16,7 +16,7 @@ import { CampusForm } from './CampusForm';
 
 export type CampusRowView = { id: number; name: string; address: string; classCount: number };
 
-export function CampusList({ campuses, canManage }: { campuses: CampusRowView[]; canManage: boolean }) {
+export function CampusList({ campuses, canManage, canAddRemove = true }: { campuses: CampusRowView[]; canManage: boolean; canAddRemove?: boolean }) {
   const router = useRouter();
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<CampusRowView | null>(null);
@@ -65,7 +65,7 @@ export function CampusList({ campuses, canManage }: { campuses: CampusRowView[];
       icon: Trash2,
       danger: true,
       onSelect: () => askDelete(row),
-      disabled: !canManage,
+      disabled: !canManage || !canAddRemove,
       disabledHint: 'Không có quyền quản lý cơ sở',
     },
   ];
@@ -77,7 +77,7 @@ export function CampusList({ campuses, canManage }: { campuses: CampusRowView[];
         title="Cơ sở"
         subtitle={`${campuses.length} cơ sở. Mỗi lớp thuộc đúng một cơ sở.`}
         actions={
-          canManage && (
+          canManage && canAddRemove && (
             <Btn variant="primary" onClick={() => setCreating(true)}>
               <Plus className="size-4" aria-hidden />
               Thêm cơ sở
@@ -113,7 +113,7 @@ export function CampusList({ campuses, canManage }: { campuses: CampusRowView[];
                   <Pencil className="size-4" aria-hidden />
                   Sửa
                 </Btn>
-                <Btn block variant="danger" onClick={() => askDelete(row)} disabled={!canManage}>
+                <Btn block variant="danger" onClick={() => askDelete(row)} disabled={!canManage || !canAddRemove}>
                   <Trash2 className="size-4" aria-hidden />
                   Xoá
                 </Btn>

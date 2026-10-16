@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { db } from '@/db/client';
 import { uploadedFiles } from '@/db/schema';
 import { ForbiddenError, requirePermission, writeAudit } from '@/lib/authz';
+import { requireUnrestricted } from '@/lib/campus-access';
 import { listOrphanFiles } from '@/lib/queries/files';
 import { removeUploadFile } from '@/lib/storage';
 import type { ActionResult } from '@/lib/validation/student';
@@ -14,6 +15,7 @@ import type { ActionResult } from '@/lib/validation/student';
 export async function cleanupOrphanFilesAction(): Promise<ActionResult> {
   try {
     await requirePermission('settings.manage');
+    await requireUnrestricted();
     const orphans = await listOrphanFiles();
     if (orphans.length === 0) return { ok: true, message: 'Không có tệp nào cần dọn' };
 

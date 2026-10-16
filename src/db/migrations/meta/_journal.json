@@ -92,6 +92,13 @@
       "when": 1791978034854,
       "tag": "0012_tai_khoan_hoc_sinh",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1792144961824,
+      "tag": "0013_tai_khoan_theo_co_so",
+      "breakpoints": true
     }
   ]
 }

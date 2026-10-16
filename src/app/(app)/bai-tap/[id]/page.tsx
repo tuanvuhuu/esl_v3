@@ -9,6 +9,7 @@ import { listItemGradingRows, listItemsOfAssignment } from '@/lib/queries/assign
 import { getAssignmentBase, listGradingRows } from '@/lib/queries/assignments';
 import { listQuestionBank } from '@/lib/queries/question-bank';
 import { getCurrentAccount, getCurrentPermissions } from '@/lib/session';
+import { passes, requireAssignmentAccess } from '@/lib/campus-access';
 
 // Chấm điểm một bài tập. Dữ liệu đọc trong Suspense (cacheComponents đang bật).
 export default function GradingPage({ params }: { params: Promise<{ id: string }> }) {
@@ -37,6 +38,7 @@ async function GradingData({ params }: { params: Promise<{ id: string }> }) {
   const granted = new Set(await getCurrentPermissions());
   if (!hasPermission(granted, 'students.view')) return <NoAccess title="Bài tập" />;
 
+  if (!(await passes(() => requireAssignmentAccess(id)))) notFound();
   const base = await getAssignmentBase(id);
   if (!base) notFound();
   const canManage = hasPermission(granted, 'assignments.manage');

@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { db } from '@/db/client';
 import { attendance, campuses, classes, classSessions, students, teachers } from '@/db/schema';
 import { ForbiddenError, requirePermission, writeAudit } from '@/lib/authz';
+import { requireCampusAccess, requireClassAccess } from '@/lib/campus-access';
 import { getClassForm } from '@/lib/queries/classes';
 import { teacherTeachesCampus } from '@/lib/queries/teachers';
 import { describeSchedule, generateSessions, joinWeekdays } from '@/lib/schedule';
@@ -83,6 +84,7 @@ export async function createClassAction(_prev: ActionResult, formData: FormData)
       return { ok: false, message: 'Vui lòng kiểm tra lại các ô được đánh dấu.', fieldErrors: fieldErrorsFrom(parsed.error) };
     }
     const v = parsed.data;
+    await requireCampusAccess(v.campusId);
     if (!(await campusExists(v.campusId))) return { ok: false, message: 'Cơ sở không tồn tại.', fieldErrors: { campusId: 'Cơ sở không tồn tại' } };
     if (await nameTaken(v.campusId, v.name, null)) {
       return { ok: false, message: 'Mã lớp này đã có ở cơ sở này.', fieldErrors: { name: 'Mã lớp này đã có ở cơ sở này' } };
@@ -144,11 +146,13 @@ export async function createClassAction(_prev: ActionResult, formData: FormData)
 export async function updateClassAction(id: number, _prev: ActionResult, formData: FormData): Promise<ActionResult> {
   try {
     await requirePermission('classes.manage');
+    await requireClassAccess(id);
     const parsed = classCoreSchema.safeParse(readForm(formData));
     if (!parsed.success) {
       return { ok: false, message: 'Vui lòng kiểm tra lại các ô được đánh dấu.', fieldErrors: fieldErrorsFrom(parsed.error) };
     }
     const v = parsed.data;
+    await requireCampusAccess(v.campusId);
     const current = await getClassForm(id);
     if (!current) return { ok: false, message: 'Không tìm thấy lớp này. Có thể đã bị xoá.' };
     if (!(await campusExists(v.campusId))) return { ok: false, message: 'Cơ sở không tồn tại.', fieldErrors: { campusId: 'Cơ sở không tồn tại' } };
@@ -197,6 +201,7 @@ export async function updateClassAction(id: number, _prev: ActionResult, formDat
 export async function loadClassForm(id: number): Promise<{ ok: true; values: ClassCoreValues } | { ok: false; message: string }> {
   try {
     await requirePermission('classes.manage');
+    await requireClassAccess(id);
     const row = await getClassForm(id);
     if (!row) return { ok: false, message: 'Không tìm thấy lớp này. Có thể đã bị xoá.' };
     return {
@@ -224,6 +229,7 @@ export async function loadClassForm(id: number): Promise<{ ok: true; values: Cla
 export async function deleteClassAction(id: number): Promise<ActionResult> {
   try {
     await requirePermission('classes.manage');
+    await requireClassAccess(id);
     const current = await getClassForm(id);
     if (!current) return { ok: false, message: 'Không tìm thấy lớp này. Có thể đã bị xoá.' };
 

@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { db } from '@/db/client';
 import { courseLevels, learningEvents, students } from '@/db/schema';
 import { ForbiddenError, requirePermission, writeAudit } from '@/lib/authz';
+import { requireStudentAccess } from '@/lib/campus-access';
 import { getCurrentAccount } from '@/lib/session';
 import type { ActionResult } from '@/lib/validation/student';
 
@@ -13,6 +14,7 @@ import type { ActionResult } from '@/lib/validation/student';
 export async function setStudentLevelAction(studentId: number, levelId: number | null, source: 'suggestion' | 'manual'): Promise<ActionResult> {
   try {
     await requirePermission('learning.manage');
+    await requireStudentAccess(studentId);
     const account = await getCurrentAccount();
     const [student] = await db
       .select({ id: students.id, fullName: students.fullName, levelId: students.levelId })

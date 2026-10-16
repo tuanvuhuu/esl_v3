@@ -1,7 +1,7 @@
 # ESL Center: kế hoạch và tiến độ
 
-> **Tiến độ tổng: 125/138 task (90%)**
-> Cập nhật lần cuối: 2026-10-16. Thêm P31 (nhập dữ liệu từ Excel, đã xong). Thêm P30 (tự đổi mật khẩu xong; 30.2 mật khẩu esl123 còn chờ kiểm chứng với nhân viên). P28 còn 28.1, 28.2, 28.3 mở. P29 xong. Số đếm lấy từ các ô `[x]` và `[ ]` trong file. P15 còn 4 mục mở (15.3, 15.4, 15.6, 15.8). P16 xong, chờ người dùng trả lời 12 câu trong `docs/NGHIEN-CUU-GIANG-DAY.md`. Còn một quyết định chờ người dùng (D5), không phải task.
+> **Tiến độ tổng: 128/142 task (90%)**
+> Cập nhật lần cuối: 2026-10-16. Thêm P32 (phân quyền theo cơ sở; 32.3 chờ E2E gọi action ngoài phạm vi). Thêm P31 (nhập dữ liệu từ Excel, đã xong). Thêm P30 (tự đổi mật khẩu xong; 30.2 mật khẩu esl123 còn chờ kiểm chứng với nhân viên). P28 còn 28.1, 28.2, 28.3 mở. P29 xong. Số đếm lấy từ các ô `[x]` và `[ ]` trong file. P15 còn 4 mục mở (15.3, 15.4, 15.6, 15.8). P16 xong, chờ người dùng trả lời 12 câu trong `docs/NGHIEN-CUU-GIANG-DAY.md`. Còn một quyết định chờ người dùng (D5), không phải task.
 
 Quy ước: `[x]` đã làm và đã kiểm chứng, `[ ]` chưa làm hoặc chưa kiểm chứng. Mỗi task đánh dấu kèm ngày và cách kiểm chứng. Quy tắc đầy đủ ở `CLAUDE.md` mục 5.
 
@@ -270,6 +270,15 @@ Quyết định (2026-10-16): Excel một sheet, mỗi dòng một học sinh k�
 - [x] **31.2** Màn `/nhap-du-lieu`: xem trước từng dòng với Thêm, Cập nhật, Giữ nguyên, lỗi và ghi chú theo dòng, thẻ tổng hợp theo loại; còn lỗi thì không nhập được. *(2026-10-16, E2E `work.spec.ts` "nhập dữ liệu"; `chuan.spec` ở 390px và 1440px.)*
 - [x] **31.3** Nhập trong một transaction theo thứ tự cơ sở → giáo viên → lớp (sinh buổi học) → học sinh (chuyển lớp ghi lịch sử) → phụ huynh và liên kết. Kế hoạch lập lại ngay trong transaction. *(2026-10-16, E2E: nhập tạo đủ bản ghi, 6 buổi học, liên kết phụ huynh; nhập lại cập nhật học phí và trạng thái.)*
 - [x] **31.4** Trợ giảng và giáo viên nước ngoài của lớp không bắt buộc (form lớp và nhập dữ liệu). *(2026-10-16, E2E `catalog.spec.ts` tạo lớp để trống hai vị trí.)*
+
+## P32. Phân quyền tài khoản theo cơ sở
+
+Quyết định (2026-10-16): bảng `account_campuses`, tài khoản làm việc ở một hoặc nhiều cơ sở. Quản trị luôn làm việc ở mọi cơ sở. Tài khoản bị giới hạn không có "Tất cả cơ sở", xem từng cơ sở trong phạm vi. Dữ liệu ban đầu (migration 0013): tài khoản giáo viên lấy cơ sở của giáo viên; giáo vụ, kế toán lấy mọi cơ sở (quản trị chỉnh lại). Ngân hàng câu hỏi vẫn dùng chung. Phụ huynh chưa gắn học sinh thì ai cũng thấy.
+
+- [x] **32.1** Schema `account_campuses`, migration 0013 kèm dữ liệu ban đầu; seed gán cơ sở chính cho tài khoản mẫu. *(2026-10-16, migrate trên esl_center.)*
+- [x] **32.2** Bộ chọn cơ sở (máy tính và điện thoại) chỉ liệt kê cơ sở được gán; danh sách lớp, giáo viên, phụ huynh, bài giảng, cơ sở, tài khoản lọc theo phạm vi; trang học sinh, lớp, bài tập mở bằng id ngoài phạm vi thì không tìm thấy; tệp tải lên kiểm theo cơ sở. *(2026-10-16, E2E `work.spec.ts` "phân quyền theo cơ sở", unit `campus.test.ts`.)*
+- [ ] **32.3** Mọi server action theo lớp, học sinh, buổi học, bài tập, học phí, phụ huynh, giáo viên, bài giảng kiểm cơ sở ở server; việc toàn trung tâm (thêm, xoá cơ sở, cài đặt, dọn tệp) chỉ tài khoản không giới hạn; nhập dữ liệu chặn cơ sở ngoài phạm vi. *(Chưa đánh dấu: đã code và typecheck, E2E toàn bộ chạy lại; chưa có E2E gọi action ngoài phạm vi.)*
+- [x] **32.4** Màn Tài khoản: chọn cơ sở làm việc trong form, cột Cơ sở trong danh sách; người bị giới hạn chỉ gán cơ sở trong phạm vi, không tạo quản trị. *(2026-10-16, unit `account-validation.test.ts`.)*
 
 ## Quyết định đã chốt
 

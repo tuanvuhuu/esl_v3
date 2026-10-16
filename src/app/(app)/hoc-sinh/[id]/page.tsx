@@ -10,6 +10,7 @@ import { listParentChoices } from '@/lib/queries/parents';
 import { getStudentDetail } from '@/lib/queries/students';
 import { hasPermission } from '@/lib/permissions';
 import { getCurrentPermissions } from '@/lib/session';
+import { passes, requireStudentAccess } from '@/lib/campus-access';
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -48,6 +49,7 @@ async function ProfileData({ params, searchParams }: { params: Promise<{ id: str
   const tabRaw = first(sp.tab);
   const tab: ProfileTab = (PROFILE_TABS.map((t) => t.key) as string[]).includes(tabRaw) ? (tabRaw as ProfileTab) : 'tong-quan';
 
+  if (!(await passes(() => requireStudentAccess(id)))) notFound();
   const student = await getStudentDetail(id);
   if (!student) notFound();
   const [history, assignments, parentChoices, skills] = await Promise.all([

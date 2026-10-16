@@ -1,6 +1,7 @@
 ﻿import { Suspense } from 'react';
 import { AccountsView, type TabKey } from '@/components/accounts/AccountsView';
 import { NoAccess } from '@/components/ui/NoAccess';
+import { getCampusContext } from '@/lib/campus-context';
 import { listAccounts, listAuditLogs, getRoleMatrix, listTeacherOptions } from '@/lib/queries/accounts';
 import { hasPermission, ROLE_CODES } from '@/lib/permissions';
 import { listParam } from '@/lib/list-param';
@@ -46,13 +47,14 @@ async function AccountsData({ searchParams }: { searchParams: Promise<SearchPara
   const permitted = new Set(await getCurrentPermissions());
   if (!hasPermission(permitted, 'accounts.manage')) return <NoAccess title="Tài khoản & quyền" />;
 
-  const [all, teachers, matrix, audit, granted, account] = await Promise.all([
+  const [all, teachers, matrix, audit, granted, account, { campuses }] = await Promise.all([
     listAccounts(),
     listTeacherOptions(),
     getRoleMatrix(),
     listAuditLogs(100),
     getCurrentPermissions(),
     getCurrentAccount(),
+    getCampusContext(),
   ]);
 
   const needle = normalizeSearch(q);
@@ -70,6 +72,7 @@ async function AccountsData({ searchParams }: { searchParams: Promise<SearchPara
       total={all.length}
       filters={{ q, role: roles.join(','), status: statuses.join(',') }}
       teachers={teachers}
+      campuses={campuses}
       matrix={matrix}
       audit={audit}
       canManage={hasPermission(new Set(granted), 'accounts.manage')}

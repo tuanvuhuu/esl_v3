@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { accountFormSchema } from '@/lib/validation/account';
 
-const base = { fullName: 'Nguyễn Thu Trang', email: 'Trang.GiaoVu@ESL-Center.vn', role: 'academic', status: 'active', teacherId: '' };
+const base = { fullName: 'Nguyễn Thu Trang', email: 'Trang.GiaoVu@ESL-Center.vn', role: 'academic', status: 'active', teacherId: '', campusIds: ['1'] };
 
 describe('accountFormSchema', () => {
   it('chuẩn hoá email về chữ thường và cắt khoảng trắng', () => {

@@ -4,6 +4,7 @@ import { and, asc, eq, inArray, or } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { campuses, classes, teacherCampuses, teachers } from '@/db/schema';
 import type { CampusScope } from '@/lib/campus';
+import { getAllowedCampusIds } from '@/lib/campus-access';
 import type { StaffRole } from '@/lib/validation/teacher';
 
 export type TeacherRow = {
@@ -81,7 +82,10 @@ export async function listTeacherChoices(scope: CampusScope): Promise<TeacherCho
       .orderBy(asc(teachers.name)),
     campusLinks(),
   ]);
-  return rows.map((t) => ({ ...t, campusIds: links.filter((l) => l.teacherId === t.id).map((l) => l.campusId) }));
+  const allowed = await getAllowedCampusIds();
+  return rows
+    .map((t) => ({ ...t, campusIds: links.filter((l) => l.teacherId === t.id).map((l) => l.campusId) }))
+    .filter((t) => allowed === null || t.campusIds.some((c) => allowed.includes(c)));
 }
 
 // Cơ sở mà một người dạy, dùng để điền form sửa

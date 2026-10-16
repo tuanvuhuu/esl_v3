@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { db } from '@/db/client';
 import { courseLevels, levelThresholds } from '@/db/schema';
 import { ForbiddenError, requirePermission, writeAudit } from '@/lib/authz';
+import { requireUnrestricted } from '@/lib/campus-access';
 import { SKILLS, type Skill } from '@/lib/assignment-scoring';
 import { levelSettingSchema } from '@/lib/validation/level';
 import type { ActionResult } from '@/lib/validation/student';
@@ -13,6 +14,7 @@ import type { ActionResult } from '@/lib/validation/student';
 export async function saveLevelAction(levelId: number, input: { name: string; thresholds: Record<Skill, number | null> }): Promise<ActionResult> {
   try {
     await requirePermission('settings.manage');
+    await requireUnrestricted();
     const parsed = levelSettingSchema.safeParse(input);
     if (!parsed.success) return { ok: false, message: parsed.error.issues[0]?.message ?? 'Trình độ không hợp lệ' };
     const [level] = await db.select({ id: courseLevels.id, code: courseLevels.code }).from(courseLevels).where(eq(courseLevels.id, levelId)).limit(1);

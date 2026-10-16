@@ -16,6 +16,7 @@ type Props = {
   badges: Record<string, number>; // số việc chờ của từng màn, cho bảng Tính năng
   campuses: CampusOption[]; // các cơ sở, cho bộ chọn trên thanh trên cùng
   campusScope: CampusScope; // cơ sở đang xem (null: tất cả)
+  campusAllowAll: boolean; // tài khoản làm việc ở mọi cơ sở thì có lựa chọn Tất cả cơ sở
   userName: string;
   userEmail: string;
   userRole: string;
@@ -23,7 +24,7 @@ type Props = {
 };
 
 // Khung ứng dụng: thanh bên (web), ngăn kéo (máy tính bảng), thanh trên cùng, tab bar và bảng Tính năng (điện thoại)
-export function ShellFrame({ children, groups, tabs, badges, campuses, campusScope, userName, userEmail, userRole, canSettings }: Props) {
+export function ShellFrame({ children, groups, tabs, badges, campuses, campusScope, campusAllowAll, userName, userEmail, userRole, canSettings }: Props) {
   const pathname = usePathname();
   const [navOpen, setNavOpen] = useState(false);
   const [featOpen, setFeatOpen] = useState(false);
@@ -54,6 +55,7 @@ export function ShellFrame({ children, groups, tabs, badges, campuses, campusSco
           canSettings={canSettings}
           campuses={campuses}
           campusScope={campusScope}
+          campusAllowAll={campusAllowAll}
           onOpenMenu={() => setNavOpen(true)}
         />
         {/* Máy tính (từ 1200px): nội dung cuộn trong khung này, thanh trên và menu đứng yên. Đổi trang thì về đầu khung (key theo đường dẫn). */}

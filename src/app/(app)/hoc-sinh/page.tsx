@@ -21,6 +21,7 @@ import { hasPermission, type Permission } from '@/lib/permissions';
 import { idListParam, listParam } from '@/lib/list-param';
 import { studentsHref } from '@/lib/student-url';
 import { getCurrentPermissions } from '@/lib/session';
+import { passes, requireStudentAccess } from '@/lib/campus-access';
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -92,7 +93,7 @@ async function StudentsData({ searchParams }: { searchParams: Promise<SearchPara
   const [result, classOptions, allClassOptions, parents, granted] = await Promise.all([
     listStudents({ q, status: status as StatusFilter, classIds, tuitions }, { limit, offset: 0 }, scope, sort),
     listClassOptions(scope),
-    listClassOptions(null),
+    listClassOptions(null), // đã lọc theo cơ sở được làm việc
     listParentChoices(),
     getCurrentPermissions(),
   ]);
@@ -148,6 +149,8 @@ async function buildDrawer(
   loadedPages: number,
   permissions: Set<Permission>,
 ) {
+  // Học sinh ở cơ sở ngoài phạm vi: không mở hồ sơ (P32)
+  if (!(await passes(() => requireStudentAccess(id)))) return null;
   const student = await getStudentDetail(id);
   if (!student) return null;
   const tab: ProfileTab = (PROFILE_TABS.map((t) => t.key) as string[]).includes(tabRaw) ? (tabRaw as ProfileTab) : 'tong-quan';

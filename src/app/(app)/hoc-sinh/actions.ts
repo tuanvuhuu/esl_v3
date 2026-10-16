@@ -6,6 +6,7 @@ import { db } from '@/db/client';
 import { classes, learningEvents, parents, studentParents, students } from '@/db/schema';
 
 import { ForbiddenError, requirePermission, writeAudit } from '@/lib/authz';
+import { requireClassAccess, requireStudentAccess } from '@/lib/campus-access';
 import { normalizeSearch } from '@/lib/text';
 import { fieldErrorsFrom, PARENT_RELATIONS, studentFormSchema, type ActionResult } from '@/lib/validation/student';
 
@@ -49,6 +50,7 @@ export async function createStudentAction(_prev: ActionResult, formData: FormDat
       return { ok: false, message: 'Vui lòng kiểm tra lại các ô được đánh dấu.', fieldErrors: fieldErrorsFrom(parsed.error) };
     }
     const v = parsed.data;
+    await requireClassAccess(v.classId);
     const id = await db.transaction(async (tx) => {
       const [student] = await tx
         .insert(students)
@@ -81,11 +83,13 @@ export async function createStudentAction(_prev: ActionResult, formData: FormDat
 export async function updateStudentAction(id: number, _prev: ActionResult, formData: FormData): Promise<ActionResult> {
   try {
     await requirePermission('students.edit');
+    await requireStudentAccess(id);
     const parsed = studentFormSchema.safeParse(Object.fromEntries(formData));
     if (!parsed.success) {
       return { ok: false, message: 'Vui lòng kiểm tra lại các ô được đánh dấu.', fieldErrors: fieldErrorsFrom(parsed.error) };
     }
     const v = parsed.data;
+    await requireClassAccess(v.classId);
     const [before] = await db
       .select({ classId: students.classId, className: classes.name })
       .from(students)
@@ -170,6 +174,7 @@ export type StudentFormValues = {
 export async function loadStudentForm(id: number): Promise<{ ok: true; values: StudentFormValues } | { ok: false; message: string }> {
   try {
     await requirePermission('students.edit');
+    await requireStudentAccess(id);
     const [row] = await db
       .select({
         fullName: students.fullName,
@@ -217,6 +222,7 @@ export async function loadStudentForm(id: number): Promise<{ ok: true; values: S
 export async function deleteStudentAction(id: number): Promise<ActionResult> {
   try {
     await requirePermission('students.delete');
+    await requireStudentAccess(id);
     const [row] = await db.select({ fullName: students.fullName }).from(students).where(eq(students.id, id)).limit(1);
     if (!row) return { ok: false, message: 'Không tìm thấy học sinh này. Có thể đã bị xoá.' };
     await db.delete(students).where(eq(students.id, id));

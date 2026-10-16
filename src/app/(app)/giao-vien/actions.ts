@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { db } from '@/db/client';
 import { teacherCampuses, teachers } from '@/db/schema';
 import { ForbiddenError, requirePermission, writeAudit } from '@/lib/authz';
+import { CAMPUS_FORBIDDEN, getAllowedCampusIds, requireCampusesSubset, requireTeacherAccess } from '@/lib/campus-access';
 import { campusesExist } from '@/lib/queries/campuses';
 import { campusIdsOfTeacher, classSlotsOfTeacher, countClassesOfTeacher } from '@/lib/queries/teachers';
 import { STAFF_ROLE_LABELS, TEACHER_STATUS_LABELS, teacherFormSchema, type StaffRole } from '@/lib/validation/teacher';
@@ -40,6 +41,7 @@ export async function createTeacherAction(_prev: ActionResult, formData: FormDat
     }
     const v = parsed.data;
     const campusIds = [...new Set(v.campusIds)];
+    await requireCampusesSubset(campusIds);
     if (!(await campusesExist(campusIds))) return { ok: false, message: 'Cơ sở không tồn tại.', fieldErrors: { campusIds: 'Cơ sở không tồn tại' } };
 
     const teacherId = await db.transaction(async (tx) => {
@@ -62,12 +64,20 @@ export async function createTeacherAction(_prev: ActionResult, formData: FormDat
 export async function updateTeacherAction(id: number, _prev: ActionResult, formData: FormData): Promise<ActionResult> {
   try {
     await requirePermission('teachers.manage');
+    await requireTeacherAccess(id);
     const parsed = teacherFormSchema.safeParse(readForm(formData));
     if (!parsed.success) {
       return { ok: false, message: 'Vui lòng kiểm tra lại các ô được đánh dấu.', fieldErrors: fieldErrorsFrom(parsed.error) };
     }
     const v = parsed.data;
     const campusIds = [...new Set(v.campusIds)];
+    // Tài khoản bị giới hạn chỉ đổi các cơ sở trong phạm vi; cơ sở ngoài phạm vi giữ nguyên như cũ
+    const allowedCampuses = await getAllowedCampusIds();
+    if (allowedCampuses !== null) {
+      const existing = id === null ? [] : (await db.select({ campusId: teacherCampuses.campusId }).from(teacherCampuses).where(eq(teacherCampuses.teacherId, id))).map((r) => r.campusId);
+      if (campusIds.some((c) => !allowedCampuses.includes(c) && !existing.includes(c))) throw new ForbiddenError(CAMPUS_FORBIDDEN);
+      for (const c of existing) if (!allowedCampuses.includes(c) && !campusIds.includes(c)) campusIds.push(c);
+    }
     const [exists] = await db.select({ id: teachers.id, staffRole: teachers.staffRole }).from(teachers).where(eq(teachers.id, id)).limit(1);
     if (!exists) return { ok: false, message: 'Không tìm thấy giáo viên này. Có thể đã bị xoá.' };
     if (v.staffRole !== exists.staffRole) {
@@ -107,6 +117,7 @@ export async function updateTeacherAction(id: number, _prev: ActionResult, formD
 export async function loadTeacherForm(id: number): Promise<{ ok: true; values: TeacherFormValues } | { ok: false; message: string }> {
   try {
     await requirePermission('teachers.manage');
+    await requireTeacherAccess(id);
     const [row] = await db
       .select({ name: teachers.name, subject: teachers.subject, phone: teachers.phone, years: teachers.years, status: teachers.status, staffRole: teachers.staffRole })
       .from(teachers)
@@ -126,6 +137,7 @@ export async function loadTeacherForm(id: number): Promise<{ ok: true; values: T
 export async function deleteTeacherAction(id: number): Promise<ActionResult> {
   try {
     await requirePermission('teachers.manage');
+    await requireTeacherAccess(id);
     const [row] = await db.select({ name: teachers.name }).from(teachers).where(eq(teachers.id, id)).limit(1);
     if (!row) return { ok: false, message: 'Không tìm thấy giáo viên này. Có thể đã bị xoá.' };
     const n = await countClassesOfTeacher(id);

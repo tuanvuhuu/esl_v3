@@ -20,6 +20,7 @@ import { ActIcon } from '@/components/ui/ActIcon';
 import { Avatar, EmptyState, Pill, type Tone, Alert } from '@/components/ui/primitives';
 import { DataGrid, type GridColumn } from '@/components/ui/datagrid';
 import { AccountForm, type TeacherOption } from './AccountForm';
+import type { CampusOption } from '@/lib/campus';
 import { Toast } from '@/components/ui/Toast';
 import { EmptyPanel, Panel, Card } from '@/components/ui/surfaces';
 import { Btn } from '@/components/ui/Btn';
@@ -33,6 +34,7 @@ const ROLE_TONE: Record<Role, Tone> = { admin: 'butter', academic: 'mint', teach
 const ACCOUNT_COLUMNS: GridColumn<AccountRow>[] = [
   { key: 'name', label: 'Thành viên', width: 'minmax(150px,2fr)', sortValue: (r) => r.fullName },
   { key: 'role', label: 'Vai trò', width: 'minmax(124px,1fr)', sortValue: (r) => r.roleLabel },
+  { key: 'campus', label: 'Cơ sở', width: 'minmax(120px,1.2fr)', sortValue: (r) => (r.role === 'admin' ? '' : r.campusIds.join(',')) },
   { key: 'link', label: 'Liên kết', width: 'minmax(88px,1fr)', sortValue: (r) => r.teacherName ?? '' },
   { key: 'last', label: 'Đăng nhập gần nhất', width: 'minmax(120px,1.1fr)', sortValue: (r) => r.lastLoginAt ?? '' },
   { key: 'status', label: 'Trạng thái', width: 'minmax(96px,1fr)', sortValue: (r) => r.status },
@@ -52,6 +54,7 @@ type Props = {
   total: number;
   filters: { q: string; role: string; status: string };
   teachers: TeacherOption[];
+  campuses: CampusOption[];
   matrix: RoleMatrix;
   audit: AuditRow[];
   canManage: boolean;
@@ -64,7 +67,7 @@ const TABS: { key: TabKey; label: string; icon: typeof Users }[] = [
   { key: 'nhat-ky', label: 'Nhật ký', icon: History },
 ];
 
-export function AccountsView({ tab, accounts, total, filters, teachers, matrix, audit, canManage, isAdmin }: Props) {
+export function AccountsView({ tab, accounts, total, filters, teachers, campuses, matrix, audit, canManage, isAdmin }: Props) {
   return (
     <section className="flex flex-col gap-5">
       <header className="flex flex-wrap items-end justify-between gap-4">
@@ -87,7 +90,7 @@ export function AccountsView({ tab, accounts, total, filters, teachers, matrix, 
         })}
       </ChipGroup>
 
-      {tab === 'nguoi-dung' && <UsersTab accounts={accounts} total={total} filters={filters} teachers={teachers} canManage={canManage} />}
+      {tab === 'nguoi-dung' && <UsersTab accounts={accounts} total={total} filters={filters} teachers={teachers} campuses={campuses} canManage={canManage} />}
       {tab === 'phan-quyen' && <PermissionsTab matrix={matrix} canManage={isAdmin} />}
       {tab === 'nhat-ky' && <AuditTab audit={audit} />}
     </section>
@@ -96,7 +99,8 @@ export function AccountsView({ tab, accounts, total, filters, teachers, matrix, 
 
 // ---------- Người dùng ----------
 
-function UsersTab({ accounts, total, filters, teachers, canManage }: { accounts: AccountRow[]; total: number; filters: Props['filters']; teachers: TeacherOption[]; canManage: boolean }) {
+function UsersTab({ accounts, total, filters, teachers, campuses, canManage }: { accounts: AccountRow[]; total: number; filters: Props['filters']; teachers: TeacherOption[]; campuses: CampusOption[]; canManage: boolean }) {
+  const campusText = (row: AccountRow) => (row.role === 'admin' ? 'Mọi cơ sở' : row.campusIds.map((id) => campuses.find((c) => c.id === id)?.name ?? `#${id}`).join(', '));
   const router = useRouter();
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<{ id: number; values: AccountFormValues } | null>(null);
@@ -182,6 +186,8 @@ function UsersTab({ accounts, total, filters, teachers, canManage }: { accounts:
         );
       case 'role':
         return <Pill tone={ROLE_TONE[row.role]}>{row.roleLabel}</Pill>;
+      case 'campus':
+        return <div className="min-w-0 truncate text-sm text-ink-2" title={campusText(row)}>{campusText(row)}</div>;
       case 'link':
         return <div className="min-w-0 truncate text-sm text-ink-2">{row.teacherName ?? '—'}</div>;
       case 'last':
@@ -214,6 +220,7 @@ function UsersTab({ accounts, total, filters, teachers, canManage }: { accounts:
       <div className="flex items-center justify-between gap-2">
         <Pill tone={ROLE_TONE[row.role]}>{row.roleLabel}</Pill>
         {row.teacherName && <small className="truncate text-xs text-muted">{row.teacherName}</small>}
+        {campusText(row) && <small className="truncate text-xs text-muted">{campusText(row)}</small>}
       </div>
       <div className="flex justify-end gap-2">
         <ActIcon label={`Sửa ${row.fullName}`} onClick={() => openEdit(row)} disabled={!canManage}>
@@ -277,10 +284,10 @@ function UsersTab({ accounts, total, filters, teachers, canManage }: { accounts:
       <Toast message={message} />
 
       <Modal open={creating} title="Mời thành viên" subtitle="Các trường có dấu * là bắt buộc." onClose={() => setCreating(false)} labelledBy="account-create-title">
-        <AccountForm mode="create" teachers={teachers} onDone={onDone} onCancel={() => setCreating(false)} />
+        <AccountForm mode="create" teachers={teachers} campuses={campuses} onDone={onDone} onCancel={() => setCreating(false)} />
       </Modal>
       <Modal open={!!editing} title="Sửa tài khoản" subtitle="Các trường có dấu * là bắt buộc." onClose={() => setEditing(null)} labelledBy="account-edit-title">
-        {editing && <AccountForm mode="edit" accountId={editing.id} initial={editing.values} teachers={teachers} onDone={onDone} onCancel={() => setEditing(null)} />}
+        {editing && <AccountForm mode="edit" accountId={editing.id} initial={editing.values} teachers={teachers} campuses={campuses} onDone={onDone} onCancel={() => setEditing(null)} />}
       </Modal>
       <ConfirmDialog
         open={!!toDelete}

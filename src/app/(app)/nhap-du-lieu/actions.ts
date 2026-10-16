@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { db } from '@/db/client';
 import { ForbiddenError, requirePermission, writeAudit } from '@/lib/authz';
+import { getAllowedCampusIds } from '@/lib/campus-access';
 import { MAX_IMPORT_BYTES, readImportFile } from '@/lib/import/excel';
 import { applyImport, ENTITY_LABELS, planImport, type EntityKind, type ImportSummary, type RowResult } from '@/lib/import/plan';
 import type { RawRow } from '@/lib/import/rows';
@@ -36,7 +37,7 @@ export async function previewImportAction(formData: FormData): Promise<PreviewRe
     await requirePermission('settings.manage');
     const file = await readUploaded(formData);
     if (!file.ok) return file;
-    const plan = await planImport(file.rows);
+    const plan = await planImport(file.rows, db, await getAllowedCampusIds());
     if (plan.rows.length === 0) return { ok: false, message: 'File chưa có dòng dữ liệu nào dưới dòng tiêu đề.' };
     return { ok: true, fileName: file.name, rows: plan.rows, summary: plan.summary, errorCount: plan.errorCount };
   } catch (error) {
@@ -63,8 +64,9 @@ export async function commitImportAction(formData: FormData): Promise<CommitResp
     await requirePermission('settings.manage');
     const file = await readUploaded(formData);
     if (!file.ok) return file;
+    const allowed = await getAllowedCampusIds();
     const result = await db.transaction(async (tx) => {
-      const plan = await planImport(file.rows, tx);
+      const plan = await planImport(file.rows, tx, allowed);
       if (plan.errorCount > 0) return { ok: false as const, errorCount: plan.errorCount };
       await applyImport(plan, tx);
       return { ok: true as const, summary: plan.summary };

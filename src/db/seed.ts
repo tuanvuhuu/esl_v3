@@ -5,6 +5,7 @@
 import { count, sql } from 'drizzle-orm';
 import { db, pool } from './client';
 import {
+  accountCampuses,
   accounts,
   assignmentSubmissions,
   assignments,
@@ -125,7 +126,7 @@ function sessionsFor(cls: { id: number; teacherId: number; room: string; weekday
 
 async function resetAppData() {
   await db.execute(sql`TRUNCATE TABLE
-    audit_logs, learning_events, assignment_submissions, assignments, class_sessions,
+    account_campuses, audit_logs, learning_events, assignment_submissions, assignments, class_sessions,
     student_parents, parents, tuition_payments, attendance, students, classes, campuses,
     accounts, teachers, teacher_campuses, role_permissions, center_settings
     RESTART IDENTITY CASCADE`);
@@ -281,8 +282,8 @@ async function main() {
     }
     if (eventRows.length > 0) await tx.insert(learningEvents).values(eventRows);
 
-    // Tài khoản, liên kết với giáo viên khi cần
-    await tx.insert(accounts).values(
+    // Tài khoản, liên kết với giáo viên khi cần. Tài khoản không phải quản trị làm việc ở cơ sở chính (P32).
+    const insertedAccounts = await tx.insert(accounts).values(
       ACCOUNT_SEED.map((a) => ({
         fullName: a.fullName,
         email: a.email,
@@ -290,7 +291,11 @@ async function main() {
         status: a.status,
         teacherId: a.teacher ? teacherId.get(a.teacher)! : null,
       })),
-    );
+    ).returning({ id: accounts.id, role: accounts.role });
+    const staffAccounts = insertedAccounts.filter((a) => a.role !== 'admin');
+    if (staffAccounts.length > 0) {
+      await tx.insert(accountCampuses).values(staffAccounts.map((a) => ({ accountId: a.id, campusId: mainCampus.id })));
+    }
 
     // Ma trận quyền mặc định
     const permissionRows = ROLE_CODES.flatMap((role) =>

@@ -18,11 +18,12 @@ type Props = {
   canSettings: boolean;
   campuses: CampusOption[];
   campusScope: CampusScope;
+  campusAllowAll: boolean;
   onOpenMenu: () => void; // chỉ dùng ở máy tính bảng (ngăn kéo menu)
 };
 
 // Thanh trên cùng: menu (máy tính bảng), tìm kiếm (phím /), cơ sở, chuông, giao diện, tài khoản.
-export function AppBar({ userName, userEmail, userRole, canSettings, campuses, campusScope, onOpenMenu }: Props) {
+export function AppBar({ userName, userEmail, userRole, canSettings, campuses, campusScope, campusAllowAll, onOpenMenu }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -109,7 +110,7 @@ export function AppBar({ userName, userEmail, userRole, canSettings, campuses, c
         <Search className="size-[18px]" aria-hidden />
       </button>
 
-      <CampusPicker campuses={campuses} scope={campusScope} />
+      <CampusPicker campuses={campuses} scope={campusScope} allowAll={campusAllowAll} />
 
       <NotificationBell />
 

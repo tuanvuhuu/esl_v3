@@ -6,6 +6,7 @@ import { db } from '@/db/client';
 import { classes, classSessions, teachers } from '@/db/schema';
 import { teacherTeachesCampus } from '@/lib/queries/teachers';
 import { ForbiddenError, requirePermission, writeAudit } from '@/lib/authz';
+import { requireSessionAccess } from '@/lib/campus-access';
 import { cancelReasonSchema, sessionFormSchema } from '@/lib/validation/class';
 import { fieldErrorsFrom, type ActionResult } from '@/lib/validation/student';
 
@@ -28,6 +29,7 @@ async function loadSession(id: number) {
 export async function updateSessionAction(id: number, _prev: ActionResult, formData: FormData): Promise<ActionResult> {
   try {
     await requirePermission('classes.manage');
+    await requireSessionAccess(id);
     const parsed = sessionFormSchema.safeParse(Object.fromEntries(formData));
     if (!parsed.success) {
       return { ok: false, message: 'Vui lòng kiểm tra lại các ô được đánh dấu.', fieldErrors: fieldErrorsFrom(parsed.error) };
@@ -77,6 +79,7 @@ export async function updateSessionAction(id: number, _prev: ActionResult, formD
 export async function cancelSessionAction(id: number, reason: string): Promise<ActionResult> {
   try {
     await requirePermission('classes.manage');
+    await requireSessionAccess(id);
     const parsed = cancelReasonSchema.safeParse(reason);
     if (!parsed.success) return { ok: false, message: parsed.error.issues[0]?.message ?? 'Lý do không hợp lệ.', fieldErrors: { cancelReason: parsed.error.issues[0]?.message ?? 'Lý do không hợp lệ' } };
     const session = await loadSession(id);
@@ -100,6 +103,7 @@ export async function cancelSessionAction(id: number, reason: string): Promise<A
 export async function restoreSessionAction(id: number): Promise<ActionResult> {
   try {
     await requirePermission('classes.manage');
+    await requireSessionAccess(id);
     const session = await loadSession(id);
     if (!session) return { ok: false, message: 'Không tìm thấy buổi học này.' };
     if (session.status !== 'cancelled') return { ok: false, message: 'Buổi này không ở trạng thái đã huỷ.' };

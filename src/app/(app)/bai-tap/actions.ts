@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { db } from '@/db/client';
 import { assignmentItems, assignmentSubmissions, assignments, classes, lessonCampuses, students } from '@/db/schema';
 import { ForbiddenError, requirePermission, writeAudit } from '@/lib/authz';
+import { requireAssignmentAccess, requireClassAccess } from '@/lib/campus-access';
 import { getAssignmentBase } from '@/lib/queries/assignments';
 import { assignmentFormSchema, gradingRowSchema, SUBMISSION_LABELS } from '@/lib/validation/assignment';
 import { fieldErrorsFrom, type ActionResult } from '@/lib/validation/student';
@@ -61,6 +62,7 @@ export async function createAssignmentAction(_prev: ActionResult, formData: Form
       return { ok: false, message: 'Vui lòng kiểm tra lại các ô được đánh dấu.', fieldErrors: fieldErrorsFrom(parsed.error) };
     }
     const v = parsed.data;
+    await requireClassAccess(v.classId);
     const [cls] = await db.select({ id: classes.id, name: classes.name, campusId: classes.campusId }).from(classes).where(eq(classes.id, v.classId)).limit(1);
     if (!cls) return { ok: false, message: 'Lớp này không tồn tại.', fieldErrors: { classId: 'Lớp này không tồn tại' } };
     const lesson = await resolveLesson(v.lessonId, cls.campusId);
@@ -82,6 +84,7 @@ export async function createAssignmentAction(_prev: ActionResult, formData: Form
 export async function updateAssignmentAction(id: number, _prev: ActionResult, formData: FormData): Promise<ActionResult> {
   try {
     await requirePermission('assignments.manage');
+    await requireAssignmentAccess(id);
     const base = await getAssignmentBase(id);
     if (!base) return { ok: false, message: 'Không tìm thấy bài tập này. Có thể đã bị xoá.' };
     const parsed = assignmentFormSchema.safeParse({ ...Object.fromEntries(formData), classId: String(base.classId) });
@@ -123,6 +126,7 @@ export async function updateAssignmentAction(id: number, _prev: ActionResult, fo
 export async function loadAssignmentForm(id: number): Promise<{ ok: true; values: AssignmentFormValues } | { ok: false; message: string }> {
   try {
     await requirePermission('assignments.manage');
+    await requireAssignmentAccess(id);
     const base = await getAssignmentBase(id);
     if (!base) return { ok: false, message: 'Không tìm thấy bài tập này. Có thể đã bị xoá.' };
     const due = new Date(base.dueAt.getTime() + 7 * 3_600_000).toISOString();
@@ -149,6 +153,7 @@ export async function loadAssignmentForm(id: number): Promise<{ ok: true; values
 export async function deleteAssignmentAction(id: number): Promise<ActionResult> {
   try {
     await requirePermission('assignments.manage');
+    await requireAssignmentAccess(id);
     const base = await getAssignmentBase(id);
     if (!base) return { ok: false, message: 'Không tìm thấy bài tập này. Có thể đã bị xoá.' };
     await db.delete(assignments).where(eq(assignments.id, id));
@@ -169,6 +174,7 @@ export async function saveSubmissionsAction(
 ): Promise<ActionResult> {
   try {
     await requirePermission('assignments.manage');
+    await requireAssignmentAccess(assignmentId);
     const base = await getAssignmentBase(assignmentId);
     if (!base) return { ok: false, message: 'Không tìm thấy bài tập này. Có thể đã bị xoá.' };
     const withItems = await db.select({ id: assignmentItems.id }).from(assignmentItems).where(eq(assignmentItems.assignmentId, assignmentId)).limit(1);

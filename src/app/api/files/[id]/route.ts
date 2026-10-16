@@ -1,5 +1,6 @@
 // Tải hoặc xem một tệp tải lên (âm thanh của đề, bài nộp). Cần quyền xem học sinh, giống các màn bài tập.
 import { connection } from 'next/server';
+import { canReadFile } from '@/lib/campus-access';
 import { hasPermission } from '@/lib/permissions';
 import { studentMayReadFile } from '@/lib/queries/student-portal';
 import { getCurrentAccount, getCurrentPermissions } from '@/lib/session';
@@ -13,7 +14,10 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
 
   // Người quản lý xem mọi tệp. Học sinh chỉ xem tệp bài làm của chính mình hoặc âm thanh câu trong lớp mình (P28).
   const granted = new Set(await getCurrentPermissions());
-  if (!hasPermission(granted, 'students.view')) {
+  if (hasPermission(granted, 'students.view')) {
+    // Nhân viên chỉ đọc tệp của cơ sở mình làm việc (P32)
+    if (!(await canReadFile(Number(raw)))) return new Response('Không có quyền xem tệp này', { status: 403 });
+  } else {
     const account = await getCurrentAccount();
     if (!account || account.role !== 'student' || account.studentId === null) return new Response('Không có quyền xem tệp này', { status: 403 });
     if (!(await studentMayReadFile(account.studentId, Number(raw)))) return new Response('Không có quyền xem tệp này', { status: 403 });

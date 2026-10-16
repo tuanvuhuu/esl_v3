@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { db } from '@/db/client';
 import { centerSettings } from '@/db/schema';
 import { ForbiddenError, requirePermission, writeAudit } from '@/lib/authz';
+import { requireUnrestricted } from '@/lib/campus-access';
 import { centerSettingsSchema } from '@/lib/validation/settings';
 import { fieldErrorsFrom, type ActionResult } from '@/lib/validation/student';
 
@@ -11,6 +12,7 @@ import { fieldErrorsFrom, type ActionResult } from '@/lib/validation/student';
 export async function saveSettingsAction(_prev: ActionResult, formData: FormData): Promise<ActionResult> {
   try {
     await requirePermission('settings.manage');
+    await requireUnrestricted();
     const parsed = centerSettingsSchema.safeParse({
       ...Object.fromEntries(formData),
       notifySmsBeforeDue: formData.has('notifySmsBeforeDue'),

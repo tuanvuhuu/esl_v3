@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { db } from '@/db/client';
 import { attendance, classSessions, students } from '@/db/schema';
 import { ForbiddenError, requirePermission, writeAudit } from '@/lib/authz';
+import { requireSessionAccess } from '@/lib/campus-access';
 import { vnDateKey } from '@/lib/datetime';
 import { z } from 'zod';
 import { type ActionResult } from '@/lib/validation/student';
@@ -27,6 +28,7 @@ function errorResult(error: unknown): ActionResult {
 export async function saveAttendanceAction(sessionId: number, entries: { studentId: number; mark: (typeof MARKS)[number] }[]): Promise<ActionResult> {
   try {
     await requirePermission('attendance.record');
+    await requireSessionAccess(sessionId);
     const parsed = entriesSchema.safeParse(entries);
     if (!parsed.success) return { ok: false, message: parsed.error.issues[0]?.message ?? 'Dữ liệu điểm danh không hợp lệ' };
 

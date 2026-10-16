@@ -8,9 +8,13 @@ export type CampusScope = number | null;
 
 export type CampusOption = { id: number; name: string; address: string };
 
+// Tài khoản chưa được gán cơ sở nào: scope trỏ tới id không tồn tại, nên mọi danh sách đều trống
+export const CAMPUS_NONE = 0;
+
 // Chọn cơ sở đang xem từ cookie. Cookie rỗng, sai, hoặc cơ sở đã xoá thì lấy cơ sở đầu tiên.
-export function resolveCampusScope(raw: string | undefined, campusIds: number[]): CampusScope {
-  if (raw === CAMPUS_ALL) return null;
+// allowAll = false (tài khoản bị giới hạn theo cơ sở): "Tất cả" không dùng được, lấy cơ sở đầu tiên trong phạm vi.
+export function resolveCampusScope(raw: string | undefined, campusIds: number[], allowAll = true): CampusScope {
+  if (raw === CAMPUS_ALL && allowAll) return null;
   const id = Number(raw);
   if (Number.isInteger(id) && campusIds.includes(id)) return id;
   return campusIds[0] ?? null;

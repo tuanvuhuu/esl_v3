@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import ExcelJS from 'exceljs';
+import { hashPassword } from '../src/lib/auth/password';
 import { IMPORT_COLUMNS, type ImportColumnKey } from '../src/lib/import/columns';
 
 import { existsSync } from 'node:fs';
@@ -798,6 +799,68 @@ test.describe('bài tập, điểm danh, học phí', () => {
       await db.query(`delete from teachers where phone = $1`, [teacherPhone]);
       await db.query(`delete from parents where phone = $1`, [parentPhone]);
       await db.query(`delete from campuses where name = $1`, [campus]);
+      await db.end();
+    }
+  });
+
+  test('phân quyền theo cơ sở: chỉ thấy cơ sở được gán (cả trên điện thoại), mở học sinh hoặc lớp cơ sở khác thì 404', async ({ page }) => {
+    loadEnvLocal();
+    const db = new Client({ connectionString: process.env.DATABASE_URL });
+    await db.connect();
+    const stamp = String(Date.now()).slice(-6);
+    const email = `e2e-co-so-${stamp}@esl-center.vn`;
+    const password = `cs-${stamp}-mat-khau`;
+    const otherCampus = `CS E2E pq ${stamp}`;
+    let otherCampusId = 0;
+    try {
+      const [main] = (await db.query<{ id: number; name: string }>(`select id, name from campuses order by id limit 1`)).rows;
+      const [teacher] = (await db.query<{ id: number }>(`select id from teachers where staff_role = 'teacher' order by id limit 1`)).rows;
+      otherCampusId = (await db.query<{ id: number }>(`insert into campuses (name) values ($1) returning id`, [otherCampus])).rows[0].id;
+      const [cls] = (await db.query<{ id: number }>(
+        `insert into classes (campus_id, name, course, teacher_id, sessions_total, fee, capacity) values ($1, $2, 'Lớp cơ sở khác', $3, 1, 0, 10) returning id`,
+        [otherCampusId, `LOP E2E pq ${stamp}`, teacher.id],
+      )).rows;
+      const [student] = (await db.query<{ id: number }>(
+        `insert into students (full_name, gender, dob, class_id, status, start_date) values ($1, 'male', '2012-01-01', $2, 'active', '2026-10-01') returning id`,
+        [`HS E2E pq ${stamp}`, cls.id],
+      )).rows;
+      const [acc] = (await db.query<{ id: number }>(
+        `insert into accounts (full_name, email, role, status, password_hash) values ('E2E giáo vụ một cơ sở', $1, 'academic', 'active', $2) returning id`,
+        [email, await hashPassword(password)],
+      )).rows;
+      await db.query(`insert into account_campuses (account_id, campus_id) values ($1, $2)`, [acc.id, main.id]);
+
+      await login(page, email, password);
+      // Bộ chọn cơ sở: chỉ cơ sở được gán, không có "Tất cả cơ sở"
+      await page.getByRole('button', { name: /^Cơ sở/ }).first().click();
+      await expect(page.getByRole('option', { name: main.name })).toBeVisible();
+      await expect(page.getByRole('option', { name: 'Tất cả cơ sở' })).toHaveCount(0);
+      await expect(page.getByRole('option', { name: otherCampus })).toHaveCount(0);
+      await page.keyboard.press('Escape');
+
+      // Dữ liệu cơ sở khác: không có trong danh sách, mở thẳng bằng đường dẫn thì 404
+      await page.goto(`/hoc-sinh?q=${encodeURIComponent(`HS E2E pq ${stamp}`)}`);
+      await expect(page.getByText(`HS E2E pq ${stamp}`)).toHaveCount(0);
+      // Trang có streaming nên mã trạng thái đã gửi trước; kiểm nội dung: trang không tìm thấy, không lộ tên
+      const notFoundText = page.getByText(/could not be found|Không tìm thấy/i).first();
+      await page.goto(`/hoc-sinh/${student.id}`);
+      await expect(notFoundText).toBeVisible();
+      await expect(page.getByText(`HS E2E pq ${stamp}`)).toHaveCount(0);
+      await page.goto(`/lop-hoc/${cls.id}`);
+      await expect(notFoundText).toBeVisible();
+      await expect(page.getByText(`LOP E2E pq ${stamp}`)).toHaveCount(0);
+
+      // Điện thoại: bộ chọn cơ sở vẫn mở được và chỉ có cơ sở được gán
+      await page.setViewportSize({ width: 390, height: 844 });
+      await page.goto('/tong-quan');
+      await page.getByRole('button', { name: /^Cơ sở/ }).first().click();
+      await expect(page.getByRole('option', { name: main.name })).toBeVisible();
+      await expect(page.getByRole('option', { name: 'Tất cả cơ sở' })).toHaveCount(0);
+    } finally {
+      await db.query(`delete from accounts where email = $1`, [email]);
+      await db.query(`delete from students where full_name = $1`, [`HS E2E pq ${stamp}`]);
+      if (otherCampusId) await db.query(`delete from classes where campus_id = $1`, [otherCampusId]);
+      await db.query(`delete from campuses where name = $1`, [otherCampus]);
       await db.end();
     }
   });

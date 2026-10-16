@@ -3,9 +3,10 @@
 import { and, count, eq, ne } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { db } from '@/db/client';
-import { accounts, rolePermissions, teachers } from '@/db/schema';
+import { accountCampuses, accounts, rolePermissions, teachers } from '@/db/schema';
 import { ForbiddenError, requireAdmin, requirePermission, writeAudit } from '@/lib/authz';
 import { DEFAULT_PASSWORD, hashPassword } from '@/lib/auth/password';
+import { CAMPUS_FORBIDDEN, campusIdsOfAccounts, getAllowedCampusIds, requireCampusesSubset } from '@/lib/campus-access';
 import { LOCKED_ADMIN_PERMISSIONS, PERMISSIONS, ROLE_CODES, ROLE_LABELS, type Permission, type Role } from '@/lib/permissions';
 import { accountFormSchema } from '@/lib/validation/account';
 import { fieldErrorsFrom, type ActionResult } from '@/lib/validation/student';
@@ -40,11 +41,35 @@ export type AccountFormValues = {
   role: Role;
   status: 'active' | 'locked';
   teacherId: string;
+  campusIds: string[];
 };
+
+// Tài khoản bị giới hạn theo cơ sở chỉ quản lý tài khoản (không phải quản trị) có chung cơ sở với mình (P32)
+async function requireAccountAccess(id: number): Promise<void> {
+  const allowed = await getAllowedCampusIds();
+  if (allowed === null) return;
+  const [row] = await db.select({ role: accounts.role }).from(accounts).where(eq(accounts.id, id)).limit(1);
+  if (!row) return;
+  const ids = (await campusIdsOfAccounts([id])).get(id) ?? [];
+  if (row.role === 'admin' || !ids.some((c) => allowed.includes(c))) throw new ForbiddenError(CAMPUS_FORBIDDEN);
+}
+
+// Ghi cơ sở của tài khoản. Quản trị không có dòng nào. Người sửa bị giới hạn: cơ sở ngoài phạm vi của họ giữ nguyên.
+async function saveAccountCampuses(accountId: number, role: Role, campusIds: number[]): Promise<void> {
+  const allowed = await getAllowedCampusIds();
+  const existing = (await campusIdsOfAccounts([accountId])).get(accountId) ?? [];
+  const keep = allowed === null ? [] : existing.filter((c) => !allowed.includes(c));
+  const next = role === 'admin' ? [] : [...new Set([...campusIds, ...keep])];
+  await db.transaction(async (tx) => {
+    await tx.delete(accountCampuses).where(eq(accountCampuses.accountId, accountId));
+    if (next.length > 0) await tx.insert(accountCampuses).values(next.map((campusId) => ({ accountId, campusId })));
+  });
+}
 
 export async function loadAccountForm(id: number): Promise<{ ok: true; values: AccountFormValues } | { ok: false; message: string }> {
   try {
     await requirePermission('accounts.manage');
+    await requireAccountAccess(id);
     const [row] = await db
       .select({ fullName: accounts.fullName, email: accounts.email, role: accounts.role, status: accounts.status, teacherId: accounts.teacherId })
       .from(accounts)
@@ -53,7 +78,14 @@ export async function loadAccountForm(id: number): Promise<{ ok: true; values: A
     if (!row) return { ok: false, message: 'Không tìm thấy tài khoản này.' };
     return {
       ok: true,
-      values: { fullName: row.fullName, email: row.email, role: row.role as Role, status: row.status, teacherId: row.teacherId ? String(row.teacherId) : '' },
+      values: {
+        fullName: row.fullName,
+        email: row.email,
+        role: row.role as Role,
+        status: row.status,
+        teacherId: row.teacherId ? String(row.teacherId) : '',
+        campusIds: ((await campusIdsOfAccounts([id])).get(id) ?? []).map(String),
+      },
     };
   } catch (error) {
     if (error instanceof ForbiddenError) return { ok: false, message: error.message };
@@ -66,12 +98,16 @@ type ValidAccount = Omit<ReturnType<typeof accountFormSchema.parse>, 'teacherId'
 type Checked = { ok: true; value: ValidAccount } | { ok: false; result: ActionResult };
 
 async function validateAccountInput(formData: FormData, accountId: number | null): Promise<Checked> {
-  const parsed = accountFormSchema.safeParse(Object.fromEntries(formData));
+  const parsed = accountFormSchema.safeParse({ ...Object.fromEntries(formData), campusIds: formData.getAll('campusIds') });
   if (!parsed.success) {
     return { ok: false, result: { ok: false, message: 'Vui lòng kiểm tra lại các ô được đánh dấu.', fieldErrors: fieldErrorsFrom(parsed.error) } };
   }
 
   const v = parsed.data;
+  // Người sửa bị giới hạn theo cơ sở: không tạo quản trị, không gán cơ sở ngoài phạm vi của mình
+  const allowed = await getAllowedCampusIds();
+  if (allowed !== null && v.role === 'admin') throw new ForbiddenError('Chỉ quản trị làm việc ở mọi cơ sở mới tạo hoặc gán vai trò Quản trị.');
+  await requireCampusesSubset(v.campusIds);
   const [dup] = await db
     .select({ id: accounts.id })
     .from(accounts)
@@ -107,6 +143,7 @@ export async function createAccountAction(_prev: ActionResult, formData: FormDat
         passwordHash: await hashPassword(DEFAULT_PASSWORD),
       })
       .returning({ id: accounts.id });
+    await saveAccountCampuses(created.id, v.role, v.campusIds);
     await writeAudit({ action: 'create', entity: 'account', entityId: created.id, summary: `Thêm tài khoản ${v.email} (${ROLE_LABELS[v.role]})` });
     revalidatePath('/tai-khoan');
     return { ok: true, message: `Đã thêm ${v.email}. Mật khẩu ban đầu là ${DEFAULT_PASSWORD}.` };
@@ -118,6 +155,7 @@ export async function createAccountAction(_prev: ActionResult, formData: FormDat
 export async function updateAccountAction(id: number, _prev: ActionResult, formData: FormData): Promise<ActionResult> {
   try {
     await requirePermission('accounts.manage');
+    await requireAccountAccess(id);
     const [current] = await db.select().from(accounts).where(eq(accounts.id, id)).limit(1);
     if (!current) return { ok: false, message: 'Không tìm thấy tài khoản này.' };
 
@@ -135,6 +173,7 @@ export async function updateAccountAction(id: number, _prev: ActionResult, formD
       .update(accounts)
       .set({ fullName: v.fullName, email: v.email, role: v.role, status: v.status, teacherId: v.teacherId, updatedAt: new Date() })
       .where(eq(accounts.id, id));
+    await saveAccountCampuses(id, v.role, v.campusIds);
     await writeAudit({ action: 'update', entity: 'account', entityId: id, summary: `Sửa tài khoản ${v.email} (${ROLE_LABELS[v.role]}, ${v.status === 'active' ? 'hoạt động' : 'tạm khoá'})` });
     revalidatePath('/tai-khoan');
     return { ok: true, message: `Đã lưu tài khoản ${v.email}` };
@@ -147,6 +186,7 @@ export async function updateAccountAction(id: number, _prev: ActionResult, formD
 export async function setAccountLockedAction(id: number, locked: boolean): Promise<ActionResult> {
   try {
     await requirePermission('accounts.manage');
+    await requireAccountAccess(id);
     const [current] = await db.select().from(accounts).where(eq(accounts.id, id)).limit(1);
     if (!current) return { ok: false, message: 'Không tìm thấy tài khoản này.' };
     if (locked && current.role === 'admin' && current.status === 'active' && (await activeAdminsExcluding(id)) === 0) {
@@ -164,6 +204,7 @@ export async function setAccountLockedAction(id: number, locked: boolean): Promi
 export async function deleteAccountAction(id: number): Promise<ActionResult> {
   try {
     await requirePermission('accounts.manage');
+    await requireAccountAccess(id);
     const [current] = await db.select().from(accounts).where(eq(accounts.id, id)).limit(1);
     if (!current) return { ok: false, message: 'Không tìm thấy tài khoản này.' };
     if (current.role === 'admin' && current.status === 'active' && (await activeAdminsExcluding(id)) === 0) {

@@ -3,6 +3,7 @@ import { asc, eq, inArray, sql, type SQL } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { campuses, classes, teacherCampuses } from '@/db/schema';
 import type { CampusOption, CampusScope } from '@/lib/campus';
+import { getAllowedCampusIds } from '@/lib/campus-access';
 
 // Điều kiện lọc theo cơ sở cho câu SQL. Scope null thì không lọc.
 // column là biểu thức cột đã có trong câu, ví dụ c.campus_id (bảng lớp đã được nối).
@@ -27,7 +28,10 @@ export async function listCampusRows(): Promise<(CampusOption & { classCount: nu
     GROUP BY cp.id, cp.name, cp.address
     ORDER BY cp.id
   `);
-  return result.rows.map((r) => ({ id: r.id, name: r.name, address: r.address, classCount: r.class_count }));
+  const allowed = await getAllowedCampusIds();
+  return result.rows
+    .filter((r) => allowed === null || allowed.includes(r.id))
+    .map((r) => ({ id: r.id, name: r.name, address: r.address, classCount: r.class_count }));
 }
 
 // Các cơ sở có đủ trong danh sách id không. Dùng để kiểm tra form giáo viên và lớp.

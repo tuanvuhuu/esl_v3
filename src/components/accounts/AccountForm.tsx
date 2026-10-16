@@ -3,6 +3,7 @@
 import { startTransition, useActionState, useState, type FormEvent } from 'react';
 import { createAccountAction, updateAccountAction, type AccountFormValues } from '@/app/(app)/tai-khoan/actions';
 import { ROLE_CODES, ROLE_LABELS } from '@/lib/permissions';
+import type { CampusOption } from '@/lib/campus';
 import type { ActionResult } from '@/lib/validation/student';
 import { Field, FORM_BTN_CANCEL, FORM_BTN_SUBMIT, inputClass, FormFooter } from '@/components/ui/Field';
 import { SelectPanel } from '@/components/ui/SelectPanel';
@@ -10,7 +11,7 @@ import { Alert } from '@/components/ui/primitives';
 
 export type TeacherOption = { id: number; name: string; linkedAccountId: number | null };
 
-const EMPTY: AccountFormValues = { fullName: '', email: '', role: 'teacher', status: 'active', teacherId: '' };
+const EMPTY: AccountFormValues = { fullName: '', email: '', role: 'teacher', status: 'active', teacherId: '', campusIds: [] };
 const INITIAL: ActionResult = { ok: false };
 
 // Form mời (thêm) và sửa tài khoản. Vai trò Giáo viên phải chọn một giáo viên.
@@ -19,6 +20,7 @@ export function AccountForm({
   accountId,
   initial,
   teachers,
+  campuses,
   onDone,
   onCancel,
 }: {
@@ -26,6 +28,7 @@ export function AccountForm({
   accountId?: number;
   initial?: AccountFormValues;
   teachers: TeacherOption[];
+  campuses: CampusOption[]; // cơ sở trong phạm vi của người đang sửa
   onDone: (message: string) => void;
   onCancel: () => void;
 }) {
@@ -100,6 +103,23 @@ export function AccountForm({
         </Field>
       )}
       {role !== 'teacher' && <input type="hidden" name="teacherId" value="" />}
+
+      {/* Cơ sở được làm việc (P32). Quản trị luôn làm việc ở mọi cơ sở nên không cần chọn. */}
+      {role !== 'admin' ? (
+        <Field label="Cơ sở làm việc *" error={errors.campusIds} wide hint="Chỉ thấy và sửa dữ liệu của các cơ sở được chọn">
+          <SelectPanel
+            name="campusIds"
+            label="Cơ sở làm việc *"
+            multiple
+            defaultValues={values.campusIds.length > 0 ? values.campusIds : campuses.length === 1 ? [String(campuses[0].id)] : []}
+            options={campuses.map((c) => ({ value: String(c.id), label: c.name }))}
+            error={!!errors.campusIds}
+            block
+          />
+        </Field>
+      ) : (
+        <p className="col-span-full text-sm text-muted">Quản trị làm việc ở mọi cơ sở.</p>
+      )}
 
       <FormFooter className="col-span-full">
         <button type="button" onClick={onCancel} className={FORM_BTN_CANCEL}>Huỷ</button>

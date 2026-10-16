@@ -2,6 +2,7 @@
 // Tiền, điểm danh và phụ huynh được tổng hợp ngay trong SQL, tham số hoá an toàn.
 import { eq, sql } from 'drizzle-orm';
 import { db } from '@/db/client';
+import { getAllowedCampusIds } from '@/lib/campus-access';
 import { accounts } from '@/db/schema';
 import type { CampusScope } from '@/lib/campus';
 import { campusCond } from '@/lib/queries/campuses';
@@ -248,6 +249,7 @@ export async function listStudents(
 }
 
 // Lớp cho bộ lọc và form học sinh, trong cơ sở đang xem. Kèm tên cơ sở để phân biệt khi xem tất cả.
+// Chỉ trả về lớp của các cơ sở tài khoản được làm việc (P32), kể cả khi scope là tất cả
 export async function listClassOptions(scope: CampusScope): Promise<{ id: number; name: string; course: string; teacherName: string; fee: number; campusId: number; campusName: string }[]> {
   const result = await db.execute<{ id: number; name: string; course: string; teacher_name: string; fee: number; campus_id: number; campus_name: string }>(sql`
     SELECT c.id, c.name, c.course, t.name AS teacher_name, c.fee, c.campus_id, cp.name AS campus_name
@@ -257,6 +259,7 @@ export async function listClassOptions(scope: CampusScope): Promise<{ id: number
     WHERE ${campusCond(scope, sql`c.campus_id`)}
     ORDER BY c.name, c.id
   `);
+  const allowed = await getAllowedCampusIds();
   return result.rows.map((r) => ({
     id: r.id,
     name: r.name,
@@ -265,7 +268,7 @@ export async function listClassOptions(scope: CampusScope): Promise<{ id: number
     fee: r.fee,
     campusId: r.campus_id,
     campusName: r.campus_name,
-  }));
+  })).filter((r) => allowed === null || allowed.includes(r.campusId));
 }
 
 export type StudentDetail = {

@@ -26,7 +26,7 @@ async function AppShell({ children }: { children: React.ReactNode }) {
   if (account.role === 'student') redirect('/cua-toi');
   const granted = new Set(await getCurrentPermissions());
   const tabs = MOBILE_TABS.filter((t) => t.permission === null || granted.has(t.permission));
-  const { campuses, scope } = await getCampusContext();
+  const { campuses, scope, allowAll } = await getCampusContext();
   const badges = await getNavBadges(granted, scope);
 
   return (
@@ -36,6 +36,7 @@ async function AppShell({ children }: { children: React.ReactNode }) {
       badges={badges}
       campuses={campuses}
       campusScope={scope}
+      campusAllowAll={allowAll}
       userName={account.fullName}
       userEmail={account.email}
       userRole={account.roleLabel}

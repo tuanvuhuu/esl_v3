@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { db } from '@/db/client';
 import { learningEvents, students } from '@/db/schema';
 import { ForbiddenError, requirePermission, writeAudit } from '@/lib/authz';
+import { requireStudentAccess } from '@/lib/campus-access';
 import { LEARNING_EVENT_LABELS, learningEventSchema } from '@/lib/validation/learning';
 import { fieldErrorsFrom, type ActionResult } from '@/lib/validation/student';
 
@@ -12,6 +13,7 @@ import { fieldErrorsFrom, type ActionResult } from '@/lib/validation/student';
 export async function addLearningEventAction(studentId: number, _prev: ActionResult, formData: FormData): Promise<ActionResult> {
   try {
     await requirePermission('learning.manage');
+    await requireStudentAccess(studentId);
     const parsed = learningEventSchema.safeParse(Object.fromEntries(formData));
     if (!parsed.success) {
       return { ok: false, message: 'Vui lòng kiểm tra lại các ô được đánh dấu.', fieldErrors: fieldErrorsFrom(parsed.error) };

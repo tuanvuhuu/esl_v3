@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { db } from '@/db/client';
 import { classes, students, tuitionPayments } from '@/db/schema';
 import { ForbiddenError, requirePermission, writeAudit } from '@/lib/authz';
+import { requireStudentAccess } from '@/lib/campus-access';
 import { formatVND } from '@/lib/money';
 import { listPaymentsOfStudent, paidOf, type PaymentRow } from '@/lib/queries/tuition';
 import { debtOf } from '@/lib/tuition';
@@ -42,6 +43,7 @@ async function studentBalance(studentId: number): Promise<{ name: string; fee: n
 export async function recordPaymentAction(studentId: number, _prev: ActionResult, formData: FormData): Promise<ActionResult> {
   try {
     await requirePermission('tuition.manage');
+    await requireStudentAccess(studentId);
     const parsed = paymentSchema.safeParse(Object.fromEntries(formData));
     if (!parsed.success) {
       return { ok: false, message: 'Vui lòng kiểm tra lại các ô được đánh dấu.', fieldErrors: fieldErrorsFrom(parsed.error) };
@@ -72,6 +74,7 @@ export async function recordPaymentAction(studentId: number, _prev: ActionResult
 export async function remindTuitionAction(studentId: number): Promise<ActionResult> {
   try {
     await requirePermission('tuition.manage');
+    await requireStudentAccess(studentId);
     const balance = await studentBalance(studentId);
     if (!balance) return { ok: false, message: 'Không tìm thấy học sinh này. Có thể đã bị xoá.' };
     if (balance.debt <= 0) return { ok: false, message: `${balance.name} đã đóng đủ học phí, không cần nhắc.` };
@@ -87,6 +90,7 @@ export async function remindTuitionAction(studentId: number): Promise<ActionResu
 export async function loadPaymentsAction(studentId: number): Promise<{ ok: true; payments: PaymentRow[] } | { ok: false; message: string }> {
   try {
     await requirePermission('tuition.manage');
+    await requireStudentAccess(studentId);
     return { ok: true, payments: await listPaymentsOfStudent(studentId) };
   } catch (error) {
     if (error instanceof ForbiddenError) return { ok: false, message: error.message };

@@ -3,6 +3,7 @@ import { asc, count, eq, inArray } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { assignments, campuses, lessonCampuses, lessonMaterials, lessons, uploadedFiles } from '@/db/schema';
 import type { CampusScope } from '@/lib/campus';
+import { getAllowedCampusIds } from '@/lib/campus-access';
 import type { MaterialKind } from '@/lib/validation/lesson';
 
 export type LessonMaterial = {
@@ -86,7 +87,10 @@ export async function listLessonChoices(): Promise<{ id: number; title: string; 
     .select({ lessonId: lessonCampuses.lessonId, campusId: lessonCampuses.campusId })
     .from(lessonCampuses)
     .where(inArray(lessonCampuses.lessonId, rows.map((r) => r.id)));
-  return rows.map((r) => ({ id: r.id, title: r.title, campusIds: campusRows.filter((c) => c.lessonId === r.id).map((c) => c.campusId) }));
+  const allowed = await getAllowedCampusIds();
+  return rows
+    .map((r) => ({ id: r.id, title: r.title, campusIds: campusRows.filter((c) => c.lessonId === r.id).map((c) => c.campusId) }))
+    .filter((r) => allowed === null || r.campusIds.some((c) => allowed.includes(c)));
 }
 
 // Số bài tập đang gắn một bài giảng

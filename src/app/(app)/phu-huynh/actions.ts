@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { db } from '@/db/client';
 import { parents, studentParents, students } from '@/db/schema';
 import { ForbiddenError, requirePermission, writeAudit } from '@/lib/authz';
+import { requireParentAccess, requireStudentAccess } from '@/lib/campus-access';
 import { getParent } from '@/lib/queries/parents';
 import { PARENT_RELATION_LABELS } from '@/lib/parent-labels';
 import {
@@ -65,6 +66,7 @@ export async function createParentAction(_prev: ActionResult, formData: FormData
 export async function updateParentAction(id: number, _prev: ActionResult, formData: FormData): Promise<ActionResult> {
   try {
     await requirePermission('parents.manage');
+    await requireParentAccess(id);
     const parsed = parentFormSchema.safeParse(Object.fromEntries(formData));
     if (!parsed.success) {
       return { ok: false, message: 'Vui lòng kiểm tra lại các ô được đánh dấu.', fieldErrors: fieldErrorsFrom(parsed.error) };
@@ -89,6 +91,7 @@ export async function updateParentAction(id: number, _prev: ActionResult, formDa
 export async function loadParentForm(id: number): Promise<{ ok: true; values: ParentFormValues } | { ok: false; message: string }> {
   try {
     await requirePermission('parents.manage');
+    await requireParentAccess(id);
     const row = await getParent(id);
     if (!row) return { ok: false, message: 'Không tìm thấy phụ huynh này. Có thể đã bị xoá.' };
     return { ok: true, values: { fullName: row.fullName, phone: row.phone, email: row.email, note: row.note } };
@@ -103,6 +106,7 @@ export async function loadParentForm(id: number): Promise<{ ok: true; values: Pa
 export async function deleteParentAction(id: number): Promise<ActionResult> {
   try {
     await requirePermission('parents.manage');
+    await requireParentAccess(id);
     const row = await getParent(id);
     if (!row) return { ok: false, message: 'Không tìm thấy phụ huynh này. Có thể đã bị xoá.' };
     await db.delete(parents).where(eq(parents.id, id));
@@ -129,6 +133,7 @@ async function ensurePrimary(studentId: number) {
 export async function addParentLinkAction(studentId: number, _prev: ActionResult, formData: FormData): Promise<ActionResult> {
   try {
     await requirePermission('parents.manage');
+    await requireStudentAccess(studentId);
     const parsed = parentLinkSchema.safeParse(Object.fromEntries(formData));
     if (!parsed.success) {
       return { ok: false, message: 'Vui lòng kiểm tra lại các ô được đánh dấu.', fieldErrors: fieldErrorsFrom(parsed.error) };
@@ -175,6 +180,7 @@ export async function addParentLinkAction(studentId: number, _prev: ActionResult
 export async function unlinkParentAction(studentId: number, parentId: number): Promise<ActionResult> {
   try {
     await requirePermission('parents.manage');
+    await requireStudentAccess(studentId);
     const [link] = await db
       .select({ id: studentParents.id })
       .from(studentParents)
@@ -197,6 +203,7 @@ export async function unlinkParentAction(studentId: number, parentId: number): P
 export async function assignStudentsAction(parentId: number, _prev: ActionResult, formData: FormData): Promise<ActionResult> {
   try {
     await requirePermission('parents.manage');
+    await requireParentAccess(parentId);
     const parsed = parentAssignSchema.safeParse({
       studentIds: formData.getAll('studentIds'),
       relation: formData.get('relation'),
@@ -206,6 +213,7 @@ export async function assignStudentsAction(parentId: number, _prev: ActionResult
       return { ok: false, message: 'Vui lòng kiểm tra lại các ô được đánh dấu.', fieldErrors: fieldErrorsFrom(parsed.error) };
     }
     const v = parsed.data;
+    for (const studentId of v.studentIds) await requireStudentAccess(studentId);
     const parent = await getParent(parentId);
     if (!parent) return { ok: false, message: 'Không tìm thấy phụ huynh này. Có thể đã bị xoá.' };
 
@@ -263,6 +271,7 @@ const FIELD_LABEL: Record<ParentEditableField, string> = {
 export async function updateParentFieldAction(id: number, field: ParentEditableField, value: string): Promise<ActionResult> {
   try {
     await requirePermission('parents.manage');
+    await requireParentAccess(id);
     if (!PARENT_EDITABLE_FIELDS.includes(field)) return { ok: false, message: 'Ô này không sửa được.' };
     const checked = parentFieldValue(field, value);
     if (!checked.ok) return { ok: false, message: checked.message, fieldErrors: { [field]: checked.message } };
@@ -292,6 +301,7 @@ export async function updateParentFieldAction(id: number, field: ParentEditableF
 export async function setLinkRelationAction(studentId: number, parentId: number, relation: string): Promise<ActionResult> {
   try {
     await requirePermission('parents.manage');
+    await requireStudentAccess(studentId);
     const parsed = parentRelationSchema.safeParse(relation);
     if (!parsed.success) return { ok: false, message: 'Quan hệ không hợp lệ.' };
     const [link] = await db
@@ -319,6 +329,7 @@ export async function setLinkRelationAction(studentId: number, parentId: number,
 export async function setPrimaryParentAction(studentId: number, parentId: number): Promise<ActionResult> {
   try {
     await requirePermission('parents.manage');
+    await requireStudentAccess(studentId);
     const [link] = await db
       .select({ id: studentParents.id })
       .from(studentParents)

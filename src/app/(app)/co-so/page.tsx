@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
 import { CampusList } from '@/components/campus/CampusList';
 import { NoAccess } from '@/components/ui/NoAccess';
+import { isUnrestricted } from '@/lib/campus-access';
 import { hasPermission } from '@/lib/permissions';
 import { listCampusRows } from '@/lib/queries/campuses';
 import { getCurrentPermissions } from '@/lib/session';
@@ -30,5 +31,6 @@ async function CampusesData() {
   const granted = new Set(await getCurrentPermissions());
   if (!hasPermission(granted, 'settings.manage')) return <NoAccess title="Cơ sở" />;
   const campuses = await listCampusRows();
-  return <CampusList campuses={campuses} canManage={hasPermission(granted, 'settings.manage')} />;
+  // Thêm, xoá cơ sở ảnh hưởng toàn trung tâm: chỉ tài khoản làm việc ở mọi cơ sở (P32)
+  return <CampusList campuses={campuses} canManage={hasPermission(granted, 'settings.manage')} canAddRemove={await isUnrestricted()} />;
 }

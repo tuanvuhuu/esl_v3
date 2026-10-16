@@ -6,6 +6,7 @@ import { cookies } from 'next/headers';
 import { db } from '@/db/client';
 import { campuses } from '@/db/schema';
 import { ForbiddenError, requirePermission, writeAudit } from '@/lib/authz';
+import { CAMPUS_FORBIDDEN, getAllowedCampusIds, requireCampusAccess, requireUnrestricted } from '@/lib/campus-access';
 import { CAMPUS_ALL, CAMPUS_COOKIE } from '@/lib/campus';
 import { countClassesOfCampus, countTeachersOfCampus, listCampuses } from '@/lib/queries/campuses';
 import { getCurrentAccount } from '@/lib/session';
@@ -24,12 +25,15 @@ async function nameTaken(name: string, exceptId: number | null): Promise<boolean
   return !!row;
 }
 
-// Đổi cơ sở đang xem, lưu trong cookie. Ai đăng nhập cũng đổi được vì đây chỉ là cách xem dữ liệu.
+// Đổi cơ sở đang xem, lưu trong cookie. Chỉ chọn được cơ sở mình làm việc (P32); "Tất cả" chỉ cho tài khoản làm việc ở mọi cơ sở.
+// Cookie chỉ là lựa chọn hiển thị: getCampusContext vẫn kiểm lại phạm vi ở mỗi yêu cầu.
 export async function setCampusAction(value: string): Promise<ActionResult> {
   const account = await getCurrentAccount();
   if (!account) return { ok: false, message: 'Phiên đăng nhập đã hết. Đăng nhập lại.' };
-  const ids = (await listCampuses()).map((c) => c.id);
-  if (value !== CAMPUS_ALL && !ids.includes(Number(value))) return { ok: false, message: 'Không tìm thấy cơ sở này.' };
+  const allowed = await getAllowedCampusIds();
+  const ids = (await listCampuses()).map((c) => c.id).filter((id) => allowed === null || allowed.includes(id));
+  if (value === CAMPUS_ALL && allowed !== null) return { ok: false, message: CAMPUS_FORBIDDEN };
+  if (value !== CAMPUS_ALL && !ids.includes(Number(value))) return { ok: false, message: 'Không tìm thấy cơ sở này trong phạm vi của bạn.' };
 
   const jar = await cookies();
   jar.set(CAMPUS_COOKIE, value, {
@@ -46,6 +50,7 @@ export async function setCampusAction(value: string): Promise<ActionResult> {
 export async function createCampusAction(_prev: ActionResult, formData: FormData): Promise<ActionResult> {
   try {
     await requirePermission('settings.manage');
+    await requireUnrestricted('Chỉ quản trị làm việc ở mọi cơ sở mới thêm được cơ sở.');
     const parsed = campusFormSchema.safeParse(Object.fromEntries(formData));
     if (!parsed.success) {
       return { ok: false, message: 'Vui lòng kiểm tra lại các ô được đánh dấu.', fieldErrors: fieldErrorsFrom(parsed.error) };
@@ -65,6 +70,7 @@ export async function createCampusAction(_prev: ActionResult, formData: FormData
 export async function updateCampusAction(id: number, _prev: ActionResult, formData: FormData): Promise<ActionResult> {
   try {
     await requirePermission('settings.manage');
+    await requireCampusAccess(id);
     const parsed = campusFormSchema.safeParse(Object.fromEntries(formData));
     if (!parsed.success) {
       return { ok: false, message: 'Vui lòng kiểm tra lại các ô được đánh dấu.', fieldErrors: fieldErrorsFrom(parsed.error) };
@@ -87,6 +93,7 @@ export async function updateCampusAction(id: number, _prev: ActionResult, formDa
 export async function deleteCampusAction(id: number): Promise<ActionResult> {
   try {
     await requirePermission('settings.manage');
+    await requireUnrestricted('Chỉ quản trị làm việc ở mọi cơ sở mới xoá được cơ sở.');
     const all = await listCampuses();
     const current = all.find((c) => c.id === id);
     if (!current) return { ok: false, message: 'Không tìm thấy cơ sở này. Có thể đã bị xoá.' };
