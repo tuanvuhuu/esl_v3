@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { generateStudentPassword, studentLoginEmail } from '@/lib/student-account';
+import { DEFAULT_PASSWORD } from '@/lib/auth/password';
+import { studentLoginEmail } from '@/lib/student-account';
 import { parseStudentCode, studentCode } from '@/lib/student-code';
 
 describe('tài khoản học sinh', () => {
@@ -14,11 +15,7 @@ describe('tài khoản học sinh', () => {
     expect(parseStudentCode('giao-vien@esl.vn')).toBeNull();
   });
 
-  it('mật khẩu tạm có độ dài đúng, không có ký tự dễ nhầm, và mỗi lần khác nhau', () => {
-    const a = generateStudentPassword();
-    const b = generateStudentPassword();
-    expect(a).toHaveLength(10);
-    expect(a).toMatch(/^[abcdefghjkmnpqrstuvwxyz23456789]+$/);
-    expect(a).not.toBe(b);
+  it('mật khẩu ban đầu của tài khoản tạo từ ứng dụng là esl123', () => {
+    expect(DEFAULT_PASSWORD).toBe('esl123');
   });
 });

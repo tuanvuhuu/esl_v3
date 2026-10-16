@@ -59,6 +59,6 @@
 
 ## 8. Git và bí mật
 
-- Không commit, không push, không tạo PR khi người dùng chưa yêu cầu.
+- Xong mỗi việc thì commit và push lên `origin main` luôn, không hỏi lại (người dùng đã chốt ngày 2026-10-16). Trước khi push: `npm run typecheck` và `npm run lint` phải sạch. Không tạo PR khi người dùng chưa yêu cầu, không force push.
 - Không dùng `--no-verify` hay tắt hook.
 - Không ghi mật khẩu, token, `DATABASE_URL` thật vào repo.

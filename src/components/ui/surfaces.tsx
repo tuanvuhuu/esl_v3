@@ -17,7 +17,8 @@ export function Panel({
   className?: string;
 }) {
   return (
-    <section className={`rounded-[var(--radius-panel)] bg-surface shadow-card ${padded ? 'p-5 max-[767px]:p-4' : ''} ${className}`}>
+    // aria-label lấy từ tiêu đề: khối có tiêu đề là một vùng có tên, trình đọc màn hình và kiểm thử đọc được
+    <section aria-label={title} className={`rounded-[var(--radius-panel)] bg-surface shadow-card ${padded ? 'p-5 max-[767px]:p-4' : ''} ${className}`}>
       {(title || action) && (
         <header className="mb-3 flex items-center justify-between gap-3">
           {title && <h2 className="text-lg font-extrabold text-ink">{title}</h2>}

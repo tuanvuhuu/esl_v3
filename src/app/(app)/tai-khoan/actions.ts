@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { db } from '@/db/client';
 import { accounts, rolePermissions, teachers } from '@/db/schema';
 import { ForbiddenError, requireAdmin, requirePermission, writeAudit } from '@/lib/authz';
+import { DEFAULT_PASSWORD, hashPassword } from '@/lib/auth/password';
 import { LOCKED_ADMIN_PERMISSIONS, PERMISSIONS, ROLE_CODES, ROLE_LABELS, type Permission, type Role } from '@/lib/permissions';
 import { accountFormSchema } from '@/lib/validation/account';
 import { fieldErrorsFrom, type ActionResult } from '@/lib/validation/student';
@@ -97,11 +98,18 @@ export async function createAccountAction(_prev: ActionResult, formData: FormDat
     const v = checked.value;
     const [created] = await db
       .insert(accounts)
-      .values({ fullName: v.fullName, email: v.email, role: v.role, status: v.status, teacherId: v.teacherId })
+      .values({
+        fullName: v.fullName,
+        email: v.email,
+        role: v.role,
+        status: v.status,
+        teacherId: v.teacherId,
+        passwordHash: await hashPassword(DEFAULT_PASSWORD),
+      })
       .returning({ id: accounts.id });
     await writeAudit({ action: 'create', entity: 'account', entityId: created.id, summary: `Thêm tài khoản ${v.email} (${ROLE_LABELS[v.role]})` });
     revalidatePath('/tai-khoan');
-    return { ok: true, message: `Đã thêm ${v.email}` };
+    return { ok: true, message: `Đã thêm ${v.email}. Mật khẩu ban đầu là ${DEFAULT_PASSWORD}.` };
   } catch (error) {
     return errorResult(error);
   }

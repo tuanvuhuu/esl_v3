@@ -608,13 +608,13 @@ test.describe('bài tập, điểm danh, học phí', () => {
       await editor.getByRole('button', { name: 'Lưu câu hỏi' }).click();
       await expectToast(page, 'Đã lưu 2 câu hỏi, tổng 7 điểm');
 
-      // Tạo tài khoản học sinh từ hồ sơ và lấy mật khẩu tạm (chỉ hiện một lần)
+      // Tạo tài khoản học sinh từ hồ sơ: mật khẩu ban đầu là esl123 (hiện một lần)
       await page.goto('/hoc-sinh?cls=2');
       await page.getByRole('link', { name: fullName, exact: true }).first().click();
       const account = page.getByRole('region', { name: 'Tài khoản học sinh' });
       await account.getByRole('button', { name: 'Tạo tài khoản học sinh' }).click();
       const password = ((await page.locator('code[aria-label="Mật khẩu tạm thời"]').textContent()) ?? '').trim();
-      expect(password).toMatch(/^[a-z2-9]{10}$/);
+      expect(password).toBe('esl123');
       await page.getByRole('button', { name: 'Đã ghi lại', exact: true }).click();
 
       // Học sinh đăng nhập bằng mã: vào khu học sinh, không vào được màn quản lý
@@ -675,7 +675,7 @@ test.describe('bài tập, điểm danh, học phí', () => {
 
       await login(page);
       await page.goto('/cai-dat');
-      const panel = page.getByRole('region', { name: 'Dọn tệp' });
+      const panel = page.getByRole('region', { name: 'Tệp không còn dùng' });
       await panel.getByRole('button', { name: 'Dọn tệp không còn dùng' }).click();
       await page.getByRole('button', { name: 'Dọn tệp', exact: true }).click();
       await expectToast(page, 'Đã dọn');

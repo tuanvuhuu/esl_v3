@@ -2,6 +2,10 @@
 // Định dạng lưu: "scrypt$<salt hex>$<khoá hex>". Chỉ chạy trên server.
 import { randomBytes, scrypt as scryptCallback, timingSafeEqual } from 'node:crypto';
 
+// Mật khẩu ban đầu của mọi tài khoản tạo từ ứng dụng (nhân viên, học sinh tạo mới hoặc đặt lại).
+// Người dùng đổi được ở trang Đổi mật khẩu.
+export const DEFAULT_PASSWORD = 'esl123';
+
 const SCHEME = 'scrypt';
 const KEY_LENGTH = 64;
 

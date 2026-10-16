@@ -1,7 +1,7 @@
 # ESL Center: kế hoạch và tiến độ
 
-> **Tiến độ tổng: 119/133 task (89%)**
-> Cập nhật lần cuối: 2026-10-16. Thêm P30 (tự đổi mật khẩu, đã xong). Số đếm lấy từ các ô `[x]` và `[ ]` trong file. P28 và P29 chưa đánh dấu vì E2E `work.spec.ts` (cổng học sinh, dọn tệp) còn lỗi. P15 còn 4 mục mở (15.3, 15.4, 15.6, 15.8). P16 xong, chờ người dùng trả lời 12 câu trong `docs/NGHIEN-CUU-GIANG-DAY.md`. Còn một quyết định chờ người dùng (D5), không phải task.
+> **Tiến độ tổng: 121/134 task (90%)**
+> Cập nhật lần cuối: 2026-10-16. Thêm P30 (tự đổi mật khẩu xong; 30.2 mật khẩu esl123 còn chờ kiểm chứng với nhân viên). P28 còn 28.1, 28.2, 28.3 mở. P29 xong. Số đếm lấy từ các ô `[x]` và `[ ]` trong file. P15 còn 4 mục mở (15.3, 15.4, 15.6, 15.8). P16 xong, chờ người dùng trả lời 12 câu trong `docs/NGHIEN-CUU-GIANG-DAY.md`. Còn một quyết định chờ người dùng (D5), không phải task.
 
 Quy ước: `[x]` đã làm và đã kiểm chứng, `[ ]` chưa làm hoặc chưa kiểm chứng. Mỗi task đánh dấu kèm ngày và cách kiểm chứng. Quy tắc đầy đủ ở `CLAUDE.md` mục 5.
 
@@ -249,17 +249,18 @@ Nguồn: câu 5 và 11 của tài liệu. Quyết định: trình độ CEFR s�
 Nguồn: câu 3 của tài liệu. Quyết định: học sinh có tài khoản riêng gắn với hồ sơ; chỉ thấy bài của lớp mình; chỉ tải được tệp của chính mình hoặc tệp đề của bài đã giao.
 
 - [ ] **28.1** Vai trò học sinh; giáo viên tạo tài khoản học sinh và đặt lại mật khẩu từ hồ sơ.
-- [ ] **28.2** Khu học sinh (`/cua-toi`): bài của tôi, làm bài (trắc nghiệm, viết, nộp tệp), nộp bài.
+- [ ] **28.2** Khu học sinh (`/cua-toi`): bài của tôi, làm bài (trắc nghiệm, viết, nộp tệp), nộp bài. *(Chưa đánh dấu: E2E `work.spec.ts` "cổng học sinh" kiểm đăng nhập bằng mã và nộp bài. Trắc nghiệm, viết và nộp tệp chưa có E2E riêng.)*
 - [ ] **28.3** Kiểm quyền: học sinh không vào được màn của giáo viên; tệp và bài làm đúng chủ.
-- [ ] **28.4** Unit test quyền; E2E học sinh đăng nhập, nộp bài, giáo viên thấy bài nộp.
+- [x] **28.4** Unit test quyền; E2E học sinh đăng nhập, nộp bài, giáo viên thấy bài nộp. *(2026-10-16, unit `student-access.test.ts`; E2E `work.spec.ts` "cổng học sinh" đạt.)*
 
 ## P29. Dọn tệp không còn dùng
 
-- [ ] **29.1** Xoá tệp tải lên không còn được tham chiếu và đã quá 24 giờ, cả trên ổ đĩa; nút chạy trong Cài đặt.
+- [x] **29.1** Xoá tệp tải lên không còn được tham chiếu và đã quá 24 giờ, cả trên ổ đĩa; nút chạy trong Cài đặt. *(2026-10-16, E2E `work.spec.ts` "dọn tệp" đạt: xoá bản ghi và tệp quá hạn, giữ tệp mới.)*
 
 ## P30. Tự đổi mật khẩu
 
 - [x] **30.1** Trang Đổi mật khẩu cho mọi tài khoản (`/doi-mat-khau`; học sinh dùng `/cua-toi/doi-mat-khau`): nhập mật khẩu hiện tại, mật khẩu mới ít nhất 10 ký tự, nhập lại. Đổi xong thì phiên ở thiết bị khác mất hiệu lực, vì chữ ký token gắn với dấu của mật khẩu. *(2026-10-16, unit `auth.test.ts` 12 test; E2E `auth.spec.ts` đổi mật khẩu với hai thiết bị; `chuan.spec` ở 390px và 1440px; typecheck và lint sạch.)*
+- [ ] **30.2** Mật khẩu ban đầu `esl123` cho tài khoản nhân viên tạo mới, học sinh tạo mới và đặt lại. *(Chưa đánh dấu: đã kiểm với học sinh qua E2E "cổng học sinh" và unit `student-account.test.ts`. Chưa kiểm chứng tạo nhân viên qua giao diện rồi đăng nhập bằng `esl123`.)*
 
 ## Quyết định đã chốt
 
@@ -273,7 +274,7 @@ Nguồn: câu 3 của tài liệu. Quyết định: học sinh có tài khoản 
 | D6 | Cơ sở: một cơ sở có nhiều lớp (1 - nhiều). Mỗi lớp thuộc đúng một cơ sở. Học sinh, buổi học, điểm danh, bài tập, học phí đi theo lớp. Giáo viên dạy một hoặc nhiều cơ sở (liên kết nhiều - nhiều). Phụ huynh, tài khoản dùng chung. Cơ sở đang xem chọn trên thanh trên cùng, lưu trong cookie, mặc định là cơ sở đầu tiên, có "Tất cả cơ sở". | Đã chốt theo yêu cầu người dùng (2026-10-14). |
 | D7 | Trợ giảng và bài giảng có thể thuộc một hoặc nhiều cơ sở, theo cùng kiểu liên kết nhiều - nhiều như giáo viên. Hai mục này chưa có trong ứng dụng; khi xây dựng (P16 và việc tiếp theo) thì áp dụng quy tắc này. | Đã chốt theo yêu cầu người dùng (2026-10-14). Trợ giảng đã làm ở P20; bài giảng chưa làm. |
 | D6 | Thiết kế mới theo `docs/DESIGN.md`, bỏ thiết kế cam-xanh cũ. | Người dùng đã từ chối. |
-| D7 | Không commit khi chưa được yêu cầu. | `CLAUDE.md` mục 8. |
+| D7 | Xong mỗi việc thì commit và push lên `origin main`, không hỏi lại. Không tạo PR khi chưa được yêu cầu. | Người dùng chốt ngày 2026-10-16. `CLAUDE.md` mục 8. |
 | D8 | Mở rộng schema bằng migration mới, không sửa migration đã áp dụng. Dữ liệu mẫu seed lại bằng `db:seed:reset` (chỉ dev). | Đúng quy tắc `CLAUDE.md` mục 4. |
 | D9 | Xác thực bằng scrypt của Node, phiên bằng cookie httpOnly có chữ ký HMAC, không thêm thư viện. | Ít phụ thuộc, đủ cho quy mô trung tâm. |
 | D10 | Mỗi module có bản web và bản điện thoại, cùng dữ liệu và Server Action, khác giao diện theo breakpoint. | Yêu cầu của người dùng. |
