@@ -1,10 +1,11 @@
 import { connection } from 'next/server';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
+import Link from 'next/link';
 import { getCurrentAccount } from '@/lib/session';
 import { Btn } from '@/components/ui/Btn';
 
-// Khu học sinh (P28): khung riêng, chỉ có bài của học sinh và nút đăng xuất. Tài khoản khác bị chuyển về màn quản lý.
+// Khu học sinh (P28): khung riêng, chỉ có bài của học sinh, đổi mật khẩu và nút đăng xuất. Tài khoản khác bị chuyển về màn quản lý.
 export default function StudentLayout({ children }: { children: React.ReactNode }) {
   return (
     <Suspense fallback={null}>
@@ -25,6 +26,9 @@ async function StudentShell({ children }: { children: React.ReactNode }) {
         <span className="text-base font-extrabold text-ink">ESL Center · Khu học sinh</span>
         <div className="flex items-center gap-3">
           <span className="text-sm text-ink-2 max-[767px]:hidden">{account.fullName}</span>
+          <Link href="/cua-toi/doi-mat-khau" className="text-sm font-semibold text-primary-deep hover:underline">
+            Đổi mật khẩu
+          </Link>
           <form action="/logout" method="post">
             <Btn type="submit" variant="ghost">
               Đăng xuất

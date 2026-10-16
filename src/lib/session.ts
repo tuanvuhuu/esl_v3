@@ -7,7 +7,7 @@ import { connection } from 'next/server';
 import { cache } from 'react';
 import { db } from '@/db/client';
 import { accounts, rolePermissions } from '@/db/schema';
-import { readSession, signSession } from './auth/token';
+import { passwordFingerprint, readSession, sessionAccountId, signSession } from './auth/token';
 import { ACCOUNT_ROLE_LABELS, PERMISSIONS, type AccountRole, type Permission } from './permissions';
 
 export const SESSION_COOKIE = 'esl_session';
@@ -38,15 +38,26 @@ export const getCurrentAccount = cache(async (): Promise<CurrentAccount | null> 
   const jar = await cookies();
   const token = jar.get(SESSION_COOKIE)?.value;
   if (!token) return null;
-  const accountId = readSession(token, sessionSecret(), Date.now());
+  const accountId = sessionAccountId(token);
   if (!accountId) return null;
 
   const [row] = await db
-    .select({ id: accounts.id, fullName: accounts.fullName, email: accounts.email, role: accounts.role, status: accounts.status, teacherId: accounts.teacherId, studentId: accounts.studentId })
+    .select({
+      id: accounts.id,
+      fullName: accounts.fullName,
+      email: accounts.email,
+      role: accounts.role,
+      status: accounts.status,
+      teacherId: accounts.teacherId,
+      studentId: accounts.studentId,
+      passwordHash: accounts.passwordHash,
+    })
     .from(accounts)
     .where(eq(accounts.id, accountId))
     .limit(1);
   if (!row || row.status !== 'active') return null;
+  // Chữ ký phải khớp với mật khẩu hiện tại: đổi mật khẩu thì phiên cũ bị từ chối (xem lib/auth/token.ts)
+  if (readSession(token, sessionSecret(), Date.now(), passwordFingerprint(row.passwordHash)) !== row.id) return null;
   return { id: row.id, fullName: row.fullName, email: row.email, role: row.role, roleLabel: ACCOUNT_ROLE_LABELS[row.role], teacherId: row.teacherId, studentId: row.studentId };
 });
 
@@ -65,11 +76,12 @@ export const getCurrentPermissions = cache(async (): Promise<Permission[]> => {
   return rows.map((r) => r.permission).filter((p): p is Permission => known.has(p));
 });
 
-// Ghi cookie phiên sau khi đăng nhập đúng
+// Ghi cookie phiên sau khi đăng nhập đúng hoặc đổi mật khẩu. Dấu lấy từ mật khẩu đang lưu.
 export async function startSession(accountId: number): Promise<void> {
+  const [row] = await db.select({ passwordHash: accounts.passwordHash }).from(accounts).where(eq(accounts.id, accountId)).limit(1);
   const jar = await cookies();
   const expiresAt = Date.now() + SESSION_HOURS * 3_600_000;
-  jar.set(SESSION_COOKIE, signSession(accountId, expiresAt, sessionSecret()), {
+  jar.set(SESSION_COOKIE, signSession(accountId, expiresAt, sessionSecret(), passwordFingerprint(row?.passwordHash ?? null)), {
     httpOnly: true,
     sameSite: 'lax',
     secure: process.env.NODE_ENV === 'production',

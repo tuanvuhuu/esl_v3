@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
-import { ACCOUNTANT, ADMIN, devPassword } from './env';
+import { Client } from 'pg';
+import { hashPassword } from '../src/lib/auth/password';
+import { ACCOUNTANT, ADMIN, devPassword, loadEnvLocal } from './env';
 import { login } from './helpers';
 
 test.describe('đăng nhập và phân quyền', () => {
@@ -75,6 +77,64 @@ test.describe('đăng nhập và phân quyền', () => {
     await page.waitForURL('**/dang-nhap');
     await login(page, target);
     await expect(page.getByRole('link', { name: 'Tổng quan' }).first()).toBeVisible();
+  });
+
+  test('đổi mật khẩu: sai mật khẩu cũ báo lỗi; đổi xong thiết bị khác bị đăng xuất và chỉ mật khẩu mới vào được', async ({ page, browser }) => {
+    // Tài khoản thử riêng, xoá ở cuối kịch bản
+    loadEnvLocal();
+    const db = new Client({ connectionString: process.env.DATABASE_URL });
+    await db.connect();
+    const stamp = Date.now();
+    const email = `e2e-doi-mk-${stamp}@esl-center.vn`;
+    const oldPassword = `cu-${stamp}-mat-khau`;
+    const newPassword = `moi-${stamp}-mat-khau`;
+    const otherDevice = await browser.newContext();
+    const freshDevice = await browser.newContext();
+    try {
+      await db.query(`insert into accounts (full_name, email, role, status, password_hash) values ('E2E đổi mật khẩu', $1, 'academic', 'active', $2)`, [
+        email,
+        await hashPassword(oldPassword),
+      ]);
+      // Hai phiên: trình duyệt này và một thiết bị khác
+      await login(page, email, oldPassword);
+      const otherPage = await otherDevice.newPage();
+      await login(otherPage, email, oldPassword);
+
+      await page.goto('/doi-mat-khau');
+      await page.locator('input[name="currentPassword"]').fill('sai-hoan-toan-1');
+      await page.locator('input[name="newPassword"]').fill(newPassword);
+      await page.locator('input[name="confirmPassword"]').fill(newPassword);
+      await page.getByRole('button', { name: 'Đổi mật khẩu', exact: true }).click();
+      await expect(page.getByText('Mật khẩu hiện tại không đúng', { exact: true })).toBeVisible();
+
+      await page.locator('input[name="currentPassword"]').fill(oldPassword);
+      await page.getByRole('button', { name: 'Đổi mật khẩu', exact: true }).click();
+      await expect(page.getByText('Đã đổi mật khẩu. Các thiết bị khác đã bị đăng xuất.')).toBeVisible();
+      await expect(page.locator('input[name="currentPassword"]')).toHaveValue('');
+
+      // Thiết bị khác: phiên cũ không còn hiệu lực
+      await otherPage.goto('/tong-quan');
+      await otherPage.waitForURL('**/dang-nhap');
+
+      // Mật khẩu cũ không vào được, mật khẩu mới vào được
+      const freshPage = await freshDevice.newPage();
+      await freshPage.goto('/dang-nhap');
+      await freshPage.getByLabel('Email').fill(email);
+      await freshPage.getByLabel('Mật khẩu').fill(oldPassword);
+      await freshPage.getByRole('button', { name: 'Đăng nhập', exact: true }).click();
+      await expect(freshPage.getByRole('alert').filter({ hasText: 'Email hoặc mật khẩu không đúng.' })).toBeVisible();
+      await login(freshPage, email, newPassword);
+      await expect(freshPage.getByRole('link', { name: 'Tổng quan' }).first()).toBeVisible();
+
+      // Thiết bị đã đổi mật khẩu vẫn ở lại trang, vì được cấp phiên mới
+      await page.goto('/tong-quan');
+      await page.waitForURL('**/tong-quan');
+    } finally {
+      await otherDevice.close();
+      await freshDevice.close();
+      await db.query('delete from accounts where email = $1', [email]);
+      await db.end();
+    }
   });
 
   // TẠM THỜI: đăng nhập nhanh theo vai trò (chỉ phát triển). Xoá cùng với tính năng.

@@ -1,6 +1,6 @@
 'use client';
 
-import { IdCard, LogOut, Settings, User } from 'lucide-react';
+import { IdCard, KeyRound, LogOut, Settings, User } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 
@@ -59,6 +59,10 @@ export function UserMenu({ name, email, role, canSettings }: { name: string; ema
                 Cài đặt
               </Link>
             )}
+            <Link href="/doi-mat-khau" role="menuitem" onClick={() => setOpen(false)} className="flex min-h-10 w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-base font-semibold text-ink hover:bg-stone">
+              <KeyRound className="size-4 text-ink-2" aria-hidden />
+              Đổi mật khẩu
+            </Link>
             <form method="post" action="/logout">
               <button type="submit" role="menuitem" className="flex min-h-10 w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-base font-semibold text-blush-ink hover:bg-blush">
                 <LogOut className="size-4 text-blush-ink" aria-hidden />

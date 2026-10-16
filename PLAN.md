@@ -1,7 +1,7 @@
 # ESL Center: kế hoạch và tiến độ
 
-> **Tiến độ tổng: 105/111 task (95%)**
-> Cập nhật lần cuối: 2026-10-14. P15 còn 4 mục mở (15.3, 15.4, 15.6, 15.8). P16 xong, chờ người dùng trả lời 12 câu trong `docs/NGHIEN-CUU-GIANG-DAY.md`. Còn một quyết định chờ người dùng (D5), không phải task.
+> **Tiến độ tổng: 119/133 task (89%)**
+> Cập nhật lần cuối: 2026-10-16. Thêm P30 (tự đổi mật khẩu, đã xong). Số đếm lấy từ các ô `[x]` và `[ ]` trong file. P28 và P29 chưa đánh dấu vì E2E `work.spec.ts` (cổng học sinh, dọn tệp) còn lỗi. P15 còn 4 mục mở (15.3, 15.4, 15.6, 15.8). P16 xong, chờ người dùng trả lời 12 câu trong `docs/NGHIEN-CUU-GIANG-DAY.md`. Còn một quyết định chờ người dùng (D5), không phải task.
 
 Quy ước: `[x]` đã làm và đã kiểm chứng, `[ ]` chưa làm hoặc chưa kiểm chứng. Mỗi task đánh dấu kèm ngày và cách kiểm chứng. Quy tắc đầy đủ ở `CLAUDE.md` mục 5.
 
@@ -257,6 +257,10 @@ Nguồn: câu 3 của tài liệu. Quyết định: học sinh có tài khoản 
 
 - [ ] **29.1** Xoá tệp tải lên không còn được tham chiếu và đã quá 24 giờ, cả trên ổ đĩa; nút chạy trong Cài đặt.
 
+## P30. Tự đổi mật khẩu
+
+- [x] **30.1** Trang Đổi mật khẩu cho mọi tài khoản (`/doi-mat-khau`; học sinh dùng `/cua-toi/doi-mat-khau`): nhập mật khẩu hiện tại, mật khẩu mới ít nhất 10 ký tự, nhập lại. Đổi xong thì phiên ở thiết bị khác mất hiệu lực, vì chữ ký token gắn với dấu của mật khẩu. *(2026-10-16, unit `auth.test.ts` 12 test; E2E `auth.spec.ts` đổi mật khẩu với hai thiết bị; `chuan.spec` ở 390px và 1440px; typecheck và lint sạch.)*
+
 ## Quyết định đã chốt
 
 | Mã | Quyết định | Lý do |
@@ -286,4 +290,4 @@ Nguồn: câu 3 của tài liệu. Quyết định: học sinh có tài khoản 
 1. Xác nhận tab thứ tư trên điện thoại (D5).
 2. Đổi mật khẩu user `postgres`, hiện là `admin`, quá yếu cho dữ liệu thật. Đổi bằng `ALTER USER postgres WITH PASSWORD '...';` trong psql.
 3. **Trước khi đưa lên máy chủ thật:** xoá đăng nhập nhanh theo vai trò (tạm thời): hàm `devQuickLoginAction` trong `src/app/dang-nhap/actions.ts`, nút trong `src/components/auth/LoginForm.tsx`, prop trong `src/app/dang-nhap/page.tsx`, và kịch bản E2E "đăng nhập nhanh" trong `e2e/auth.spec.ts`. Hàm đã tự tắt khi `NODE_ENV=production`, nhưng vẫn nên xoá.
-4. Thêm giới hạn số lần đăng nhập sai và chức năng tự đổi mật khẩu trước khi dùng ngoài mạng nội bộ (xem `README.md`).
+4. Thêm giới hạn số lần đăng nhập sai trước khi dùng ngoài mạng nội bộ (xem `README.md`). Chức năng tự đổi mật khẩu đã có ở P30.
