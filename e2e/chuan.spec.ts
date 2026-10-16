@@ -26,6 +26,7 @@ const ROUTES = [
   '/tai-khoan?tab=phan-quyen',
   '/tai-khoan?tab=nhat-ky',
   '/doi-mat-khau',
+  '/nhap-du-lieu',
 ];
 
 // Đo trên trang. Trả về danh sách vi phạm, rỗng là đạt.

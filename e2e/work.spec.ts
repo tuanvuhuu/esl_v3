@@ -1,4 +1,6 @@
 import { expect, test } from '@playwright/test';
+import ExcelJS from 'exceljs';
+import { IMPORT_COLUMNS, type ImportColumnKey } from '../src/lib/import/columns';
 
 import { existsSync } from 'node:fs';
 import { mkdir, rm, writeFile } from 'node:fs/promises';
@@ -712,5 +714,91 @@ test.describe('bài tập, điểm danh, học phí', () => {
     await page.locator('button:visible', { hasText: 'Đã học' }).first().click();
     await expect(page.getByText('đã học xong nên không sửa được')).toBeVisible();
     await page.keyboard.press('Escape');
+  });
+
+  test('nhập dữ liệu: dòng lỗi chặn nhập; nhập tạo cơ sở, lớp, giáo viên, học sinh, phụ huynh; nhập lại thì cập nhật', async ({ page }) => {
+    loadEnvLocal();
+    const db = new Client({ connectionString: process.env.DATABASE_URL });
+    await db.connect();
+    const stamp = String(Date.now()).slice(-6);
+    const campus = `CS E2E nhap ${stamp}`;
+    const className = `LOP E2E N${stamp}`;
+    const teacherPhone = `09${stamp}11`;
+    const parentPhone = `09${stamp}22`;
+    const header = IMPORT_COLUMNS.map((c) => c.header);
+    const lineOf = (v: Partial<Record<ImportColumnKey, string | number>>) => IMPORT_COLUMNS.map((c) => v[c.key] ?? null);
+    const classCells = {
+      campusName: campus, className, course: 'Kiểm thử nhập', weekdays: 'T2,T4', startTime: '18:00', endTime: '19:30',
+      classStartDate: '02/11/2026', sessionsTotal: 6, fee: 3000000, capacity: 15, teacherName: `GV E2E nhap ${stamp}`, teacherPhone,
+    };
+    const studentA = { studentName: `HS E2E nhap A ${stamp}`, gender: 'Nam', dob: '01/01/2012', parentName: `PH E2E nhap ${stamp}`, parentPhone, relation: 'Bố' };
+    const studentB = { studentName: `HS E2E nhap B ${stamp}`, gender: 'Nữ', dob: '02/02/2013', parentPhone, relation: 'Bố' };
+
+    async function xlsx(lines: Partial<Record<ImportColumnKey, string | number>>[]): Promise<Buffer> {
+      const wb = new ExcelJS.Workbook();
+      const ws = wb.addWorksheet('Du lieu');
+      ws.addRow(header);
+      for (const l of lines) ws.addRow(lineOf(l));
+      return Buffer.from((await wb.xlsx.writeBuffer()) as ArrayBuffer);
+    }
+    const upload = (name: string, buffer: Buffer) =>
+      page.locator('input[aria-label="File Excel cần nhập"]').setInputFiles({ name, mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', buffer });
+
+    try {
+      await login(page);
+      await page.goto('/nhap-du-lieu');
+      await expect(page.getByRole('link', { name: 'Tải file mẫu' })).toHaveAttribute('href', '/api/nhap-du-lieu/mau');
+      const template = await page.request.get('/api/nhap-du-lieu/mau');
+      expect(template.status()).toBe(200);
+      expect(template.headers()['content-type']).toContain('spreadsheetml');
+
+      // File có một dòng lỗi: lớp mới thiếu lịch. Không nhập được dòng nào.
+      await upload('loi.xlsx', await xlsx([{ ...classCells, ...studentA }, { campusName: campus, className: `${className}X`, studentName: 'HS E2E thiếu lịch', gender: 'Nam', dob: '03/03/2012' }]));
+      await expect(page.getByText('Có 1 dòng lỗi.')).toBeVisible();
+      await expect(page.getByText(/cần ghi đủ để tạo lớp mới: khoá học, ngày học/).first()).toBeVisible();
+      await expect(page.getByRole('button', { name: /Nhập dữ liệu \(/ })).toBeDisabled();
+
+      // File đúng: hai học sinh cùng lớp, chung một phụ huynh
+      await upload('dung.xlsx', await xlsx([{ ...classCells, ...studentA }, { campusName: campus, className, ...studentB }]));
+      await expect(page.getByText('Không có lỗi.')).toBeVisible();
+      await expect(page.getByRole('region', { name: 'Học sinh' })).toContainText('Thêm2');
+      await page.getByRole('button', { name: 'Nhập dữ liệu (2 dòng)' }).click();
+      await expect(page.getByText(/Đã nhập xong: cơ sở thêm 1; giáo viên thêm 1; lớp thêm 1; học sinh thêm 2; phụ huynh thêm 1/)).toBeVisible();
+
+      const cls = (await db.query<{ id: number; assistant_id: number | null; n: number }>(
+        `select c.id, c.assistant_id, (select count(*)::int from class_sessions s where s.class_id = c.id) as n
+         from classes c join campuses k on k.id = c.campus_id where k.name = $1 and c.name = $2`, [campus, className],
+      )).rows;
+      expect(cls).toHaveLength(1);
+      expect(cls[0].n).toBe(6);
+      expect(cls[0].assistant_id).toBeNull();
+      const links = (await db.query<{ full_name: string; is_primary: boolean; relation: string }>(
+        `select s.full_name, sp.is_primary, sp.relation from student_parents sp join students s on s.id = sp.student_id
+         join parents p on p.id = sp.parent_id where p.phone = $1 order by s.full_name`, [parentPhone],
+      )).rows;
+      expect(links).toEqual([
+        { full_name: studentA.studentName, is_primary: true, relation: 'father' },
+        { full_name: studentB.studentName, is_primary: true, relation: 'father' },
+      ]);
+
+      // Nhập lại: lớp đổi học phí, học sinh A nhận theo họ tên và ngày sinh, đổi trạng thái
+      await upload('capnhat.xlsx', await xlsx([{ campusName: campus, className, fee: 3500000, studentName: studentA.studentName, dob: studentA.dob, status: 'Bảo lưu' }]));
+      await expect(page.getByText('Không có lỗi.')).toBeVisible();
+      await page.getByRole('button', { name: 'Nhập dữ liệu (1 dòng)' }).click();
+      await expect(page.getByText(/Đã nhập xong: lớp cập nhật 1; học sinh cập nhật 1/)).toBeVisible();
+      const after = (await db.query<{ fee: number; status: string; total: number }>(
+        `select c.fee, s.status, (select count(*)::int from students x where x.class_id = c.id) as total
+         from students s join classes c on c.id = s.class_id where s.full_name = $1`, [studentA.studentName],
+      )).rows;
+      expect(after).toEqual([{ fee: 3500000, status: 'paused', total: 2 }]);
+    } finally {
+      // Dọn theo thứ tự khoá ngoại: học sinh (kèm liên kết), lớp (kèm buổi học), giáo viên, phụ huynh, cơ sở
+      await db.query(`delete from students where full_name like $1`, [`HS E2E nhap % ${stamp}`]);
+      await db.query(`delete from classes where campus_id in (select id from campuses where name = $1)`, [campus]);
+      await db.query(`delete from teachers where phone = $1`, [teacherPhone]);
+      await db.query(`delete from parents where phone = $1`, [parentPhone]);
+      await db.query(`delete from campuses where name = $1`, [campus]);
+      await db.end();
+    }
   });
 });

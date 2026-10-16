@@ -45,9 +45,9 @@ test.describe('giáo viên, lớp học, phụ huynh', () => {
     await create.getByLabel('Khoá học *').fill('Kiểm thử đầu cuối');
     await create.getByRole('button', { name: 'Giáo viên chủ nhiệm *' }).click();
     await create.getByRole('option', { name: 'Cô Ngọc Ánh · Thiếu nhi' }).click();
-    await create.getByRole('button', { name: 'Trợ giảng *' }).click();
+    await create.getByRole('button', { name: 'Trợ giảng' }).click();
     await create.getByRole('option', { name: 'Cô Lan Anh · Hỗ trợ lớp' }).click();
-    await create.getByRole('button', { name: 'Giáo viên nước ngoài *' }).click();
+    await create.getByRole('button', { name: 'Giáo viên nước ngoài' }).click();
     await create.getByRole('option', { name: 'Ms. Emily Carter · Speaking' }).click();
     await create.getByLabel('Học phí (VND) *').fill('1000000');
     await create.getByLabel('Giờ bắt đầu *').fill('18:00');
@@ -71,12 +71,13 @@ test.describe('giáo viên, lớp học, phụ huynh', () => {
     await expect(page.locator('article', { hasText: code })).toHaveCount(0);
   });
 
-  test('lớp: thiếu trợ giảng hoặc giáo viên nước ngoài thì không tạo được', async ({ page }) => {
+  test('lớp: để trống trợ giảng và giáo viên nước ngoài vẫn tạo được', async ({ page }) => {
     await login(page);
     await page.goto('/lop-hoc');
     await page.getByRole('button', { name: 'Tạo lớp học' }).first().click();
     const create = dialogById(page, 'class-create-title');
-    await create.getByLabel('Mã lớp *').fill(uniq('LOP E2E'));
+    const code = uniq('LOP E2E');
+    await create.getByLabel('Mã lớp *').fill(code);
     await create.getByLabel('Khoá học *').fill('Kiểm thử đầu cuối');
     await create.getByRole('button', { name: 'Giáo viên chủ nhiệm *' }).click();
     await create.getByRole('option', { name: 'Cô Ngọc Ánh · Thiếu nhi' }).click();
@@ -87,9 +88,8 @@ test.describe('giáo viên, lớp học, phụ huynh', () => {
     await create.getByLabel('Ngày khai giảng *').fill('2026-10-19');
     await create.getByLabel('Số buổi *').fill('4');
     await create.getByRole('button', { name: 'Tạo lớp', exact: true }).click();
-    await expect(create.getByText('Vui lòng chọn trợ giảng')).toBeVisible();
-    await expect(create.getByText('Vui lòng chọn giáo viên nước ngoài')).toBeVisible();
-    await create.getByRole('button', { name: 'Huỷ', exact: true }).click();
+    // Lớp thử có tiền tố "LOP E2E" được dọn trong global-teardown
+    await expectToast(page, `Đã tạo lớp ${code} với 4 buổi học`);
   });
 
   test('lớp còn học sinh thì không xoá được', async ({ page }) => {

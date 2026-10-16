@@ -118,24 +118,24 @@ export function ClassForm({
           block
         />
       </Field>
-      <Field label="Trợ giảng *" error={errors.assistantId} hint={assistantOptions.length === 0 ? 'Cơ sở này chưa có trợ giảng. Thêm ở màn Giáo viên, chọn vai trò Trợ giảng.' : undefined}>
+      <Field label="Trợ giảng" error={errors.assistantId} hint={assistantOptions.length === 0 ? 'Cơ sở này chưa có trợ giảng. Thêm ở màn Giáo viên, chọn vai trò Trợ giảng.' : undefined}>
         <SelectPanel
           name="assistantId"
-          label="Trợ giảng *"
+          label="Trợ giảng"
           value={assistantId}
           onChange={setAssistantId}
-          options={[{ value: '', label: 'Chọn trợ giảng' }, ...assistantOptions.map((t) => ({ value: String(t.id), label: `${t.name} · ${t.subject}` }))]}
+          options={[{ value: '', label: 'Chưa có trợ giảng' }, ...assistantOptions.map((t) => ({ value: String(t.id), label: `${t.name} · ${t.subject}` }))]}
           error={!!errors.assistantId}
           block
         />
       </Field>
-      <Field label="Giáo viên nước ngoài *" error={errors.foreignTeacherId} hint={foreignOptions.length === 0 ? 'Cơ sở này chưa có giáo viên nước ngoài. Thêm ở màn Giáo viên, chọn vai trò Giáo viên nước ngoài.' : undefined}>
+      <Field label="Giáo viên nước ngoài" error={errors.foreignTeacherId} hint={foreignOptions.length === 0 ? 'Cơ sở này chưa có giáo viên nước ngoài. Thêm ở màn Giáo viên, chọn vai trò Giáo viên nước ngoài.' : undefined}>
         <SelectPanel
           name="foreignTeacherId"
-          label="Giáo viên nước ngoài *"
+          label="Giáo viên nước ngoài"
           value={foreignTeacherId}
           onChange={setForeignTeacherId}
-          options={[{ value: '', label: 'Chọn giáo viên nước ngoài' }, ...foreignOptions.map((t) => ({ value: String(t.id), label: `${t.name} · ${t.subject}` }))]}
+          options={[{ value: '', label: 'Chưa có giáo viên nước ngoài' }, ...foreignOptions.map((t) => ({ value: String(t.id), label: `${t.name} · ${t.subject}` }))]}
           error={!!errors.foreignTeacherId}
           block
         />

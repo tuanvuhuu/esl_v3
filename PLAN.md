@@ -1,7 +1,7 @@
 # ESL Center: kế hoạch và tiến độ
 
-> **Tiến độ tổng: 121/134 task (90%)**
-> Cập nhật lần cuối: 2026-10-16. Thêm P30 (tự đổi mật khẩu xong; 30.2 mật khẩu esl123 còn chờ kiểm chứng với nhân viên). P28 còn 28.1, 28.2, 28.3 mở. P29 xong. Số đếm lấy từ các ô `[x]` và `[ ]` trong file. P15 còn 4 mục mở (15.3, 15.4, 15.6, 15.8). P16 xong, chờ người dùng trả lời 12 câu trong `docs/NGHIEN-CUU-GIANG-DAY.md`. Còn một quyết định chờ người dùng (D5), không phải task.
+> **Tiến độ tổng: 125/138 task (90%)**
+> Cập nhật lần cuối: 2026-10-16. Thêm P31 (nhập dữ liệu từ Excel, đã xong). Thêm P30 (tự đổi mật khẩu xong; 30.2 mật khẩu esl123 còn chờ kiểm chứng với nhân viên). P28 còn 28.1, 28.2, 28.3 mở. P29 xong. Số đếm lấy từ các ô `[x]` và `[ ]` trong file. P15 còn 4 mục mở (15.3, 15.4, 15.6, 15.8). P16 xong, chờ người dùng trả lời 12 câu trong `docs/NGHIEN-CUU-GIANG-DAY.md`. Còn một quyết định chờ người dùng (D5), không phải task.
 
 Quy ước: `[x]` đã làm và đã kiểm chứng, `[ ]` chưa làm hoặc chưa kiểm chứng. Mỗi task đánh dấu kèm ngày và cách kiểm chứng. Quy tắc đầy đủ ở `CLAUDE.md` mục 5.
 
@@ -261,6 +261,15 @@ Nguồn: câu 3 của tài liệu. Quyết định: học sinh có tài khoản 
 
 - [x] **30.1** Trang Đổi mật khẩu cho mọi tài khoản (`/doi-mat-khau`; học sinh dùng `/cua-toi/doi-mat-khau`): nhập mật khẩu hiện tại, mật khẩu mới ít nhất 10 ký tự, nhập lại. Đổi xong thì phiên ở thiết bị khác mất hiệu lực, vì chữ ký token gắn với dấu của mật khẩu. *(2026-10-16, unit `auth.test.ts` 12 test; E2E `auth.spec.ts` đổi mật khẩu với hai thiết bị; `chuan.spec` ở 390px và 1440px; typecheck và lint sạch.)*
 - [ ] **30.2** Mật khẩu ban đầu `esl123` cho tài khoản nhân viên tạo mới, học sinh tạo mới và đặt lại. *(Chưa đánh dấu: đã kiểm với học sinh qua E2E "cổng học sinh" và unit `student-account.test.ts`. Chưa kiểm chứng tạo nhân viên qua giao diện rồi đăng nhập bằng `esl123`.)*
+
+## P31. Nhập dữ liệu từ Excel
+
+Quyết định (2026-10-16): Excel một sheet, mỗi dòng một học sinh kèm cơ sở, lớp, ba vị trí giáo viên và một phụ huynh. Nhận bản ghi đã có: cơ sở theo tên; lớp theo cơ sở và mã lớp; giáo viên, phụ huynh theo SĐT (giáo viên không có số thì theo tên); học sinh theo mã HS, không có mã thì theo họ tên và ngày sinh. Ô trống giữ giá trị cũ, không xoá bản ghi. Lớp đã có không đổi lịch tuần.
+
+- [x] **31.1** File mẫu `.xlsx` (`/api/nhap-du-lieu/mau`, cần quyền cài đặt): tiêu đề có ghi chú, màu theo nhóm, danh sách chọn, cột SĐT và ngày định dạng Text. *(2026-10-16, unit `import.test.ts` tạo mẫu rồi đọc lại không lỗi; E2E kiểm route trả file Excel.)*
+- [x] **31.2** Màn `/nhap-du-lieu`: xem trước từng dòng với Thêm, Cập nhật, Giữ nguyên, lỗi và ghi chú theo dòng, thẻ tổng hợp theo loại; còn lỗi thì không nhập được. *(2026-10-16, E2E `work.spec.ts` "nhập dữ liệu"; `chuan.spec` ở 390px và 1440px.)*
+- [x] **31.3** Nhập trong một transaction theo thứ tự cơ sở → giáo viên → lớp (sinh buổi học) → học sinh (chuyển lớp ghi lịch sử) → phụ huynh và liên kết. Kế hoạch lập lại ngay trong transaction. *(2026-10-16, E2E: nhập tạo đủ bản ghi, 6 buổi học, liên kết phụ huynh; nhập lại cập nhật học phí và trạng thái.)*
+- [x] **31.4** Trợ giảng và giáo viên nước ngoài của lớp không bắt buộc (form lớp và nhập dữ liệu). *(2026-10-16, E2E `catalog.spec.ts` tạo lớp để trống hai vị trí.)*
 
 ## Quyết định đã chốt
 

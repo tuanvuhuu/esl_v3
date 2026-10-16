@@ -42,15 +42,16 @@ async function fitsSlot(id: number, role: StaffRole, campusId: number): Promise<
   return !!row && (await teacherTeachesCampus(id, campusId));
 }
 
-// Ba vị trí của lớp: giáo viên chủ nhiệm, trợ giảng, giáo viên nước ngoài. Trả về lỗi đầu tiên, hoặc null nếu đủ và đúng.
-async function slotErrors(v: { campusId: number; teacherId: number; assistantId: number; foreignTeacherId: number }): Promise<ActionResult | null> {
+// Ba vị trí của lớp: giáo viên chủ nhiệm (bắt buộc), trợ giảng và giáo viên nước ngoài (có thể trống).
+// Trả về lỗi đầu tiên, hoặc null nếu đúng.
+async function slotErrors(v: { campusId: number; teacherId: number; assistantId: number | null; foreignTeacherId: number | null }): Promise<ActionResult | null> {
   if (!(await fitsSlot(v.teacherId, 'teacher', v.campusId))) {
     return { ok: false, message: 'Giáo viên chủ nhiệm phải là giáo viên dạy ở cơ sở này.', fieldErrors: { teacherId: 'Chọn giáo viên dạy ở cơ sở này' } };
   }
-  if (!(await fitsSlot(v.assistantId, 'assistant', v.campusId))) {
+  if (v.assistantId !== null && !(await fitsSlot(v.assistantId, 'assistant', v.campusId))) {
     return { ok: false, message: 'Trợ giảng phải là trợ giảng dạy ở cơ sở này.', fieldErrors: { assistantId: 'Chọn trợ giảng dạy ở cơ sở này' } };
   }
-  if (!(await fitsSlot(v.foreignTeacherId, 'foreign', v.campusId))) {
+  if (v.foreignTeacherId !== null && !(await fitsSlot(v.foreignTeacherId, 'foreign', v.campusId))) {
     return { ok: false, message: 'Giáo viên nước ngoài phải dạy ở cơ sở này.', fieldErrors: { foreignTeacherId: 'Chọn giáo viên nước ngoài dạy ở cơ sở này' } };
   }
   return null;

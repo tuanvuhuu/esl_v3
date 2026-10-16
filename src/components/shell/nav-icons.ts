@@ -14,6 +14,7 @@ import {
   Library,
   Settings,
   ShieldCheck,
+  Upload,
   Users,
   Wallet,
 } from 'lucide-react';
@@ -35,4 +36,5 @@ export const NAV_ICONS: Record<IconKey, LucideIcon> = {
   building: Building2,
   settings: Settings,
   shield: ShieldCheck,
+  upload: Upload,
 };

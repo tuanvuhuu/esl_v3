@@ -38,7 +38,7 @@ export function FileInput({ label, accept, disabled = false, onFile }: { label: 
       aria-label={label}
       disabled={disabled}
       onChange={(e) => onFile(e.target.files?.[0])}
-      className="text-sm text-ink-2 file:mr-3 file:rounded-[var(--radius-ctl)] file:border file:border-line file:bg-surface file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-ink"
+      className="h-[var(--ctl-h)] max-w-full text-sm text-ink-2 file:mr-3 file:h-full file:rounded-[var(--radius-ctl)] file:border file:border-line file:bg-surface file:px-3 file:text-sm file:font-semibold file:text-ink max-[767px]:h-[var(--ctl-h-touch)]"
     />
   );
 }

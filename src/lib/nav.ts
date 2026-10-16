@@ -18,7 +18,8 @@ export type IconKey =
   | 'chart'
   | 'building'
   | 'settings'
-  | 'shield';
+  | 'shield'
+  | 'upload';
 
 export type NavItem = {
   href: string;
@@ -63,6 +64,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/co-so', label: 'Cơ sở', icon: 'building', permission: 'settings.manage' },
       { href: '/cai-dat', label: 'Cài đặt', icon: 'settings', permission: 'settings.manage' },
+      { href: '/nhap-du-lieu', label: 'Nhập dữ liệu', icon: 'upload', permission: 'settings.manage' },
       { href: '/tai-khoan', label: 'Tài khoản & quyền', icon: 'shield', permission: 'accounts.manage' },
     ],
   },

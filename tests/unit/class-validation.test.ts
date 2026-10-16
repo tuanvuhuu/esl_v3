@@ -34,17 +34,17 @@ describe('lớp học', () => {
     expect(classCreateSchema.safeParse({ ...createOk, campusId: '' }).success).toBe(false);
     expect(classCoreSchema.safeParse({ ...createOk, campusId: '0' }).success).toBe(false);
   });
-  it('lớp cần đủ giáo viên chủ nhiệm, trợ giảng và giáo viên nước ngoài', () => {
+  it('giáo viên chủ nhiệm bắt buộc; trợ giảng và giáo viên nước ngoài có thể để trống', () => {
     expect(classCreateSchema.safeParse({ ...createOk, teacherId: '' }).success).toBe(false);
-    expect(classCreateSchema.safeParse({ ...createOk, assistantId: '' }).success).toBe(false);
-    expect(classCreateSchema.safeParse({ ...createOk, foreignTeacherId: '' }).success).toBe(false);
     const r = classCreateSchema.safeParse({ ...createOk, assistantId: '', foreignTeacherId: '' });
-    expect(r.success).toBe(false);
-    if (!r.success) {
-      const errors = fieldErrorsFrom(r.error);
-      expect(errors.assistantId).toBe('Vui lòng chọn trợ giảng');
-      expect(errors.foreignTeacherId).toBe('Vui lòng chọn giáo viên nước ngoài');
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data.assistantId).toBeNull();
+      expect(r.data.foreignTeacherId).toBeNull();
     }
+    const bad = classCreateSchema.safeParse({ ...createOk, assistantId: 'abc' });
+    expect(bad.success).toBe(false);
+    if (!bad.success) expect(fieldErrorsFrom(bad.error).assistantId).toBe('Trợ giảng không hợp lệ');
   });
   it('bắt buộc chọn ít nhất một ngày học', () => {
     const r = classCreateSchema.safeParse({ ...createOk, weekdays: [] });
