@@ -147,9 +147,11 @@ async function main() {
 
   await db.transaction(async (tx) => {
     // Cơ sở, giáo viên và lớp. Mọi lớp mẫu thuộc cơ sở chính.
+    // Migration 0003 đã tạo sẵn "Cơ sở chính" trên DB mới, nên dùng upsert theo tên thay vì insert thường (E-065).
     const [mainCampus] = await tx
       .insert(campuses)
       .values({ name: 'Cơ sở chính', address: 'Số 1, đường mẫu, quận demo' })
+      .onConflictDoUpdate({ target: campuses.name, set: { address: 'Số 1, đường mẫu, quận demo' } })
       .returning({ id: campuses.id });
     const insertedTeachers = await tx.insert(teachers).values(TEACHER_SEED.map((t) => ({ ...t }))).returning({ id: teachers.id, name: teachers.name });
     // Giáo viên mẫu đều dạy ở cơ sở chính

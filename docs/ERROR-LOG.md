@@ -593,3 +593,12 @@ Mỗi lỗi gặp phải được ghi ở đây, theo mẫu dưới đây. Trư�
 - Cách sửa: Tạo pool và drizzle ở lần dùng đầu tiên (`getPool`, `getDb`), bọc bằng `lazy` (Proxy). Build không cần CSDL. Lúc chạy, nếu thiếu cấu hình vẫn báo lỗi rõ ràng.
 - Quy tắc phòng ngừa: Module dùng chung (CSDL, biến môi trường) không được ném lỗi khi nạp module, chỉ ném khi thực sự dùng. Trước khi báo deploy xong: tạm chuyển `.env.local` đi rồi chạy `next build` để tái hiện điều kiện của Vercel, rồi khôi phục. Runtime trên Vercel vẫn cần `DATABASE_URL` và `SESSION_SECRET` đặt trong cấu hình dự án.
 - Đã áp dụng ở: `src/db/client.ts`.
+
+## E-065 · Seed lỗi trên DB mới vì cơ sở mặc định đã có sẵn từ migration
+- Ngày: 2026-10-16
+- Khu vực: CSDL (`src/db/seed.ts`, migration `0003_co_so_mot_nhieu_lop.sql`)
+- Triệu chứng: Chạy `npm run db:migrate` rồi `npm run db:seed` trên database trống (esl_center trên Neon). Seed báo `duplicate key value violates unique constraint "campuses_name_key"` với "Cơ sở chính".
+- Nguyên nhân: Migration 0003 chèn sẵn dòng "Cơ sở chính" để gán dữ liệu cũ. Seed chỉ kiểm tra bảng `students` và `teachers` có trống không, rồi insert campus bằng insert thường. Trên DB đã seed bằng `--reset` thì bảng `campuses` bị TRUNCATE trước nên không gặp lỗi, nên lỗi chỉ lộ ra trên DB mới.
+- Cách sửa: Insert campus dùng `onConflictDoUpdate({ target: campuses.name })`, cập nhật địa chỉ mẫu nếu đã có. Transaction seed vẫn rollback khi lỗi nên không để dữ liệu dở.
+- Quy tắc phòng ngừa: Seed phải chạy được trên DB vừa migrate, không chỉ trên DB đã reset. Khi migration chèn dữ liệu nền, seed dùng upsert theo khoá tự nhiên hoặc bỏ qua bản ghi đó. Kiểm tra: `migrate` rồi `db:seed` trên DB trống phải chạy được, và chạy `db:seed` lần hai phải báo bỏ qua.
+- Đã áp dụng ở: `src/db/seed.ts`.
