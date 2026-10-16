@@ -566,3 +566,30 @@ Mỗi lỗi gặp phải được ghi ở đây, theo mẫu dưới đây. Trư�
 - Cách sửa: DataGrid có `stickyEnd`: cột cuối dính mép phải (`sticky right-0`, lề 16px), và dòng có `minWidth` bằng tổng cột để ô dính có khung bám. RowMenu vẽ menu bằng portal lên body, định vị theo nút, mở lên khi thiếu chỗ bên dưới, đóng khi cuộn hoặc đổi cỡ màn hình. Cột Ghi chú giảm min từ 110px xuống 104px để bảng vẫn vừa 1440px.
 - Quy tắc phòng ngừa: Bảng cuộn ngang có cột thao tác ở cuối thì đặt `stickyEnd`. Menu trong khung cuộn phải vẽ bằng portal, không absolute trong khung. Đo menu của dòng cuối ở màn hình cao 900px: đáy menu không được vượt màn hình.
 - Đã áp dụng ở: `src/components/ui/datagrid.tsx`, `src/components/ui/RowMenu.tsx`, `src/components/parents/ParentList.tsx`.
+
+## E-062 · Thông báo sau khi lưu biến mất vì trang làm mới dựng lại cây giao diện
+- Ngày: 2026-10-15
+- Khu vực: Giao diện (`src/components/ui/Toast.tsx`), các màn gọi `router.refresh()` sau khi lưu
+- Triệu chứng: Lưu câu hỏi bài tập xong, thông báo "Đã lưu 3 câu hỏi" hiện rồi mất. Kịch bản E2E "bài tập có câu hỏi" lúc đạt lúc không. Theo dõi DOM bằng MutationObserver: sau khi lưu, phần tử tiêu đề của trang bị gỡ và dựng lại, và thông báo mất theo.
+- Nguyên nhân: Thông báo giữ trong state của `useToast` ở component chứa dữ liệu. `router.refresh()` làm dựng lại cây giao diện đó, nên state mất.
+- Cách sửa: Trạng thái thông báo giữ ở mức module bằng `useSyncExternalStore`. Thông báo vẫn còn sau khi trang làm mới.
+- Quy tắc phòng ngừa: Thông báo sau khi lưu phải sống qua `router.refresh()`. Không để thông báo trong state của component có dữ liệu được làm mới. Kiểm tra: sau khi lưu, thông báo còn hiện sau 500ms và sau khi trang làm mới.
+- Đã áp dụng ở: `src/components/ui/Toast.tsx`.
+
+## E-063 · Tên tài liệu gõ trong lúc tải tệp bị ghi đè bằng tên tệp
+- Ngày: 2026-10-15
+- Khu vực: Giao diện (`src/components/lessons/MaterialsPanel.tsx`)
+- Triệu chứng: Chọn tệp tài liệu, gõ tên "Bảng từ vựng" trong lúc tệp đang tải lên. Khi tải xong, tên bị đổi thành "tu-vung.txt" và tài liệu lưu với tên tệp.
+- Nguyên nhân: Hàm tải tệp đọc `title` từ closure lúc bắt đầu tải (còn rỗng), nên `if (!title) setTitle(r.name)` ghi đè tên gõ sau đó.
+- Cách sửa: `setTitle((prev) => (prev.trim() === '' ? r.name : prev))`.
+- Quy tắc phòng ngừa: Khi cập nhật state sau một `await`, dùng hàm cập nhật `(prev) => …` thay vì giá trị đọc từ closure lúc bắt đầu. Kịch bản E2E phải gõ tên trong lúc tải tệp để bắt lỗi này.
+- Đã áp dụng ở: `src/components/lessons/MaterialsPanel.tsx`.
+
+## E-064 · Build trên Vercel thất bại vì thiếu DATABASE_URL khi thu thập cấu hình route
+- Ngày: 2026-10-16
+- Khu vực: Next.js (build), CSDL (`src/db/client.ts`)
+- Triệu chứng: Vercel build nhánh main (commit 34a7253) lỗi: "Failed to collect configuration for /logout ... Thiếu DATABASE_URL". Tái hiện ở máy: chuyển `.env.local` đi rồi `next build` cũng lỗi (lần này ở `/api/files/[id]`).
+- Nguyên nhân: `src/db/client.ts` tạo pool và ném lỗi ngay khi module được nạp, nếu thiếu `DATABASE_URL`. Route `/logout` import `lib/session` → `db/client`. Khi build, Next nạp module của route để thu thập cấu hình, nên build cần có chuỗi kết nối.
+- Cách sửa: Tạo pool và drizzle ở lần dùng đầu tiên (`getPool`, `getDb`), bọc bằng `lazy` (Proxy). Build không cần CSDL. Lúc chạy, nếu thiếu cấu hình vẫn báo lỗi rõ ràng.
+- Quy tắc phòng ngừa: Module dùng chung (CSDL, biến môi trường) không được ném lỗi khi nạp module, chỉ ném khi thực sự dùng. Trước khi báo deploy xong: tạm chuyển `.env.local` đi rồi chạy `next build` để tái hiện điều kiện của Vercel, rồi khôi phục. Runtime trên Vercel vẫn cần `DATABASE_URL` và `SESSION_SECRET` đặt trong cấu hình dự án.
+- Đã áp dụng ở: `src/db/client.ts`.
