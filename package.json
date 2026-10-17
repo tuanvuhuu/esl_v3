@@ -8,6 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
+    "test:task": "node scripts/test-task.mjs",
+    "test:recent": "node scripts/test-task.mjs recent",
     "test:e2e": "playwright test",
     "typecheck": "tsc --noEmit",
     "db:generate": "node node_modules/drizzle-kit/bin.cjs generate",
