@@ -1,4 +1,4 @@
-﻿import { expect, test } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { login } from './helpers';
 
 // Kiểm tra chuẩn giao diện (docs/DESIGN.md mục 8), để chặn lệch chuẩn về sau:
@@ -43,6 +43,7 @@ function audit(phone: boolean): string[] {
     for (const el of Array.from(document.querySelectorAll('button, select, input, textarea, [role="tab"]'))) {
       if (!visible(el)) continue;
       const html = el as HTMLElement;
+      if (el.tagName === 'TEXTAREA') continue; // ô nhập nhiều dòng (ghi chú, nội dung) có chiều cao theo rows
       if (el.tagName === 'INPUT' && ['checkbox', 'radio', 'hidden'].includes((el as HTMLInputElement).type)) continue;
       const role = el.getAttribute('role');
       if (role === 'checkbox' || role === 'switch') continue; // ô đánh dấu quyền có cỡ riêng
@@ -84,14 +85,38 @@ function audit(phone: boolean): string[] {
 for (const width of [1440, 390]) {
   test(`chuẩn giao diện ở ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
-    await login(page);
     const all: string[] = [];
+
+    // Đo trang Đăng nhập trước khi vào app
+    await page.goto('/dang-nhap', { waitUntil: 'load' });
+    await page.waitForTimeout(300);
+    const loginIssues = await page.evaluate(audit, width < 768);
+    for (const i of loginIssues) all.push(`/dang-nhap: ${i}`);
+
+    await login(page);
     for (const route of ROUTES) {
       await page.goto(route, { waitUntil: 'load' });
       await page.waitForTimeout(300);
       const issues = await page.evaluate(audit, width < 768);
       for (const i of issues) all.push(`${route}: ${i}`);
     }
+
+    // Đo hộp thoại form: mở form thêm học sinh (web: "Thêm học sinh", mobile: "Thêm mới")
+    await page.goto('/hoc-sinh');
+    const addBtn = width < 768 ? page.getByRole('button', { name: 'Thêm mới' }) : page.getByRole('button', { name: 'Thêm học sinh' });
+    await addBtn.first().click();
+    await page.waitForTimeout(300);
+    const formIssues = await page.evaluate(audit, width < 768);
+    for (const i of formIssues) all.push(`/hoc-sinh (dialog thêm): ${i}`);
+    await page.keyboard.press('Escape');
+
+    // Đo hồ sơ học sinh (ngăn kéo web hoặc trang riêng điện thoại)
+    const profileUrl = width < 768 ? '/hoc-sinh/1' : '/hoc-sinh?h=1';
+    await page.goto(profileUrl, { waitUntil: 'load' });
+    await page.waitForTimeout(300);
+    const profileIssues = await page.evaluate(audit, width < 768);
+    for (const i of profileIssues) all.push(`${profileUrl}: ${i}`);
+
     expect(all, all.join('\n')).toEqual([]);
   });
 }
