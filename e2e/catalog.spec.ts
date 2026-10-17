@@ -71,6 +71,52 @@ test.describe('giáo viên, lớp học, phụ huynh', () => {
     await expect(page.locator('article', { hasText: code })).toHaveCount(0);
   });
 
+  test('lớp: chọn trình độ CEFR, xem chi tiết hiện đúng trình độ, sửa đổi trình độ thành công', async ({ page }) => {
+    await login(page);
+    const code = uniq('LOP CEFR');
+    await page.goto('/lop-hoc');
+    await page.getByRole('button', { name: 'Tạo lớp học' }).first().click();
+    const create = dialogById(page, 'class-create-title');
+    await create.getByLabel('Mã lớp *').fill(code);
+    await create.getByLabel('Khoá học *').fill('Luyện thi B1 Preliminary');
+    await create.getByRole('button', { name: 'Giáo viên chủ nhiệm *' }).click();
+    await create.getByRole('option', { name: 'Cô Ngọc Ánh · Thiếu nhi' }).click();
+    await create.getByRole('button', { name: 'Trình độ CEFR' }).click();
+    await create.getByRole('option', { name: /B1/ }).click();
+    await create.getByLabel('Học phí (VND) *').fill('3000000');
+    await create.getByLabel('Giờ bắt đầu *').fill('19:00');
+    await create.getByLabel('Giờ kết thúc *').fill('20:30');
+    await create.getByLabel('Số buổi *').fill('4');
+    await create.locator('label:has(input[value="T3"])').click();
+    await create.getByLabel('Ngày khai giảng *').fill('2026-10-20');
+    await create.getByRole('button', { name: 'Tạo lớp', exact: true }).click();
+    await expectToast(page, `Đã tạo lớp ${code}`);
+
+    // Thẻ danh sách hiện "Trình độ B1"
+    const card = page.locator('article', { hasText: code });
+    await expect(card.getByText(/Trình độ B1/)).toBeVisible();
+    await card.getByRole('link', { name: code }).click();
+
+    // Trang chi tiết hiện "B1" trong thông tin lớp
+    await expect(page.getByText('Trình độ CEFR')).toBeVisible();
+    await expect(page.locator('dd', { hasText: /B1/ })).toBeVisible();
+
+    // Sửa lớp: đổi sang A2
+    await page.getByRole('button', { name: 'Sửa lớp' }).click();
+    const edit = dialogById(page, 'class-edit-title');
+    await edit.getByRole('button', { name: 'Trình độ CEFR' }).click();
+    await edit.getByRole('option', { name: /A2/ }).click();
+    await edit.getByRole('button', { name: 'Lưu thay đổi' }).click();
+    await expectToast(page, `Đã lưu lớp ${code}`);
+    await expect(page.locator('dd', { hasText: /A2/ })).toBeVisible();
+
+    // Dọn dẹp: xoá lớp thử
+    await page.getByRole('button', { name: 'Xoá lớp', exact: true }).click();
+    await page.getByRole('button', { name: 'Xoá lớp', exact: true }).last().click();
+    await page.waitForURL('**/lop-hoc');
+    await expect(page.locator('article', { hasText: code })).toHaveCount(0);
+  });
+
   test('lớp: để trống trợ giảng và giáo viên nước ngoài vẫn tạo được', async ({ page }) => {
     await login(page);
     await page.goto('/lop-hoc');

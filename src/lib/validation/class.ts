@@ -39,6 +39,11 @@ export const classCoreSchema = z.object({
   teacherId: z.coerce.number({ error: 'Vui lòng chọn giáo viên chủ nhiệm' }).int('Giáo viên không hợp lệ').positive('Vui lòng chọn giáo viên chủ nhiệm'),
   assistantId: optionalStaffId('Trợ giảng'),
   foreignTeacherId: optionalStaffId('Giáo viên nước ngoài'),
+  // Trình độ CEFR của lớp (A1-C2), tùy chọn
+  levelId: z.preprocess(
+    (v) => (v === '' || v === undefined || v === null || v === 'none' ? null : Number(v)),
+    z.number({ error: 'Trình độ không hợp lệ' }).int('Trình độ không hợp lệ').positive('Trình độ không hợp lệ').nullable().optional(),
+  ),
   room: z.string().trim().max(40, 'Phòng tối đa 40 ký tự').default(''),
   fee: z.coerce
     .number({ error: 'Học phí phải là số' })

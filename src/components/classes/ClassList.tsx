@@ -10,7 +10,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { RowMenu, type RowMenuItem } from '@/components/ui/RowMenu';
 import { ProgressBar } from '@/components/ui/primitives';
 import { Card, EmptyPanel } from '@/components/ui/surfaces';
-import { type CampusChoice, type TeacherChoice } from './ClassForm';
+import { type CampusChoice, type LevelChoice, type TeacherChoice } from './ClassForm';
 import { useClassDialogs } from './useClassDialogs';
 
 // showCampus: hiện tên cơ sở trên từng lớp khi đang xem tất cả cơ sở
@@ -18,6 +18,7 @@ export function ClassList({
   classes,
   teachers,
   campuses,
+  levels,
   defaultCampusId,
   showCampus,
   canManage,
@@ -25,11 +26,12 @@ export function ClassList({
   classes: ClassRow[];
   teachers: TeacherChoice[];
   campuses: CampusChoice[];
+  levels?: LevelChoice[];
   defaultCampusId: number;
   showCampus: boolean;
   canManage: boolean;
 }) {
-  const dlg = useClassDialogs({ teachers, campuses, defaultCampusId });
+  const dlg = useClassDialogs({ teachers, campuses, levels, defaultCampusId });
 
   const menuItems = (row: ClassRow): RowMenuItem[] => [
     { kind: 'link', href: `/lop-hoc/${row.id}`, label: 'Xem chi tiết', icon: Eye },
@@ -70,7 +72,10 @@ export function ClassList({
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <Link href={`/lop-hoc/${row.id}`} scroll={false} className="block truncate text-lg font-extrabold text-ink hover:underline">{row.name}</Link>
-                  <small className="block truncate text-sm text-muted">{showCampus ? `${row.course} · ${row.campusName}` : row.course}</small>
+                  <small className="block truncate text-sm text-muted">
+                    {showCampus ? `${row.course} · ${row.campusName}` : row.course}
+                    {row.levelCode ? ` · Trình độ ${row.levelCode}` : ''}
+                  </small>
                 </div>
                 <div className="hidden min-[768px]:block">
                   <RowMenu label={`Thao tác với lớp ${row.name}`} items={menuItems(row)} />

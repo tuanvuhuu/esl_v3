@@ -8,7 +8,7 @@ import { todayKeyVN } from '@/lib/datetime';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Modal } from '@/components/ui/Modal';
 import { Toast, useToast } from '@/components/ui/Toast';
-import { ClassForm, type CampusChoice, type TeacherChoice } from './ClassForm';
+import { ClassForm, type CampusChoice, type LevelChoice, type TeacherChoice } from './ClassForm';
 
 export type ClassTarget = { id: number; name: string; studentCount: number };
 
@@ -16,11 +16,13 @@ export type ClassTarget = { id: number; name: string; studentCount: number };
 export function useClassDialogs({
   teachers,
   campuses,
+  levels,
   defaultCampusId,
   onDeleted,
 }: {
   teachers: TeacherChoice[];
   campuses: CampusChoice[];
+  levels?: LevelChoice[];
   defaultCampusId: number;
   onDeleted?: () => void;
 }) {
@@ -79,6 +81,7 @@ export function useClassDialogs({
           mode="create"
           teachers={teachers}
           campuses={campuses}
+          levels={levels}
           defaultCampusId={defaultCampusId}
           defaultStartDate={todayKeyVN()}
           onDone={onDone}
@@ -93,6 +96,7 @@ export function useClassDialogs({
             initial={editing.values}
             teachers={teachers}
             campuses={campuses}
+            levels={levels}
             defaultCampusId={defaultCampusId}
             defaultStartDate=""
             onDone={onDone}

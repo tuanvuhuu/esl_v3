@@ -46,6 +46,20 @@ describe('lớp học', () => {
     expect(bad.success).toBe(false);
     if (!bad.success) expect(fieldErrorsFrom(bad.error).assistantId).toBe('Trợ giảng không hợp lệ');
   });
+  it('trình độ CEFR tùy chọn: nhận id số, chuỗi rỗng đổi thành null, chuỗi sai báo lỗi', () => {
+    const withLevel = classCreateSchema.parse({ ...createOk, levelId: '2' });
+    expect(withLevel.levelId).toBe(2);
+
+    const withoutLevel = classCreateSchema.parse({ ...createOk, levelId: '' });
+    expect(withoutLevel.levelId).toBeNull();
+
+    const noneLevel = classCreateSchema.parse({ ...createOk, levelId: 'none' });
+    expect(noneLevel.levelId).toBeNull();
+
+    const badLevel = classCreateSchema.safeParse({ ...createOk, levelId: 'xyz' });
+    expect(badLevel.success).toBe(false);
+    if (!badLevel.success) expect(fieldErrorsFrom(badLevel.error).levelId).toBe('Trình độ không hợp lệ');
+  });
   it('bắt buộc chọn ít nhất một ngày học', () => {
     const r = classCreateSchema.safeParse({ ...createOk, weekdays: [] });
     expect(r.success).toBe(false);

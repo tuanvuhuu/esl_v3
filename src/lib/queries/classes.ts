@@ -19,6 +19,9 @@ export type ClassRow = {
   assistantName: string | null;
   foreignTeacherId: number | null;
   foreignTeacherName: string | null;
+  levelId: number | null;
+  levelCode: string | null;
+  levelName: string | null;
   schedule: string; // "T2 · T4 · T6 · 18:30–20:30"
   weekdays: string; // "T2,T4,T6"
   startTime: string;
@@ -37,6 +40,7 @@ type RawClass = {
   weekdays: string; start_time: string; end_time: string; room: string; fee: number; capacity: number; sessions_total: number;
   student_count: number; sessions_done: number; next_at: Date | null;
   assistant_id: number | null; assistant_name: string | null; foreign_teacher_id: number | null; foreign_name: string | null;
+  level_id: number | null; level_code: string | null; level_name: string | null;
 };
 
 // Các lớp trong cơ sở đang xem (scope null: mọi cơ sở), hoặc một lớp nếu có id. 'any': không lọc theo cơ sở.
@@ -47,6 +51,7 @@ async function selectClasses(scope: CampusScope | 'any', id?: number): Promise<C
   const result = await db.execute<RawClass>(sql`
     SELECT c.id, c.name, c.course, c.campus_id, cp.name AS campus_name, c.teacher_id, t.name AS teacher_name,
       c.assistant_id, a.name AS assistant_name, c.foreign_teacher_id, f.name AS foreign_name,
+      c.level_id, cl.code AS level_code, cl.name AS level_name,
       c.weekdays, c.start_time, c.end_time, c.room, c.fee, c.capacity, c.sessions_total,
       (SELECT COUNT(*)::int FROM students s WHERE s.class_id = c.id) AS student_count,
       (SELECT COUNT(*)::int FROM class_sessions cs WHERE cs.class_id = c.id AND cs.status = 'done') AS sessions_done,
@@ -55,6 +60,7 @@ async function selectClasses(scope: CampusScope | 'any', id?: number): Promise<C
     JOIN teachers t ON t.id = c.teacher_id
     LEFT JOIN teachers a ON a.id = c.assistant_id
     LEFT JOIN teachers f ON f.id = c.foreign_teacher_id
+    LEFT JOIN course_levels cl ON cl.id = c.level_id
     JOIN campuses cp ON cp.id = c.campus_id
     WHERE ${byId} AND ${byCampus}
     ORDER BY c.name, c.id
@@ -71,6 +77,9 @@ async function selectClasses(scope: CampusScope | 'any', id?: number): Promise<C
     assistantName: r.assistant_name,
     foreignTeacherId: r.foreign_teacher_id,
     foreignTeacherName: r.foreign_name,
+    levelId: r.level_id,
+    levelCode: r.level_code,
+    levelName: r.level_name,
     schedule: describeSchedule(r.weekdays, r.start_time, r.end_time),
     weekdays: r.weekdays,
     startTime: r.start_time,
@@ -118,6 +127,7 @@ export async function getClassForm(id: number) {
       teacherId: classes.teacherId,
       assistantId: classes.assistantId,
       foreignTeacherId: classes.foreignTeacherId,
+      levelId: classes.levelId,
       room: classes.room,
       fee: classes.fee,
       capacity: classes.capacity,

@@ -70,6 +70,7 @@ export type ClassCoreValues = {
   teacherId: string; // giáo viên chủ nhiệm
   assistantId: string;
   foreignTeacherId: string;
+  levelId: string; // id của course_levels hoặc '' (Không áp dụng)
   room: string;
   fee: number;
   capacity: number;
@@ -110,6 +111,7 @@ export async function createClassAction(_prev: ActionResult, formData: FormData)
           teacherId: v.teacherId,
           assistantId: v.assistantId,
           foreignTeacherId: v.foreignTeacherId,
+          levelId: v.levelId ?? null,
           schedule: describeSchedule(weekdays, v.startTime, v.endTime),
           weekdays,
           startTime: v.startTime,
@@ -172,6 +174,7 @@ export async function updateClassAction(id: number, _prev: ActionResult, formDat
           teacherId: v.teacherId,
           assistantId: v.assistantId,
           foreignTeacherId: v.foreignTeacherId,
+          levelId: v.levelId ?? null,
           room: v.room,
           fee: v.fee,
           capacity: v.capacity,
@@ -213,6 +216,7 @@ export async function loadClassForm(id: number): Promise<{ ok: true; values: Cla
         teacherId: String(row.teacherId),
         assistantId: row.assistantId ? String(row.assistantId) : '',
         foreignTeacherId: row.foreignTeacherId ? String(row.foreignTeacherId) : '',
+        levelId: row.levelId ? String(row.levelId) : '',
         room: row.room,
         fee: row.fee,
         capacity: row.capacity,

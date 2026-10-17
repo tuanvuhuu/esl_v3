@@ -13,6 +13,7 @@ import { Alert } from '@/components/ui/primitives';
 // Form lớp chỉ cho chọn đúng vai trò và người dạy ở cơ sở của lớp.
 export type TeacherChoice = { id: number; name: string; subject: string; staffRole: StaffRole; campusIds: number[] };
 export type CampusChoice = { id: number; name: string };
+export type LevelChoice = { id: number; code: string; name: string };
 
 const INITIAL: ActionResult = { ok: false };
 
@@ -24,6 +25,7 @@ export function ClassForm({
   initial,
   teachers,
   campuses,
+  levels = [],
   defaultCampusId,
   defaultStartDate,
   onDone,
@@ -34,6 +36,7 @@ export function ClassForm({
   initial?: ClassCoreValues;
   teachers: TeacherChoice[];
   campuses: CampusChoice[];
+  levels?: LevelChoice[];
   defaultCampusId: number;
   defaultStartDate: string;
   onDone: (message: string) => void;
@@ -46,6 +49,7 @@ export function ClassForm({
     teacherId: '',
     assistantId: '',
     foreignTeacherId: '',
+    levelId: '',
     room: '',
     fee: 0,
     capacity: 15,
@@ -55,6 +59,7 @@ export function ClassForm({
   const [teacherId, setTeacherId] = useState(values.teacherId);
   const [assistantId, setAssistantId] = useState(values.assistantId);
   const [foreignTeacherId, setForeignTeacherId] = useState(values.foreignTeacherId);
+  const [levelId, setLevelId] = useState(values.levelId ?? '');
   // Mỗi vị trí chỉ hiện người đúng vai trò và dạy ở cơ sở đang chọn
   const optionsOf = (role: StaffRole, campus: string) => teachers.filter((t) => t.staffRole === role && t.campusIds.includes(Number(campus)));
   const teacherOptions = optionsOf('teacher', campusId);
@@ -106,6 +111,20 @@ export function ClassForm({
       </Field>
       <Field label="Khoá học *" error={errors.course}>
         <input name="course" defaultValue={values.course} placeholder="VD: IELTS Foundation 6.0" autoComplete="off" className={inputClass(errors.course)} />
+      </Field>
+      <Field label="Trình độ CEFR" error={errors.levelId} hint="Khung tham chiếu Châu Âu (A1–C2), để trống nếu không áp dụng">
+        <SelectPanel
+          name="levelId"
+          label="Trình độ CEFR"
+          value={levelId}
+          onChange={setLevelId}
+          options={[
+            { value: '', label: 'Không áp dụng (để trống)' },
+            ...levels.map((l) => ({ value: String(l.id), label: `${l.code} · ${l.name}` })),
+          ]}
+          error={!!errors.levelId}
+          block
+        />
       </Field>
       <Field label="Giáo viên chủ nhiệm *" error={errors.teacherId} hint={teacherOptions.length === 0 ? 'Cơ sở này chưa có giáo viên. Thêm ở màn Giáo viên.' : undefined}>
         <SelectPanel

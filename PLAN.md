@@ -16,6 +16,7 @@ Khi vừa làm xong hoặc cần kiểm tra riêng từng task, **không cần c
 | **18.5** 🆕 | Bài giảng & tài liệu đa cơ sở | `npm run test:task 18.5` |
 | **22.7** 🆕 | Mở rộng nghiên cứu giảng dạy (rubric, kỹ năng, ngưỡng, tệp) | `npm run test:task 22.7` |
 | **P25** 🆕 | Bài giảng và tài liệu (25.1, 25.2, 25.3) | `npm run test:task 25` |
+| **27.1** 🆕 | Trình độ CEFR lớp học (Tạo/Sửa lớp, thẻ lớp, chi tiết) | `npm run test:task 27.1` |
 | **P28** 🆕 | Cổng học sinh trực tuyến (28.1 - 28.4) | `npm run test:task 28` |
 | **30.2** 🆕 | Mật khẩu mặc định `esl123` cho nhân viên mới & học sinh | `npm run test:task 30.2` |
 | **32.3** 🆕 | Phân quyền cơ sở: Server Action chặn ngoài phạm vi | `npm run test:task 32.3` |
@@ -260,7 +261,7 @@ Nguồn: mục 5 (màn 5 và 6 của tài liệu, P16 C).
 
 Nguồn: câu 5 và 11 của tài liệu. Quyết định: trình độ CEFR sửa được trong Cài đặt; hệ thống gợi ý, giáo viên xác nhận mới ghi sự kiện.
 
-- [x] **27.1** Bảng `course_levels` (A1–C2 mặc định qua migration 0011, tên sửa được trong Cài đặt, mục "Trình độ và ngưỡng lên lớp"), `level_thresholds` (ngưỡng 70% từ A1 đến C1 cho từng kỹ năng; C2 không có ngưỡng). Cột `students.level_id` đã dùng (hồ sơ, tab Kỹ năng). Cột `classes.level_id` đã có trong schema nhưng form lớp chưa có ô chọn: **chưa hoàn thành phần lớp**. *(2026-10-14, migration 0011 áp dụng, dữ liệu mặc định kiểm bằng truy vấn)*
+- [x] **27.1** 🆕 [VỪA HOÀN THÀNH] Bảng `course_levels` (A1–C2 mặc định qua migration 0011, tên sửa được trong Cài đặt, mục "Trình độ và ngưỡng lên lớp"), `level_thresholds` (ngưỡng 70% từ A1 đến C1 cho từng kỹ năng; C2 không có ngưỡng). Cột `students.level_id` đã dùng (hồ sơ, tab Kỹ năng). Cột `classes.level_id` đã tích hợp vào form Tạo/Sửa lớp (`ClassForm.tsx`), hiển thị trên thẻ lớp và trang chi tiết lớp. *(2026-10-17, hoàn thiện cả phần lớp học; unit `class-validation.test.ts` và E2E `catalog.spec.ts` tạo, xem chi tiết và sửa trình độ CEFR xanh 100%.)*
 - [x] **27.2** Gợi ý khi ba bài đã chấm gần nhất đều có và trung bình từng kỹ năng đạt ngưỡng của trình độ hiện tại; nếu chưa đủ thì nêu kỹ năng còn thiếu. Giáo viên bấm "Xác nhận lên …" thì mới đổi trình độ và ghi sự kiện `level_up` vào lịch sử. Đổi tay ghi `note`, hoặc `level_up` khi lên. *(2026-10-14, E2E xanh)*
 - [x] **27.3** Unit test quy tắc gợi ý: `tests/unit/level-rule.test.ts` (9 test). E2E "trình độ": dữ liệu ba bài tạo bằng SQL, xác nhận lên A2, kiểm sự kiện trong bảng, dọn dữ liệu. *(2026-10-14)*
 

@@ -1,4 +1,4 @@
-﻿import Link from 'next/link';
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 import { Suspense } from 'react';
@@ -12,6 +12,7 @@ import { hasPermission } from '@/lib/permissions';
 import { getCampusContext } from '@/lib/campus-context';
 import { getClassDetail } from '@/lib/queries/classes';
 import { listAssignmentsOfClass } from '@/lib/queries/assignments';
+import { listLevels } from '@/lib/queries/levels';
 import { listTeacherChoices } from '@/lib/queries/teachers';
 import { getCurrentPermissions } from '@/lib/session';
 import { Panel } from '@/components/ui/surfaces';
@@ -53,10 +54,11 @@ async function ClassData({ params }: { params: Promise<{ id: string }> }) {
   if (!(await passes(() => requireClassAccess(Number(raw))))) notFound();
   if (!hasPermission(granted, 'students.view')) return <NoAccess title="Lớp học" />;
 
-  const [cls, teachers, assignments, { campuses, scope }] = await Promise.all([
+  const [cls, teachers, assignments, levels, { campuses, scope }] = await Promise.all([
     getClassDetail(id),
     listTeacherChoices(null),
     listAssignmentsOfClass(id),
+    listLevels(),
     getCampusContext(),
   ]);
   if (!cls) notFound();
@@ -66,7 +68,7 @@ async function ClassData({ params }: { params: Promise<{ id: string }> }) {
       <PageHeader
         crumbs={['Đào tạo', 'Lớp học', cls.name]}
         title={cls.name}
-        subtitle={cls.course}
+        subtitle={cls.levelCode ? `${cls.course} · Trình độ ${cls.levelCode}` : cls.course}
         actions={
           <ClassDetailActions
             classId={cls.id}
@@ -74,6 +76,7 @@ async function ClassData({ params }: { params: Promise<{ id: string }> }) {
             studentCount={cls.studentCount}
             teachers={teachers.map((t) => ({ id: t.id, name: t.name, subject: t.subject, staffRole: t.staffRole, campusIds: t.campusIds }))}
             campuses={campuses}
+            levels={levels.map((l) => ({ id: l.id, code: l.code, name: l.name }))}
             defaultCampusId={scope ?? campuses[0]?.id ?? 0}
             canManage={hasPermission(granted, 'classes.manage')}
           />
@@ -91,6 +94,8 @@ async function ClassData({ params }: { params: Promise<{ id: string }> }) {
               <dd className="text-ink">{cls.assistantName ?? <span className="text-muted">Chưa có</span>}</dd>
               <dt className="text-muted">GV nước ngoài</dt>
               <dd className="text-ink">{cls.foreignTeacherName ?? <span className="text-muted">Chưa có</span>}</dd>
+              <dt className="text-muted">Trình độ CEFR</dt>
+              <dd className="text-ink">{cls.levelCode ? `${cls.levelCode} · ${cls.levelName}` : <span className="text-muted">Không áp dụng</span>}</dd>
               <dt className="text-muted">Lịch học</dt>
               <dd className="font-bold text-ink">{cls.schedule}</dd>
               <dt className="text-muted">Ngày khai giảng</dt>

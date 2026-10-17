@@ -40,6 +40,13 @@ export const TASK_MAP = {
   '25.1': { alias: '25' },
   '25.2': { alias: '25' },
   '25.3': { alias: '25' },
+  '27.1': {
+    name: 'Chọn trình độ CEFR cho lớp học trong form Tạo/Sửa lớp',
+    vitest: 'tests/unit/class-validation.test.ts',
+    e2e: 'e2e/catalog.spec.ts',
+    grep: 'chọn trình độ CEFR',
+  },
+  '27': { alias: '27.1' },
   '28': {
     name: 'P28. Cổng học sinh trực tuyến (28.1 - 28.4)',
     vitest: 'tests/unit/student-access.test.ts tests/unit/student-account.test.ts',
@@ -66,7 +73,7 @@ export const TASK_MAP = {
 
 // Danh sách các task vừa hoàn thành
 export const RECENT_TASK_KEYS = [
-  '15.3', '15.4', '15.6', '15.8', '18.5', '22.7', '25', '28', '30.2', '32.3'
+  '15.3', '15.4', '15.6', '15.8', '18.5', '22.7', '25', '27.1', '28', '30.2', '32.3'
 ];
 
 function resolveTask(key) {
