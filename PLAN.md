@@ -310,19 +310,19 @@ Quyết định (2026-10-16): bảng `account_campuses`, tài khoản làm việ
 | D4 | Học phí dùng sổ thu cộng dồn, thay "đặt số đã đóng". | Có lịch sử thu, đối soát được. |
 | D5 | Tab thứ tư trên điện thoại là Điểm danh, thay Tính năng. | **Chờ người dùng xác nhận.** |
 | D6 | Cơ sở: một cơ sở có nhiều lớp (1 - nhiều). Mỗi lớp thuộc đúng một cơ sở. Học sinh, buổi học, điểm danh, bài tập, học phí đi theo lớp. Giáo viên dạy một hoặc nhiều cơ sở (liên kết nhiều - nhiều). Phụ huynh, tài khoản dùng chung. Cơ sở đang xem chọn trên thanh trên cùng, lưu trong cookie, mặc định là cơ sở đầu tiên, có "Tất cả cơ sở". | Đã chốt theo yêu cầu người dùng (2026-10-14). |
-| D7 | Trợ giảng và bài giảng có thể thuộc một hoặc nhiều cơ sở, theo cùng kiểu liên kết nhiều - nhiều như giáo viên. Hai mục này chưa có trong ứng dụng; khi xây dựng (P16 và việc tiếp theo) thì áp dụng quy tắc này. | Đã chốt theo yêu cầu người dùng (2026-10-14). Trợ giảng đã làm ở P20; bài giảng chưa làm. |
-| D6 | Thiết kế mới theo `docs/DESIGN.md`, bỏ thiết kế cam-xanh cũ. | Người dùng đã từ chối. |
-| D7 | Xong mỗi việc thì commit và push lên `origin main`, không hỏi lại. Không tạo PR khi chưa được yêu cầu. | Người dùng chốt ngày 2026-10-16. `CLAUDE.md` mục 8. |
-| D8 | Mở rộng schema bằng migration mới, không sửa migration đã áp dụng. Dữ liệu mẫu seed lại bằng `db:seed:reset` (chỉ dev). | Đúng quy tắc `CLAUDE.md` mục 4. |
-| D9 | Xác thực bằng scrypt của Node, phiên bằng cookie httpOnly có chữ ký HMAC, không thêm thư viện. | Ít phụ thuộc, đủ cho quy mô trung tâm. |
-| D10 | Mỗi module có bản web và bản điện thoại, cùng dữ liệu và Server Action, khác giao diện theo breakpoint. | Yêu cầu của người dùng. |
-| D11 | Lịch học là các buổi học cụ thể sinh từ lịch tuần của lớp. | Timeline và điểm danh tham chiếu được từng buổi. |
-| D12 | Lịch sử học tập gộp từ điểm danh, bài nộp, khoản thu và bảng `learning_events`. | Không lặp dữ liệu, truy vết được. |
-| D13 | Hồ sơ học sinh trên web là ngăn kéo (`?h=`), trên điện thoại là trang riêng. Không có Sửa, Xoá trong hồ sơ. | DESIGN mục 3 và 6. |
-| D14 | Hạn đóng học phí là ngày `dueDay` (cài đặt, 1–28) của tháng sau tháng khai giảng. Phí trễ hạn chỉ lưu, chưa tự cộng. | Quy tắc đơn giản, người dùng chỉnh được. |
-| D15 | Nhắc đóng và thông báo chỉ ghi nhận (nhật ký, cài đặt), chưa gửi SMS hay email. | Chưa có nhà cung cấp kênh gửi. |
-| D16 | Chuẩn kích thước lấy từ trang Học sinh: nút, ô nhập, ô chọn và chip cao 32px trên web, 44px trên điện thoại (chip điện thoại 36px). Nút icon và nút ⋯ cao 36px trên web, 44px trên điện thoại. Bo góc ô và nút 12px, thẻ và bảng 24px. | Người dùng chọn trang Học sinh làm chuẩn cho mọi trang. |
-| D17 | Bảng hiện từ 768px khi có tối đa 6 cột, từ 1200px khi nhiều cột hơn. Dưới mốc đó hiện thẻ. | Phụ huynh và Giáo viên cần hiển thị nhiều dữ liệu hơn trên màn vừa. |
+| D7 | Trợ giảng và bài giảng thuộc một hoặc nhiều cơ sở, theo cùng kiểu liên kết nhiều - nhiều như giáo viên. | Đã hoàn thành (trợ giảng ở P20; bài giảng ở 18.5 & P25). |
+| D8 | Thiết kế mới theo `docs/DESIGN.md`, bỏ thiết kế cam-xanh cũ. | Đã chốt theo yêu cầu người dùng. |
+| D9 | Xong mỗi việc thì commit và push lên `origin main`, không hỏi lại. Không tạo PR khi chưa được yêu cầu. | Người dùng chốt ngày 2026-10-16. `CLAUDE.md` mục 8. |
+| D10 | Mở rộng schema bằng migration mới, không sửa migration đã áp dụng. Dữ liệu mẫu seed lại bằng `db:seed:reset` (chỉ dev). | Đúng quy tắc `CLAUDE.md` mục 4. |
+| D11 | Xác thực bằng scrypt của Node, phiên bằng cookie httpOnly có chữ ký HMAC, không thêm thư viện. | Ít phụ thuộc, đủ cho quy mô trung tâm. |
+| D12 | Mỗi module có bản web và bản điện thoại, cùng dữ liệu và Server Action, khác giao diện theo breakpoint. | Yêu cầu của người dùng. |
+| D13 | Lịch học là các buổi học cụ thể sinh từ lịch tuần của lớp. | Timeline và điểm danh tham chiếu được từng buổi. |
+| D14 | Lịch sử học tập gộp từ điểm danh, bài nộp, khoản thu và bảng `learning_events`. | Không lặp dữ liệu, truy vết được. |
+| D15 | Hồ sơ học sinh trên web là ngăn kéo (`?h=`), trên điện thoại là trang riêng. Không có Sửa, Xoá trong hồ sơ. | DESIGN mục 3 và 6. |
+| D16 | Hạn đóng học phí là ngày `dueDay` (cài đặt, 1–28) của tháng sau tháng khai giảng. Phí trễ hạn chỉ lưu, chưa tự cộng. | Quy tắc đơn giản, người dùng chỉnh được. |
+| D17 | Nhắc đóng và thông báo chỉ ghi nhận (nhật ký, cài đặt), chưa gửi SMS hay email. | Chưa có nhà cung cấp kênh gửi. |
+| D18 | Chuẩn kích thước lấy từ trang Học sinh: nút, ô nhập, ô chọn và chip cao 32px trên web, 44px trên điện thoại (chip điện thoại 36px). Nút icon và nút ⋯ cao 36px trên web, 44px trên điện thoại. Bo góc ô và nút 12px, thẻ và bảng 24px. | Người dùng chọn trang Học sinh làm chuẩn cho mọi trang. |
+| D19 | Bảng hiện từ 768px khi có tối đa 6 cột, từ 1200px khi nhiều cột hơn. Dưới mốc đó hiện thẻ. | Phụ huynh và Giáo viên cần hiển thị nhiều dữ liệu hơn trên màn vừa. |
 
 ## Việc cần người dùng làm
 
