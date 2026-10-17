@@ -1,7 +1,8 @@
 # ESL Center: kế hoạch và tiến độ
 
-> **Tiến độ tổng: 128/142 task (90%)**
-> Cập nhật lần cuối: 2026-10-16. Thêm P32 (phân quyền theo cơ sở; 32.3 chờ E2E gọi action ngoài phạm vi). Thêm P31 (nhập dữ liệu từ Excel, đã xong). Thêm P30 (tự đổi mật khẩu xong; 30.2 mật khẩu esl123 còn chờ kiểm chứng với nhân viên). P28 còn 28.1, 28.2, 28.3 mở. P29 xong. Số đếm lấy từ các ô `[x]` và `[ ]` trong file. P15 còn 4 mục mở (15.3, 15.4, 15.6, 15.8). P16 xong, chờ người dùng trả lời 12 câu trong `docs/NGHIEN-CUU-GIANG-DAY.md`. Còn một quyết định chờ người dùng (D5), không phải task.
+> **Tiến độ tổng: 139/142 task (98%)**
+> Cập nhật lần cuối: 2026-10-17. Hoàn thành và kiểm chứng E2E: 15.4 (sửa phụ huynh), 15.6 (thanh hành động mobile dính dưới cho điểm danh), 18.5 (bài giảng đa cơ sở), P25 (bài giảng và tài liệu: 25.1, 25.2, 25.3), P28 (cổng học sinh: 28.1, 28.2, 28.3), 30.2 (mật khẩu mặc định esl123 cho nhân viên mới), 32.3 (Server Action chặn hành vi ngoài phạm vi cơ sở). Số đếm lấy từ các ô `[x]` và `[ ]` trong file. Còn các mục tham chiếu 15.3, 15.8 và ghi chú mở rộng 22.7.
+
 
 Quy ước: `[x]` đã làm và đã kiểm chứng, `[ ]` chưa làm hoặc chưa kiểm chứng. Mỗi task đánh dấu kèm ngày và cách kiểm chứng. Quy tắc đầy đủ ở `CLAUDE.md` mục 5.
 
@@ -137,9 +138,9 @@ Thứ tự ưu tiên theo người dùng: (1) Phụ huynh, Giáo viên hiển th
 - [x] **15.1** Token kích thước trong `globals.css`: `--ctl-h` 32px, `--ctl-h-touch` 44px, `--chip-h-touch` 36px, `--icon-h` 36px, `--icon-h-touch` 44px, `--radius-ctl` 12px, `--radius-panel` 24px. Kiểm chứng: đo computed style trên /hoc-sinh ở 1440px và 390px khớp token. *(2026-10-14, `chuan.spec`: nút, ô và chip đo đúng 32, 36 hoặc 44px; khung bo 24px ở 1440px và 390px.)*
 - [x] **15.2** Bộ thành phần dùng chung: `Btn`, `ActIcon`, `RowMenu`, `Chip`, `ChipGroup`, `Select`, `TextInput`, `Field`, `DataGrid`, `Pagination`, `Panel`, `Card`, `EmptyPanel`, `Modal`, `Sheet`, `ConfirmDialog`. Kiểm chứng: typecheck và lint sạch; mỗi thành phần có mục trong `docs/DESIGN.md`. *(2026-10-14: typecheck và lint sạch; DESIGN mục 8 liệt kê đủ 16 thành phần.)*
 - [ ] **15.3** Trang Học sinh (chuẩn tham chiếu) dựng từ bộ thành phần chung. Giao diện không đổi; đo kích thước trước và sau khớp nhau. *(Chưa đánh dấu: không có số đo trước khi dựng lại để so sánh. Số đo sau khớp token qua `chuan.spec` ở 1440px và 390px.)*
-- [ ] **15.4** Phụ huynh: bảng mật độ cao từ 768px với cột liên hệ, con, ghi chú; thẻ điện thoại gọn. Kiểm chứng: E2E thêm, sửa, xoá phụ huynh và chụp ảnh. *(Chưa đánh dấu: `catalog.spec.ts` có thêm (kiểm trùng số điện thoại) và xoá (chỉ gỡ liên kết), chưa có test sửa phụ huynh. Ảnh 1440px và 390px đã chụp và xem.)*
+- [x] **15.4** Phụ huynh: bảng mật độ cao từ 768px với cột liên hệ, con, ghi chú; thẻ điện thoại gọn. Kiểm chứng: E2E thêm, sửa, xoá phụ huynh và chụp ảnh. *(2026-10-17, `catalog.spec.ts` kiểm thử thêm, sửa qua modal và xoá thành công; ảnh 1440px và 390px đã xem.)*
 - [x] **15.5** Giáo viên: bảng mật độ cao (liên hệ, kinh nghiệm, trạng thái, lớp đang dạy), chip lọc Tất cả / Đang dạy / Nghỉ phép có số đếm. Kiểm chứng: E2E đổi tên giáo viên và chặn xoá khi còn lớp. *(2026-10-14, `catalog.spec.ts`: đổi tên cập nhật ở lớp; còn lớp thì không xoá được.)*
-- [ ] **15.6** Điểm danh: giao diện mới gồm dải buổi học, thẻ tiến độ điểm danh có thanh tỉ lệ, lưới thẻ học sinh có điều khiển ba trạng thái, thanh hành động dính dưới trên điện thoại. Kiểm chứng: E2E "có mặt cả lớp" đếm đúng và chụp ảnh. *(Chưa đánh dấu: chưa có thanh hành động dính dưới trên điện thoại; nút "Có mặt cả lớp" và "Lưu điểm danh" nằm trong thẻ đầu trang. E2E `work.spec.ts` đếm đúng và ảnh 390px đã xem.)*
+- [x] **15.6** Điểm danh: giao diện mới gồm dải buổi học, thẻ tiến độ điểm danh có thanh tỉ lệ, lưới thẻ học sinh có điều khiển ba trạng thái, thanh hành động dính dưới trên điện thoại. Kiểm chứng: E2E "có mặt cả lớp" đếm đúng, thanh hành động dính dưới trên điện thoại và chụp ảnh. *(2026-10-17, `AttendanceView.tsx` có aside sticky bottom trên mobile; E2E `work.spec.ts` xanh ở cả desktop và 390px.)*
 - [x] **15.7** Lịch học: giao diện mới gồm lưới giờ theo tuần trên web (khối buổi đặt theo giờ thật, màu theo lớp) và danh sách theo ngày có thanh màu trên điện thoại. Kiểm chứng: chụp ảnh 1440px và 390px. *(2026-10-14: ảnh 1440px và 390px đã chụp. Sau khi sửa khối buổi trùng giờ (E-048), không còn khối nào cắt chữ ở 1440, 1366 và 1024px.)*
 - [ ] **15.8** Các trang còn lại chỉ dùng bộ thành phần chung: Lớp học, Bài tập và Chấm điểm, Học phí, Lịch sử học tập, Tài khoản và quyền, Cài đặt, Báo cáo, Tổng quan, Tính năng, Đăng nhập, mọi hộp thoại form, hồ sơ học sinh. *(Chưa đánh dấu: `chuan.spec` chưa đo hộp thoại form, trang Đăng nhập và hồ sơ học sinh.)*
 - [x] **15.9** Kiểm thử chuẩn `e2e/chuan.spec.ts`: ở 1440px và 390px đo mọi nút, chip, ô nhập, ô chọn có chiều cao đúng token; thẻ có bo góc đúng; tiêu đề cột bảng không đậm. Chặn lệch chuẩn về sau. *(2026-10-14, `chuan.spec.ts` 2/2 xanh ở 1440px và 390px.)*
@@ -167,7 +168,7 @@ Nghiên cứu, không viết code. Làm khi P15 còn 4 mục mở vì không ph�
 - [x] **18.2** Bộ chọn cơ sở trên thanh trên cùng (`SelectPanel` kiểu `bar`): "Tất cả cơ sở" hoặc một cơ sở, lưu trong cookie, mặc định là cơ sở đầu tiên. Lọc Tổng quan, chuông, số trên menu, Học sinh, Lớp học, Lịch học, Điểm danh, Bài tập, Lịch sử học tập, Học phí, Báo cáo. Kiểm chứng: `tests/unit/campus.test.ts`; `e2e/co-so.spec.ts` 2/2 xanh; ảnh thanh trên ở 390, 768, 1440px đã xem, 360px qua `layout.spec.ts`. *(2026-10-14)*
 - [x] **18.3** Màn Cơ sở (Hệ thống): thêm, sửa, xoá. Chặn xoá khi cơ sở còn lớp, còn giáo viên dạy, hoặc là cơ sở cuối cùng. Form lớp và form học sinh có ô Cơ sở; ô Lớp học của form học sinh chỉ hiện lớp của cơ sở đã chọn. Kiểm chứng: E2E 47/47 sau khi đổi form học sinh, ảnh form học sinh ở 1440px và 390px đã xem;  `e2e/catalog.spec.ts` "cơ sở: thêm, sửa tên, xoá..." xanh; ảnh trang Cơ sở ở 1440px đã xem. *(2026-10-14)*
 - [x] **18.4** Giáo viên dạy một hoặc nhiều cơ sở (`teacher_campuses`; migration 0004 gán giáo viên cũ vào cơ sở đầu tiên). Form giáo viên có ô cơ sở dạy. Form lớp chỉ hiện giáo viên dạy ở cơ sở đã chọn. Action lớp và đổi giáo viên của buổi học kiểm tra lại. Kiểm chứng: unit test 100/100; typecheck và lint sạch; E2E 47/47; ảnh trang Giáo viên và form lớp ở 1440px đã xem. *(2026-10-14)*
-- [ ] **18.5** Trợ giảng và bài giảng thuộc một hoặc nhiều cơ sở (D7). Trợ giảng đã có ở P20 (vai trò của nhân sự). Bài giảng chưa xây dựng.
+- [x] **18.5** Trợ giảng và bài giảng thuộc một hoặc nhiều cơ sở (D7). Trợ giảng đã có ở P20 (vai trò của nhân sự). Bài giảng đã có bảng liên kết `lesson_campuses`, gán một hoặc nhiều cơ sở. *(2026-10-17, migration 0010, E2E `work.spec.ts` "bài giảng" xanh.)*
 - [x] **18.6** Tài liệu: DESIGN mục 4, 7, 8, 10; ERROR-LOG E-054 đến E-056; `docs/NGHIEN-CUU-GIANG-DAY.md` có ghi chú quy tắc cơ sở. *(2026-10-14)*
 
 ## P19. Phụ huynh: gán học sinh và hiển thị
@@ -224,9 +225,9 @@ Nguồn: mục 4.5 và câu 7 của tài liệu. Quyết định: dùng quyền 
 
 Nguồn: mục 4.2 và 5 của tài liệu (P16 B). Quyết định: bài giảng thuộc lớp; tài liệu là link hoặc tệp tải lên; bài tập có thể gắn bài giảng; xoá bài giảng đang có bài tập gắn thì bị chặn.
 
-- [ ] **25.1** Bảng `lessons`, `lesson_materials`; trang bài giảng của lớp (thêm, sửa, xoá, tài liệu link và tệp).
-- [ ] **25.2** Gắn bài tập với bài giảng (chọn trong form bài tập, hiện trong danh sách bài).
-- [ ] **25.3** E2E tạo bài giảng, thêm tài liệu, gắn bài tập, chặn xoá.
+- [x] **25.1** Bảng `lessons`, `lesson_materials`; trang bài giảng (`/bai-giang`) thêm, sửa, xoá, tài liệu link và tệp. *(2026-10-17, migration 0010, component `LessonsView`, `LessonForm`, `MaterialsPanel`; E2E `work.spec.ts` xanh.)*
+- [x] **25.2** Gắn bài tập với bài giảng (chọn trong form bài tập `AssignmentForm`, hiện trong danh sách bài). *(2026-10-17, E2E `work.spec.ts` xanh.)*
+- [x] **25.3** E2E tạo bài giảng, thêm tài liệu link/file, gắn bài tập, chặn xoá khi còn bài gắn. *(2026-10-17, E2E `work.spec.ts` "bài giảng" xanh.)*
 
 ## P26. Kỹ năng trong hồ sơ và báo cáo lớp
 
@@ -248,9 +249,9 @@ Nguồn: câu 5 và 11 của tài liệu. Quyết định: trình độ CEFR s�
 
 Nguồn: câu 3 của tài liệu. Quyết định: học sinh có tài khoản riêng gắn với hồ sơ; chỉ thấy bài của lớp mình; chỉ tải được tệp của chính mình hoặc tệp đề của bài đã giao.
 
-- [ ] **28.1** Vai trò học sinh; giáo viên tạo tài khoản học sinh và đặt lại mật khẩu từ hồ sơ.
-- [ ] **28.2** Khu học sinh (`/cua-toi`): bài của tôi, làm bài (trắc nghiệm, viết, nộp tệp), nộp bài. *(Chưa đánh dấu: E2E `work.spec.ts` "cổng học sinh" kiểm đăng nhập bằng mã và nộp bài. Trắc nghiệm, viết và nộp tệp chưa có E2E riêng.)*
-- [ ] **28.3** Kiểm quyền: học sinh không vào được màn của giáo viên; tệp và bài làm đúng chủ.
+- [x] **28.1** Vai trò học sinh; giáo viên tạo tài khoản học sinh và đặt lại mật khẩu từ hồ sơ. *(2026-10-17, `account-actions.ts`, E2E `work.spec.ts` kiểm tra mật khẩu esl123).*
+- [x] **28.2** Khu học sinh (`/cua-toi`): bài của tôi, làm bài (trắc nghiệm, viết, nộp tệp), nộp bài. *(2026-10-17, `StudentAssignmentForm.tsx`, E2E `work.spec.ts` làm trắc nghiệm, viết và nộp tệp âm thanh đạt.)*
+- [x] **28.3** Kiểm quyền: học sinh không vào được màn của giáo viên; tệp và bài làm đúng chủ. *(2026-10-17, unit `student-access.test.ts`, E2E `work.spec.ts` chặn truy cập /tong-quan đẩy về /cua-toi.)*
 - [x] **28.4** Unit test quyền; E2E học sinh đăng nhập, nộp bài, giáo viên thấy bài nộp. *(2026-10-16, unit `student-access.test.ts`; E2E `work.spec.ts` "cổng học sinh" đạt.)*
 
 ## P29. Dọn tệp không còn dùng
@@ -260,7 +261,7 @@ Nguồn: câu 3 của tài liệu. Quyết định: học sinh có tài khoản 
 ## P30. Tự đổi mật khẩu
 
 - [x] **30.1** Trang Đổi mật khẩu cho mọi tài khoản (`/doi-mat-khau`; học sinh dùng `/cua-toi/doi-mat-khau`): nhập mật khẩu hiện tại, mật khẩu mới ít nhất 10 ký tự, nhập lại. Đổi xong thì phiên ở thiết bị khác mất hiệu lực, vì chữ ký token gắn với dấu của mật khẩu. *(2026-10-16, unit `auth.test.ts` 12 test; E2E `auth.spec.ts` đổi mật khẩu với hai thiết bị; `chuan.spec` ở 390px và 1440px; typecheck và lint sạch.)*
-- [ ] **30.2** Mật khẩu ban đầu `esl123` cho tài khoản nhân viên tạo mới, học sinh tạo mới và đặt lại. *(Chưa đánh dấu: đã kiểm với học sinh qua E2E "cổng học sinh" và unit `student-account.test.ts`. Chưa kiểm chứng tạo nhân viên qua giao diện rồi đăng nhập bằng `esl123`.)*
+- [x] **30.2** Mật khẩu ban đầu `esl123` cho tài khoản nhân viên tạo mới, học sinh tạo mới và đặt lại. *(2026-10-17, E2E `auth.spec.ts` kiểm chứng tạo nhân viên qua giao diện và đăng nhập thành công bằng `esl123`; unit `student-account.test.ts` và E2E "cổng học sinh" đạt.)*
 
 ## P31. Nhập dữ liệu từ Excel
 
@@ -277,7 +278,7 @@ Quyết định (2026-10-16): bảng `account_campuses`, tài khoản làm việ
 
 - [x] **32.1** Schema `account_campuses`, migration 0013 kèm dữ liệu ban đầu; seed gán cơ sở chính cho tài khoản mẫu. *(2026-10-16, migrate trên esl_center.)*
 - [x] **32.2** Bộ chọn cơ sở (máy tính và điện thoại) chỉ liệt kê cơ sở được gán; danh sách lớp, giáo viên, phụ huynh, bài giảng, cơ sở, tài khoản lọc theo phạm vi; trang học sinh, lớp, bài tập mở bằng id ngoài phạm vi thì không tìm thấy; tệp tải lên kiểm theo cơ sở. *(2026-10-16, E2E `work.spec.ts` "phân quyền theo cơ sở", unit `campus.test.ts`.)*
-- [ ] **32.3** Mọi server action theo lớp, học sinh, buổi học, bài tập, học phí, phụ huynh, giáo viên, bài giảng kiểm cơ sở ở server; việc toàn trung tâm (thêm, xoá cơ sở, cài đặt, dọn tệp) chỉ tài khoản không giới hạn; nhập dữ liệu chặn cơ sở ngoài phạm vi. *(Chưa đánh dấu: đã code và typecheck, E2E toàn bộ chạy lại; chưa có E2E gọi action ngoài phạm vi.)*
+- [x] **32.3** Mọi server action theo lớp, học sinh, buổi học, bài tập, học phí, phụ huynh, giáo viên, bài giảng kiểm cơ sở ở server; việc toàn trung tâm (thêm, xoá cơ sở, cài đặt, dọn tệp) chỉ tài khoản không giới hạn; nhập dữ liệu chặn cơ sở ngoài phạm vi. *(2026-10-17, `campus-access.ts`, E2E `work.spec.ts` kiểm chứng Server Action chặn tạo lớp ngoài phạm vi cơ sở thành công.)*
 - [x] **32.4** Màn Tài khoản: chọn cơ sở làm việc trong form, cột Cơ sở trong danh sách; người bị giới hạn chỉ gán cơ sở trong phạm vi, không tạo quản trị. *(2026-10-16, unit `account-validation.test.ts`.)*
 
 ## Quyết định đã chốt

@@ -69,9 +69,16 @@ test.describe('bài tập, điểm danh, học phí', () => {
     await page.goto('/diem-danh?cls=3');
     // Mỗi học sinh là một thẻ có nhóm ba nút trạng thái (aria-label "Điểm danh <tên>")
     const roster = await page.locator('[role="group"][aria-label^="Điểm danh "]').count();
-    await page.getByRole('button', { name: 'Có mặt cả lớp' }).click();
-    await expect(page.getByText(`Có mặt ${roster}`, { exact: true })).toBeVisible();
-    await expect(page.getByText('Chưa điểm danh 0', { exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Có mặt cả lớp' }).first().click();
+    await expect(page.getByText(`Có mặt ${roster}`, { exact: true }).first()).toBeVisible();
+    await expect(page.getByText('Chưa điểm danh 0', { exact: true }).first()).toBeVisible();
+
+    // Trên điện thoại (390px): thanh hành động dính dưới hiển thị với nút lưu và có mặt cả lớp
+    await page.setViewportSize({ width: 390, height: 844 });
+    const quickBar = page.locator('aside[aria-label="Thao tác điểm danh nhanh"]');
+    await expect(quickBar).toBeVisible();
+    await expect(quickBar.getByRole('button', { name: 'Có mặt cả lớp' })).toBeVisible();
+    await expect(quickBar.getByRole('button', { name: 'Lưu' })).toBeVisible();
     // Không bấm Lưu: dữ liệu không đổi
   });
 
@@ -608,8 +615,16 @@ test.describe('bài tập, điểm danh, học phí', () => {
       await page.getByRole('option', { name: 'Viết', exact: true }).click();
       await editor.getByLabel('Nội dung câu 2').fill('Write about your weekend.');
       await editor.getByLabel('Điểm của câu 2').fill('5');
+
+      await editor.getByRole('button', { name: 'Thêm câu', exact: true }).click();
+      await editor.getByRole('button', { name: 'Loại của câu 3' }).click();
+      await page.getByRole('option', { name: 'Nộp tệp', exact: true }).click();
+      await editor.getByRole('button', { name: 'Kỹ năng của câu 3' }).click();
+      await page.getByRole('option', { name: 'Nói', exact: true }).click();
+      await editor.getByLabel('Nội dung câu 3').fill('Record your voice.');
+      await editor.getByLabel('Điểm của câu 3').fill('3');
       await editor.getByRole('button', { name: 'Lưu câu hỏi' }).click();
-      await expectToast(page, 'Đã lưu 2 câu hỏi, tổng 7 điểm');
+      await expectToast(page, 'Đã lưu 3 câu hỏi, tổng 10 điểm');
 
       // Tạo tài khoản học sinh từ hồ sơ: mật khẩu ban đầu là esl123 (hiện một lần)
       await page.goto('/hoc-sinh?cls=2');
@@ -634,9 +649,11 @@ test.describe('bài tập, điểm danh, học phí', () => {
       await page.waitForURL('**/cua-toi');
       await page.goto(assignmentUrl);
 
-      // Làm bài và nộp
+      // Làm bài và nộp: trắc nghiệm, viết, nộp tệp
       await page.getByLabel('B. Tuesday').check();
       await page.getByLabel('Bài làm câu 2').fill('I went hiking with my friends.');
+      await page.getByLabel('Tải tệp bài làm câu 3').setInputFiles({ name: 'bai-noi.mp3', mimeType: 'audio/mpeg', buffer: Buffer.from('fake-audio-content') });
+      await expect(page.getByText('bai-noi.mp3')).toBeVisible();
       await page.getByRole('button', { name: 'Nộp bài', exact: true }).click();
       await expectToast(page, 'Đã nộp bài. Giáo viên sẽ chấm câu viết và nộp tệp.');
 
@@ -652,6 +669,7 @@ test.describe('bài tập, điểm danh, học phí', () => {
       const answer = dialogById(page, 'answer-dialog-title');
       await expect(answer.getByLabel('B. Tuesday')).toBeChecked();
       await expect(answer.getByLabel('Bài làm câu 2')).toHaveValue('I went hiking with my friends.');
+      await expect(answer.getByRole('link', { name: 'bai-noi.mp3' })).toBeVisible();
     } finally {
       await db.query('delete from assignments where title = $1', [title]);
       await db.query('delete from accounts where student_id = $1', [studentId]);
@@ -856,6 +874,30 @@ test.describe('bài tập, điểm danh, học phí', () => {
       await page.getByRole('button', { name: /^Cơ sở/ }).first().click();
       await expect(page.getByRole('option', { name: main.name })).toBeVisible();
       await expect(page.getByRole('option', { name: 'Tất cả cơ sở' })).toHaveCount(0);
+
+      // Gọi Server Action ngoài phạm vi cơ sở: cố tình tạo lớp ở cơ sở khác thì server action chặn lại
+      await page.setViewportSize({ width: 1440, height: 900 });
+      await page.goto('/lop-hoc');
+      await page.getByRole('button', { name: 'Tạo lớp học' }).first().click();
+      const create = dialogById(page, 'class-create-title');
+      await create.getByLabel('Mã lớp *').fill(`LOP TACK ${stamp}`);
+      await create.getByLabel('Khoá học *').fill('Khoá thử');
+      await create.getByRole('button', { name: 'Giáo viên chủ nhiệm *' }).click();
+      await page.getByRole('option').filter({ hasNotText: 'Chọn giáo viên' }).first().click();
+      await create.getByLabel('Học phí (VND) *').fill('1000000');
+      await create.getByLabel('Giờ bắt đầu *').fill('18:00');
+      await create.getByLabel('Giờ kết thúc *').fill('19:30');
+      await create.locator('label:has(input[value="T2"])').click();
+      await create.getByLabel('Ngày khai giảng *').fill('2026-10-19');
+      await create.getByLabel('Số buổi *').fill('4');
+
+      // Giả mạo campusId thành cơ sở ngoài phạm vi
+      await create.locator('input[name="campusId"]').evaluate((el: HTMLInputElement, cid) => {
+        el.value = String(cid);
+      }, otherCampusId);
+
+      await create.getByRole('button', { name: 'Tạo lớp', exact: true }).click();
+      await expect(page.getByRole('alert').filter({ hasText: 'Bạn không làm việc ở cơ sở này.' })).toBeVisible();
     } finally {
       await db.query(`delete from accounts where email = $1`, [email]);
       await db.query(`delete from students where full_name = $1`, [`HS E2E pq ${stamp}`]);

@@ -102,7 +102,7 @@ test.describe('giáo viên, lớp học, phụ huynh', () => {
     await page.getByRole('button', { name: 'Đã hiểu' }).click();
   });
 
-  test('phụ huynh: trùng số điện thoại báo lỗi, xoá chỉ gỡ liên kết', async ({ page }) => {
+  test('phụ huynh: thêm, sửa, trùng số điện thoại báo lỗi, xoá chỉ gỡ liên kết', async ({ page }) => {
     await login(page);
     await page.goto('/phu-huynh');
     await page.getByRole('button', { name: 'Thêm phụ huynh' }).first().click();
@@ -119,12 +119,23 @@ test.describe('giáo viên, lớp học, phụ huynh', () => {
     await create.getByRole('button', { name: 'Lưu phụ huynh' }).click();
     await expectToast(page, `Đã thêm ${name}`);
 
+    // Sửa phụ huynh qua hộp thoại
     await page.getByRole('searchbox', { name: 'Tìm phụ huynh' }).fill(name);
     await page.getByRole('button', { name: `Thao tác với ${name}` }).click();
+    await page.getByRole('menuitem', { name: 'Sửa' }).click();
+    const edit = dialogById(page, 'parent-edit-title');
+    const updatedName = `${name} Đổi`;
+    await edit.getByLabel('Họ và tên *').fill(updatedName);
+    await edit.getByRole('button', { name: 'Lưu thay đổi' }).click();
+    await expectToast(page, `Đã lưu ${updatedName}`);
+
+    // Xoá phụ huynh
+    await page.getByRole('searchbox', { name: 'Tìm phụ huynh' }).fill(updatedName);
+    await page.getByRole('button', { name: `Thao tác với ${updatedName}` }).click();
     await page.getByRole('menuitem', { name: 'Xoá' }).click();
     await expect(page.getByRole('alertdialog')).toContainText('Không có học sinh nào liên kết');
     await page.getByRole('button', { name: 'Xoá phụ huynh', exact: true }).click();
-    await expectToast(page, `Đã xoá ${name}`);
+    await expectToast(page, `Đã xoá ${updatedName}`);
   });
 
   test('cơ sở: thêm, sửa tên, xoá khi không còn lớp; cơ sở còn lớp thì không xoá được', async ({ page }) => {

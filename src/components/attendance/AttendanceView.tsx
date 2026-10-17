@@ -231,6 +231,27 @@ export function AttendanceView({
         </>
       )}
 
+      {/* Thanh hành động dính dưới trên điện thoại (P15.6) */}
+      {canRecord && session && session.isPast && session.status !== 'cancelled' && (
+        <aside
+          aria-label="Thao tác điểm danh nhanh"
+          className="sticky bottom-[calc(68px+var(--safe-b))] z-30 -mx-4 -mb-2 mt-4 flex items-center justify-between gap-3 border-t border-line bg-surface/95 px-4 py-2.5 shadow-lg backdrop-blur-md min-[768px]:hidden"
+        >
+          <span className="text-xs text-muted">
+            Đã điểm danh <b className="font-semibold text-ink">{marked}/{roster.length}</b>
+          </span>
+          <div className="flex items-center gap-2">
+            <Btn onClick={markAllPresent} disabled={!canMark} className="h-[var(--chip-h-touch)] px-3 text-xs">
+              Có mặt cả lớp
+            </Btn>
+            <Btn variant="primary" onClick={save} disabled={!canMark || pending} className="h-[var(--chip-h-touch)] px-3 text-xs">
+              <CalendarDays className="size-3.5" aria-hidden />
+              {pending ? 'Đang lưu…' : 'Lưu'}
+            </Btn>
+          </div>
+        </aside>
+      )}
+
       <Toast message={message} />
       <span className="sr-only" aria-live="polite">{canRecord ? '' : 'Bạn không có quyền điểm danh.'}</span>
     </section>

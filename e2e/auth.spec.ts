@@ -137,6 +137,54 @@ test.describe('đăng nhập và phân quyền', () => {
     }
   });
 
+  test('tài khoản nhân viên tạo mới đăng nhập được bằng mật khẩu mặc định esl123', async ({ page }) => {
+    loadEnvLocal();
+    const db = new Client({ connectionString: process.env.DATABASE_URL });
+    await db.connect();
+    const stamp = Date.now();
+    const email = `e2e-nv-${stamp}@esl-center.vn`;
+    try {
+      await login(page, ADMIN);
+      await page.goto('/tai-khoan');
+      await page.getByRole('button', { name: 'Mời thành viên' }).click();
+
+      const modal = page.getByRole('dialog');
+      await modal.locator('input[name="fullName"]').fill('Nhân viên Mới E2E');
+      await modal.locator('input[name="email"]').fill(email);
+
+      // Chọn vai trò Giáo vụ
+      await modal.getByRole('button', { name: 'Vai trò *' }).click();
+      await page.getByRole('option', { name: 'Giáo vụ' }).click();
+
+      // Kiểm tra và chọn cơ sở nếu chưa có
+      const campusBtn = modal.getByRole('button', { name: 'Cơ sở làm việc *' });
+      if (await campusBtn.isVisible()) {
+        await campusBtn.click();
+        await page.getByRole('option').first().click();
+        await page.keyboard.press('Escape');
+      }
+
+      await modal.getByRole('button', { name: 'Gửi lời mời' }).click();
+      await expect(page.getByRole('status').filter({ hasText: 'esl123' })).toBeVisible();
+
+      // Đăng xuất
+      await page.getByRole('button', { name: 'Tài khoản' }).click();
+      await page.getByRole('menuitem', { name: 'Đăng xuất' }).click();
+      await page.waitForURL('**/dang-nhap');
+
+      // Đăng nhập bằng tài khoản nhân viên mới với mật khẩu esl123
+      await page.getByLabel('Email').fill(email);
+      await page.getByLabel('Mật khẩu').fill('esl123');
+      await page.getByRole('button', { name: 'Đăng nhập', exact: true }).click();
+      await page.waitForURL('**/tong-quan');
+      await expect(page.getByRole('link', { name: 'Tổng quan' }).first()).toBeVisible();
+    } finally {
+      await db.query('delete from accounts where email = $1', [email]);
+      await db.end();
+    }
+  });
+
+
   // TẠM THỜI: đăng nhập nhanh theo vai trò (chỉ phát triển). Xoá cùng với tính năng.
   test('đăng nhập nhanh theo nhãn quyền vào đúng tài khoản', async ({ page }) => {
     await page.goto('/dang-nhap');
