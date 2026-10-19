@@ -1,0 +1,887 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Bài tập online · Bản mẫu</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+/* Token lấy đúng từ esl-center/src/app/globals.css và docs/DESIGN.md */
+:root {
+  --bg: #FFFFFF; --surface: #FFFFFF; --ink: #2F2A1F; --ink-2: #4A4538; --muted: #6E6755;
+  --line: #ECE6D8; --stone: #F1ECE0; --stone-ink: #6B6453;
+  --primary: #FFC933; --primary-deep: #EDA400; --primary-soft: #FFF1CC; --on-primary: #2F2A1F;
+  --accent: #159E5E; --mint: #C5F0D6; --mint-ink: #0C7A42; --lav: #D8EEBA; --lav-ink: #44700D;
+  --butter: #FFE59C; --butter-ink: #8A6200; --blush: #FBD2BD; --blush-ink: #B83E18;
+  --link: #1D4ED8; --page: #F7F4EC;
+  --shadow: 0 0 0 1px var(--line), 0 1px 2px rgba(47,42,31,.04), 0 14px 34px -22px rgba(47,42,31,.28);
+  --lift: 0 30px 80px -30px rgba(47,42,31,.45);
+  --radius-ctl: 12px; --radius-panel: 24px; --ctl-h: 32px; --ctl-h-touch: 44px; --kid-h: 64px;
+  --fs-xs: 11px; --fs-sm: 12px; --fs-base: 13px; --fs-md: 14px; --fs-lg: 15px; --fs-xl: 16px;
+  --fs-2xl: 20px; --fs-3xl: 24px; --fs-h1: 26px; --fs-kid: 22px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #17130E; --surface: #221D16; --ink: #F4EEDF; --ink-2: #CFC6B2; --muted: #9D9580; --line: #3A3328;
+    --stone: #2D281F; --stone-ink: #CFC6B2; --primary: #F5CD62; --primary-deep: #E5B038; --primary-soft: #3B3320;
+    --on-primary: #2A2316; --accent: #6CC39C; --mint: #1F3A2C; --mint-ink: #9EDDBC; --lav: #2A3322; --lav-ink: #C4E0A0;
+    --butter: #3E3517; --butter-ink: #FFDD8A; --blush: #3A2A20; --blush-ink: #F0BFA5; --link: #7DB3FF; --page: #110E0A;
+    --shadow: 0 0 0 1px var(--line), 0 1px 2px rgba(0,0,0,.3), 0 14px 34px -22px rgba(0,0,0,.7);
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #17130E; --surface: #221D16; --ink: #F4EEDF; --ink-2: #CFC6B2; --muted: #9D9580; --line: #3A3328;
+  --stone: #2D281F; --stone-ink: #CFC6B2; --primary: #F5CD62; --primary-deep: #E5B038; --primary-soft: #3B3320;
+  --on-primary: #2A2316; --accent: #6CC39C; --mint: #1F3A2C; --mint-ink: #9EDDBC; --lav: #2A3322; --lav-ink: #C4E0A0;
+  --butter: #3E3517; --butter-ink: #FFDD8A; --blush: #3A2A20; --blush-ink: #F0BFA5; --link: #7DB3FF; --page: #110E0A;
+  --shadow: 0 0 0 1px var(--line), 0 1px 2px rgba(0,0,0,.3), 0 14px 34px -22px rgba(0,0,0,.7);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--page); color: var(--ink); font-family: "Be Vietnam Pro", system-ui, sans-serif; font-size: var(--fs-md); line-height: 1.45; }
+button { font: inherit; color: inherit; cursor: pointer; }
+.page { max-width: 1440px; margin: 0 auto; padding: 24px 16px 64px; }
+.head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; }
+.head h1 { margin: 0; font-size: var(--fs-h1); font-weight: 800; }
+.head p { margin: 4px 0 0; color: var(--muted); }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { height: var(--ctl-h); padding: 0 14px; border-radius: 999px; border: 0; background: var(--stone); color: var(--stone-ink); font-weight: 600; font-size: var(--fs-base); }
+.chip[aria-pressed="true"] { background: var(--primary); color: var(--on-primary); }
+.group { display: none; }
+.group.on { display: block; }
+.group-title { font-size: var(--fs-2xl); font-weight: 800; margin: 8px 0 4px; }
+.group-note { color: var(--muted); margin: 0 0 16px; max-width: 900px; }
+.row { display: flex; flex-wrap: wrap; gap: 28px; align-items: flex-start; }
+.cap { font-size: var(--fs-sm); color: var(--muted); margin: 10px 4px 0; max-width: 360px; }
+.cap b { color: var(--ink); font-weight: 700; display: block; font-size: var(--fs-base); }
+
+/* Khung điện thoại 360x740 */
+.phone { width: 360px; height: 740px; border-radius: 40px; background: var(--bg); box-shadow: var(--lift), 0 0 0 10px #1c1914; overflow: hidden; display: flex; flex-direction: column; position: relative; }
+.status { height: 34px; display: flex; align-items: center; justify-content: space-between; padding: 0 22px; font-size: var(--fs-sm); font-weight: 600; color: var(--ink-2); flex: none; }
+.ph-top { display: flex; align-items: center; gap: 10px; padding: 6px 16px 10px; flex: none; }
+.ph-body { flex: 1; overflow-y: auto; padding: 4px 16px 16px; display: flex; flex-direction: column; gap: 14px; }
+.ph-foot { flex: none; padding: 12px 16px 22px; border-top: 1px solid var(--line); background: var(--bg); }
+.icon-btn { width: var(--ctl-h-touch); height: var(--ctl-h-touch); border-radius: var(--radius-ctl); border: 1px solid var(--line); background: var(--surface); display: grid; place-items: center; flex: none; }
+.progress { flex: 1; height: 12px; border-radius: 999px; background: var(--stone); overflow: hidden; }
+.progress > i { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
+.kid-btn { width: 100%; min-height: var(--kid-h); border-radius: 20px; border: 0; background: var(--primary); color: var(--on-primary); font-weight: 800; font-size: var(--fs-xl); display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 4px 0 var(--primary-deep); }
+.kid-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--primary-deep); }
+.kid-btn.ghost { background: var(--surface); border: 1px solid var(--line); box-shadow: 0 4px 0 var(--line); color: var(--ink); }
+.prompt { display: flex; align-items: center; gap: 12px; }
+.prompt h2 { margin: 0; font-size: var(--fs-kid); font-weight: 800; line-height: 1.25; }
+.speaker { width: 72px; height: 72px; border-radius: 50%; border: 0; background: var(--primary); box-shadow: 0 4px 0 var(--primary-deep); display: grid; place-items: center; flex: none; }
+.vi { font-size: var(--fs-base); color: var(--muted); display: flex; align-items: center; gap: 6px; }
+.pics { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.pic { aspect-ratio: 1; border-radius: 22px; border: 3px solid var(--line); background: var(--surface); display: grid; place-items: center; font-size: 64px; position: relative; transition: transform .12s; }
+.pic:active { transform: scale(.97); }
+.pic.right { border-color: var(--accent); background: var(--mint); }
+.pic.wrong { border-color: var(--blush-ink); background: var(--blush); animation: shake .3s; }
+@keyframes shake { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+.pic .tick { position: absolute; top: 8px; right: 8px; width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: #fff; display: none; place-items: center; font-weight: 800; font-size: 16px; }
+.pic.right .tick { display: grid; }
+.feedback { border-radius: 18px; padding: 12px 14px; display: flex; align-items: center; gap: 12px; font-weight: 700; }
+.feedback.ok { background: var(--mint); color: var(--mint-ink); }
+.feedback.no { background: var(--blush); color: var(--blush-ink); }
+.card { background: var(--surface); border-radius: var(--radius-panel); box-shadow: var(--shadow); padding: 16px; }
+.pill { display: inline-flex; align-items: center; height: 22px; padding: 0 9px; border-radius: 999px; font-size: var(--fs-xs); font-weight: 700; }
+.pill.mint { background: var(--mint); color: var(--mint-ink); } .pill.butter { background: var(--butter); color: var(--butter-ink); }
+.pill.blush { background: var(--blush); color: var(--blush-ink); } .pill.stone { background: var(--stone); color: var(--stone-ink); } .pill.lav { background: var(--lav); color: var(--lav-ink); }
+.muted { color: var(--muted); }
+.small { font-size: var(--fs-sm); }
+
+/* Đường học */
+.path { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 8px 0; }
+.node { width: 76px; height: 76px; border-radius: 50%; border: 0; display: grid; place-items: center; font-size: 30px; position: relative; }
+.node.done { background: var(--accent); color: #fff; box-shadow: 0 5px 0 #0e7445; }
+.node.now { background: var(--primary); box-shadow: 0 5px 0 var(--primary-deep), 0 0 0 8px var(--primary-soft); }
+.node.lock { background: var(--stone); color: var(--muted); box-shadow: 0 5px 0 var(--line); }
+.node .lbl { position: absolute; left: 92px; top: 50%; transform: translateY(-50%); white-space: nowrap; font-size: var(--fs-md); font-weight: 700; color: var(--ink); text-align: left; }
+.node .lbl small { display: block; font-weight: 500; color: var(--muted); font-size: var(--fs-sm); }
+.off-l { margin-right: 90px; } .off-r { margin-left: 90px; }
+.streak { display: flex; gap: 8px; }
+.streak span { flex: 1; height: 36px; border-radius: 10px; background: var(--stone); display: grid; place-items: center; font-size: var(--fs-sm); font-weight: 700; color: var(--muted); }
+.streak span.on { background: var(--butter); color: var(--butter-ink); }
+
+/* Ghép đôi, sắp xếp */
+.match { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.tile { min-height: 64px; border-radius: 16px; border: 2px solid var(--line); background: var(--surface); display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 700; font-size: var(--fs-xl); }
+.tile.pic-t { font-size: 34px; }
+.tile.sel { border-color: var(--primary-deep); background: var(--primary-soft); }
+.tile.paired { border-color: var(--accent); background: var(--mint); color: var(--mint-ink); }
+.slots { min-height: 64px; border-radius: 16px; border: 2px dashed var(--line); padding: 8px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.word { height: 48px; padding: 0 16px; border-radius: 14px; border: 2px solid var(--line); background: var(--surface); font-weight: 700; font-size: var(--fs-xl); box-shadow: 0 3px 0 var(--line); }
+.word.used { visibility: hidden; }
+.bank { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* Ghi âm */
+.rec-wrap { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 8px 0; }
+.rec { width: 120px; height: 120px; border-radius: 50%; border: 0; background: var(--blush-ink); color: #fff; display: grid; place-items: center; box-shadow: 0 6px 0 #8c2c0f; position: relative; }
+.rec.on::after { content: ""; position: absolute; inset: -12px; border-radius: 50%; border: 4px solid var(--blush-ink); opacity: .5; animation: pulse 1.2s infinite; }
+@keyframes pulse { from { transform: scale(.9); opacity: .7; } to { transform: scale(1.25); opacity: 0; } }
+.timer { font-size: var(--fs-3xl); font-weight: 800; font-variant-numeric: tabular-nums; }
+.bars { display: flex; align-items: center; gap: 3px; height: 40px; }
+.bars i { width: 4px; border-radius: 4px; background: var(--blush-ink); opacity: .8; }
+.sentence { font-size: var(--fs-kid); font-weight: 800; text-align: center; line-height: 1.4; }
+.sentence .lit { background: var(--primary-soft); color: var(--primary-deep); border-radius: 6px; padding: 0 3px; }
+
+/* Kết quả */
+.stars { display: flex; justify-content: center; gap: 6px; font-size: 54px; line-height: 1; }
+.stars .dim { filter: grayscale(1); opacity: .35; }
+.confetti { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.confetti i { position: absolute; top: -10px; width: 8px; height: 14px; border-radius: 2px; animation: fall 2.6s linear infinite; }
+@keyframes fall { to { transform: translateY(780px) rotate(540deg); } }
+.sticker-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.sticker { aspect-ratio: 1; border-radius: 16px; background: var(--stone); display: grid; place-items: center; font-size: 30px; }
+.sticker.new { background: var(--butter); box-shadow: 0 0 0 3px var(--primary-deep); }
+.sticker.lock { filter: grayscale(1); opacity: .35; }
+
+/* Nhận xét bài nói (học sinh) */
+.fb-item { display: flex; gap: 12px; align-items: flex-start; padding: 12px; border-radius: 16px; background: var(--stone); }
+.fb-time { flex: none; font-variant-numeric: tabular-nums; font-weight: 800; color: var(--primary-deep); font-size: var(--fs-md); }
+.fb-item b { display: block; }
+.mini-btns { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.mini { height: 36px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); font-weight: 700; font-size: var(--fs-base); display: inline-flex; align-items: center; gap: 6px; }
+.mini.primary { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
+
+/* Trò chơi */
+.memory { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.mcard { aspect-ratio: 3/4; perspective: 600px; border: 0; background: none; padding: 0; }
+.mcard .in { position: relative; width: 100%; height: 100%; transition: transform .35s; transform-style: preserve-3d; }
+.mcard.flip .in, .mcard.got .in { transform: rotateY(180deg); }
+.mcard .f, .mcard .b { position: absolute; inset: 0; border-radius: 16px; backface-visibility: hidden; display: grid; place-items: center; }
+.mcard .f { background: var(--primary); box-shadow: 0 4px 0 var(--primary-deep); font-size: 28px; }
+.mcard .b { background: var(--surface); border: 2px solid var(--line); transform: rotateY(180deg); font-size: 40px; font-weight: 800; }
+.mcard .b.txt { font-size: var(--fs-xl); }
+.mcard.got .b { border-color: var(--accent); background: var(--mint); color: var(--mint-ink); }
+.holes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.hole { aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle at 50% 70%, #5b4a33 0 45%, #3e3222 46% 60%, transparent 61%); position: relative; display: grid; place-items: center; overflow: hidden; }
+.hole .pop { font-size: 44px; transform: translateY(8px); transition: transform .2s; }
+.hole.empty .pop { transform: translateY(80px); }
+.hud { display: flex; justify-content: space-between; align-items: center; font-weight: 800; }
+
+/* Khung máy tính */
+.desk { width: min(1180px, 100%); border-radius: 18px; background: var(--bg); box-shadow: var(--lift), 0 0 0 1px var(--line); overflow: hidden; }
+.desk-bar { height: 34px; background: var(--stone); display: flex; align-items: center; gap: 7px; padding: 0 14px; }
+.desk-bar i { width: 11px; height: 11px; border-radius: 50%; background: var(--line); }
+.desk-bar span { margin-left: 12px; font-size: var(--fs-sm); color: var(--muted); }
+.app { display: grid; grid-template-columns: 220px 1fr; min-height: 640px; }
+.side { border-right: 1px solid var(--line); padding: 16px 12px; display: flex; flex-direction: column; gap: 4px; }
+.brand { display: flex; align-items: center; gap: 10px; padding: 4px 8px 14px; font-weight: 800; }
+.brand i { width: 32px; height: 32px; border-radius: 10px; background: var(--primary); display: grid; place-items: center; font-style: normal; }
+.nav { height: 36px; border-radius: 10px; padding: 0 10px; display: flex; align-items: center; gap: 10px; color: var(--ink-2); font-weight: 600; font-size: var(--fs-md); }
+.nav.on { background: var(--primary-soft); color: var(--ink); }
+.nav small { margin-left: auto; }
+.main { padding: 20px 24px; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.crumbs { font-size: var(--fs-sm); color: var(--muted); }
+.title-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.title-row h2 { margin: 2px 0 0; font-size: var(--fs-h1); font-weight: 800; }
+.btn { height: var(--ctl-h); padding: 0 12px; border-radius: var(--radius-ctl); border: 1px solid var(--line); background: var(--surface); font-weight: 700; font-size: var(--fs-base); display: inline-flex; align-items: center; gap: 6px; }
+.btn.primary { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
+.btn.danger { border-color: var(--blush-ink); color: var(--blush-ink); }
+.grid2 { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 16px; align-items: start; }
+.panel { background: var(--surface); border-radius: var(--radius-panel); box-shadow: var(--shadow); padding: 20px; }
+.panel h3 { margin: 0 0 12px; font-size: var(--fs-lg); font-weight: 800; }
+.field { display: flex; flex-direction: column; gap: 6px; font-size: var(--fs-base); color: var(--ink-2); }
+.input { height: var(--ctl-h); border-radius: var(--radius-ctl); border: 1px solid var(--line); background: var(--surface); padding: 0 10px; font: inherit; font-size: var(--fs-md); color: var(--ink); width: 100%; }
+.types { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.type { border: 1px solid var(--line); border-radius: 14px; padding: 10px; background: var(--surface); text-align: left; display: flex; flex-direction: column; gap: 4px; font-size: var(--fs-base); }
+.type b { font-size: var(--fs-md); }
+.type.on { border-color: var(--primary-deep); background: var(--primary-soft); }
+.opt-row { display: grid; grid-template-columns: 56px 1fr auto auto; gap: 8px; align-items: center; }
+.thumb { width: 56px; height: 56px; border-radius: 12px; background: var(--stone); display: grid; place-items: center; font-size: 28px; }
+.radio { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--line); display: grid; place-items: center; }
+.radio.on { border-color: var(--accent); } .radio.on::after { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
+.audio-row { display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 14px; background: var(--stone); }
+.play { width: 36px; height: 36px; border-radius: 50%; border: 0; background: var(--primary); display: grid; place-items: center; flex: none; }
+.wave-s { flex: 1; height: 28px; display: flex; align-items: center; gap: 2px; }
+.wave-s i { flex: 1; background: var(--ink-2); opacity: .45; border-radius: 2px; }
+.preview-phone { border-radius: 26px; border: 8px solid #1c1914; background: var(--bg); padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+
+/* Chấm nói */
+.player { display: flex; flex-direction: column; gap: 10px; }
+.wave { position: relative; height: 96px; border-radius: 16px; background: var(--stone); display: flex; align-items: center; gap: 2px; padding: 0 12px; cursor: crosshair; }
+.wave i { flex: 1; border-radius: 2px; background: var(--ink-2); opacity: .5; }
+.wave i.played { background: var(--primary-deep); opacity: 1; }
+.marker { position: absolute; top: -8px; bottom: -8px; width: 2px; background: var(--blush-ink); }
+.marker span { position: absolute; top: -18px; left: 50%; transform: translateX(-50%); background: var(--blush-ink); color: #fff; font-size: var(--fs-xs); font-weight: 700; padding: 1px 6px; border-radius: 6px; white-space: nowrap; }
+.ticks { display: flex; justify-content: space-between; font-size: var(--fs-xs); color: var(--muted); padding: 0 12px; }
+.ctrls { display: flex; align-items: center; gap: 10px; }
+.err { display: grid; grid-template-columns: 52px 1fr auto; gap: 10px; padding: 12px; border-radius: 16px; border: 1px solid var(--line); align-items: start; }
+.err .t { font-weight: 800; color: var(--blush-ink); font-variant-numeric: tabular-nums; }
+.tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag { height: 28px; padding: 0 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); font-size: var(--fs-sm); font-weight: 600; }
+.tag.on { background: var(--blush); border-color: var(--blush-ink); color: var(--blush-ink); }
+.crit { display: grid; grid-template-columns: 1fr auto; gap: 8px 12px; align-items: center; }
+.starsel { display: flex; gap: 2px; font-size: 22px; }
+.starsel span { cursor: pointer; } .starsel .off { filter: grayscale(1); opacity: .3; }
+textarea.input { height: auto; min-height: 72px; padding: 8px 10px; resize: vertical; }
+
+/* Trình chiếu */
+.stage { background: #1b1711; color: #F4EEDF; border-radius: 18px; padding: 28px; display: flex; flex-direction: column; gap: 22px; min-height: 560px; }
+.stage .q { font-size: 44px; font-weight: 800; text-align: center; }
+.stage .opts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; flex: 1; }
+.stage .opt { border-radius: 24px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; font-size: 80px; border: 0; color: #2F2A1F; }
+.stage .opt b { font-size: 28px; }
+.track { display: flex; flex-direction: column; gap: 8px; }
+.lane { display: flex; align-items: center; gap: 12px; font-weight: 700; }
+.lane .road { flex: 1; height: 34px; border-radius: 999px; background: rgba(255,255,255,.08); position: relative; }
+.lane .car { position: absolute; top: 50%; transform: translate(-50%, -50%); font-size: 26px; transition: left .4s; }
+
+/* Telegram */
+.tg { width: 360px; border-radius: 28px; overflow: hidden; box-shadow: var(--lift); background: #d8e3c8; }
+.tg-top { background: #517da2; color: #fff; padding: 14px 16px; display: flex; align-items: center; gap: 10px; }
+.tg-top i { width: 38px; height: 38px; border-radius: 50%; background: var(--primary); display: grid; place-items: center; font-style: normal; font-weight: 800; color: #2F2A1F; }
+.tg-body { padding: 14px; display: flex; flex-direction: column; gap: 10px; min-height: 520px; background: #cfdcc0 radial-gradient(rgba(255,255,255,.25) 1px, transparent 1px) 0 0/18px 18px; }
+.bub { max-width: 86%; background: #fff; color: #222; border-radius: 16px 16px 16px 4px; padding: 9px 12px; font-size: 14px; line-height: 1.4; box-shadow: 0 1px 1px rgba(0,0,0,.12); }
+.bub.me { align-self: flex-end; background: #effdde; border-radius: 16px 16px 4px 16px; }
+.bub small { display: block; text-align: right; color: #8a9a7a; font-size: 11px; margin-top: 3px; }
+.bub .sig { color: #517da2; font-weight: 700; margin-top: 6px; display: block; }
+.tg-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.tg-btns span { background: rgba(81,125,162,.85); color: #fff; border-radius: 10px; padding: 8px; text-align: center; font-size: 13px; font-weight: 600; }
+.voice { display: flex; align-items: center; gap: 8px; }
+.voice .dot { width: 32px; height: 32px; border-radius: 50%; background: #517da2; display: grid; place-items: center; color: #fff; }
+
+.legend { margin-top: 28px; padding: 16px 18px; border-radius: var(--radius-panel); background: var(--surface); box-shadow: var(--shadow); color: var(--ink-2); font-size: var(--fs-base); }
+.legend b { color: var(--ink); }
+@media (max-width: 760px) {
+  .phone { width: 100%; max-width: 360px; }
+  .app { grid-template-columns: 1fr; } .side { display: none; }
+  .grid2 { grid-template-columns: 1fr; } .types { grid-template-columns: 1fr 1fr; }
+  .stage .opts { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="head">
+    <div>
+      <h1>Bài tập online cho học sinh 3–11 tuổi</h1>
+      <p>Bản mẫu giao diện cho kế hoạch P35. Bấm thử: chọn tranh, ghép đôi, xếp câu, ghi âm, lật thẻ, đánh dấu lỗi bài nói.</p>
+    </div>
+    <div class="chips" role="tablist" aria-label="Nhóm màn hình">
+      <button class="chip" aria-pressed="true" data-g="hs">Học sinh</button>
+      <button class="chip" aria-pressed="false" data-g="game">Trò chơi</button>
+      <button class="chip" aria-pressed="false" data-g="gv">Giáo viên</button>
+      <button class="chip" aria-pressed="false" data-g="ph">Phụ huynh (Telegram)</button>
+      <button class="chip" id="theme" aria-pressed="false" title="Đổi giao diện sáng tối">Sáng / Tối</button>
+    </div>
+  </div>
+
+  <!-- ===================== HỌC SINH ===================== -->
+  <section class="group on" id="g-hs">
+    <div class="group-title">Học sinh</div>
+    <p class="group-note">Mỗi màn một câu, nút to, hướng dẫn bằng giọng nói (có bản tiếng Việt cho trẻ nhỏ), sai được làm lại ngay ở chế độ luyện. Không trừ sao khi sai.</p>
+    <div class="row">
+
+      <!-- 1. Đường học -->
+      <div>
+        <div class="phone">
+          <div class="status"><span>9:41</span><span>●●● 82%</span></div>
+          <div class="ph-top">
+            <div style="flex:1">
+              <div class="small muted">Xin chào</div>
+              <div style="font-weight:800;font-size:var(--fs-2xl)">Minh Anh 👋</div>
+            </div>
+            <span class="pill butter" style="height:32px;font-size:var(--fs-md)">⭐ 128</span>
+          </div>
+          <div class="ph-body">
+            <div class="card" style="padding:12px 14px">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><b>Tuần này</b><span class="small muted">3/3 buổi · giữ chuỗi 5 tuần 🔥</span></div>
+              <div class="streak"><span class="on">T2</span><span>T3</span><span class="on">T4</span><span>T5</span><span class="on">T6</span><span>T7</span><span>CN</span></div>
+            </div>
+            <div class="card" style="padding:12px 14px;display:flex;gap:12px;align-items:center">
+              <div style="font-size:34px">🏆</div>
+              <div style="flex:1"><b>Cả lớp KIDS-S1</b><div class="small muted">Còn 22 sao nữa là mở truyện "The Big Red Bus"</div>
+                <div class="progress" style="margin-top:6px"><i style="width:78%"></i></div></div>
+            </div>
+            <div class="path">
+              <button class="node done off-l">✓<span class="lbl">Colors<small>3 ⭐</small></span></button>
+              <button class="node done off-r">✓<span class="lbl">Animals<small>2 ⭐</small></span></button>
+              <button class="node now">▶<span class="lbl">My family<small>Bài hôm nay · 5 câu</small></span></button>
+              <button class="node lock off-r">🔒<span class="lbl">Food<small>Mở khi xong bài trước</small></span></button>
+              <button class="node lock off-l">🎁<span class="lbl">Ôn tập<small>Trò chơi lật thẻ</small></span></button>
+            </div>
+          </div>
+          <div class="ph-foot"><button class="kid-btn">▶ Học tiếp: My family</button></div>
+        </div>
+        <p class="cap"><b>Bài của tôi · đường học</b>Chuỗi học tính theo tuần (không ép mỗi ngày), mục tiêu chung của lớp thay cho bảng xếp hạng.</p>
+      </div>
+
+      <!-- 2. Nghe rồi chọn tranh -->
+      <div>
+        <div class="phone">
+          <div class="status"><span>9:42</span><span>●●● 82%</span></div>
+          <div class="ph-top">
+            <button class="icon-btn" aria-label="Thoát">✕</button>
+            <div class="progress"><i style="width:40%"></i></div>
+            <span class="small muted" style="font-weight:700">2/5</span>
+          </div>
+          <div class="ph-body">
+            <div class="prompt">
+              <button class="speaker" aria-label="Nghe lại">
+                <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#2F2A1F" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>
+              </button>
+              <div><h2>Listen and touch</h2><div class="vi">🇻🇳 Nghe và chạm vào tranh đúng</div></div>
+            </div>
+            <div class="pics" id="pics">
+              <button class="pic" data-ok="0">🐶<span class="tick">✓</span></button>
+              <button class="pic" data-ok="1">🐱<span class="tick">✓</span></button>
+              <button class="pic" data-ok="0">🐰<span class="tick">✓</span></button>
+              <button class="pic" data-ok="0">🐟<span class="tick">✓</span></button>
+            </div>
+            <div class="feedback ok" id="fb-ok" hidden>🎉 Giỏi lắm! It's a <u>cat</u>.</div>
+            <div class="feedback no" id="fb-no" hidden>🙂 Chưa đúng, nghe lại nhé!</div>
+          </div>
+          <div class="ph-foot"><button class="kid-btn" id="next1" disabled style="opacity:.45">Tiếp tục</button></div>
+        </div>
+        <p class="cap"><b>Nghe rồi chọn tranh (3+ tuổi)</b>Không cần biết chữ: loa to, tranh to, chạm là có phản hồi. Bấm thử: con mèo là đáp án đúng.</p>
+      </div>
+
+      <!-- 3. Ghép đôi -->
+      <div>
+        <div class="phone">
+          <div class="status"><span>9:43</span><span>●●● 81%</span></div>
+          <div class="ph-top">
+            <button class="icon-btn" aria-label="Thoát">✕</button>
+            <div class="progress"><i style="width:60%"></i></div>
+            <span class="small muted" style="font-weight:700">3/5</span>
+          </div>
+          <div class="ph-body">
+            <div class="prompt"><div><h2>Match the words</h2><div class="vi">🇻🇳 Chạm một tranh rồi chạm chữ đúng</div></div></div>
+            <div class="match" id="match">
+              <button class="tile pic-t" data-k="mother">👩</button><button class="tile" data-k="father">father</button>
+              <button class="tile pic-t" data-k="father">👨</button><button class="tile" data-k="baby">baby</button>
+              <button class="tile pic-t" data-k="baby">👶</button><button class="tile" data-k="mother">mother</button>
+              <button class="tile pic-t" data-k="grandma">👵</button><button class="tile" data-k="grandma">grandma</button>
+            </div>
+            <div class="small muted" id="match-note">Đã ghép 0/4</div>
+          </div>
+          <div class="ph-foot"><button class="kid-btn">Kiểm tra</button></div>
+        </div>
+        <p class="cap"><b>Ghép đôi (5+ tuổi)</b>Trên máy thật dùng kéo thả (dnd-kit) và chạm hai bước như bản mẫu; mỗi cặp đúng được một phần điểm.</p>
+      </div>
+
+      <!-- 4. Sắp xếp câu -->
+      <div>
+        <div class="phone">
+          <div class="status"><span>9:44</span><span>●●● 81%</span></div>
+          <div class="ph-top">
+            <button class="icon-btn" aria-label="Thoát">✕</button>
+            <div class="progress"><i style="width:80%"></i></div>
+            <span class="small muted" style="font-weight:700">4/5</span>
+          </div>
+          <div class="ph-body">
+            <div class="prompt"><div><h2>Make a sentence</h2><div class="vi">🇻🇳 Xếp các từ thành câu đúng</div></div></div>
+            <div class="card" style="display:flex;gap:10px;align-items:center;padding:12px"><div style="font-size:44px">👨‍🍳</div><div class="small muted">Nhìn tranh và xếp câu nói về bố.</div></div>
+            <div class="slots" id="slots"><span class="small muted" id="slot-hint">Chạm từ bên dưới…</span></div>
+            <div class="bank" id="bank">
+              <button class="word">cook</button><button class="word">My</button><button class="word">can</button><button class="word">father</button><button class="word">.</button>
+            </div>
+            <div class="feedback ok" id="fb-order" hidden>✨ My father can cook.</div>
+          </div>
+          <div class="ph-foot" style="display:grid;grid-template-columns:1fr 2fr;gap:10px">
+            <button class="kid-btn ghost" id="order-reset">Làm lại</button><button class="kid-btn" id="order-check">Kiểm tra</button>
+          </div>
+        </div>
+        <p class="cap"><b>Sắp xếp (7+ tuổi)</b>Chạm từ để đưa lên dòng câu, chạm lại để bỏ. Đáp án đúng có giọng đọc cả câu.</p>
+      </div>
+
+      <!-- 5. Ghi âm: nghe rồi nhắc lại / đọc to -->
+      <div>
+        <div class="phone">
+          <div class="status"><span>9:45</span><span>●●● 80%</span></div>
+          <div class="ph-top">
+            <button class="icon-btn" aria-label="Thoát">✕</button>
+            <div class="progress"><i style="width:100%"></i></div>
+            <span class="small muted" style="font-weight:700">5/5</span>
+          </div>
+          <div class="ph-body">
+            <div class="prompt">
+              <button class="speaker" aria-label="Nghe mẫu" style="width:56px;height:56px"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#2F2A1F" stroke-width="2.2" stroke-linecap="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg></button>
+              <div><h2 style="font-size:var(--fs-2xl)">Listen and say</h2><div class="vi">🇻🇳 Nghe cô đọc, rồi bấm nút đỏ và nói theo</div></div>
+            </div>
+            <div class="card sentence" id="karaoke"><span>This</span> <span>is</span> <span>my</span> <span>brother.</span> <span>He</span> <span>is</span> <span>three.</span></div>
+            <div class="rec-wrap">
+              <div class="timer" id="timer">0:00 / 0:10</div>
+              <div class="bars" id="bars" hidden></div>
+              <button class="rec" id="rec" aria-label="Bấm để nói">
+                <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+              </button>
+              <div class="small muted" id="rec-hint">Bấm để nói</div>
+            </div>
+          </div>
+          <div class="ph-foot" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <button class="kid-btn ghost" id="replay" disabled style="opacity:.45">▶ Nghe lại</button><button class="kid-btn" id="submit-rec" disabled style="opacity:.45">Nộp bài</button>
+          </div>
+        </div>
+        <p class="cap"><b>Nghe rồi nhắc lại · karaoke đọc theo</b>Chữ sáng dần theo giọng mẫu; trẻ ghi âm tối đa 10 giây, nghe lại rồi mới nộp. Chỉ hiện khi phụ huynh đã đồng ý ghi âm.</p>
+      </div>
+
+      <!-- 6. Kết quả -->
+      <div>
+        <div class="phone">
+          <div class="confetti" id="confetti"></div>
+          <div class="status"><span>9:46</span><span>●●● 80%</span></div>
+          <div class="ph-body" style="justify-content:center;text-align:center;gap:18px">
+            <div style="font-size:72px">🦉</div>
+            <div style="font-weight:800;font-size:var(--fs-3xl)">Xong bài rồi!</div>
+            <div class="stars"><span>⭐</span><span>⭐</span><span class="dim">⭐</span></div>
+            <div class="muted">4/4 câu chạm và kéo đúng · bài nói đang chờ cô Hà chấm</div>
+            <div class="card" style="text-align:left">
+              <div style="display:flex;justify-content:space-between;margin-bottom:10px"><b>Sticker mới</b><span class="small muted">5/12</span></div>
+              <div class="sticker-grid">
+                <div class="sticker">🦁</div><div class="sticker">🚀</div><div class="sticker">🌈</div><div class="sticker new">🐙</div>
+                <div class="sticker">🎈</div><div class="sticker lock">🦄</div><div class="sticker lock">🍩</div><div class="sticker lock">🏰</div>
+              </div>
+            </div>
+          </div>
+          <div class="ph-foot"><button class="kid-btn">Về đường học</button></div>
+        </div>
+        <p class="cap"><b>Tổng kết</b>Sao theo bài, sticker mở khoá bằng sao. Linh vật (cú) chỉ là ví dụ, thay bằng linh vật của trung tâm.</p>
+      </div>
+
+      <!-- 7. Xem nhận xét bài nói -->
+      <div>
+        <div class="phone">
+          <div class="status"><span>19:05</span><span>●●● 64%</span></div>
+          <div class="ph-top"><button class="icon-btn" aria-label="Quay lại">←</button><b style="font-size:var(--fs-xl)">Nhận xét của cô Hà</b></div>
+          <div class="ph-body">
+            <div class="card" style="background:var(--mint);box-shadow:none">
+              <b style="color:var(--mint-ink)">Điều con làm tốt 💚</b>
+              <div style="color:var(--mint-ink)">Con đọc to, rõ, đúng hết các từ "my brother".</div>
+            </div>
+            <div style="display:flex;gap:10px">
+              <div class="card" style="flex:1;padding:10px 12px;text-align:center"><div class="small muted">Phát âm</div><div>⭐⭐<span style="opacity:.3">⭐</span></div></div>
+              <div class="card" style="flex:1;padding:10px 12px;text-align:center"><div class="small muted">Trôi chảy</div><div>⭐⭐⭐</div></div>
+              <div class="card" style="flex:1;padding:10px 12px;text-align:center"><div class="small muted">Hoàn thành</div><div>⭐⭐⭐</div></div>
+            </div>
+            <b>Con sửa 2 chỗ này nhé</b>
+            <div class="fb-item">
+              <span class="fb-time">0:03</span>
+              <div><b>three → con đọc thành "tree"</b><span class="small muted">Đặt đầu lưỡi giữa hai hàm răng, thổi nhẹ: /θ/</span>
+                <div class="mini-btns"><button class="mini">▶ Con nói</button><button class="mini">▶ Cô đọc mẫu</button><button class="mini primary">🎤 Nói lại</button></div></div>
+            </div>
+            <div class="fb-item">
+              <span class="fb-time">0:05</span>
+              <div><b>brother<u>s</u>? → brother</b><span class="small muted">Chỉ một người anh thì không thêm "s".</span>
+                <div class="mini-btns"><button class="mini">▶ Con nói</button><button class="mini">▶ Cô đọc mẫu</button><button class="mini primary">🎤 Nói lại</button></div></div>
+            </div>
+          </div>
+          <div class="ph-foot"><button class="kid-btn">🎤 Nói lại 2 câu được đánh dấu</button></div>
+        </div>
+        <p class="cap"><b>Học sinh xem nhận xét bài nói</b>Khen trước, chỉ 1–2 lỗi quan trọng; nghe đoạn mình nói và mẫu của cô, chỉ ghi âm lại câu bị đánh dấu.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== TRÒ CHƠI ===================== -->
+  <section class="group" id="g-game">
+    <div class="group-title">Trò chơi</div>
+    <p class="group-note">Giáo viên soạn một danh sách từ (từ, tranh, âm thanh, nghĩa tiếng Việt), app tự tạo nhiều trò chơi từ cùng danh sách đó.</p>
+    <div class="row">
+      <div>
+        <div class="phone">
+          <div class="status"><span>16:20</span><span>●●● 70%</span></div>
+          <div class="ph-top"><button class="icon-btn" aria-label="Thoát">✕</button><b style="flex:1;font-size:var(--fs-xl)">Lật thẻ nhớ · Animals</b><span class="pill mint" id="mem-score">0/3 cặp</span></div>
+          <div class="ph-body">
+            <div class="vi">🇻🇳 Lật hai thẻ: tranh và chữ giống nhau là một cặp</div>
+            <div class="memory" id="memory"></div>
+          </div>
+          <div class="ph-foot"><button class="kid-btn ghost" id="mem-reset">↻ Chơi lại</button></div>
+        </div>
+        <p class="cap"><b>Lật thẻ nhớ (4+ tuổi)</b>Bấm thử. Đúng cặp thì phát âm từ đó.</p>
+      </div>
+
+      <div>
+        <div class="phone">
+          <div class="status"><span>16:25</span><span>●●● 69%</span></div>
+          <div class="ph-top"><button class="icon-btn" aria-label="Thoát">✕</button><b style="flex:1;font-size:var(--fs-xl)">Đập chuột từ vựng</b><span class="pill butter">⏱ 0:24</span></div>
+          <div class="ph-body">
+            <div class="prompt"><button class="speaker" style="width:56px;height:56px" aria-label="Nghe">🔊</button><div><h2 style="font-size:var(--fs-2xl)">“banana”</h2><div class="vi">🇻🇳 Chạm nhanh vào quả chuối</div></div></div>
+            <div class="hud"><span>Điểm: 7</span><span>❤️❤️❤️</span></div>
+            <div class="holes">
+              <div class="hole empty"><span class="pop">🍎</span></div>
+              <div class="hole"><span class="pop">🍌</span></div>
+              <div class="hole empty"><span class="pop">🍇</span></div>
+              <div class="hole"><span class="pop">🍊</span></div>
+              <div class="hole empty"><span class="pop">🍓</span></div>
+              <div class="hole"><span class="pop">🍉</span></div>
+              <div class="hole empty"><span class="pop">🥝</span></div>
+              <div class="hole empty"><span class="pop">🍐</span></div>
+              <div class="hole"><span class="pop">🍒</span></div>
+            </div>
+          </div>
+          <div class="ph-foot small muted" style="text-align:center">Không mất mạng khi chạm sai: chỉ nghe lại từ và thử tiếp</div>
+        </div>
+        <p class="cap"><b>Đập chuột từ vựng (4+ tuổi)</b>Nghe từ rồi chạm đúng tranh đang trồi lên. Luyện nghe nhanh.</p>
+      </div>
+
+      <div>
+        <div class="phone">
+          <div class="status"><span>16:30</span><span>●●● 68%</span></div>
+          <div class="ph-top"><button class="icon-btn" aria-label="Quay lại">←</button><b style="flex:1;font-size:var(--fs-xl)">Hộp từ của con</b></div>
+          <div class="ph-body">
+            <div class="card" style="text-align:center">
+              <div style="font-size:48px">🃏</div>
+              <div style="font-weight:800;font-size:var(--fs-2xl)">8 từ cần ôn hôm nay</div>
+              <div class="small muted">Ôn đúng lúc sắp quên, mỗi lần chừng 3 phút</div>
+            </div>
+            <div class="card" style="display:flex;flex-direction:column;gap:10px">
+              <div style="display:flex;justify-content:space-between"><b>Đã thuộc</b><span class="pill mint">46 từ</span></div>
+              <div style="display:flex;justify-content:space-between"><b>Đang học</b><span class="pill butter">18 từ</span></div>
+              <div style="display:flex;justify-content:space-between"><b>Hay quên</b><span class="pill blush">5 từ</span></div>
+            </div>
+            <div class="small muted">Hay quên: <b style="color:var(--ink)">three, brother, kitchen, Thursday, purple</b></div>
+          </div>
+          <div class="ph-foot"><button class="kid-btn">▶ Ôn 8 từ</button></div>
+        </div>
+        <p class="cap"><b>Hộp từ, ôn lặp lại ngắt quãng (ts-fsrs)</b>Mỗi ngày gợi ý vài từ cần ôn qua một trò chơi ngắn.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== GIÁO VIÊN ===================== -->
+  <section class="group" id="g-gv">
+    <div class="group-title">Giáo viên</div>
+    <p class="group-note">Dùng khung app hiện có (thanh bên, PageHeader, Panel, nút 32px). Soạn câu có xem trước như học sinh thấy; chấm nói đánh dấu lỗi theo giây.</p>
+
+    <!-- Soạn câu -->
+    <div class="desk" style="margin-bottom:12px">
+      <div class="desk-bar"><i></i><i></i><i></i><span>esl-center · Bài tập · My family · Soạn câu hỏi</span></div>
+      <div class="app">
+        <aside class="side">
+          <div class="brand"><i>E</i>ESL Center</div>
+          <div class="nav">🏠 Tổng quan</div><div class="nav">👥 Học sinh</div><div class="nav">💬 Tin nhắn <small class="pill blush">3</small></div>
+          <div class="nav">📘 Lớp học</div><div class="nav on">📝 Bài tập</div><div class="nav">📚 Bài giảng</div><div class="nav">🎮 Trò chơi</div><div class="nav">🃏 Danh sách từ</div>
+        </aside>
+        <main class="main">
+          <div class="crumbs">Đào tạo / Bài tập / KIDS-S1 · My family</div>
+          <div class="title-row"><h2>Soạn câu hỏi</h2><div style="display:flex;gap:8px"><button class="btn">Ngân hàng câu hỏi</button><button class="btn primary">Lưu 5 câu</button></div></div>
+          <div class="grid2">
+            <div class="panel">
+              <h3>Câu 1 · Chọn dạng câu</h3>
+              <div class="types">
+                <button class="type on"><b>🖼 Nghe chọn tranh</b><span class="muted">3+ · Nghe</span></button>
+                <button class="type"><b>🔗 Ghép đôi</b><span class="muted">5+ · Từ vựng</span></button>
+                <button class="type"><b>🧩 Sắp xếp</b><span class="muted">7+ · Ngữ pháp</span></button>
+                <button class="type"><b>✏️ Điền chỗ trống</b><span class="muted">7+ · Đọc viết</span></button>
+                <button class="type"><b>🔁 Nghe nhắc lại</b><span class="muted">3+ · Nói</span></button>
+                <button class="type"><b>📖 Đọc to</b><span class="muted">6+ · Nói</span></button>
+                <button class="type"><b>🗣 Nói về tranh</b><span class="muted">8+ · Nói</span></button>
+                <button class="type"><b>☑️ Trắc nghiệm</b><span class="muted">Đã có</span></button>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px">
+                <label class="field">Lời hướng dẫn (tiếng Anh) *<input class="input" value="Listen and touch" /></label>
+                <label class="field">Hướng dẫn tiếng Việt<input class="input" value="Nghe và chạm vào tranh đúng" /></label>
+              </div>
+              <div class="field" style="margin-top:12px">Âm thanh câu hỏi *
+                <div class="audio-row">
+                  <button class="play" aria-label="Phát">▶</button>
+                  <div class="wave-s"></div>
+                  <span class="small muted">“cat” · 0:01</span>
+                  <button class="btn">🎤 Ghi lại</button><button class="btn">🤖 Giọng máy</button>
+                </div>
+              </div>
+              <div class="field" style="margin-top:12px">Các tranh (chọn đáp án đúng)
+                <div style="display:flex;flex-direction:column;gap:8px">
+                  <div class="opt-row"><div class="thumb">🐶</div><input class="input" value="dog" /><span class="radio"></span><button class="btn danger" aria-label="Xoá">🗑</button></div>
+                  <div class="opt-row"><div class="thumb">🐱</div><input class="input" value="cat" /><span class="radio on"></span><button class="btn danger" aria-label="Xoá">🗑</button></div>
+                  <div class="opt-row"><div class="thumb">🐰</div><input class="input" value="rabbit" /><span class="radio"></span><button class="btn danger" aria-label="Xoá">🗑</button></div>
+                  <div class="opt-row"><div class="thumb">🐟</div><input class="input" value="fish" /><span class="radio"></span><button class="btn danger" aria-label="Xoá">🗑</button></div>
+                </div>
+              </div>
+              <div style="display:flex;gap:12px;margin-top:12px;align-items:center;flex-wrap:wrap">
+                <label class="field" style="width:120px">Điểm<input class="input" value="1" /></label>
+                <label class="field" style="flex:1">Nguồn và giấy phép<input class="input" value="Tranh tự vẽ · trung tâm" /></label>
+              </div>
+            </div>
+            <div class="panel">
+              <h3>Xem trước như học sinh</h3>
+              <div class="preview-phone">
+                <div style="display:flex;gap:10px;align-items:center"><div class="speaker" style="width:48px;height:48px;font-size:20px">🔊</div><div><b>Listen and touch</b><div class="small muted">🇻🇳 Nghe và chạm vào tranh đúng</div></div></div>
+                <div class="pics" style="gap:8px"><div class="pic" style="font-size:40px;border-radius:16px">🐶</div><div class="pic right" style="font-size:40px;border-radius:16px">🐱<span class="tick">✓</span></div><div class="pic" style="font-size:40px;border-radius:16px">🐰</div><div class="pic" style="font-size:40px;border-radius:16px">🐟</div></div>
+              </div>
+              <div class="small muted" style="margin-top:10px">Chế độ: <span class="pill stone">Luyện · làm lại khi sai</span></div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+    <p class="cap" style="max-width:900px"><b>Soạn câu hỏi</b>Tám dạng câu chọn bằng thẻ; tranh và âm thanh tải thẳng lên Supabase; ghi giọng mẫu ngay tại chỗ hoặc sinh giọng máy; ô nguồn và giấy phép cho tài liệu mở.</p>
+
+    <!-- Chấm nói -->
+    <div class="desk" style="margin:28px 0 12px">
+      <div class="desk-bar"><i></i><i></i><i></i><span>esl-center · Bài tập · My family · Chấm bài nói</span></div>
+      <div class="app">
+        <aside class="side">
+          <div class="brand"><i>E</i>ESL Center</div>
+          <div class="nav">🏠 Tổng quan</div><div class="nav">👥 Học sinh</div><div class="nav">💬 Tin nhắn <small class="pill blush">3</small></div>
+          <div class="nav">📘 Lớp học</div><div class="nav on">📝 Bài tập</div><div class="nav">📚 Bài giảng</div>
+        </aside>
+        <main class="main">
+          <div class="crumbs">Đào tạo / Bài tập / KIDS-S1 · My family / Chấm bài nói</div>
+          <div class="title-row"><div><h2>Nguyễn Minh Anh · Câu 5</h2><div class="muted small">Nghe rồi nhắc lại · “This is my brother. He is three.” · nộp 19:02 hôm nay</div></div>
+            <div style="display:flex;gap:8px"><button class="btn">← Em trước</button><button class="btn">Em sau →</button><span class="pill butter" style="height:32px">Còn 6 bài chờ chấm</span></div></div>
+          <div class="grid2">
+            <div style="display:flex;flex-direction:column;gap:16px">
+              <div class="panel player">
+                <h3 style="margin:0">Bản ghi của học sinh <span class="small muted" style="font-weight:500">· bấm vào sóng âm để đánh dấu lỗi tại giây đó</span></h3>
+                <div class="wave" id="wave"></div>
+                <div class="ticks"><span>0:00</span><span>0:02</span><span>0:04</span><span>0:06</span><span>0:08</span></div>
+                <div class="ctrls"><button class="play" aria-label="Phát">▶</button><span class="small muted">0:03 / 0:08</span><span style="flex:1"></span><button class="btn">▶ Nghe mẫu</button><button class="btn">Tốc độ 0.75×</button></div>
+              </div>
+              <div class="panel">
+                <h3>Lỗi đã đánh dấu <span class="small muted" id="err-count" style="font-weight:500">· 2</span></h3>
+                <div style="display:flex;flex-direction:column;gap:10px" id="errs">
+                  <div class="err"><span class="t">0:03</span>
+                    <div style="display:flex;flex-direction:column;gap:8px">
+                      <div class="tags"><span class="tag">Mất âm cuối</span><span class="tag on">/θ/ → /t/</span><span class="tag">/ʃ/ /s/</span><span class="tag">s/es</span><span class="tag">-ed</span><span class="tag">Trọng âm</span><span class="tag">Ngữ điệu</span><span class="tag">Thiếu/thừa từ</span></div>
+                      <input class="input" value="three /θriː/" aria-label="Chữ đúng" />
+                      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn">🎤 Ghi âm mẫu (0:02)</button><label class="small" style="display:flex;align-items:center;gap:6px"><input type="checkbox" checked /> Yêu cầu nói lại câu này</label></div>
+                    </div>
+                    <button class="btn danger" aria-label="Xoá lỗi">🗑</button>
+                  </div>
+                  <div class="err"><span class="t">0:05</span>
+                    <div style="display:flex;flex-direction:column;gap:8px">
+                      <div class="tags"><span class="tag">Mất âm cuối</span><span class="tag">/θ/ → /t/</span><span class="tag on">s/es</span><span class="tag">Thiếu/thừa từ</span></div>
+                      <input class="input" value="brother (không thêm s)" aria-label="Chữ đúng" />
+                    </div>
+                    <button class="btn danger" aria-label="Xoá lỗi">🗑</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:16px">
+              <div class="panel">
+                <h3>Tiêu chí · 6 tuổi</h3>
+                <div class="crit">
+                  <span>Phát âm</span><span class="starsel" data-v="2"></span>
+                  <span>Trôi chảy</span><span class="starsel" data-v="3"></span>
+                  <span>Hoàn thành yêu cầu</span><span class="starsel" data-v="3"></span>
+                </div>
+                <label class="field" style="margin-top:14px">Điều con làm tốt *<textarea class="input">Con đọc to, rõ, đúng hết các từ "my brother".</textarea></label>
+                <div class="small muted" style="margin-top:8px">Gợi ý: với trẻ dưới 8 tuổi chỉ nêu 1–2 lỗi quan trọng nhất.</div>
+              </div>
+              <div class="panel">
+                <h3>Gửi kết quả</h3>
+                <label class="small" style="display:flex;gap:8px;align-items:center"><input type="checkbox" checked /> Gửi nhận xét cho phụ huynh qua Telegram</label>
+                <div class="small muted" style="margin:6px 0 12px">Ký tên: — Cô Thu Hà, GV lớp KIDS-S1 · bản sao gửi super admin</div>
+                <button class="btn primary" style="width:100%;justify-content:center">Lưu và gửi</button>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+    <p class="cap" style="max-width:900px"><b>Chấm bài nói</b>Bấm vào sóng âm để thêm lỗi tại giây đó (thử bấm). Loại lỗi chọn nhanh từ danh sách lỗi thường gặp của người Việt; ghi âm mẫu để trẻ nghe; đánh dấu câu cần nói lại.</p>
+
+    <!-- Trình chiếu -->
+    <div class="desk" style="margin:28px 0 12px">
+      <div class="desk-bar"><i></i><i></i><i></i><span>Chế độ trình chiếu · KIDS-S1 · Đua xe trả lời nhanh</span></div>
+      <div style="padding:16px">
+        <div class="stage">
+          <div style="display:flex;justify-content:space-between;align-items:center"><span class="pill butter">Câu 4/10</span><span style="font-weight:700;opacity:.8">Cô Hà điều khiển bằng điện thoại · ← → chuyển câu</span><span class="pill mint">⏱ 0:08</span></div>
+          <div class="q">🔊 “Which one is <u>purple</u>?”</div>
+          <div class="opts">
+            <button class="opt" style="background:#FFC933">🍆<b>A</b></button>
+            <button class="opt" style="background:#C5F0D6">🥦<b>B</b></button>
+            <button class="opt" style="background:#FBD2BD">🍅<b>C</b></button>
+            <button class="opt" style="background:#D8EEBA">🍋<b>D</b></button>
+          </div>
+          <div class="track">
+            <div class="lane">Đội Hổ<div class="road"><span class="car" style="left:68%">🏎️</span></div>7</div>
+            <div class="lane">Đội Gấu<div class="road"><span class="car" style="left:52%">🚙</span></div>5</div>
+            <div class="lane">Đội Thỏ<div class="road"><span class="car" style="left:76%">🚗</span></div>8</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="cap" style="max-width:900px"><b>Chế độ trình chiếu</b>Chiếu lên tivi lớp, chia đội, trả lời đúng thì xe chạy nhanh hơn. Dùng cùng danh sách từ của bài.</p>
+  </section>
+
+  <!-- ===================== PHỤ HUYNH ===================== -->
+  <section class="group" id="g-ph">
+    <div class="group-title">Phụ huynh nhận qua Telegram</div>
+    <p class="group-note">Phụ huynh không cần cài app: đồng ý ghi âm, nhận nhận xét bài nói kèm giọng mẫu của cô, trả lời giáo viên ngay trong Telegram. Super admin nhận bản sao các trao đổi.</p>
+    <div class="row">
+      <div class="tg">
+        <div class="tg-top"><i>E</i><div><b>ESL Center Bot</b><div style="font-size:12px;opacity:.8">bot</div></div></div>
+        <div class="tg-body">
+          <div class="bub">Trung tâm xin phép cho bé <b>Minh Anh</b> ghi âm khi làm bài nói, để giáo viên nghe và sửa phát âm. Bản ghi chỉ giáo viên lớp và phụ huynh nghe được, tự xoá sau 24 tháng.
+            <div class="tg-btns" style="margin-top:8px"><span>✅ Đồng ý</span><span>Không đồng ý</span></div><small>18:40</small></div>
+          <div class="bub me">✅ Đồng ý<small>18:41 ✓✓</small></div>
+          <div class="bub">📝 <b>Minh Anh</b> đã có nhận xét bài nói “My family”.
+            <br/>⭐ Phát âm 2/3 · Trôi chảy 3/3 · Hoàn thành 3/3
+            <br/>💚 Con đọc to, rõ, đúng hết các từ "my brother".
+            <br/>🔧 Cần luyện: <b>three</b> (con đọc thành “tree”).
+            <span class="sig">— Cô Thu Hà, GV lớp KIDS-S1</span><small>19:20</small></div>
+          <div class="bub"><div class="voice"><span class="dot">▶</span><span>Giọng mẫu “three” · 0:02</span></div><small>19:20</small></div>
+          <div class="bub me">Cảm ơn cô, tối nay bố cho con luyện thêm ạ.<small>19:31 ✓✓</small></div>
+          <div class="tg-btns"><span>📅 Lịch học</span><span>💰 Học phí</span><span>📝 Bài tập</span><span>🗣 Nhận xét</span></div>
+        </div>
+      </div>
+      <div class="tg">
+        <div class="tg-top" style="background:#3d5f80"><i>E</i><div><b>ESL Center Bot</b><div style="font-size:12px;opacity:.8">Super admin · bản sao</div></div></div>
+        <div class="tg-body">
+          <div class="bub">📋 <b>Bản sao trao đổi</b><br/>Cô Thu Hà → PH Nguyễn Văn Hùng<br/>HS Minh Anh · KIDS-S1<br/>“Nhận xét bài nói My family…”<small>19:20</small></div>
+          <div class="bub">📋 <b>Bản sao trao đổi</b><br/>PH Nguyễn Văn Hùng → Cô Thu Hà<br/>HS Minh Anh · KIDS-S1<br/>“Cảm ơn cô, tối nay bố cho con luyện thêm ạ.”<br/><span class="small" style="color:#8a9a7a">Bấm Trả lời để nhắn phụ huynh</span><small>19:31</small></div>
+          <div class="bub">📊 <b>Cuối ngày 19/10</b><br/>18 buổi đã dạy · 4 vắng<br/>27 bài nộp · 9 bài nói chờ chấm<br/>Thu 12.500.000 ₫<small>21:00</small></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="legend"><b>Ghi chú bản mẫu.</b> Màu, phông (Be Vietnam Pro), bo góc 12/24px, nút 32px (máy tính) và 44px (điện thoại) lấy từ hệ thiết kế hiện có; nút trẻ em cao 64px theo P35. Biểu tượng emoji chỉ để minh hoạ, bản thật dùng tranh vẽ và icon của trung tâm. Có chế độ tối (nút Sáng / Tối hoặc theo hệ thống).</div>
+</div>
+
+<script>
+(() => {
+  // Chuyển nhóm màn hình
+  document.querySelectorAll('.chip[data-g]').forEach((c) => c.addEventListener('click', () => {
+    document.querySelectorAll('.chip[data-g]').forEach((x) => x.setAttribute('aria-pressed', String(x === c)));
+    document.querySelectorAll('.group').forEach((g) => g.classList.toggle('on', g.id === 'g-' + c.dataset.g));
+  }));
+  // Sáng tối
+  const root = document.documentElement;
+  document.getElementById('theme').addEventListener('click', (e) => {
+    const dark = root.dataset.theme !== 'dark' && !(root.dataset.theme !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
+    root.dataset.theme = dark ? 'dark' : 'light';
+    e.currentTarget.setAttribute('aria-pressed', String(dark));
+  });
+
+  // Nghe rồi chọn tranh
+  const next1 = document.getElementById('next1');
+  document.querySelectorAll('#pics .pic').forEach((p) => p.addEventListener('click', () => {
+    document.querySelectorAll('#pics .pic').forEach((x) => x.classList.remove('wrong'));
+    const ok = p.dataset.ok === '1';
+    p.classList.add(ok ? 'right' : 'wrong');
+    document.getElementById('fb-ok').hidden = !ok;
+    document.getElementById('fb-no').hidden = ok;
+    if (ok) { next1.disabled = false; next1.style.opacity = 1; }
+  }));
+
+  // Ghép đôi: chạm hai bước
+  let picked = null, pairs = 0;
+  document.querySelectorAll('#match .tile').forEach((t) => t.addEventListener('click', () => {
+    if (t.classList.contains('paired')) return;
+    if (!picked) { picked = t; t.classList.add('sel'); return; }
+    if (picked === t) { t.classList.remove('sel'); picked = null; return; }
+    const samePicKind = picked.classList.contains('pic-t') === t.classList.contains('pic-t');
+    if (!samePicKind && picked.dataset.k === t.dataset.k) {
+      picked.classList.remove('sel'); picked.classList.add('paired'); t.classList.add('paired'); pairs++;
+      document.getElementById('match-note').textContent = 'Đã ghép ' + pairs + '/4' + (pairs === 4 ? ' · Giỏi quá! 🎉' : '');
+    } else {
+      picked.classList.remove('sel');
+    }
+    picked = null;
+  }));
+
+  // Sắp xếp câu
+  const slots = document.getElementById('slots'), bank = document.getElementById('bank'), hint = document.getElementById('slot-hint');
+  bank.querySelectorAll('.word').forEach((w) => w.addEventListener('click', () => {
+    if (w.classList.contains('used')) return;
+    w.classList.add('used'); hint.hidden = true;
+    const b = document.createElement('button'); b.className = 'word'; b.textContent = w.textContent;
+    b.addEventListener('click', () => { b.remove(); w.classList.remove('used'); if (!slots.querySelector('.word')) hint.hidden = false; });
+    slots.appendChild(b);
+  }));
+  document.getElementById('order-reset').addEventListener('click', () => {
+    slots.querySelectorAll('.word').forEach((b) => b.remove()); bank.querySelectorAll('.word').forEach((w) => w.classList.remove('used'));
+    hint.hidden = false; document.getElementById('fb-order').hidden = true;
+  });
+  document.getElementById('order-check').addEventListener('click', () => {
+    const s = [...slots.querySelectorAll('.word')].map((b) => b.textContent).join(' ');
+    const fb = document.getElementById('fb-order');
+    fb.hidden = false;
+    if (s === 'My father can cook .') { fb.className = 'feedback ok'; fb.textContent = '✨ Đúng rồi: My father can cook.'; }
+    else { fb.className = 'feedback no'; fb.textContent = '🙂 Gần đúng rồi, thử lại nhé!'; }
+  });
+
+  // Ghi âm giả lập + karaoke
+  const rec = document.getElementById('rec'), timer = document.getElementById('timer'), bars = document.getElementById('bars');
+  const words = [...document.querySelectorAll('#karaoke span')];
+  let iv = null, sec = 0;
+  for (let i = 0; i < 28; i++) bars.appendChild(document.createElement('i'));
+  const stop = () => {
+    clearInterval(iv); iv = null; rec.classList.remove('on'); bars.hidden = true;
+    document.getElementById('rec-hint').textContent = 'Đã ghi ' + sec + ' giây · bấm để nói lại';
+    ['replay', 'submit-rec'].forEach((id) => { const b = document.getElementById(id); b.disabled = false; b.style.opacity = 1; });
+  };
+  rec.addEventListener('click', () => {
+    if (iv) return stop();
+    sec = 0; rec.classList.add('on'); bars.hidden = false; words.forEach((w) => w.classList.remove('lit'));
+    document.getElementById('rec-hint').textContent = 'Đang nghe con nói… bấm để dừng';
+    let tick = 0;
+    iv = setInterval(() => {
+      tick++;
+      bars.querySelectorAll('i').forEach((b) => (b.style.height = 6 + Math.random() * 34 + 'px'));
+      if (tick % 3 === 0) { const w = words[Math.min(words.length - 1, tick / 3 - 1)]; if (w) w.classList.add('lit'); }
+      if (tick % 5 === 0) { sec++; timer.textContent = '0:' + String(sec).padStart(2, '0') + ' / 0:10'; if (sec >= 10) stop(); }
+    }, 200);
+  });
+
+  // Pháo giấy màn kết quả
+  const conf = document.getElementById('confetti');
+  const colors = ['#FFC933', '#159E5E', '#FBD2BD', '#D8EEBA', '#7DB3FF'];
+  for (let i = 0; i < 26; i++) { const c = document.createElement('i'); c.style.left = Math.random() * 100 + '%'; c.style.background = colors[i % colors.length]; c.style.animationDelay = Math.random() * 2.6 + 's'; conf.appendChild(c); }
+
+  // Lật thẻ nhớ
+  const memory = document.getElementById('memory');
+  const deck = [['🐶', 'dog'], ['🐱', 'cat'], ['🐰', 'rabbit']];
+  const build = () => {
+    memory.innerHTML = ''; let open = [], got = 0;
+    document.getElementById('mem-score').textContent = '0/3 cặp';
+    const cards = deck.flatMap(([e, w]) => [{ k: w, face: e, txt: false }, { k: w, face: w, txt: true }]).sort(() => Math.random() - 0.5);
+    cards.forEach((c) => {
+      const b = document.createElement('button'); b.className = 'mcard'; b.setAttribute('aria-label', 'Thẻ');
+      b.innerHTML = '<div class="in"><div class="f">⭐</div><div class="b' + (c.txt ? ' txt' : '') + '">' + c.face + '</div></div>';
+      b.addEventListener('click', () => {
+        if (b.classList.contains('flip') || b.classList.contains('got') || open.length === 2) return;
+        b.classList.add('flip'); open.push([b, c]);
+        if (open.length === 2) {
+          const [[b1, c1], [b2, c2]] = open;
+          setTimeout(() => {
+            if (c1.k === c2.k && c1.txt !== c2.txt) { b1.classList.add('got'); b2.classList.add('got'); got++; document.getElementById('mem-score').textContent = got + '/3 cặp' + (got === 3 ? ' 🎉' : ''); }
+            b1.classList.remove('flip'); b2.classList.remove('flip'); open = [];
+          }, 700);
+        }
+      });
+      memory.appendChild(b);
+    });
+  };
+  build(); document.getElementById('mem-reset').addEventListener('click', build);
+
+  // Sóng âm nhỏ ở màn soạn
+  document.querySelectorAll('.wave-s').forEach((w) => { for (let i = 0; i < 40; i++) { const b = document.createElement('i'); b.style.height = 4 + Math.abs(Math.sin(i / 3)) * 20 + 'px'; w.appendChild(b); } });
+
+  // Sóng âm chấm nói: bấm để thêm lỗi tại giây đó
+  const wave = document.getElementById('wave');
+  const N = 120, DURATION = 8;
+  for (let i = 0; i < N; i++) { const b = document.createElement('i'); b.style.height = 8 + Math.abs(Math.sin(i / 5) * Math.cos(i / 11)) * 64 + 'px'; if (i < N * 3 / 8) b.classList.add('played'); wave.appendChild(b); }
+  const addMarker = (fraction) => { const m = document.createElement('div'); m.className = 'marker'; m.style.left = 'calc(12px + (100% - 24px) * ' + fraction + ')'; m.innerHTML = '<span>0:' + String(Math.round(fraction * DURATION)).padStart(2, '0') + '</span>'; wave.appendChild(m); };
+  addMarker(3 / 8); addMarker(5 / 8);
+  let count = 2;
+  wave.addEventListener('click', (e) => {
+    const r = wave.getBoundingClientRect(); const f = Math.min(1, Math.max(0, (e.clientX - r.left - 12) / (r.width - 24)));
+    addMarker(f); count++;
+    document.getElementById('err-count').textContent = '· ' + count;
+    const t = '0:' + String(Math.round(f * DURATION)).padStart(2, '0');
+    const row = document.createElement('div'); row.className = 'err';
+    row.innerHTML = '<span class="t">' + t + '</span><div style="display:flex;flex-direction:column;gap:8px"><div class="tags"><span class="tag">Mất âm cuối</span><span class="tag">/θ/ → /t/</span><span class="tag">s/es</span><span class="tag">-ed</span><span class="tag">Trọng âm</span><span class="tag">Ngữ điệu</span></div><input class="input" placeholder="Chữ đúng, ví dụ: cat /kæt/" aria-label="Chữ đúng" /></div><button class="btn danger" aria-label="Xoá lỗi">🗑</button>';
+    row.querySelectorAll('.tag').forEach((tg) => tg.addEventListener('click', () => tg.classList.toggle('on')));
+    row.querySelector('.btn.danger').addEventListener('click', () => { row.remove(); count--; document.getElementById('err-count').textContent = '· ' + count; });
+    document.getElementById('errs').prepend(row);
+  });
+  document.querySelectorAll('#errs .tag').forEach((tg) => tg.addEventListener('click', () => tg.classList.toggle('on')));
+
+  // Chọn sao theo tiêu chí
+  document.querySelectorAll('.starsel').forEach((s) => {
+    const draw = (v) => { s.innerHTML = ''; for (let i = 1; i <= 3; i++) { const st = document.createElement('span'); st.textContent = '⭐'; if (i > v) st.className = 'off'; st.addEventListener('click', () => draw(i)); s.appendChild(st); } };
+    draw(Number(s.dataset.v));
+  });
+})();
+</script>
+</body>
+</html>
