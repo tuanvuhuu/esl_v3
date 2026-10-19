@@ -1,6 +1,6 @@
-// Dữ liệu học thử: cơ sở, giáo viên, lớp, học sinh và một bài đủ các dạng câu (P35).
+// Dữ liệu học thử: cơ sở, giáo viên, lớp, học sinh và bộ bài mẫu đủ các dạng câu (P35, dữ liệu ở demo-lessons.ts).
 // Tách riêng ở "Cơ sở học thử" để không lẫn vào lớp thật. Chỉ chạy trên server.
-import { and, eq, inArray } from 'drizzle-orm';
+import { and, asc, eq, inArray } from 'drizzle-orm';
 import { db } from '@/db/client';
 import {
   accounts,
@@ -16,48 +16,70 @@ import {
   teachers,
 } from '@/db/schema';
 import { DEMO_CAMPUS_NAME, DEMO_CLASS_NAME, DEMO_STUDENT_EMAIL } from './demo-account';
+import { DEMO_LESSONS, type DemoLesson } from './demo-lessons';
 
 const DEMO_TEACHER_NAME = 'Giáo viên học thử';
-const DEMO_ASSIGNMENT_TITLE = 'Học thử: Animals & Colors';
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
-// Bài mẫu: mỗi dạng câu một câu, chấm tự động được trừ câu nói và câu viết
-async function insertDemoItems(tx: Tx, assignmentId: number): Promise<void> {
-  const item = async (position: number, values: Omit<typeof assignmentItems.$inferInsert, 'assignmentId' | 'position'>) => {
-    const [row] = await tx.insert(assignmentItems).values({ assignmentId, position, ...values }).returning({ id: assignmentItems.id });
-    return row.id;
-  };
+// Dấu nhận biết nội dung bài: đổi câu trong demo-lessons.ts thì dấu đổi, bài được dựng lại
+type SignatureRow = { itemType: string; prompt: string; referenceText: string; options: number; pairs: number };
+const signatureOf = (rows: SignatureRow[]) => rows.map((r) => `${r.itemType}:${r.prompt}:${r.referenceText}:${r.options}:${r.pairs}`).join('|');
 
-  const pic = await item(1, { skill: 'listening', itemType: 'picture_choice', prompt: 'Which one is a puppy?', promptVi: 'Chạm vào chú cún con', points: 1 });
-  await tx.insert(assignmentItemOptions).values([
-    { itemId: pic, position: 1, label: '🐶 Puppy', isCorrect: true },
-    { itemId: pic, position: 2, label: '🐱 Kitten' },
-    { itemId: pic, position: 3, label: '🐰 Bunny' },
-    { itemId: pic, position: 4, label: '🐦 Bird' },
-  ]);
+function lessonSignature(lesson: DemoLesson): string {
+  return signatureOf(
+    lesson.items.map((i) => ({ itemType: i.itemType, prompt: i.prompt, referenceText: i.referenceText ?? '', options: (i.options ?? []).length, pairs: (i.pairs ?? []).length })),
+  );
+}
 
-  const match = await item(2, { skill: 'reading', itemType: 'match', prompt: 'Match the words', promptVi: 'Ghép từ tiếng Anh với nghĩa tiếng Việt', points: 2 });
-  await tx.insert(assignmentItemPairs).values([
-    { itemId: match, position: 1, leftLabel: 'Red', rightLabel: 'Màu đỏ' },
-    { itemId: match, position: 2, leftLabel: 'Blue', rightLabel: 'Màu xanh dương' },
-    { itemId: match, position: 3, leftLabel: 'Yellow', rightLabel: 'Màu vàng' },
-    { itemId: match, position: 4, leftLabel: 'Green', rightLabel: 'Màu xanh lá' },
-  ]);
+// Dấu của bài đang lưu, đọc từ các câu trong CSDL
+async function storedSignature(tx: Tx, assignmentId: number): Promise<string> {
+  const items = await tx
+    .select({ id: assignmentItems.id, itemType: assignmentItems.itemType, prompt: assignmentItems.prompt, referenceText: assignmentItems.referenceText })
+    .from(assignmentItems)
+    .where(eq(assignmentItems.assignmentId, assignmentId))
+    .orderBy(asc(assignmentItems.position));
+  const ids = items.map((i) => i.id);
+  const opts = ids.length > 0 ? await tx.select({ itemId: assignmentItemOptions.itemId }).from(assignmentItemOptions).where(inArray(assignmentItemOptions.itemId, ids)) : [];
+  const pairs = ids.length > 0 ? await tx.select({ itemId: assignmentItemPairs.itemId }).from(assignmentItemPairs).where(inArray(assignmentItemPairs.itemId, ids)) : [];
+  return signatureOf(
+    items.map((i) => ({ ...i, options: opts.filter((o) => o.itemId === i.id).length, pairs: pairs.filter((p) => p.itemId === i.id).length })),
+  );
+}
 
-  await item(3, { skill: 'writing', itemType: 'order', prompt: 'Put the words in order', promptVi: 'Sắp xếp các từ thành câu đúng', referenceText: 'I have a red ball', points: 2 });
-  await item(4, { skill: 'writing', itemType: 'gap_fill', prompt: 'The sky is _____.', promptVi: 'Điền từ còn thiếu', referenceText: 'blue', points: 1 });
+// Ghi các câu của một bài trong ba truy vấn. Đáp án đúng nằm đầu danh sách trong dữ liệu,
+// nên xoay vị trí theo số thứ tự câu để đáp án đúng không luôn là A.
+async function insertLessonItems(tx: Tx, assignmentId: number, lesson: DemoLesson): Promise<void> {
+  const rows = await tx
+    .insert(assignmentItems)
+    .values(
+      lesson.items.map((item, index) => ({
+        assignmentId,
+        position: index + 1,
+        skill: item.skill,
+        itemType: item.itemType,
+        prompt: item.prompt,
+        promptVi: item.promptVi,
+        passage: item.passage ?? '',
+        referenceText: item.referenceText ?? '',
+        maxSeconds: item.maxSeconds ?? 10,
+        points: item.points,
+        sourceLicense: 'Bài mẫu ESL Center',
+      })),
+    )
+    .returning({ id: assignmentItems.id, position: assignmentItems.position });
+  const idAt = new Map(rows.map((r) => [r.position, r.id]));
 
-  const choice = await item(5, { skill: 'reading', itemType: 'choice', prompt: 'How many legs does a cat have?', promptVi: 'Con mèo có mấy chân?', points: 1 });
-  await tx.insert(assignmentItemOptions).values([
-    { itemId: choice, position: 1, label: 'Two' },
-    { itemId: choice, position: 2, label: 'Four', isCorrect: true },
-    { itemId: choice, position: 3, label: 'Six' },
-  ]);
+  const options = lesson.items.flatMap((item, index) => {
+    const list = item.options ?? [];
+    return list.map((o, oi) => ({ itemId: idAt.get(index + 1)!, position: ((oi + index) % list.length) + 1, label: o.label, isCorrect: o.isCorrect ?? false }));
+  });
+  if (options.length > 0) await tx.insert(assignmentItemOptions).values(options);
 
-  await item(6, { skill: 'speaking', itemType: 'speak_repeat', prompt: 'Listen and repeat', promptVi: 'Nghe rồi nói lại', referenceText: 'Hello, my name is Tom.', maxSeconds: 10, points: 1 });
-  await item(7, { skill: 'speaking', itemType: 'speak_read', prompt: 'Read aloud', promptVi: 'Đọc to câu sau', referenceText: 'The cat is on the mat.', maxSeconds: 15, points: 1 });
-  await item(8, { skill: 'writing', itemType: 'text', prompt: 'What is your favourite colour?', promptVi: 'Con thích màu gì? Viết một câu tiếng Anh.', points: 1 });
+  const pairs = lesson.items.flatMap((item, index) =>
+    (item.pairs ?? []).map((p, pi) => ({ itemId: idAt.get(index + 1)!, position: pi + 1, leftLabel: p.left, rightLabel: p.right })),
+  );
+  if (pairs.length > 0) await tx.insert(assignmentItemPairs).values(pairs);
 }
 
 // Tạo dữ liệu học thử nếu chưa có, xoá bài làm cũ để mỗi lần vào đều làm từ đầu.
@@ -99,22 +121,37 @@ export async function prepareDemoStudent(): Promise<{ accountId: number; assignm
     }
     const studentId = account.studentId as number;
 
-    let [assignment] = await tx.select({ id: assignments.id }).from(assignments).where(and(eq(assignments.classId, klass.id), eq(assignments.title, DEMO_ASSIGNMENT_TITLE))).limit(1);
-    if (!assignment) {
-      const due = new Date(Date.now() + 3650 * 86_400_000);
-      [assignment] = await tx
-        .insert(assignments)
-        .values({ classId: klass.id, title: DEMO_ASSIGNMENT_TITLE, description: 'Bài học thử đủ các dạng câu: chọn tranh, ghép đôi, sắp xếp, điền từ, trắc nghiệm, nói và viết.', dueAt: due, maxScore: 10 })
-        .returning({ id: assignments.id });
-      await insertDemoItems(tx, assignment.id);
+    // Đồng bộ bộ bài mẫu: thêm bài còn thiếu, dựng lại bài có nội dung đổi, bỏ bài không còn trong danh sách.
+    // Hạn nộp tăng dần theo thứ tự để danh sách bài của học sinh đúng thứ tự.
+    const existing = await tx.select({ id: assignments.id, title: assignments.title }).from(assignments).where(eq(assignments.classId, klass.id));
+    const wanted = new Set(DEMO_LESSONS.map((l) => l.title));
+    const stale = existing.filter((a) => !wanted.has(a.title)).map((a) => a.id);
+    if (stale.length > 0) await tx.delete(assignments).where(inArray(assignments.id, stale));
+
+    const ids: number[] = [];
+    for (const [li, lesson] of DEMO_LESSONS.entries()) {
+      const due = new Date(Date.UTC(2099, 0, 1 + li));
+      // Điểm tối đa của bài bằng tổng điểm các câu, như khi giáo viên lưu câu hỏi
+      const maxScore = lesson.items.reduce((sum, i) => sum + i.points, 0);
+      const found = existing.find((a) => a.title === lesson.title);
+      let id: number;
+      if (found) {
+        id = found.id;
+        await tx.update(assignments).set({ description: lesson.description, dueAt: due, maxScore, updatedAt: new Date() }).where(eq(assignments.id, id));
+        if ((await storedSignature(tx, id)) !== lessonSignature(lesson)) {
+          await tx.delete(assignmentItems).where(eq(assignmentItems.assignmentId, id));
+          await insertLessonItems(tx, id, lesson);
+        }
+      } else {
+        [{ id }] = await tx.insert(assignments).values({ classId: klass.id, title: lesson.title, description: lesson.description, dueAt: due, maxScore }).returning({ id: assignments.id });
+        await insertLessonItems(tx, id, lesson);
+      }
+      ids.push(id);
     }
 
     // Làm mới: bỏ mọi bài làm cũ của học sinh học thử (điểm từng câu xoá theo khoá ngoại)
-    const demoAssignmentIds = (await tx.select({ id: assignments.id }).from(assignments).where(eq(assignments.classId, klass.id))).map((r) => r.id);
-    if (demoAssignmentIds.length > 0) {
-      await tx.delete(assignmentSubmissions).where(and(eq(assignmentSubmissions.studentId, studentId), inArray(assignmentSubmissions.assignmentId, demoAssignmentIds)));
-    }
+    await tx.delete(assignmentSubmissions).where(and(eq(assignmentSubmissions.studentId, studentId), inArray(assignmentSubmissions.assignmentId, ids)));
 
-    return { accountId: account.id, assignmentId: assignment.id };
+    return { accountId: account.id, assignmentId: ids[0] };
   });
 }
