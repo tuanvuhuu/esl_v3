@@ -5,6 +5,7 @@
 // - Mỗi thay đổi cấu trúc: sửa file này, chạy `npm run db:generate -- --name=<mô_tả>`, kiểm tra SQL, rồi commit.
 // - Không sửa migration đã áp dụng (xem CLAUDE.md mục 4).
 import {
+  bigint,
   boolean,
   date,
   index,
@@ -656,6 +657,60 @@ export const centerSettings = pgTable('center_settings', {
 export type Student = typeof students.$inferSelect;
 export type ClassRow = typeof classes.$inferSelect;
 export type Campus = typeof campuses.$inferSelect;
+// ---------- Telegram (P34) ----------
+
+export const telegramDirectionEnum = pgEnum('telegram_direction', ['in', 'out']);
+
+// Một chat Telegram gắn với một phụ huynh hoặc một tài khoản nhân viên. chat_id là id chat do Telegram cấp.
+export const telegramChats = pgTable(
+  'telegram_chats',
+  {
+    id: serial('id').primaryKey(),
+    chatId: bigint('chat_id', { mode: 'number' }).notNull(),
+    parentId: integer('parent_id').references(() => parents.id, { onDelete: 'cascade' }),
+    accountId: integer('account_id').references(() => accounts.id, { onDelete: 'cascade' }),
+    displayName: varchar('display_name', { length: 160 }).notNull().default(''),
+    active: boolean('active').notNull().default(true),
+    ...timestamps,
+  },
+  (t) => [uniqueIndex('telegram_chats_chat_key').on(t.chatId), index('telegram_chats_parent_idx').on(t.parentId), index('telegram_chats_account_idx').on(t.accountId)],
+);
+
+// Mã kết nối dùng một lần: người dùng gửi /start <mã> cho bot để gắn chat với phụ huynh hoặc tài khoản
+export const telegramLinkCodes = pgTable(
+  'telegram_link_codes',
+  {
+    id: serial('id').primaryKey(),
+    code: varchar('code', { length: 40 }).notNull(),
+    parentId: integer('parent_id').references(() => parents.id, { onDelete: 'cascade' }),
+    accountId: integer('account_id').references(() => accounts.id, { onDelete: 'cascade' }),
+    createdByAccountId: integer('created_by_account_id').references(() => accounts.id, { onDelete: 'set null' }),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    usedAt: timestamp('used_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex('telegram_link_codes_code_key').on(t.code)],
+);
+
+// Tin nhắn qua bot: phụ huynh gửi vào (in) và trung tâm gửi ra (out). delivered = false khi chưa gửi được (chưa có token, lỗi mạng).
+export const telegramMessages = pgTable(
+  'telegram_messages',
+  {
+    id: serial('id').primaryKey(),
+    chatId: bigint('chat_id', { mode: 'number' }).notNull(),
+    parentId: integer('parent_id').references(() => parents.id, { onDelete: 'cascade' }),
+    accountId: integer('account_id').references(() => accounts.id, { onDelete: 'cascade' }),
+    direction: telegramDirectionEnum('direction').notNull(),
+    kind: varchar('kind', { length: 20 }).notNull().default('text'),
+    text: text('text').notNull(),
+    sentByAccountId: integer('sent_by_account_id').references(() => accounts.id, { onDelete: 'set null' }),
+    delivered: boolean('delivered').notNull().default(true),
+    readAt: timestamp('read_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('telegram_messages_parent_idx').on(t.parentId, t.createdAt), index('telegram_messages_chat_idx').on(t.chatId, t.createdAt)],
+);
+
 export type Teacher = typeof teachers.$inferSelect;
 export type Account = typeof accounts.$inferSelect;
 export type Parent = typeof parents.$inferSelect;

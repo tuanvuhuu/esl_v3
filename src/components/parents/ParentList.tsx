@@ -1,10 +1,12 @@
 'use client';
 
-import { Pencil, Phone, Plus, Search, Trash2, Users } from 'lucide-react';
+import { Pencil, Phone, Plus, Search, Send, Trash2, Users } from 'lucide-react';
 import Link from 'next/link';
 import { useCallback, useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { deleteParentAction, loadParentForm, type ParentFormValues } from '@/app/(app)/phu-huynh/actions';
+import { createParentLinkAction } from '@/app/(app)/tin-nhan/actions';
+import { TelegramLinkDialog } from '@/components/telegram/TelegramLinkDialog';
 import type { ParentRow, StudentChoice } from '@/lib/queries/parents';
 import { PARENT_RELATION_LABELS } from '@/lib/parent-labels';
 import { normalizeSearch } from '@/lib/text';
@@ -50,6 +52,7 @@ export function ParentList(props: {
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<{ id: number; values: ParentFormValues } | null>(null);
   const [toDelete, setToDelete] = useState<ParentRow | null>(null);
+  const [telegramFor, setTelegramFor] = useState<ParentRow | null>(null);
   const { message, notify } = useToast();
   const [pending, startTransition] = useTransition();
 
@@ -121,6 +124,7 @@ export function ParentList(props: {
 
   const menuItems = (row: ParentRow): RowMenuItem[] => [
     { kind: 'action', label: 'Sửa', icon: Pencil, onSelect: () => openEdit(row), disabled: !canManage, disabledHint: 'Không có quyền quản lý phụ huynh' },
+    { kind: 'action', label: 'Kết nối Telegram', icon: Send, onSelect: () => setTelegramFor(row), disabled: !canManage, disabledHint: 'Không có quyền quản lý phụ huynh' },
     { kind: 'action', label: 'Xoá', icon: Trash2, danger: true, onSelect: () => setToDelete(row), disabled: !canManage, disabledHint: 'Không có quyền quản lý phụ huynh' },
   ];
 
@@ -138,6 +142,7 @@ export function ParentList(props: {
             <Avatar name={row.fullName} seed={row.id} />
             <div className="min-w-0">
               <b className="block truncate text-base text-ink">{row.fullName}</b>
+          {row.telegramLinked && <small className="block text-xs text-muted">Đã kết nối Telegram</small>}
               <small className="block truncate text-xs text-muted">{row.email || 'Chưa có email'}</small>
             </div>
           </div>
@@ -249,6 +254,7 @@ export function ParentList(props: {
                 canManage={canManage}
                 onEdit={() => openEdit(row)}
                 onDelete={() => setToDelete(row)}
+                onTelegram={() => setTelegramFor(row)}
               />
             ))}
           </div>
@@ -274,6 +280,18 @@ export function ParentList(props: {
         {editing && <ParentForm mode="edit" parentId={editing.id} initial={editing.values} onDone={onDone} onCancel={() => setEditing(null)} />}
       </Modal>
 
+      <TelegramLinkDialog
+        open={telegramFor !== null}
+        title={`Kết nối Telegram · ${telegramFor?.fullName ?? ''}`}
+        subtitle="Phụ huynh nhận lịch học, học phí, bài tập và trao đổi với trung tâm qua bot."
+        linked={telegramFor?.telegramLinked ?? false}
+        create={() => createParentLinkAction(telegramFor!.id)}
+        onClose={() => {
+          setTelegramFor(null);
+          router.refresh();
+        }}
+      />
+
       <ConfirmDialog
         open={!!toDelete}
         title="Xoá phụ huynh này?"
@@ -292,11 +310,13 @@ function ParentCard({
   canManage,
   onEdit,
   onDelete,
+  onTelegram,
 }: {
   row: ParentRow;
   canManage: boolean;
   onEdit: () => void;
   onDelete: () => void;
+  onTelegram: () => void;
 }) {
   return (
     <Card>
@@ -313,7 +333,7 @@ function ParentCard({
       <div className="flex flex-wrap gap-1.5">
         <ChildChips row={row} />
       </div>
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-3 gap-2">
         <Btn block onClick={onEdit} disabled={!canManage}>
           <Pencil className="size-4" aria-hidden />
           Sửa
@@ -321,6 +341,10 @@ function ParentCard({
         <Btn block variant="danger" onClick={onDelete} disabled={!canManage}>
           <Trash2 className="size-4" aria-hidden />
           Xoá
+        </Btn>
+        <Btn block onClick={onTelegram} disabled={!canManage}>
+          <Send className="size-4" aria-hidden />
+          Telegram
         </Btn>
       </div>
     </Card>

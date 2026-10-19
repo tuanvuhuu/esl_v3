@@ -99,6 +99,13 @@
       "when": 1792144961824,
       "tag": "0013_tai_khoan_theo_co_so",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1792382488084,
+      "tag": "0014_telegram",
+      "breakpoints": true
     }
   ]
 }

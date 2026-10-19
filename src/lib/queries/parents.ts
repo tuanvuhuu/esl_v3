@@ -1,7 +1,7 @@
 // Truy vấn phụ huynh và liên kết với học sinh. Chỉ chạy trên server.
 import { asc, eq } from 'drizzle-orm';
 import { db } from '@/db/client';
-import { campuses, classes, parents, studentParents, students } from '@/db/schema';
+import { campuses, classes, parents, studentParents, students, telegramChats } from '@/db/schema';
 import { getAllowedCampusIds } from '@/lib/campus-access';
 
 export type ParentRow = {
@@ -11,6 +11,7 @@ export type ParentRow = {
   email: string;
   note: string;
   children: { studentId: number; studentName: string; relation: 'father' | 'mother' | 'guardian' | 'other'; isPrimary: boolean }[];
+  telegramLinked: boolean; // có chat Telegram đang nhận tin của trung tâm (P34)
 };
 
 // Liên kết phụ huynh - học sinh kèm cơ sở của học sinh, để lọc theo phạm vi tài khoản (P32)
@@ -23,7 +24,7 @@ async function linksWithCampus() {
 }
 
 // Phụ huynh thấy được: chưa gắn học sinh nào, hoặc có ít nhất một con học ở cơ sở trong phạm vi
-async function visibleParentIds(): Promise<Set<number> | null> {
+export async function visibleParentIds(): Promise<Set<number> | null> {
   const allowed = await getAllowedCampusIds();
   if (allowed === null) return null;
   const links = await linksWithCampus();
@@ -54,7 +55,10 @@ export async function listParents(): Promise<ParentRow[]> {
       .innerJoin(classes, eq(classes.id, students.classId))
       .orderBy(asc(students.fullName)),
   ]);
+  const linkedRows = await db.select({ parentId: telegramChats.parentId }).from(telegramChats).where(eq(telegramChats.active, true));
+  const linked = new Set(linkedRows.map((r) => r.parentId));
   return parentRows.filter((p) => visible === null || visible.has(p.id)).map((p) => ({
+    telegramLinked: linked.has(p.id),
     id: p.id,
     fullName: p.fullName,
     phone: p.phone,

@@ -1,11 +1,13 @@
 // Tệp tải lên: âm thanh của đề và tệp bài nộp (P22). Chỉ chạy trên server.
-// Nội dung nằm trên ổ đĩa máy chủ trong storage/uploads, tên file là khoá ngẫu nhiên. Tên gốc và loại tệp nằm trong bảng uploaded_files.
+// Nội dung lưu qua blob-store (Firebase Storage khi có cấu hình, ổ đĩa khi dev), tên là khoá ngẫu nhiên.
+// Tên gốc và loại tệp nằm trong bảng uploaded_files.
 import { randomBytes } from 'node:crypto';
-import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
-import path from 'node:path';
 import { eq } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { uploadedFiles } from '@/db/schema';
+import { deleteBlob, getBlob, putBlob } from './blob-store';
+
+export { uploadDir } from './blob-store';
 
 const MB = 1024 * 1024;
 const AUDIO_MAX = 25 * MB;
@@ -26,10 +28,6 @@ export const ALLOWED_TYPES: Record<string, number> = {
   'text/plain': DOC_MAX,
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document': DOC_MAX,
 };
-
-export function uploadDir(): string {
-  return path.join(process.cwd(), 'storage', 'uploads');
-}
 
 // Tên gốc để hiện và tải xuống: bỏ đường dẫn và ký tự điều khiển, giới hạn độ dài
 export function safeFileName(name: string): string {
@@ -52,8 +50,7 @@ export async function saveUpload(file: File, accountId: number | null): Promise<
   const storageKey = randomBytes(24).toString('hex');
   const name = safeFileName(file.name);
   const bytes = Buffer.from(await file.arrayBuffer());
-  await mkdir(uploadDir(), { recursive: true });
-  await writeFile(path.join(uploadDir(), storageKey), bytes);
+  await putBlob(storageKey, bytes, file.type);
   const [row] = await db
     .insert(uploadedFiles)
     .values({ storageKey, originalName: name, mimeType: file.type, sizeBytes: bytes.length, uploadedByAccountId: accountId })
@@ -61,19 +58,15 @@ export async function saveUpload(file: File, accountId: number | null): Promise<
   return { ok: true, id: row.id, name };
 }
 
-// Đọc một tệp theo id để phục vụ tải xuống. Null nếu không có dòng nào hoặc ổ đĩa đã mất tệp.
+// Đọc một tệp theo id để phục vụ tải xuống. Null nếu không có dòng nào hoặc nơi lưu đã mất tệp.
 export async function readUpload(id: number): Promise<{ originalName: string; mimeType: string; bytes: Buffer } | null> {
   const [row] = await db.select().from(uploadedFiles).where(eq(uploadedFiles.id, id)).limit(1);
   if (!row) return null;
-  try {
-    const bytes = await readFile(path.join(uploadDir(), row.storageKey));
-    return { originalName: row.originalName, mimeType: row.mimeType, bytes };
-  } catch {
-    return null;
-  }
+  const bytes = await getBlob(row.storageKey);
+  return bytes ? { originalName: row.originalName, mimeType: row.mimeType, bytes } : null;
 }
 
-// Xoá một tệp trên ổ đĩa. Tệp đã mất thì bỏ qua, không báo lỗi.
+// Xoá nội dung một tệp. Tệp đã mất thì bỏ qua, không báo lỗi.
 export async function removeUploadFile(storageKey: string): Promise<void> {
-  await rm(path.join(uploadDir(), storageKey), { force: true });
+  await deleteBlob(storageKey);
 }

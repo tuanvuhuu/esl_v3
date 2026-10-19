@@ -5,6 +5,8 @@ import { revalidatePath } from 'next/cache';
 import { db } from '@/db/client';
 import { classes, students, tuitionPayments } from '@/db/schema';
 import { ForbiddenError, requirePermission, writeAudit } from '@/lib/authz';
+import { getCurrentAccount } from '@/lib/session';
+import { notifyParentsOfStudent } from '@/lib/telegram/service';
 import { requireStudentAccess } from '@/lib/campus-access';
 import { formatVND } from '@/lib/money';
 import { listPaymentsOfStudent, paidOf, type PaymentRow } from '@/lib/queries/tuition';
@@ -80,7 +82,17 @@ export async function remindTuitionAction(studentId: number): Promise<ActionResu
     if (balance.debt <= 0) return { ok: false, message: `${balance.name} đã đóng đủ học phí, không cần nhắc.` };
     await writeAudit({ action: 'remind', entity: 'student', entityId: studentId, summary: `Nhắc đóng học phí ${balance.name}: còn thiếu ${formatVND(balance.debt)}` });
     revalidatePath('/hoc-phi');
-    return { ok: true, message: `Đã ghi nhắc đóng cho ${balance.name}. Chưa gửi tin nhắn vì chưa có kênh gửi.` };
+    // Gửi cho phụ huynh đã kết nối Telegram (P34)
+    const account = await getCurrentAccount();
+    const sent = await notifyParentsOfStudent(
+      studentId,
+      `ESL Center xin nhắc: học phí của ${balance.name} còn thiếu ${formatVND(balance.debt)} (đã đóng ${formatVND(balance.paid)} / ${formatVND(balance.fee)}). Phụ huynh gõ /hocphi để xem lại bất cứ lúc nào.`,
+      'tuition',
+      account?.id ?? null,
+    );
+    if (sent.delivered > 0) return { ok: true, message: `Đã gửi nhắc học phí qua Telegram cho phụ huynh của ${balance.name}.` };
+    if (sent.chats > 0) return { ok: true, message: `Đã ghi nhắc đóng cho ${balance.name}, nhưng chưa gửi được qua Telegram (chưa cấu hình bot hoặc lỗi mạng).` };
+    return { ok: true, message: `Đã ghi nhắc đóng cho ${balance.name}. Phụ huynh chưa kết nối Telegram nên chưa gửi tin.` };
   } catch (error) {
     return errorResult(error);
   }

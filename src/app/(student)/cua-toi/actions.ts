@@ -11,6 +11,7 @@ import { getAssignmentBase } from '@/lib/queries/assignments';
 import { criterionScoresOf, enrolledStudent, existingSubmissionScores } from '@/lib/queries/student-portal';
 import { getCurrentAccount } from '@/lib/session';
 import { saveUpload } from '@/lib/storage';
+import { notifyClassStaff } from '@/lib/telegram/service';
 import { sameClass, studentMayResubmit } from '@/lib/student-access';
 import { studentAnswersSchema } from '@/lib/validation/student-portal';
 import type { ActionResult } from '@/lib/validation/student';
@@ -134,6 +135,8 @@ export async function submitMyAnswersAction(assignmentId: number, input: Student
     revalidatePath('/cua-toi');
     revalidatePath(`/cua-toi/${assignmentId}`);
     revalidatePath(`/bai-tap/${assignmentId}`);
+    // Báo giáo viên của lớp qua Telegram (nếu đã kết nối). Không chờ được thì vẫn trả kết quả nộp bài.
+    await notifyClassStaff(base.classId, `${student.fullName} (lớp ${base.className}) vừa nộp bài "${base.title}".${summary.status === 'graded' ? ` Điểm tự chấm: ${summary.total}/${summary.maxTotal}.` : ' Có câu cần giáo viên chấm.'}`, 'submission');
     if (summary.status === 'graded') return { ok: true, message: `Đã nộp bài: ${summary.total}/${summary.maxTotal} điểm` };
     return { ok: true, message: 'Đã nộp bài. Giáo viên sẽ chấm câu viết và nộp tệp.' };
   } catch (error) {

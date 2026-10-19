@@ -906,4 +906,74 @@ test.describe('bài tập, điểm danh, học phí', () => {
       await db.end();
     }
   });
+
+  test('telegram: tạo link cho phụ huynh, bot nhận /start, tin nhắn và lệnh; trung tâm trả lời trong màn Tin nhắn', async ({ page }) => {
+    loadEnvLocal();
+    const secret = process.env.TELEGRAM_WEBHOOK_SECRET ?? '';
+    expect(secret.length).toBeGreaterThanOrEqual(16);
+    const db = new Client({ connectionString: process.env.DATABASE_URL });
+    await db.connect();
+    const stamp = String(Date.now()).slice(-6);
+    const name = `PH E2E tele ${stamp}`;
+    const chatId = 9_000_000_000 + Number(stamp);
+    const hook = (text: string, withSecret = true) =>
+      page.request.post('/api/telegram/webhook', {
+        headers: withSecret ? { 'x-telegram-bot-api-secret-token': secret } : {},
+        data: { update_id: Date.now(), message: { message_id: 1, chat: { id: chatId, type: 'private' }, from: { id: chatId, first_name: 'Phụ huynh', is_bot: false }, text } },
+      });
+    let parentId = 0;
+    try {
+      const [student] = (await db.query<{ id: number }>(`select id from students where status = 'active' order by id limit 1`)).rows;
+      parentId = (await db.query<{ id: number }>(`insert into parents (full_name, phone) values ($1, $2) returning id`, [name, `09${stamp}55`])).rows[0].id;
+      await db.query(`insert into student_parents (student_id, parent_id, relation, is_primary) values ($1, $2, 'father', false)`, [student.id, parentId]);
+
+      // Webhook sai mã bí mật bị từ chối
+      expect((await hook('/help', false)).status()).toBe(401);
+
+      await login(page);
+      await page.goto('/phu-huynh');
+      await page.getByRole('searchbox', { name: 'Tìm phụ huynh' }).fill(name);
+      await page.getByRole('button', { name: `Thao tác với ${name}` }).click();
+      await page.getByRole('menuitem', { name: 'Kết nối Telegram' }).click();
+      await page.getByRole('button', { name: 'Tạo link' }).click();
+      const code = ((await page.getByLabel('Mã kết nối', { exact: true }).textContent()) ?? '').trim();
+      expect(code).toMatch(/^[a-f0-9]{20}$/);
+      await page.getByRole('button', { name: 'Đóng', exact: true }).click();
+
+      // Phụ huynh bấm link: Telegram gửi /start <mã> vào webhook
+      expect((await hook(`/start ${code}`)).status()).toBe(200);
+      const chat = (await db.query<{ parent_id: number; active: boolean }>(`select parent_id, active from telegram_chats where chat_id = $1`, [chatId])).rows;
+      expect(chat).toEqual([{ parent_id: parentId, active: true }]);
+      // Mã chỉ dùng được một lần
+      const used = (await db.query<{ used: boolean }>(`select used_at is not null as used from telegram_link_codes where code = $1`, [code])).rows;
+      expect(used).toEqual([{ used: true }]);
+
+      // Tin thường được lưu cho trung tâm đọc; lệnh /hocphi được trả lời
+      await hook('Cô ơi con xin nghỉ học hôm nay');
+      await hook('/hocphi');
+      const msgs = (await db.query<{ direction: string; kind: string; text: string }>(`select direction, kind, text from telegram_messages where chat_id = $1 order by id`, [chatId])).rows;
+      expect(msgs.some((m) => m.direction === 'in' && m.text === 'Cô ơi con xin nghỉ học hôm nay')).toBe(true);
+      expect(msgs.some((m) => m.direction === 'out' && m.kind === 'command' && /còn thiếu|đã đóng đủ/.test(m.text))).toBe(true);
+
+      // Màn Tin nhắn: thấy cuộc trò chuyện, trả lời được (chưa có token nên ghi là chưa gửi được)
+      await page.goto(`/tin-nhan?p=${parentId}`);
+      await expect(page.getByRole('list', { name: 'Tin nhắn' })).toContainText('Cô ơi con xin nghỉ học hôm nay');
+      await page.getByLabel('Trả lời').fill('Cô đã nhận tin, chúc con mau khoẻ.');
+      await page.getByRole('button', { name: 'Gửi qua Telegram' }).click();
+      await expectToast(page, 'Đã lưu tin nhưng chưa gửi được qua Telegram');
+      await expect(page.getByRole('list', { name: 'Tin nhắn' })).toContainText('Cô đã nhận tin, chúc con mau khoẻ.');
+      const unread = (await db.query<{ n: number }>(`select count(*)::int as n from telegram_messages where parent_id = $1 and direction = 'in' and read_at is null`, [parentId])).rows[0].n;
+      expect(unread).toBe(0);
+
+      // /huy: ngừng nhận tin
+      await hook('/huy');
+      const after = (await db.query<{ active: boolean }>(`select active from telegram_chats where chat_id = $1`, [chatId])).rows;
+      expect(after).toEqual([{ active: false }]);
+    } finally {
+      await db.query(`delete from telegram_chats where chat_id = $1`, [chatId]);
+      await db.query(`delete from telegram_messages where chat_id = $1`, [chatId]);
+      if (parentId) await db.query(`delete from parents where id = $1`, [parentId]);
+      await db.end();
+    }
+  });
 });

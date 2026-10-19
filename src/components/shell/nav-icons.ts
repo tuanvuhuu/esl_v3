@@ -12,6 +12,7 @@ import {
   House,
   IdCard,
   Library,
+  MessageCircle,
   Settings,
   ShieldCheck,
   Upload,
@@ -37,4 +38,5 @@ export const NAV_ICONS: Record<IconKey, LucideIcon> = {
   settings: Settings,
   shield: ShieldCheck,
   upload: Upload,
+  message: MessageCircle,
 };
