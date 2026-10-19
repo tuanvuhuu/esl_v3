@@ -6,7 +6,17 @@ import { accounts, parents, studentParents, students, teachers, telegramChats, t
 import { vnDateTimeLabel } from '@/lib/datetime';
 import { formatVND } from '@/lib/money';
 import { answerCallbackQuery, sendMessage } from './api';
-import { HELP_TEXT, LINK_CODE_DAYS, newLinkCode, PARENT_KEYBOARD, parseCommand, STAFF_HELP_TEXT, STAFF_KEYBOARD } from './commands';
+import {
+  HELP_TEXT,
+  LINK_CODE_DAYS,
+  newLinkCode,
+  PARENT_INLINE_MENU,
+  PARENT_KEYBOARD,
+  parseCommand,
+  QUICK_MENU_INLINE,
+  STAFF_HELP_TEXT,
+  STAFF_KEYBOARD,
+} from './commands';
 
 export type LinkTarget = { parentId: number } | { accountId: number };
 
@@ -459,12 +469,19 @@ export async function handleIncoming(message: IncomingMessage): Promise<void> {
     return;
   }
 
-  // Lệnh trợ giúp
+  // Lệnh trợ giúp & Menu
   if (command.kind === 'help' || command.kind === 'start') {
     const isParent = chat.parentId !== null;
-    const helpMsg = isParent ? HELP_TEXT : STAFF_HELP_TEXT;
-    const keyboard = isParent ? PARENT_KEYBOARD : STAFF_KEYBOARD;
-    await sendAndRecord(chat, helpMsg, 'system', null, keyboard);
+    if (isParent) {
+      await sendAndRecord(chat, HELP_TEXT, 'system', null, PARENT_INLINE_MENU);
+      await sendMessage(
+        chat.chatId,
+        '💡 Bàn phím tra cứu nhanh đã hiển thị ở phía dưới màn hình. Bạn chỉ cần bấm vào các nút để xem ngay thông tin mà không cần gõ lệnh.',
+        PARENT_KEYBOARD,
+      );
+    } else {
+      await sendAndRecord(chat, STAFF_HELP_TEXT, 'system', null, STAFF_KEYBOARD);
+    }
     return;
   }
 
@@ -479,13 +496,13 @@ export async function handleIncoming(message: IncomingMessage): Promise<void> {
     return;
   }
 
-  // Xử lý lệnh của phụ huynh
+  // Xử lý lệnh của phụ huynh (kèm menu nút bấm inline để chuyển nhanh tính năng)
   if (chat.parentId !== null) {
-    if (command.kind === 'schedule') return void (await sendAndRecord(chat, await scheduleText(chat.parentId), 'command', null));
-    if (command.kind === 'tuition') return void (await sendAndRecord(chat, await tuitionText(chat.parentId), 'command', null));
-    if (command.kind === 'homework') return void (await sendAndRecord(chat, await homeworkText(chat.parentId), 'command', null));
-    if (command.kind === 'scores') return void (await sendAndRecord(chat, await scoresText(chat.parentId), 'command', null));
-    if (command.kind === 'attendance') return void (await sendAndRecord(chat, await attendanceText(chat.parentId), 'command', null));
+    if (command.kind === 'schedule') return void (await sendAndRecord(chat, await scheduleText(chat.parentId), 'command', null, QUICK_MENU_INLINE));
+    if (command.kind === 'tuition') return void (await sendAndRecord(chat, await tuitionText(chat.parentId), 'command', null, QUICK_MENU_INLINE));
+    if (command.kind === 'homework') return void (await sendAndRecord(chat, await homeworkText(chat.parentId), 'command', null, QUICK_MENU_INLINE));
+    if (command.kind === 'scores') return void (await sendAndRecord(chat, await scoresText(chat.parentId), 'command', null, QUICK_MENU_INLINE));
+    if (command.kind === 'attendance') return void (await sendAndRecord(chat, await attendanceText(chat.parentId), 'command', null, QUICK_MENU_INLINE));
     if (command.kind === 'leave') return void (await handleLeaveCommand(chat));
 
     // Nếu phụ huynh gửi tin nhắn thường (không phải lệnh):
@@ -506,7 +523,13 @@ export async function handleIncoming(message: IncomingMessage): Promise<void> {
       .where(and(eq(telegramMessages.chatId, chat.chatId), eq(telegramMessages.kind, 'ack'), gt(telegramMessages.createdAt, new Date(Date.now() - 6 * 3_600_000))))
       .limit(1);
     if (!recentAck) {
-      await sendAndRecord(chat, 'Trung tâm đã nhận tin nhắn và sẽ trả lời sớm. Gõ /help hoặc chọn menu bên dưới để tra cứu nhanh.', 'ack', null, PARENT_KEYBOARD);
+      await sendAndRecord(
+        chat,
+        'Dạ Trung tâm đã nhận được tin nhắn và Thầy/Cô sẽ phản hồi sớm ạ.\n\n👉 Quý phụ huynh có thể bấm nhanh vào các nút bên dưới để tra cứu ngay thông tin:',
+        'ack',
+        null,
+        QUICK_MENU_INLINE,
+      );
     }
   }
 }
@@ -536,9 +559,22 @@ async function linkByCode(message: IncomingMessage, code: string): Promise<void>
   const chat = await chatOf(message.chatId);
   if (chat) {
     const isParent = chat.parentId !== null;
-    const keyboard = isParent ? PARENT_KEYBOARD : STAFF_KEYBOARD;
-    const helpText = isParent ? HELP_TEXT : STAFF_HELP_TEXT;
-    await sendAndRecord(chat, `Đã kết nối với ESL Center${name ? ` cho ${name}` : ''}.\n\n${helpText}`, 'system', null, keyboard);
+    if (isParent) {
+      await sendAndRecord(
+        chat,
+        `🎉 Chúc mừng Quý phụ huynh${name ? ` (${name})` : ''} đã kết nối thành công với ESL Center!\n\n${HELP_TEXT}`,
+        'system',
+        null,
+        PARENT_INLINE_MENU,
+      );
+      await sendMessage(
+        chat.chatId,
+        '💡 Bàn phím tra cứu nhanh đã sẵn sàng ở phía dưới màn hình của bạn. Quý phụ huynh chỉ cần chạm nhẹ vào nút để xem thông tin ngay lập tức.',
+        PARENT_KEYBOARD,
+      );
+    } else {
+      await sendAndRecord(chat, `Đã kết nối với ESL Center cho cán bộ/giáo viên: ${name}.\n\n${STAFF_HELP_TEXT}`, 'system', null, STAFF_KEYBOARD);
+    }
   }
 }
 
@@ -767,6 +803,58 @@ export async function handleCallbackQuery(cb: IncomingCallback): Promise<void> {
       const sessionId = parseInt(parts[2], 10);
       await denyLeaveRequest(chat, studentId, sessionId);
       await answerCallbackQuery(cb.id, 'Đã từ chối đơn');
+      return;
+    }
+
+    // Các nút tra cứu 1 chạm dành cho phụ huynh (Inline Keyboard)
+    if (cb.data === 'cmd:schedule' && chat.parentId) {
+      const text = await scheduleText(chat.parentId);
+      await sendAndRecord(chat, text, 'command', null, QUICK_MENU_INLINE);
+      await answerCallbackQuery(cb.id, '📅 Đã tải lịch học');
+      return;
+    }
+
+    if (cb.data === 'cmd:scores' && chat.parentId) {
+      const text = await scoresText(chat.parentId);
+      await sendAndRecord(chat, text, 'command', null, QUICK_MENU_INLINE);
+      await answerCallbackQuery(cb.id, '📊 Đã tải bảng điểm');
+      return;
+    }
+
+    if (cb.data === 'cmd:attendance' && chat.parentId) {
+      const text = await attendanceText(chat.parentId);
+      await sendAndRecord(chat, text, 'command', null, QUICK_MENU_INLINE);
+      await answerCallbackQuery(cb.id, '📝 Đã tải chuyên cần');
+      return;
+    }
+
+    if (cb.data === 'cmd:tuition' && chat.parentId) {
+      const text = await tuitionText(chat.parentId);
+      await sendAndRecord(chat, text, 'command', null, QUICK_MENU_INLINE);
+      await answerCallbackQuery(cb.id, '💳 Đã tải học phí');
+      return;
+    }
+
+    if (cb.data === 'cmd:homework' && chat.parentId) {
+      const text = await homeworkText(chat.parentId);
+      await sendAndRecord(chat, text, 'command', null, QUICK_MENU_INLINE);
+      await answerCallbackQuery(cb.id, '📚 Đã tải bài tập');
+      return;
+    }
+
+    if (cb.data === 'cmd:leave' && chat.parentId) {
+      await handleLeaveCommand(chat);
+      await answerCallbackQuery(cb.id);
+      return;
+    }
+
+    if (cb.data === 'cmd:help') {
+      if (chat.parentId) {
+        await sendAndRecord(chat, HELP_TEXT, 'system', null, PARENT_INLINE_MENU);
+      } else {
+        await sendAndRecord(chat, STAFF_HELP_TEXT, 'system', null, STAFF_KEYBOARD);
+      }
+      await answerCallbackQuery(cb.id, '❓ Hướng dẫn sử dụng');
       return;
     }
 

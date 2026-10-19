@@ -71,7 +71,14 @@ export async function getMe(): Promise<ApiResult<{ username: string; first_name:
   return call('getMe', {});
 }
 
+export async function setMyCommands(
+  commands: { command: string; description: string }[],
+): Promise<ApiResult<boolean>> {
+  return call<boolean>('setMyCommands', { commands });
+}
+
 export async function getWebhookInfo(): Promise<ApiResult<{ url: string; pending_update_count: number; last_error_message?: string }>> {
   return call('getWebhookInfo', {});
 }
+
 

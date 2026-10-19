@@ -27,6 +27,26 @@ describe('đọc lệnh Telegram', () => {
     expect(parseCommand('/help')).toEqual({ kind: 'help' });
   });
 
+  it('nhận diện nút bấm tiếng Việt và từ khoá không cần gõ lệnh gạch chéo', () => {
+    expect(parseCommand('📅 Lịch học')).toEqual({ kind: 'schedule' });
+    expect(parseCommand('Lịch học')).toEqual({ kind: 'schedule' });
+    expect(parseCommand('📊 Điểm số')).toEqual({ kind: 'scores' });
+    expect(parseCommand('Bảng điểm')).toEqual({ kind: 'scores' });
+    expect(parseCommand('📝 Chuyên cần')).toEqual({ kind: 'attendance' });
+    expect(parseCommand('Điểm danh')).toEqual({ kind: 'attendance' });
+    expect(parseCommand('💳 Học phí')).toEqual({ kind: 'tuition' });
+    expect(parseCommand('Học phí')).toEqual({ kind: 'tuition' });
+    expect(parseCommand('📚 Bài tập')).toEqual({ kind: 'homework' });
+    expect(parseCommand('Bài tập')).toEqual({ kind: 'homework' });
+    expect(parseCommand('🩺 Xin nghỉ học')).toEqual({ kind: 'leave' });
+    expect(parseCommand('Xin nghỉ')).toEqual({ kind: 'leave' });
+    expect(parseCommand('❓ Hướng dẫn')).toEqual({ kind: 'help' });
+    expect(parseCommand('Hướng dẫn')).toEqual({ kind: 'help' });
+    expect(parseCommand('📅 Lịch dạy hôm nay')).toEqual({ kind: 'today' });
+    expect(parseCommand('📝 Bài chờ chấm')).toEqual({ kind: 'pending_grading' });
+    expect(parseCommand('📊 Báo cáo ngày')).toEqual({ kind: 'report' });
+  });
+
   it('tin thường và lệnh lạ đều là tin để trung tâm đọc', () => {
     expect(parseCommand('  Cô ơi con nghỉ học hôm nay  ')).toEqual({ kind: 'text', text: 'Cô ơi con nghỉ học hôm nay' });
     expect(parseCommand('/abc xyz')).toEqual({ kind: 'text', text: '/abc xyz' });

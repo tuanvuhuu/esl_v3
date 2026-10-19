@@ -8,8 +8,8 @@ import { requireCampusAccess, requireClassAccess, requireParentAccess, requireUn
 import { hasPermission } from '@/lib/permissions';
 import { teacherVisibleParentIds } from '@/lib/queries/parents';
 import { getCurrentAccount, getCurrentPermissions } from '@/lib/session';
-import { botToken, botUsername, setWebhook, webhookSecret } from '@/lib/telegram/api';
-import { deepLink } from '@/lib/telegram/commands';
+import { botToken, botUsername, setMyCommands, setWebhook, webhookSecret } from '@/lib/telegram/api';
+import { DEFAULT_BOT_COMMANDS, deepLink } from '@/lib/telegram/commands';
 import { broadcastTelegramMessage, createLinkCode, replyToParent } from '@/lib/telegram/service';
 import type { ActionResult } from '@/lib/validation/student';
 
@@ -103,8 +103,9 @@ export async function setupWebhookAction(): Promise<ActionResult> {
     const url = `${proto}://${host}/api/telegram/webhook`;
     const result = await setWebhook(url, secret);
     if (!result.ok) return { ok: false, message: `Telegram từ chối: ${result.description}` };
+    await setMyCommands(DEFAULT_BOT_COMMANDS);
     await writeAudit({ action: 'update', entity: 'telegram', entityId: '', summary: `Cài webhook Telegram: ${url}` });
-    return { ok: true, message: `Đã cài webhook: ${url}` };
+    return { ok: true, message: `Đã cài webhook và thiết lập nút Menu tra cứu cho bot: ${url}` };
   } catch (error) {
     return { ok: false, message: errorMessage(error, 'Không cài được webhook. Thử lại sau ít phút.') };
   }
