@@ -104,6 +104,60 @@ Ghi chú bảo mật:
 - Chưa có giới hạn số lần đăng nhập sai. Nên bổ sung trước khi đưa ra ngoài mạng nội bộ.
 - Chưa có chức năng tự đổi mật khẩu. Quản trị đặt lại bằng công cụ dòng lệnh ở trên.
 
+## Sao lưu và khôi phục cơ sở dữ liệu (P34.26)
+
+### 1. Sao lưu tự động lên Google Drive
+
+Chạy lệnh sao lưu thủ công hoặc đặt cron chạy hằng ngày:
+
+```bash
+npm run db:backup
+```
+
+- Toàn bộ cơ sở dữ liệu được dump, nén gzip và tải lên thư mục `backups/daily` trên Google Drive của trung tâm.
+- Ngày đầu tiên mỗi tháng (hoặc khi chạy với cờ `--monthly`), một bản sẽ được lưu thêm vào `backups/monthly`.
+- Hệ thống áp dụng chính sách duy trì: giữ 30 bản daily và 12 bản monthly (tự động xoá các bản cũ hơn).
+- Nếu sao lưu gặp sự cố, hệ thống tự động gửi tin cảnh báo khẩn cấp tới Super Admin qua bot Telegram.
+
+### 2. Hướng dẫn khôi phục dữ liệu
+
+Khi cần khôi phục dữ liệu từ bản sao lưu `esl_center_backup_YYYY-MM-DD_HHMMSS.sql.gz` tải từ Google Drive:
+
+1. **Khôi phục trực tiếp qua lệnh CLI:**
+   - **Linux / macOS:**
+     ```bash
+     gzip -d -c esl_center_backup_YYYY-MM-DD_HHMMSS.sql.gz | psql "$DATABASE_URL"
+     ```
+   - **Windows PowerShell:**
+     ```powershell
+     # Giải nén file .gz thành .sql bằng tar tích hợp sẵn trên Windows:
+     tar -xzf esl_center_backup_YYYY-MM-DD_HHMMSS.sql.gz
+     # Nạp file SQL vào PostgreSQL:
+     psql -d "$env:DATABASE_URL" -f esl_center_backup_YYYY-MM-DD_HHMMSS.sql
+     ```
+
+2. **Kiểm tra tính toàn vẹn sau khi khôi phục:**
+   - Đăng nhập kiểm tra số lượng học sinh, lớp học và các tài khoản người dùng:
+     ```bash
+     npm run test:recent
+     ```
+
+## Lưu trữ tệp cũ sang Google Drive (P34.25)
+
+Chạy script định kỳ (hằng tháng hoặc qua cron):
+
+```bash
+# Kiểm tra trước danh sách tệp sẽ chuyển (không thay đổi dữ liệu)
+npm run files:archive -- --dry-run
+
+# Thực hiện chuyển đổi tệp cũ quá 90 ngày sang Google Drive
+npm run files:archive
+```
+
+- Tự động quét và chuyển các tệp âm thanh ghi âm, bài nộp học sinh của các bài đã chấm quá 90 ngày từ Supabase Storage sang Google Drive của trung tâm.
+- Đảm bảo an toàn: Tải lên Google Drive $\rightarrow$ Kiểm tra kích thước byte khớp tuyệt đối $\rightarrow$ Cập nhật `storage_location = 'drive'` trong database $\rightarrow$ Mới xoá tệp trên Supabase Storage.
+- Mọi liên kết xem/nghe lại tệp từ giao diện giáo viên và học sinh vẫn hoạt động bình thường, dữ liệu được truyền phát mượt mà từ Google Drive.
+
 ## Cấu trúc thư mục
 
 - `src/app/` các route (App Router). Nhóm `(app)` là khung ứng dụng có đăng nhập.

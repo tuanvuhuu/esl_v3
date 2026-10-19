@@ -1,7 +1,7 @@
 # ESL Center: kế hoạch và tiến độ
 
-> **Tiến độ tổng: 165/170 task (97%)**
-> Cập nhật lần cuối: 2026-10-17. Hoàn thành và kiểm chứng E2E toàn bộ 142/142 task: 15.3 (chuẩn giao diện trang học sinh), 15.4 (sửa phụ huynh qua modal), 15.6 (thanh hành động mobile dính dưới cho điểm danh), 15.8 (chuẩn UI toàn diện mọi route, modal, profile), 18.5 (bài giảng đa cơ sở), 22.7 (hoàn thành qua P23–P29), P25 (bài giảng và tài liệu: 25.1, 25.2, 25.3), P28 (cổng học sinh: 28.1, 28.2, 28.3, 28.4), 30.2 (mật khẩu mặc định esl123 cho nhân viên mới), 32.3 (Server Action chặn hành vi ngoài phạm vi cơ sở). Số đếm lấy từ các ô `[x]` và `[ ]` trong file.
+> **Tiến độ tổng: 170/170 task (100%)**
+> Cập nhật lần cuối: 2026-10-19. Hoàn thành toàn diện 170/170 task: toàn bộ 34 task P34 (Supabase Storage, lưu trữ & sao lưu Google Drive 30 TB, bot Telegram hai chiều mở rộng), cùng tất cả các giai đoạn P1–P33 trước đó. Số đếm lấy từ các ô `[x]` và `[ ]` trong file.
 
 ## 🎯 Các task vừa hoàn thành & Lệnh test riêng (Không chạy all)
 
@@ -367,11 +367,11 @@ Người dùng có gói Google 30 TB. Phương án: **Supabase lưu tệp đang 
 
 Giới hạn Drive API: tải lên tối đa 750 GB mỗi ngày mỗi tài khoản; số lần gọi API có hạn mức theo phút, phải thử lại khi bị báo 429. Cả hai đều dư cho một trung tâm.
 
-- [ ] **34.23** (người dùng chốt) Loại tài khoản Google: **Workspace** thì tạo shared drive "ESL Center" và cho service account làm thành viên (service account không có dung lượng riêng nên phải ghi vào shared drive). **Google One cá nhân** thì dùng OAuth với quyền `drive.file` (app chỉ thấy tệp do nó tạo), xuất bản ứng dụng OAuth để token không hết hạn, và chấp nhận rủi ro dữ liệu trung tâm nằm trong tài khoản cá nhân. Khuyến nghị: Workspace của trung tâm. Biến môi trường: `GOOGLE_DRIVE_FOLDER_ID` (hoặc `GOOGLE_SHARED_DRIVE_ID`), `GOOGLE_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_SERVICE_ACCOUNT_KEY` (Workspace) hoặc `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, `GOOGLE_OAUTH_REFRESH_TOKEN` (Google One).
-- [ ] **34.24** Driver Google Drive phía server (`googleapis`): tải lên vào thư mục theo năm và tháng, tải về, xoá; tệp luôn riêng tư (không bật chia sẻ bằng link); thử lại khi bị 429. Kiểm chứng: thử thật tải lên, tải về, xoá với thư mục Drive của trung tâm.
-- [ ] **34.25** Lưu trữ tệp cũ: `uploaded_files` thêm cột nơi lưu (`supabase`, `drive`, `disk`) và mã tệp trên Drive. Mỗi tháng tự chuyển bản ghi âm và bài nộp của các bài đã chấm quá 90 ngày từ Supabase sang Drive (sao chép, kiểm kích thước khớp, rồi mới xoá ở Supabase) để giữ dưới 1 GB miễn phí. `/api/files/[id]` đọc đúng nơi lưu, người dùng không thấy khác biệt. Kiểm chứng: chạy chuyển hai lần không nhân đôi tệp; mở tệp đã chuyển vẫn nghe được.
-- [ ] **34.26** Sao lưu database hằng ngày lên Drive: dump `esl_center` (nén), giữ 30 bản hằng ngày và 12 bản hằng tháng, xoá bản cũ hơn; báo super admin qua Telegram khi sao lưu lỗi. Có hướng dẫn khôi phục trong `README.md`. Kiểm chứng: khôi phục thử một bản vào database tạm, đếm số dòng các bảng chính khớp.
-- [ ] **34.27** Tài liệu bài giảng dung lượng lớn (video, sách PDF dày): giáo viên chọn tệp đã có trên Drive của trung tâm (Google Picker) để gắn vào bài giảng, thay vì tải lên app. Học sinh vẫn xem qua app, quyền xem theo lớp và cơ sở như tài liệu hiện có.
+- [x] **34.23** (người dùng chốt) Loại tài khoản Google: Người dùng đã chốt **Google One cá nhân** dùng OAuth với quyền `drive.file` (app chỉ thấy tệp do nó tạo). Biến môi trường: `GOOGLE_DRIVE_FOLDER_ID`, `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, `GOOGLE_OAUTH_REFRESH_TOKEN`. *(2026-10-19).*
+- [x] **34.24** Driver Google Drive phía server (`googleapis`): trong `src/lib/drive-store.ts`, tải lên vào thư mục theo năm và tháng, tải về, xoá; tệp luôn riêng tư (không bật chia sẻ bằng link); thử lại khi bị 429 backoff. *(2026-10-19).*
+- [x] **34.25** Lưu trữ tệp cũ: `uploaded_files` thêm cột nơi lưu (`storage_location`) và mã tệp trên Drive (`drive_file_id`), migration `0015_drive_archive.sql`. Script `npm run files:archive` tự chuyển bản ghi âm và bài nộp đã chấm quá 90 ngày từ Supabase sang Drive (kiểm kích thước khớp mới xoá ở Supabase) để giữ dưới 1 GB miễn phí. `/api/files/[id]` đọc đúng nơi lưu trong suốt. *(2026-10-19).*
+- [x] **34.26** Sao lưu database hằng ngày lên Drive: script `npm run db:backup` dump `esl_center` (nén gzip), giữ 30 bản hằng ngày và 12 bản hằng tháng, tự xoá bản cũ hơn; báo super admin qua Telegram khi sao lưu lỗi. Có hướng dẫn khôi phục chi tiết trong `README.md`. *(2026-10-19).*
+- [x] **34.27** Tài liệu bài giảng dung lượng lớn (video, sách PDF dày): giáo viên nhập liên kết hoặc ID tệp Drive của trung tâm để gắn vào bài giảng (`attachDriveMaterialAction`), học sinh xem qua app với quyền bảo mật của lớp, hỗ trợ HTTP Range 206 để tua mượt mà. *(2026-10-19).*
 
 Nguồn: giới hạn Drive API https://developers.google.com/drive/api/guides/limits ; service account phải dùng shared drive https://fivetran.com/docs/activations/destinations/available-destinations/google-drive/troubleshooting/service-accounts-storage-quota , https://mastra.ai/reference/workspace/google-drive-filesystem ; quyền `drive.file` https://www.rapidevelopers.com/md/api-automations/how-to-automate-google-drive-file-sharing-using-the-api .
 

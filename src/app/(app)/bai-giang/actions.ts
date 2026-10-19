@@ -9,6 +9,8 @@ import { CAMPUS_FORBIDDEN, getAllowedCampusIds, requireLessonAccess } from '@/li
 import { campusesExist } from '@/lib/queries/campuses';
 import { countAssignmentsOfLesson } from '@/lib/queries/lessons';
 import { getCurrentAccount } from '@/lib/session';
+import { getFileInfoFromDrive, isDriveConfigured } from '@/lib/drive-store';
+import { registerDriveUpload } from '@/lib/storage';
 import { lessonFormSchema, materialFormSchema } from '@/lib/validation/lesson';
 import type { ActionResult } from '@/lib/validation/student';
 
@@ -151,6 +153,93 @@ export async function deleteMaterialAction(id: number): Promise<ActionResult> {
     await writeAudit({ action: 'delete', entity: 'lesson_material', entityId: id, summary: `Xoá tài liệu ${found.title}` });
     revalidateLessons();
     return { ok: true, message: `Đã xoá tài liệu ${found.title}` };
+  } catch (error) {
+    return errorResult(error);
+  }
+}
+
+// Trích xuất ID tệp Google Drive từ URL hoặc mã tệp (P34.27)
+export function extractDriveFileId(input: string): string | null {
+  const trimmed = input.trim();
+  if (!trimmed) return null;
+  const matchFileD = trimmed.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+  if (matchFileD) return matchFileD[1];
+  const matchId = trimmed.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+  if (matchId) return matchId[1];
+  if (/^[a-zA-Z0-9_-]{20,}$/.test(trimmed)) {
+    return trimmed;
+  }
+  return null;
+}
+
+// Gắn tệp dung lượng lớn từ Google Drive của trung tâm vào bài giảng (P34.27)
+export async function attachDriveMaterialAction(
+  lessonId: number,
+  input: { title?: string; driveUrlOrId: string },
+): Promise<ActionResult> {
+  try {
+    await requirePermission('assignments.manage');
+    await requireLessonAccess(lessonId);
+
+    const fileId = extractDriveFileId(input.driveUrlOrId);
+    if (!fileId) {
+      return { ok: false, message: 'Liên kết hoặc mã tệp Google Drive không hợp lệ.' };
+    }
+
+    if (!isDriveConfigured()) {
+      return {
+        ok: false,
+        message: 'Google Drive chưa được cấu hình trên máy chủ. Vui lòng liên hệ quản trị viên để cấu hình biến môi trường GOOGLE_DRIVE_FOLDER_ID, GOOGLE_OAUTH_CLIENT_ID...',
+      };
+    }
+
+    const driveInfo = await getFileInfoFromDrive(fileId);
+    if (!driveInfo) {
+      return {
+        ok: false,
+        message: 'Không tìm thấy tệp này trên Google Drive của trung tâm hoặc tài khoản bot không có quyền truy cập.',
+      };
+    }
+
+    const [lesson] = await db.select({ id: lessons.id, title: lessons.title }).from(lessons).where(eq(lessons.id, lessonId)).limit(1);
+    if (!lesson) return { ok: false, message: 'Bài giảng này không còn tồn tại.' };
+
+    const account = await getCurrentAccount();
+    const title = input.title?.trim() || driveInfo.name || 'Tài liệu Drive';
+    const mimeType = driveInfo.mimeType || 'application/octet-stream';
+    const sizeBytes = parseInt(driveInfo.size || '0', 10);
+
+    const uploadRes = await registerDriveUpload({
+      name: driveInfo.name || title,
+      driveFileId: fileId,
+      mimeType,
+      sizeBytes,
+      accountId: account?.id ?? null,
+    });
+
+    if (!uploadRes.ok) {
+      return { ok: false, message: uploadRes.message };
+    }
+
+    const [last] = await db.select({ position: max(lessonMaterials.position) }).from(lessonMaterials).where(eq(lessonMaterials.lessonId, lessonId));
+    await db.insert(lessonMaterials).values({
+      lessonId,
+      position: Number(last?.position ?? 0) + 1,
+      kind: 'file',
+      title,
+      url: '',
+      fileId: uploadRes.id,
+    });
+
+    await writeAudit({
+      action: 'create',
+      entity: 'lesson_material',
+      entityId: lessonId,
+      summary: `Gắn tài liệu Google Drive ${title} (${fileId}) cho bài giảng ${lesson.title}`,
+    });
+
+    revalidateLessons();
+    return { ok: true, message: `Đã gắn tài liệu từ Google Drive: ${title}` };
   } catch (error) {
     return errorResult(error);
   }

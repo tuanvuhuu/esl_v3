@@ -26,11 +26,43 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   const file = await readUpload(Number(raw));
   if (!file) return new Response('Không tìm thấy tệp', { status: 404 });
 
+  const total = file.bytes.length;
+  const rangeHeader = _request.headers.get('range');
+
+  if (rangeHeader && /^bytes=\d*-\d*$/.test(rangeHeader)) {
+    const parts = rangeHeader.replace(/bytes=/, '').split('-');
+    const start = parts[0] ? parseInt(parts[0], 10) : 0;
+    const end = parts[1] ? parseInt(parts[1], 10) : total - 1;
+
+    if (start >= total || end >= total || start > end) {
+      return new Response('Dải byte không hợp lệ', {
+        status: 416,
+        headers: { 'Content-Range': `bytes */${total}` },
+      });
+    }
+
+    const chunk = file.bytes.subarray(start, end + 1);
+    return new Response(new Uint8Array(chunk), {
+      status: 206,
+      headers: {
+        'Content-Type': file.mimeType,
+        'Content-Range': `bytes ${start}-${end}/${total}`,
+        'Accept-Ranges': 'bytes',
+        'Content-Length': String(chunk.length),
+        'Content-Disposition': `inline; filename*=UTF-8''${encodeURIComponent(file.originalName)}`,
+        'X-Content-Type-Options': 'nosniff',
+        'Content-Security-Policy': "default-src 'none'; sandbox",
+        'Cache-Control': 'private, no-store',
+      },
+    });
+  }
+
   // Trả đúng loại đã kiểm khi tải lên. Không cho trình duyệt đoán loại và không cho chạy script trong tệp.
   return new Response(new Uint8Array(file.bytes), {
     headers: {
       'Content-Type': file.mimeType,
-      'Content-Length': String(file.bytes.length),
+      'Content-Length': String(total),
+      'Accept-Ranges': 'bytes',
       'Content-Disposition': `inline; filename*=UTF-8''${encodeURIComponent(file.originalName)}`,
       'X-Content-Type-Options': 'nosniff',
       'Content-Security-Policy': "default-src 'none'; sandbox",

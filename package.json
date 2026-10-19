@@ -18,13 +18,16 @@
     "db:seed:reset": "node --env-file-if-exists=.env.local --import tsx src/db/seed.ts --reset",
     "db:set-password": "node --env-file-if-exists=.env.local --import tsx src/db/set-password.ts",
     "db:studio": "node --env-file-if-exists=.env.local node_modules/drizzle-kit/bin.cjs studio",
-    "files:migrate": "node scripts/migrate-files-to-supabase.mjs"
+    "files:migrate": "node scripts/migrate-files-to-supabase.mjs",
+    "files:archive": "node scripts/archive-old-files-to-drive.mjs",
+    "db:backup": "node scripts/backup-db-to-drive.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1152.0",
     "@aws-sdk/s3-request-presigner": "^3.1152.0",
     "drizzle-orm": "^0.45.4",
     "exceljs": "^4.4.0",
+    "googleapis": "^186.0.0",
     "lucide-react": "^1.56.0",
     "next": "16.4.0",
     "pg": "^8.23.1",

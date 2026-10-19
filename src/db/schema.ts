@@ -294,7 +294,7 @@ export const assignmentSubmissions = pgTable(
 export const skillEnum = pgEnum('skill', ['listening', 'speaking', 'reading', 'writing']);
 export const itemTypeEnum = pgEnum('item_type', ['choice', 'text', 'file']);
 
-// Tệp tải lên: âm thanh của đề, tệp bài nộp. Nội dung nằm trên ổ đĩa máy chủ, tên file là storageKey ngẫu nhiên.
+// Tệp tải lên: âm thanh của đề, tệp bài nộp, tài liệu. Nội dung nằm trên Supabase Storage hoặc lưu trữ Google Drive (P34.25).
 export const uploadedFiles = pgTable(
   'uploaded_files',
   {
@@ -304,6 +304,8 @@ export const uploadedFiles = pgTable(
     mimeType: varchar('mime_type', { length: 120 }).notNull(),
     sizeBytes: integer('size_bytes').notNull(),
     uploadedByAccountId: integer('uploaded_by_account_id').references(() => accounts.id, { onDelete: 'set null' }),
+    storageLocation: varchar('storage_location', { length: 20 }).notNull().default('supabase'),
+    driveFileId: varchar('drive_file_id', { length: 120 }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [uniqueIndex('uploaded_files_key').on(t.storageKey)],

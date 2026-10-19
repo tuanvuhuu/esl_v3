@@ -6,6 +6,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { uploadedFiles } from '@/db/schema';
 import { createSignedUploadUrl, deleteBlob, getBlob, putBlob } from './blob-store';
+import { downloadFromDrive } from './drive-store';
 
 export { uploadDir } from './blob-store';
 
@@ -58,12 +59,96 @@ export async function saveUpload(file: File, accountId: number | null): Promise<
   return { ok: true, id: row.id, name };
 }
 
-// Đọc một tệp theo id để phục vụ tải xuống. Null nếu không có dòng nào hoặc nơi lưu đã mất tệp.
+// Đọc một tệp theo id để phục vụ tải xuống. Tự động đọc từ Google Drive (nếu đã chuyển lưu trữ) hoặc Supabase Storage / ổ đĩa.
 export async function readUpload(id: number): Promise<{ originalName: string; mimeType: string; bytes: Buffer } | null> {
-  const [row] = await db.select().from(uploadedFiles).where(eq(uploadedFiles.id, id)).limit(1);
+  let row: {
+    id: number;
+    storageKey: string;
+    originalName: string;
+    mimeType: string;
+    sizeBytes: number;
+    storageLocation?: string | null;
+    driveFileId?: string | null;
+  } | undefined;
+
+  try {
+    const [res] = await db
+      .select({
+        id: uploadedFiles.id,
+        storageKey: uploadedFiles.storageKey,
+        originalName: uploadedFiles.originalName,
+        mimeType: uploadedFiles.mimeType,
+        sizeBytes: uploadedFiles.sizeBytes,
+        storageLocation: uploadedFiles.storageLocation,
+        driveFileId: uploadedFiles.driveFileId,
+      })
+      .from(uploadedFiles)
+      .where(eq(uploadedFiles.id, id))
+      .limit(1);
+    row = res;
+  } catch (err: unknown) {
+    // Trường hợp DB chưa kịp chạy migration thêm cột storage_location
+    const msg = (err as Error)?.message || '';
+    if (msg.includes('storage_location') || msg.includes('drive_file_id')) {
+      const [res] = await db
+        .select({
+          id: uploadedFiles.id,
+          storageKey: uploadedFiles.storageKey,
+          originalName: uploadedFiles.originalName,
+          mimeType: uploadedFiles.mimeType,
+          sizeBytes: uploadedFiles.sizeBytes,
+        })
+        .from(uploadedFiles)
+        .where(eq(uploadedFiles.id, id))
+        .limit(1);
+      row = res ? { ...res, storageLocation: 'supabase', driveFileId: null } : undefined;
+    } else {
+      throw err;
+    }
+  }
+
   if (!row) return null;
+
+  // 1. Tệp đã lưu trữ trên Google Drive (P34.25 / P34.27)
+  if (row.storageLocation === 'drive' && (row.driveFileId || row.storageKey)) {
+    try {
+      const driveBytes = await downloadFromDrive(row.driveFileId || row.storageKey);
+      if (driveBytes) {
+        return { originalName: row.originalName, mimeType: row.mimeType, bytes: driveBytes };
+      }
+    } catch (driveErr) {
+      console.error(`[storage] Lỗi tải tệp id=${id} từ Google Drive:`, driveErr);
+    }
+  }
+
+  // 2. Tệp trên Supabase Storage hoặc ổ đĩa cục bộ
   const bytes = await getBlob(row.storageKey);
   return bytes ? { originalName: row.originalName, mimeType: row.mimeType, bytes } : null;
+}
+
+// Đăng ký một tệp Google Drive vào hệ thống (P34.27)
+export async function registerDriveUpload(params: {
+  name: string;
+  driveFileId: string;
+  mimeType: string;
+  sizeBytes: number;
+  accountId: number | null;
+}): Promise<UploadResult> {
+  const name = safeFileName(params.name);
+  const storageKey = `drive_${params.driveFileId.slice(0, 32)}`;
+  const [row] = await db
+    .insert(uploadedFiles)
+    .values({
+      storageKey,
+      originalName: name,
+      mimeType: params.mimeType,
+      sizeBytes: params.sizeBytes,
+      uploadedByAccountId: params.accountId,
+      storageLocation: 'drive',
+      driveFileId: params.driveFileId,
+    })
+    .returning({ id: uploadedFiles.id });
+  return { ok: true, id: row.id, name };
 }
 
 // Xoá nội dung một tệp. Tệp đã mất thì bỏ qua, không báo lỗi.

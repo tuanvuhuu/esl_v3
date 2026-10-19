@@ -2,10 +2,17 @@
 
 import { Link2, Paperclip, Trash2 } from 'lucide-react';
 import { useState, useTransition } from 'react';
-import { deleteMaterialAction, saveMaterialAction } from '@/app/(app)/bai-giang/actions';
+import { deleteMaterialAction, saveMaterialAction, attachDriveMaterialAction } from '@/app/(app)/bai-giang/actions';
 import { uploadFileAction } from '@/app/(app)/bai-tap/question-actions';
 import type { LessonRow } from '@/lib/queries/lessons';
-import { MATERIAL_KIND_LABELS, MATERIAL_KINDS, type MaterialKind } from '@/lib/validation/lesson';
+import { MATERIAL_KIND_LABELS } from '@/lib/validation/lesson';
+
+type UiMaterialKind = 'link' | 'file' | 'drive';
+const UI_MATERIAL_OPTIONS: { value: UiMaterialKind; label: string }[] = [
+  { value: 'link', label: 'Liên kết' },
+  { value: 'file', label: 'Tệp tải lên (Supabase)' },
+  { value: 'drive', label: 'Google Drive (Tệp lớn / Video)' },
+];
 import { ActIcon } from '@/components/ui/ActIcon';
 import { Btn } from '@/components/ui/Btn';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
@@ -18,9 +25,10 @@ import { UPLOAD_ACCEPT } from '@/lib/upload-types';
 // Các loại tệp được tải lên làm tài liệu. Khớp với danh sách máy chủ kiểm khi tải lên.
 // Tài liệu của một bài giảng: danh sách liên kết và tệp, thêm và xoá (có xác nhận)
 export function MaterialsPanel({ lesson, canManage, onChanged }: { lesson: LessonRow; canManage: boolean; onChanged: (message: string) => void }) {
-  const [kind, setKind] = useState<MaterialKind>('link');
+  const [kind, setKind] = useState<UiMaterialKind>('link');
   const [title, setTitle] = useState('');
   const [url, setUrl] = useState('');
+  const [driveInput, setDriveInput] = useState('');
   const [fileId, setFileId] = useState<number | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -30,6 +38,7 @@ export function MaterialsPanel({ lesson, canManage, onChanged }: { lesson: Lesso
   function resetForm() {
     setTitle('');
     setUrl('');
+    setDriveInput('');
     setFileId(null);
     setFileName(null);
   }
@@ -51,6 +60,15 @@ export function MaterialsPanel({ lesson, canManage, onChanged }: { lesson: Lesso
 
   function add() {
     startTransition(async () => {
+      if (kind === 'drive') {
+        const r = await attachDriveMaterialAction(lesson.id, { title, driveUrlOrId: driveInput });
+        if (!r.ok) return setError(r.message ?? 'Không thêm được tài liệu Google Drive');
+        setError(null);
+        resetForm();
+        onChanged(r.message ?? 'Đã thêm tài liệu từ Google Drive');
+        return;
+      }
+
       const r = await saveMaterialAction(lesson.id, { kind, title, url, fileId });
       if (!r.ok) return setError(r.message ?? 'Không thêm được tài liệu');
       setError(null);
@@ -119,17 +137,23 @@ export function MaterialsPanel({ lesson, canManage, onChanged }: { lesson: Lesso
               <SelectPanel
                 label="Loại tài liệu"
                 value={kind}
-                onChange={(v) => setKind(v as MaterialKind)}
-                options={MATERIAL_KINDS.map((k) => ({ value: k, label: MATERIAL_KIND_LABELS[k] }))}
+                onChange={(v) => setKind(v as UiMaterialKind)}
+                options={UI_MATERIAL_OPTIONS}
                 block
               />
             </Field>
-            <Field label="Tên tài liệu *">
-              <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="VD: Slide buổi 3" aria-label="Tên tài liệu" className={inputClass()} />
+            <Field label={kind === 'drive' ? 'Tên tài liệu (tuỳ chọn)' : 'Tên tài liệu *'}>
+              <input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder={kind === 'drive' ? 'Để trống sẽ lấy tên từ Google Drive' : 'VD: Slide buổi 3'}
+                aria-label="Tên tài liệu"
+                className={inputClass()}
+              />
             </Field>
           </div>
 
-          {kind === 'link' ? (
+          {kind === 'link' && (
             <Field label="Liên kết *" hint="Bắt đầu bằng https://">
               <input
                 type="url"
@@ -141,7 +165,24 @@ export function MaterialsPanel({ lesson, canManage, onChanged }: { lesson: Lesso
                 className={inputClass()}
               />
             </Field>
-          ) : (
+          )}
+
+          {kind === 'drive' && (
+            <Field
+              label="Liên kết hoặc ID tệp Google Drive *"
+              hint="Dành cho video bài giảng hoặc tài liệu lớn (sách PDF, audio nặng) trên Google Drive của trung tâm. Học sinh xem trực tiếp qua app với quyền bảo mật của lớp."
+            >
+              <input
+                value={driveInput}
+                onChange={(e) => setDriveInput(e.target.value)}
+                placeholder="https://drive.google.com/file/d/... hoặc mã tệp Drive"
+                aria-label="Liên kết hoặc ID tệp Google Drive"
+                className={inputClass()}
+              />
+            </Field>
+          )}
+
+          {kind === 'file' && (
             <div className="flex flex-col gap-2">
               <span className="text-sm font-normal text-ink-2">Tệp *</span>
               {fileId !== null ? (

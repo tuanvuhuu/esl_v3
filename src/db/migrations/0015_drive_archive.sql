@@ -1,0 +1,2 @@
+ALTER TABLE "uploaded_files" ADD COLUMN IF NOT EXISTS "storage_location" varchar(20) DEFAULT 'supabase' NOT NULL;--> statement-breakpoint
+ALTER TABLE "uploaded_files" ADD COLUMN IF NOT EXISTS "drive_file_id" varchar(120);
