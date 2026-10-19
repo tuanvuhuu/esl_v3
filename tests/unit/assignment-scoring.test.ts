@@ -213,6 +213,14 @@ describe('các dạng câu hỏi online mới P35', () => {
 
     // Dữ liệu JSON hỏng hoặc chưa làm -> 0 điểm
     expect(itemPoints(item, { ...blank(40), answerText: 'invalid json' })).toBe(0);
+
+    // Đúng 1/3 cặp của câu 2 điểm -> điểm lẻ; điểm lưu vào bài (cột số nguyên) được làm tròn
+    const three: ScoringItem = { ...item, points: 2, pairs: item.pairs!.slice(0, 3) };
+    const oneOfThree = JSON.stringify([{ left: 'mother', right: 'mẹ' }]);
+    expect(itemPoints(three, { ...blank(40), answerText: oneOfThree })).toBe(0.67);
+    const summary = summarizeSubmission([three], [{ ...blank(40), answerText: oneOfThree }]);
+    expect(summary.status).toBe('graded');
+    expect(storedScore(summary)).toBe(1);
     expect(itemPoints(item, undefined)).toBe(0);
   });
 });

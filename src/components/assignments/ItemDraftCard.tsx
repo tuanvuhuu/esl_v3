@@ -30,6 +30,8 @@ const EXERCISE_TYPES: { type: ItemType; icon: string; title: string; hint: strin
   { type: 'speak_read', icon: '📖', title: 'Đọc to', hint: '6+ · Nói', defaultSkill: 'speaking' },
   { type: 'speak_picture', icon: '🗣️', title: 'Nói về tranh', hint: '8+ · Nói', defaultSkill: 'speaking' },
   { type: 'choice', icon: '☑️', title: 'Trắc nghiệm chữ', hint: 'Mọi lứa tuổi', defaultSkill: 'reading' },
+  { type: 'text', icon: '📝', title: 'Trả lời viết', hint: 'Giáo viên chấm', defaultSkill: 'writing' },
+  { type: 'file', icon: '📎', title: 'Nộp tệp', hint: 'Giáo viên chấm', defaultSkill: 'writing' },
 ];
 
 export function ItemDraftCard({
@@ -220,14 +222,17 @@ export function ItemDraftCard({
 
       {/* 1. Chọn dạng câu hỏi (Card Grid như mockup) */}
       <div>
-        <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-muted">Dạng bài tập</label>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <p className="mb-2 block text-xs font-bold uppercase tracking-wider text-muted">Dạng bài tập</p>
+        <div role="radiogroup" aria-label={`Loại của câu ${n}`} className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {EXERCISE_TYPES.map((et) => {
             const active = d.itemType === et.type;
             return (
               <button
                 key={et.type}
                 type="button"
+                role="radio"
+                aria-checked={active}
+                aria-label={et.title}
                 onClick={() => setItemType(et.type)}
                 className={`flex flex-col items-start rounded-xl border p-2.5 text-left transition-all ${
                   active
@@ -238,7 +243,7 @@ export function ItemDraftCard({
                 <span className="text-sm font-bold text-ink">
                   {et.icon} {et.title}
                 </span>
-                <span className="text-[11px] text-muted">{et.hint}</span>
+                <span className="text-xs text-muted">{et.hint}</span>
               </button>
             );
           })}
@@ -249,7 +254,7 @@ export function ItemDraftCard({
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <Field label="Kỹ năng *">
           <SelectPanel
-            label={`Kỹ năng câu ${n}`}
+            label={`Kỹ năng của câu ${n}`}
             value={d.skill}
             onChange={(v) => patch({ skill: v as Skill })}
             options={SKILLS.map((s) => ({ value: s, label: SKILL_LABELS[s] }))}
@@ -266,6 +271,7 @@ export function ItemDraftCard({
             value={hasCriteria ? String(criteriaTotal(d)) : d.points}
             onChange={(e) => patch({ points: e.target.value })}
             readOnly={hasCriteria}
+            aria-label={`Điểm của câu ${n}`}
             className={inputClass()}
           />
         </Field>
@@ -274,6 +280,7 @@ export function ItemDraftCard({
             type="text"
             value={d.sourceLicense}
             onChange={(e) => patch({ sourceLicense: e.target.value })}
+            aria-label={`Nguồn và giấy phép của câu ${n}`}
             placeholder="VD: Tranh tự vẽ · ESL Center"
             className={inputClass()}
           />
@@ -287,6 +294,7 @@ export function ItemDraftCard({
             type="text"
             value={d.prompt}
             onChange={(e) => patch({ prompt: e.target.value })}
+            aria-label={`Nội dung câu ${n}`}
             placeholder="VD: Listen and touch the correct picture"
             className={inputClass()}
           />
@@ -296,11 +304,25 @@ export function ItemDraftCard({
             type="text"
             value={d.promptVi}
             onChange={(e) => patch({ promptVi: e.target.value })}
+            aria-label={`Hướng dẫn tiếng Việt của câu ${n}`}
             placeholder="VD: Nghe và chạm vào tranh đúng"
             className={inputClass()}
           />
         </Field>
       </div>
+
+      {/* Đoạn đọc cho câu trắc nghiệm, viết, nộp tệp (bài đọc hiểu, đề viết dài) */}
+      {(d.itemType === 'choice' || d.itemType === 'text' || d.itemType === 'file') && (
+        <Field label="Đoạn đọc hoặc lời nhắc (không bắt buộc)">
+          <textarea
+            value={d.passage}
+            onChange={(e) => patch({ passage: e.target.value })}
+            rows={3}
+            aria-label={`Đoạn đọc của câu ${n}`}
+            className={textareaClass()}
+          />
+        </Field>
+      )}
 
       {/* 4. Âm thanh câu hỏi */}
       <div className="flex flex-col gap-2 rounded-xl border border-line bg-stone/30 p-3">

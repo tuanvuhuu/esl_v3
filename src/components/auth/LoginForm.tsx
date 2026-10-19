@@ -12,7 +12,8 @@ const INITIAL: ActionResult = { ok: false };
 
 // Form đăng nhập. Mật khẩu không được điền sẵn; lỗi hiện ngay trong ô.
 // quickLogin: bật nút đăng nhập nhanh theo vai trò (tạm thời, chỉ khi phát triển).
-export function LoginForm({ quickLogin = false }: { quickLogin?: boolean }) {
+// demo: nút "Vào học thử" mở thẳng bài học mẫu, không cần mật khẩu (DEMO_LOGIN=off để tắt).
+export function LoginForm({ quickLogin = false, demo = false }: { quickLogin?: boolean; demo?: boolean }) {
   const [state, formAction, pending] = useActionState<ActionResult, FormData>(loginAction, INITIAL);
   const [quickPending, startQuick] = useTransition();
   const [quickError, setQuickError] = useState<string | null>(null);
@@ -59,6 +60,13 @@ export function LoginForm({ quickLogin = false }: { quickLogin?: boolean }) {
             {pending ? 'Đang đăng nhập…' : 'Đăng nhập'}
           </button>
         </form>
+
+        {demo && (
+          // Thẻ a thường (không dùng Link) để trình duyệt không tải trước và tự tạo phiên học thử
+          <a href="/hoc-thu" className={`${BTN_BASE} ${BTN_GHOST} -mt-2 w-full`}>
+            Vào học thử, không cần đăng nhập
+          </a>
+        )}
 
         {quickLogin && (
           <section aria-label="Đăng nhập nhanh theo quyền (tạm thời, chỉ khi phát triển)" className="flex flex-col gap-2.5 border-t border-line pt-4">

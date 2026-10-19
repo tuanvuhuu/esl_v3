@@ -2,6 +2,7 @@ import { connection } from 'next/server';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 import Link from 'next/link';
+import { isDemoAccount } from '@/lib/demo-account';
 import { getCurrentAccount } from '@/lib/session';
 import { Btn } from '@/components/ui/Btn';
 
@@ -26,9 +27,14 @@ async function StudentShell({ children }: { children: React.ReactNode }) {
         <span className="text-base font-extrabold text-ink">ESL Center · Khu học sinh</span>
         <div className="flex items-center gap-3">
           <span className="text-sm text-ink-2 max-[767px]:hidden">{account.fullName}</span>
-          <Link href="/cua-toi/doi-mat-khau" className="text-sm font-semibold text-primary-deep hover:underline">
-            Đổi mật khẩu
-          </Link>
+          {/* Tài khoản học thử không có mật khẩu, nên không có đổi mật khẩu */}
+          {isDemoAccount(account.email) ? (
+            <span className="whitespace-nowrap rounded-full bg-primary-soft px-2.5 py-1 text-sm font-semibold text-primary-deep">Học thử</span>
+          ) : (
+            <Link href="/cua-toi/doi-mat-khau" className="text-sm font-semibold text-primary-deep hover:underline">
+              Đổi mật khẩu
+            </Link>
+          )}
           <form action="/logout" method="post">
             <Btn type="submit" variant="ghost">
               Đăng xuất

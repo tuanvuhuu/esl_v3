@@ -214,9 +214,10 @@ export function summarizeSubmission(items: ScoringItem[], answers: ScoringAnswer
   };
 }
 
-// Điểm lưu vào bài nộp: chỉ khi đã chấm đủ mới có điểm, còn lại để trống như bài nhập tay
+// Điểm lưu vào bài nộp: chỉ khi đã chấm đủ mới có điểm, còn lại để trống như bài nhập tay.
+// Cột điểm là số nguyên, còn ghép đôi đúng một phần cho điểm lẻ, nên làm tròn trước khi lưu.
 export function storedScore(summary: SubmissionSummary): number | null {
-  return summary.complete && summary.status === 'graded' ? summary.total : null;
+  return summary.complete && summary.status === 'graded' ? Math.round(summary.total) : null;
 }
 
 // Chấm chéo (P23): lệch từ hai điểm trở lên thì đánh dấu để giáo viên xem lại

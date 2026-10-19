@@ -1,10 +1,9 @@
 'use client';
 
-import { ArrowLeft, Check, RotateCcw, Volume2, X } from 'lucide-react';
+import { Check, RotateCcw, Volume2, X } from 'lucide-react';
 import { useEffect, useRef, useState, useTransition } from 'react';
 import type { StudentAssignmentView, StudentItem } from '@/lib/queries/student-portal';
 import { studentUploadAction, submitMyAnswersAction, type StudentAnswerInput } from '@/app/(student)/cua-toi/actions';
-import { normalizeSentence } from '@/lib/assignment-scoring';
 
 type AnswerDraft = {
   selectedOptionId: number | null;
@@ -95,7 +94,7 @@ export function InteractiveExercisePlayer({
   }
 
   if (isFinished) {
-    return <CelebrationScreen view={view} answers={answers} onExit={onExit} error={submitError} />;
+    return <CelebrationScreen view={view} onExit={onExit} error={submitError} />;
   }
 
   return (
@@ -240,7 +239,7 @@ function ExerciseItem({
         )}
 
         {item.itemType === 'gap_fill' && (
-          <GapFillQuestion item={item} answer={answer} onChange={onChange} />
+          <GapFillQuestion answer={answer} onChange={onChange} />
         )}
 
         {(item.itemType === 'speak_repeat' || item.itemType === 'speak_read' || item.itemType === 'speak_picture') && (
@@ -252,7 +251,7 @@ function ExerciseItem({
         )}
 
         {(item.itemType === 'text' || item.itemType === 'file') && (
-          <TextOrFileQuestion item={item} answer={answer} onChange={onChange} />
+          <TextOrFileQuestion answer={answer} onChange={onChange} />
         )}
       </div>
 
@@ -313,10 +312,12 @@ function PictureChoiceQuestion({
                   alt={opt.label}
                   className="max-h-24 max-w-full rounded-lg object-contain"
                 />
+              ) : leadingEmoji(opt.label) ? (
+                <span className="text-6xl" aria-hidden>{leadingEmoji(opt.label)}</span>
               ) : (
-                <span className="text-5xl">🖼️</span>
+                <span className="text-5xl" aria-hidden>🖼️</span>
               )}
-              {opt.label && <span className="mt-2 text-sm font-black truncate max-w-full">{opt.label}</span>}
+              {opt.label && <span className="mt-2 max-w-full truncate text-base font-black">{stripLeadingEmoji(opt.label)}</span>}
               {isSelected && (
                 <span className="absolute top-2 right-2 flex size-6 items-center justify-center rounded-full bg-[var(--accent)] text-white shadow-xs">
                   <Check className="size-4 stroke-[3]" />
@@ -469,7 +470,7 @@ function OrderQuestion({
     return list.sort(() => Math.random() - 0.5);
   });
 
-  function addWord(word: string, index: number) {
+  function addWord(word: string) {
     const next = [...placedWords, word];
     setPlacedWords(next);
     onChange({ answerText: next.join(' ') });
@@ -518,7 +519,7 @@ function OrderQuestion({
             <button
               key={wi}
               type="button"
-              onClick={() => addWord(w, wi)}
+              onClick={() => addWord(w)}
               disabled={isUsed}
               className={`flex h-11 items-center justify-center rounded-xl border-2 px-3.5 text-base font-extrabold shadow-sm transition-all active:scale-95 ${
                 isUsed
@@ -545,15 +546,22 @@ function OrderQuestion({
   );
 }
 
+// Nhãn đáp án bắt đầu bằng emoji (ví dụ "🐶 Puppy") thì dùng emoji làm tranh khi câu chưa có ảnh
+const LEADING_EMOJI = /^(\p{Extended_Pictographic}(?:\uFE0F|\u200D\p{Extended_Pictographic})*)\s*/u;
+function leadingEmoji(label: string): string | null {
+  return LEADING_EMOJI.exec(label)?.[1] ?? null;
+}
+function stripLeadingEmoji(label: string): string {
+  return label.replace(LEADING_EMOJI, '');
+}
+
 // ==========================================
 // 5. DẠNG: ĐIỀN CHỖ TRỐNG (gap_fill)
 // ==========================================
 function GapFillQuestion({
-  item,
   answer,
   onChange,
 }: {
-  item: StudentItem;
   answer: AnswerDraft | undefined;
   onChange: (patch: Partial<AnswerDraft>) => void;
 }) {
@@ -631,7 +639,7 @@ function SpeakQuestion({
         mr.start();
         setRecording(true);
         setSeconds(0);
-      } catch (err) {
+      } catch {
         alert('Vui lòng cấp quyền truy cập micro để làm bài nói!');
       }
     }
@@ -640,18 +648,18 @@ function SpeakQuestion({
   useEffect(() => {
     let iv: NodeJS.Timeout;
     if (recording) {
-      iv = setInterval(() => {
-        setSeconds((prev) => {
-          if (prev >= maxSec) {
-            toggleRecord();
-            return maxSec;
-          }
-          return prev + 1;
-        });
-      }, 1000);
+      iv = setInterval(() => setSeconds((prev) => Math.min(prev + 1, maxSec)), 1000);
     }
     return () => clearInterval(iv);
   }, [recording, maxSec]);
+
+  // Hết thời gian thì tự dừng ghi âm (dừng ở đây, không gọi trong hàm cập nhật state)
+  useEffect(() => {
+    if (recording && seconds >= maxSec && mediaRecorderRef.current?.state === 'recording') {
+      mediaRecorderRef.current.stop();
+      setRecording(false);
+    }
+  }, [recording, seconds, maxSec]);
 
   return (
     <div className="flex flex-col items-center gap-4 py-2">
@@ -732,11 +740,9 @@ function ChoiceQuestion({
 // 8. DẠNG: VIẾT HOẶC NỘP TỆP
 // ==========================================
 function TextOrFileQuestion({
-  item,
   answer,
   onChange,
 }: {
-  item: StudentItem;
   answer: AnswerDraft | undefined;
   onChange: (patch: Partial<AnswerDraft>) => void;
 }) {
@@ -747,7 +753,7 @@ function TextOrFileQuestion({
         onChange={(e) => onChange({ answerText: e.target.value })}
         rows={4}
         placeholder="Nhập bài làm của bạn…"
-        className="w-full rounded-2xl border-2 border-line p-3 text-sm font-medium text-ink outline-none focus:border-[var(--primary-deep)]"
+        className="w-full rounded-2xl border-2 border-line p-3 text-base font-medium text-ink outline-none focus:border-[var(--primary-deep)]"
       />
     </div>
   );
@@ -758,12 +764,10 @@ function TextOrFileQuestion({
 // ==========================================
 function CelebrationScreen({
   view,
-  answers,
   onExit,
   error,
 }: {
   view: StudentAssignmentView;
-  answers: Record<number, AnswerDraft>;
   onExit?: () => void;
   error?: string | null;
 }) {

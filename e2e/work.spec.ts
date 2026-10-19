@@ -123,16 +123,14 @@ test.describe('bài tập, điểm danh, học phí', () => {
     await editor.getByLabel('Điểm của câu 1').fill('2');
 
     await editor.getByRole('button', { name: 'Thêm câu', exact: true }).click();
-    await editor.getByRole('button', { name: 'Loại của câu 2' }).click();
-    await page.getByRole('option', { name: 'Trả lời viết', exact: true }).click();
+    await editor.getByRole('radiogroup', { name: 'Loại của câu 2' }).getByRole('radio', { name: 'Trả lời viết', exact: true }).click();
     await editor.getByRole('button', { name: 'Kỹ năng của câu 2' }).click();
     await page.getByRole('option', { name: 'Viết', exact: true }).click();
     await editor.getByLabel('Nội dung câu 2').fill('Write about your weekend.');
     await editor.getByLabel('Điểm của câu 2').fill('5');
 
     await editor.getByRole('button', { name: 'Thêm câu', exact: true }).click();
-    await editor.getByRole('button', { name: 'Loại của câu 3' }).click();
-    await page.getByRole('option', { name: 'Nộp tệp', exact: true }).click();
+    await editor.getByRole('radiogroup', { name: 'Loại của câu 3' }).getByRole('radio', { name: 'Nộp tệp', exact: true }).click();
     await editor.getByRole('button', { name: 'Kỹ năng của câu 3' }).click();
     await page.getByRole('option', { name: 'Nói', exact: true }).click();
     await editor.getByLabel('Nội dung câu 3').fill('Record a short introduction about yourself.');
@@ -184,8 +182,7 @@ test.describe('bài tập, điểm danh, học phí', () => {
     await page.getByRole('button', { name: 'Soạn câu hỏi' }).click();
     const editor = dialogById(page, 'items-editor-title');
     await editor.getByRole('button', { name: 'Thêm câu', exact: true }).click();
-    await editor.getByRole('button', { name: 'Loại của câu 1' }).click();
-    await page.getByRole('option', { name: 'Trả lời viết', exact: true }).click();
+    await editor.getByRole('radiogroup', { name: 'Loại của câu 1' }).getByRole('radio', { name: 'Trả lời viết', exact: true }).click();
     await editor.getByRole('button', { name: 'Kỹ năng của câu 1' }).click();
     await page.getByRole('option', { name: 'Viết', exact: true }).click();
     await editor.getByLabel('Nội dung câu 1').fill('Write an essay about technology.');
@@ -193,8 +190,7 @@ test.describe('bài tập, điểm danh, học phí', () => {
     await expect(editor.getByLabel('Điểm của câu 1')).toHaveValue('20');
 
     await editor.getByRole('button', { name: 'Thêm câu', exact: true }).click();
-    await editor.getByRole('button', { name: 'Loại của câu 2' }).click();
-    await page.getByRole('option', { name: 'Nộp tệp', exact: true }).click();
+    await editor.getByRole('radiogroup', { name: 'Loại của câu 2' }).getByRole('radio', { name: 'Nộp tệp', exact: true }).click();
     await editor.getByRole('button', { name: 'Kỹ năng của câu 2' }).click();
     await page.getByRole('option', { name: 'Nói', exact: true }).click();
     await editor.getByLabel('Nội dung câu 2').fill('Talk about your favourite place.');
@@ -350,7 +346,7 @@ test.describe('bài tập, điểm danh, học phí', () => {
 
     // Thêm một tệp tải lên
     await materials.getByRole('button', { name: 'Loại tài liệu' }).click();
-    await page.getByRole('option', { name: 'Tệp', exact: true }).click();
+    await page.getByRole('option', { name: 'Tệp tải lên (Supabase)', exact: true }).click();
     await materials.getByLabel('Tải tệp tài liệu').setInputFiles({ name: 'tu-vung.txt', mimeType: 'text/plain', buffer: Buffer.from('apple, banana') });
     await materials.getByLabel('Tên tài liệu').fill('Bảng từ vựng');
     await materials.getByRole('button', { name: 'Thêm tài liệu' }).click();
@@ -420,15 +416,13 @@ test.describe('bài tập, điểm danh, học phí', () => {
     await editor.getByLabel('Đáp án 2 là đáp án đúng').check();
     await editor.getByLabel('Điểm của câu 1').fill('2');
     await editor.getByRole('button', { name: 'Thêm câu', exact: true }).click();
-    await editor.getByRole('button', { name: 'Loại của câu 2' }).click();
-    await page.getByRole('option', { name: 'Trả lời viết', exact: true }).click();
+    await editor.getByRole('radiogroup', { name: 'Loại của câu 2' }).getByRole('radio', { name: 'Trả lời viết', exact: true }).click();
     await editor.getByRole('button', { name: 'Kỹ năng của câu 2' }).click();
     await page.getByRole('option', { name: 'Viết', exact: true }).click();
     await editor.getByLabel('Nội dung câu 2').fill('Write about your weekend.');
     await editor.getByRole('button', { name: 'Mẫu IELTS viết' }).click();
     await editor.getByRole('button', { name: 'Thêm câu', exact: true }).click();
-    await editor.getByRole('button', { name: 'Loại của câu 3' }).click();
-    await page.getByRole('option', { name: 'Nộp tệp', exact: true }).click();
+    await editor.getByRole('radiogroup', { name: 'Loại của câu 3' }).getByRole('radio', { name: 'Nộp tệp', exact: true }).click();
     await editor.getByRole('button', { name: 'Kỹ năng của câu 3' }).click();
     await page.getByRole('option', { name: 'Nói', exact: true }).click();
     await editor.getByLabel('Nội dung câu 3').fill('Talk about your favourite place.');
@@ -609,16 +603,14 @@ test.describe('bài tập, điểm danh, học phí', () => {
       await editor.getByLabel('Đáp án 2 là đáp án đúng').check();
       await editor.getByLabel('Điểm của câu 1').fill('2');
       await editor.getByRole('button', { name: 'Thêm câu', exact: true }).click();
-      await editor.getByRole('button', { name: 'Loại của câu 2' }).click();
-      await page.getByRole('option', { name: 'Trả lời viết', exact: true }).click();
+      await editor.getByRole('radiogroup', { name: 'Loại của câu 2' }).getByRole('radio', { name: 'Trả lời viết', exact: true }).click();
       await editor.getByRole('button', { name: 'Kỹ năng của câu 2' }).click();
       await page.getByRole('option', { name: 'Viết', exact: true }).click();
       await editor.getByLabel('Nội dung câu 2').fill('Write about your weekend.');
       await editor.getByLabel('Điểm của câu 2').fill('5');
 
       await editor.getByRole('button', { name: 'Thêm câu', exact: true }).click();
-      await editor.getByRole('button', { name: 'Loại của câu 3' }).click();
-      await page.getByRole('option', { name: 'Nộp tệp', exact: true }).click();
+      await editor.getByRole('radiogroup', { name: 'Loại của câu 3' }).getByRole('radio', { name: 'Nộp tệp', exact: true }).click();
       await editor.getByRole('button', { name: 'Kỹ năng của câu 3' }).click();
       await page.getByRole('option', { name: 'Nói', exact: true }).click();
       await editor.getByLabel('Nội dung câu 3').fill('Record your voice.');
@@ -649,7 +641,7 @@ test.describe('bài tập, điểm danh, học phí', () => {
       await page.waitForURL('**/cua-toi');
       await page.goto(assignmentUrl);
 
-      // Làm bài và nộp: trắc nghiệm, viết, nộp tệp
+      // Làm bài và nộp: trắc nghiệm, viết, nộp tệp (bài chỉ có dạng câu cũ nên mở ở dạng danh sách)
       await page.getByLabel('B. Tuesday').check();
       await page.getByLabel('Bài làm câu 2').fill('I went hiking with my friends.');
       await page.getByLabel('Tải tệp bài làm câu 3').setInputFiles({ name: 'bai-noi.mp3', mimeType: 'audio/mpeg', buffer: Buffer.from('fake-audio-content') });
@@ -703,8 +695,12 @@ test.describe('bài tập, điểm danh, học phí', () => {
 
       const left = await db.query<{ storage_key: string }>(`select storage_key from uploaded_files where storage_key in ($1, $2)`, [oldKey, newKey]);
       expect(left.rows.map((r) => r.storage_key)).toEqual([newKey]);
-      expect(existsSync(join(dir, oldKey))).toBe(false);
-      expect(existsSync(join(dir, newKey))).toBe(true);
+      // Khi .env.local cấu hình Supabase (P34), tệp nằm trên Supabase nên không kiểm thư mục trên ổ đĩa
+      const onDisk = !(process.env.SUPABASE_ACCESS_KEY_ID && process.env.SUPABASE_SECRET_ACCESS_KEY && process.env.SUPABASE_STORAGE_BUCKET);
+      if (onDisk) {
+        expect(existsSync(join(dir, oldKey))).toBe(false);
+        expect(existsSync(join(dir, newKey))).toBe(true);
+      }
     } finally {
       await db.query(`delete from uploaded_files where storage_key in ($1, $2)`, [oldKey, newKey]);
       await rm(join(dir, oldKey), { force: true });

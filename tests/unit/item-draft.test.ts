@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { blankDraft, draftFromBank, draftToInput, snippet, toDraft, type Draft } from '@/components/assignments/item-draft';
 import type { BankQuestion } from '@/lib/queries/question-bank';
+import { itemFormSchema } from '@/lib/validation/assignment';
 
 const bank: BankQuestion = {
   id: 7,
@@ -86,5 +87,12 @@ describe('nội dung ngắn để nhận diện câu', () => {
   it('không có nội dung thì hiện tên âm thanh, hoặc ghi chú trống', () => {
     expect(snippet('', 'day.mp3')).toBe('(âm thanh: day.mp3)');
     expect(snippet('', null)).toBe('(không có nội dung)');
+  });
+
+  it('câu mới để trống tiếng Việt, câu mẫu, nguồn vẫn qua được kiểm tra của máy chủ', () => {
+    const d: Draft = { ...blankDraft(), prompt: 'Choose the day.' };
+    d.options = d.options.map((o, i) => ({ ...o, label: i === 0 ? 'Monday' : 'Tuesday' }));
+    const parsed = itemFormSchema.safeParse(draftToInput(d));
+    expect(parsed.success).toBe(true);
   });
 });

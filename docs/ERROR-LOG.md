@@ -602,3 +602,39 @@ Mỗi lỗi gặp phải được ghi ở đây, theo mẫu dưới đây. Trư�
 - Cách sửa: Insert campus dùng `onConflictDoUpdate({ target: campuses.name })`, cập nhật địa chỉ mẫu nếu đã có. Transaction seed vẫn rollback khi lỗi nên không để dữ liệu dở.
 - Quy tắc phòng ngừa: Seed phải chạy được trên DB vừa migrate, không chỉ trên DB đã reset. Khi migration chèn dữ liệu nền, seed dùng upsert theo khoá tự nhiên hoặc bỏ qua bản ghi đó. Kiểm tra: `migrate` rồi `db:seed` trên DB trống phải chạy được, và chạy `db:seed` lần hai phải báo bỏ qua.
 - Đã áp dụng ở: `src/db/seed.ts`.
+
+## E-066 · Migration viết tay không có trong journal nên `db:migrate` bỏ qua
+- Ngày: 2026-10-19
+- Khu vực: CSDL (`src/db/migrations/0016_online_exercise_types.sql`)
+- Triệu chứng: Commit P35 có file `0016_online_exercise_types.sql` nhưng `__drizzle_migrations` chỉ có 15 bản. DB dev chạy được vì đã chạy tay; DB khác (Vercel, máy mới) sẽ thiếu cột và bảng mới.
+- Nguyên nhân: File SQL viết tay, không chạy `npm run db:generate`, nên không có dòng trong `meta/_journal.json` và không có snapshot. Drizzle chỉ chạy migration có trong journal.
+- Cách sửa: Chạy `db:generate -- --name=online_exercise_types` để có journal và snapshot, giữ nội dung SQL viết tay (có IF NOT EXISTS nên chạy lại trên DB đã có vẫn được), rồi `db:migrate`.
+- Quy tắc phòng ngừa: Mọi migration phải sinh bằng `db:generate`. Trước khi commit, kiểm tra số file `.sql` bằng số dòng trong `_journal.json`.
+- Đã áp dụng ở: `src/db/migrations/meta/_journal.json`, `meta/0016_snapshot.json`.
+
+## E-067 · Nộp bài lỗi khi ghép đôi đúng một phần vì điểm lẻ ghi vào cột số nguyên
+- Ngày: 2026-10-19
+- Khu vực: Chấm điểm (`src/lib/assignment-scoring.ts`)
+- Triệu chứng: Bài chỉ có câu tự chấm, câu ghép đôi đúng 1/3 cặp: tổng điểm 0.67, ghi vào `assignment_submissions.score` (integer) thì PostgreSQL từ chối, học sinh thấy "Không nộp được bài".
+- Nguyên nhân: Ghép đôi tính điểm theo tỷ lệ cặp đúng, `storedScore` trả nguyên tổng lẻ.
+- Cách sửa: `storedScore` làm tròn trước khi lưu. Unit test câu 2 điểm đúng 1/3 cặp lưu 1.
+- Quy tắc phòng ngừa: Điểm tính ra số lẻ phải làm tròn trước khi ghi vào cột số nguyên. Unit test chấm điểm luôn có trường hợp điểm lẻ.
+- Đã áp dụng ở: `src/lib/assignment-scoring.ts`, `tests/unit/assignment-scoring.test.ts`.
+
+## E-068 · Màn soạn câu mới làm mất hai dạng câu cũ
+- Ngày: 2026-10-19
+- Khu vực: Giao diện (`src/components/assignments/ItemDraftCard.tsx`)
+- Triệu chứng: Sau P35, lưới chọn dạng câu không còn "Trả lời viết" và "Nộp tệp"; giáo viên không tạo được câu viết. E2E `work.spec` tìm ô chọn "Loại của câu" không thấy.
+- Nguyên nhân: Ô chọn loại câu (theo `ITEM_TYPES`) được thay bằng lưới thẻ có danh sách riêng, danh sách này bỏ sót hai dạng cũ, và lưới không có tên cho trình đọc màn hình.
+- Cách sửa: Thêm lại hai dạng; lưới là `radiogroup` tên "Loại của câu n", mỗi thẻ là `radio`; cập nhật `work.spec`.
+- Quy tắc phòng ngừa: Thay một ô chọn bằng giao diện khác thì giữ đủ mọi giá trị cũ và giữ tên truy cập; chạy E2E của màn đó trước khi commit.
+- Đã áp dụng ở: `src/components/assignments/ItemDraftCard.tsx`, `e2e/work.spec.ts`.
+
+## E-069 · Không lưu được câu hỏi khi để trống ô tiếng Việt hoặc ô nguồn
+- Ngày: 2026-10-19
+- Khu vực: Giao diện và validate (`src/components/assignments/item-draft.ts`, `src/lib/validation/assignment.ts`)
+- Triệu chứng: Bấm lưu câu hỏi trong bài hoặc ngân hàng, hộp thoại báo "Invalid input: expected string, received null". E2E `work.spec` 6 test soạn câu không thấy thông báo "Đã lưu".
+- Nguyên nhân: `draftToInput` gửi `null` cho `promptVi`, `referenceText`, `sourceLicense`, `maxSeconds` khi ô trống, còn schema zod chỉ nhận chuỗi (`.default('')` chỉ áp khi thiếu trường, không áp cho `null`).
+- Cách sửa: Gửi chuỗi đã cắt khoảng trắng và `maxSeconds` mặc định 15. Unit test: câu mới để trống các ô phụ qua được `itemFormSchema`.
+- Quy tắc phòng ngừa: Dữ liệu gửi từ form phải khớp đúng schema của máy chủ. Mỗi hàm chuyển form sang dữ liệu gửi đi có unit test chạy qua schema zod tương ứng.
+- Đã áp dụng ở: `src/components/assignments/item-draft.ts`, `tests/unit/item-draft.test.ts`.
