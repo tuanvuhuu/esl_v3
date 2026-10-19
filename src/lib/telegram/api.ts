@@ -4,16 +4,23 @@
 const API = 'https://api.telegram.org';
 
 export function botToken(): string | null {
-  return process.env.TELEGRAM_BOT_TOKEN || null;
+  const raw =
+    process.env.TELEGRAM_BOT_TOKEN ||
+    process.env.TELEGRAM_TOKEN ||
+    process.env.BOT_TOKEN ||
+    '';
+  const trimmed = raw.trim();
+  return trimmed.length > 0 ? trimmed : null;
 }
 
 export function botUsername(): string | null {
-  return (process.env.TELEGRAM_BOT_USERNAME || '').replace(/^@/, '') || null;
+  const raw = process.env.TELEGRAM_BOT_USERNAME || process.env.BOT_USERNAME || '';
+  return raw.replace(/^@/, '').trim() || null;
 }
 
 export function webhookSecret(): string | null {
-  const secret = process.env.TELEGRAM_WEBHOOK_SECRET;
-  return secret && secret.length >= 16 ? secret : null;
+  const raw = (process.env.TELEGRAM_WEBHOOK_SECRET || '').trim();
+  return raw.length >= 16 ? raw : null;
 }
 
 type ApiResult<T> = { ok: true; result: T } | { ok: false; description: string };

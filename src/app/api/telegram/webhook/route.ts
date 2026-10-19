@@ -87,10 +87,12 @@ export async function GET() {
   const { botToken, webhookSecret } = await import('@/lib/telegram/api');
   const token = botToken();
   const secret = webhookSecret();
+  const telegramKeys = Object.keys(process.env).filter((k) => k.toUpperCase().includes('TELEGRAM'));
   return Response.json({
     hasToken: !!token,
     tokenPrefix: token ? token.slice(0, 10) + '...' : null,
     hasSecret: !!secret,
+    telegramKeys,
     timestamp: new Date().toISOString(),
   });
 }
