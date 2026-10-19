@@ -4,21 +4,47 @@ import type { ItemInput } from '@/app/(app)/bai-tap/question-actions';
 import type { BankQuestion } from '@/lib/queries/question-bank';
 
 export const MAX_OPTIONS = 6;
+export const MAX_PAIRS = 8;
 
-export type DraftOption = { key: string; id: number | null; label: string; isCorrect: boolean };
+export type DraftOption = {
+  key: string;
+  id: number | null;
+  label: string;
+  isCorrect: boolean;
+  imageFileId: number | null;
+  audioFileId: number | null;
+};
 export type DraftCriterion = { key: string; id: number | null; name: string; maxPoints: string };
+export type DraftPair = {
+  key: string;
+  id: number | null;
+  position: number;
+  leftLabel: string;
+  leftImageFileId: number | null;
+  rightLabel: string;
+  rightImageFileId: number | null;
+};
+
 export type Draft = {
   key: string;
   id: number | null;
   skill: Skill;
   itemType: ItemType;
   prompt: string;
+  promptVi: string;
   passage: string;
+  referenceText: string;
   points: string;
   audioFileId: number | null;
   audioName: string | null;
+  imageFileId: number | null;
+  modelAudioFileId: number | null;
+  modelAudioName: string | null;
+  maxSeconds: string;
+  sourceLicense: string;
   options: DraftOption[];
   criteria: DraftCriterion[];
+  pairs: DraftPair[];
   bankQuestionId: number | null; // câu chép từ ngân hàng nào (để đếm số bài dùng câu đó)
 };
 
@@ -32,8 +58,22 @@ export type DraftSource = {
   points: number;
   audioFileId: number | null;
   audioName: string | null;
-  options: { id: number; label: string; isCorrect: boolean }[];
+  imageFileId?: number | null;
+  modelAudioFileId?: number | null;
+  promptVi?: string | null;
+  referenceText?: string | null;
+  maxSeconds?: number | null;
+  sourceLicense?: string | null;
+  options: { id: number; label: string; isCorrect: boolean; imageFileId?: number | null; audioFileId?: number | null }[];
   criteria: { id: number; name: string; maxPoints: number }[];
+  pairs?: {
+    id: number;
+    position: number;
+    leftLabel: string;
+    leftImageFileId: number | null;
+    rightLabel: string;
+    rightImageFileId: number | null;
+  }[];
 };
 
 let counter = 0;
@@ -47,12 +87,35 @@ export function toDraft(source: DraftSource, bankQuestionId: number | null = nul
     skill: source.skill,
     itemType: source.itemType,
     prompt: source.prompt,
+    promptVi: source.promptVi ?? '',
     passage: source.passage,
+    referenceText: source.referenceText ?? '',
     points: String(source.points),
     audioFileId: source.audioFileId,
     audioName: source.audioName,
-    options: source.options.map((o) => ({ key: newKey(), id: o.id, label: o.label, isCorrect: o.isCorrect })),
+    imageFileId: source.imageFileId ?? null,
+    modelAudioFileId: source.modelAudioFileId ?? null,
+    modelAudioName: null,
+    maxSeconds: source.maxSeconds ? String(source.maxSeconds) : '15',
+    sourceLicense: source.sourceLicense ?? '',
+    options: source.options.map((o) => ({
+      key: newKey(),
+      id: o.id,
+      label: o.label,
+      isCorrect: o.isCorrect,
+      imageFileId: o.imageFileId ?? null,
+      audioFileId: o.audioFileId ?? null,
+    })),
     criteria: source.criteria.map((c) => ({ key: newKey(), id: c.id, name: c.name, maxPoints: String(c.maxPoints) })),
+    pairs: (source.pairs ?? []).map((p) => ({
+      key: newKey(),
+      id: p.id,
+      position: p.position,
+      leftLabel: p.leftLabel ?? '',
+      leftImageFileId: p.leftImageFileId ?? null,
+      rightLabel: p.rightLabel ?? '',
+      rightImageFileId: p.rightImageFileId ?? null,
+    })),
     bankQuestionId,
   };
 }
@@ -65,15 +128,23 @@ export function blankDraft(): Draft {
     skill: 'reading',
     itemType: 'choice',
     prompt: '',
+    promptVi: '',
     passage: '',
+    referenceText: '',
     points: '1',
     audioFileId: null,
     audioName: null,
+    imageFileId: null,
+    modelAudioFileId: null,
+    modelAudioName: null,
+    maxSeconds: '15',
+    sourceLicense: '',
     options: [
-      { key: newKey(), id: null, label: '', isCorrect: true },
-      { key: newKey(), id: null, label: '', isCorrect: false },
+      { key: newKey(), id: null, label: '', isCorrect: true, imageFileId: null, audioFileId: null },
+      { key: newKey(), id: null, label: '', isCorrect: false, imageFileId: null, audioFileId: null },
     ],
     criteria: [],
+    pairs: [],
     bankQuestionId: null,
   };
 }
@@ -86,6 +157,7 @@ export function draftFromBank(question: BankQuestion): Draft {
     id: null,
     options: d.options.map((o) => ({ ...o, id: null })),
     criteria: d.criteria.map((c) => ({ ...c, id: null })),
+    pairs: d.pairs.map((p) => ({ ...p, id: null })),
   };
 }
 
@@ -94,17 +166,43 @@ export const criteriaTotal = (d: Draft) => d.criteria.reduce((sum, c) => sum + (
 
 // Dữ liệu gửi lên máy chủ. Trắc nghiệm không có tiêu chí; câu có tiêu chí lấy điểm từ tổng tiêu chí.
 export function draftToInput(d: Draft): ItemInput {
-  const criteria = d.itemType === 'choice' ? [] : d.criteria.map((c) => ({ id: c.id, name: c.name, maxPoints: Number(c.maxPoints) }));
+  const hasOptions = ['choice', 'picture_choice', 'gap_fill', 'order'].includes(d.itemType);
+  const criteria = hasOptions ? [] : d.criteria.map((c) => ({ id: c.id, name: c.name, maxPoints: Number(c.maxPoints) }));
   return {
     id: d.id,
     skill: d.skill,
     itemType: d.itemType,
     prompt: d.prompt,
+    promptVi: d.promptVi.trim() ? d.promptVi.trim() : null,
     passage: d.passage,
-    points: criteria.length > 0 ? criteria.reduce((sum, c) => sum + c.maxPoints, 0) : Number(d.points),
+    referenceText: d.referenceText.trim() ? d.referenceText.trim() : null,
+    points: criteria.length > 0 ? criteria.reduce((sum, c) => sum + c.maxPoints, 0) : Number(d.points) || 1,
     audioFileId: d.audioFileId,
     bankQuestionId: d.bankQuestionId,
-    options: d.itemType === 'choice' ? d.options.map((o) => ({ id: o.id, label: o.label, isCorrect: o.isCorrect })) : [],
+    imageFileId: d.imageFileId,
+    modelAudioFileId: d.modelAudioFileId,
+    maxSeconds: d.maxSeconds ? Number(d.maxSeconds) : null,
+    sourceLicense: d.sourceLicense.trim() ? d.sourceLicense.trim() : null,
+    options: hasOptions
+      ? d.options.map((o) => ({
+          id: o.id,
+          label: o.label,
+          isCorrect: o.isCorrect,
+          imageFileId: o.imageFileId,
+          audioFileId: o.audioFileId,
+        }))
+      : [],
+    pairs:
+      d.itemType === 'match'
+        ? d.pairs.map((p, idx) => ({
+            id: p.id,
+            position: idx + 1,
+            leftLabel: p.leftLabel.trim(),
+            leftImageFileId: p.leftImageFileId,
+            rightLabel: p.rightLabel.trim(),
+            rightImageFileId: p.rightImageFileId,
+          }))
+        : [],
     criteria,
   };
 }

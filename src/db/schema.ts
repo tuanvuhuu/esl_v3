@@ -292,7 +292,18 @@ export const assignmentSubmissions = pgTable(
 
 // Bốn kỹ năng cố định (docs/NGHIEN-CUU-GIANG-DAY.md). Loại câu: trắc nghiệm (tự chấm), trả lời viết (chấm tay), nộp tệp (chấm tay).
 export const skillEnum = pgEnum('skill', ['listening', 'speaking', 'reading', 'writing']);
-export const itemTypeEnum = pgEnum('item_type', ['choice', 'text', 'file']);
+export const itemTypeEnum = pgEnum('item_type', [
+  'choice',
+  'text',
+  'file',
+  'picture_choice',
+  'match',
+  'order',
+  'gap_fill',
+  'speak_repeat',
+  'speak_read',
+  'speak_picture',
+]);
 
 // Tệp tải lên: âm thanh của đề, tệp bài nộp, tài liệu. Nội dung nằm trên Supabase Storage hoặc lưu trữ Google Drive (P34.25).
 export const uploadedFiles = pgTable(
@@ -311,7 +322,7 @@ export const uploadedFiles = pgTable(
   (t) => [uniqueIndex('uploaded_files_key').on(t.storageKey)],
 );
 
-// Câu hỏi bên trong một bài tập. Xoá bài thì xoá câu hỏi.
+// Câu hỏi bên trong một bài tập. Xoá bài thì xoá câu hỏi. Hỗ trợ các dạng câu P35 (tranh, âm thanh mẫu, ghi âm).
 export const assignmentItems = pgTable(
   'assignment_items',
   {
@@ -323,9 +334,15 @@ export const assignmentItems = pgTable(
     skill: skillEnum('skill').notNull(),
     itemType: itemTypeEnum('item_type').notNull(),
     prompt: text('prompt').notNull().default(''),
+    promptVi: text('prompt_vi').notNull().default(''),
     passage: text('passage').notNull().default(''),
     points: integer('points').notNull().default(1),
     audioFileId: integer('audio_file_id').references(() => uploadedFiles.id, { onDelete: 'set null' }),
+    imageFileId: integer('image_file_id').references(() => uploadedFiles.id, { onDelete: 'set null' }),
+    modelAudioFileId: integer('model_audio_file_id').references(() => uploadedFiles.id, { onDelete: 'set null' }),
+    referenceText: text('reference_text').notNull().default(''),
+    maxSeconds: integer('max_seconds').notNull().default(10),
+    sourceLicense: varchar('source_license', { length: 300 }).notNull().default(''),
     // Câu chép từ ngân hàng (P24). Xoá câu trong ngân hàng thì bài vẫn giữ nội dung đã chép.
     bankQuestionId: integer('bank_question_id').references(() => questions.id, { onDelete: 'set null' }),
     ...timestamps,
@@ -333,7 +350,7 @@ export const assignmentItems = pgTable(
   (t) => [index('assignment_items_assignment_idx').on(t.assignmentId, t.position), index('assignment_items_bank_idx').on(t.bankQuestionId)],
 );
 
-// Đáp án của câu trắc nghiệm. Đúng một đáp án đúng do giáo viên chọn khi soạn câu.
+// Đáp án của câu trắc nghiệm / chọn tranh. Có thể kèm ảnh hoặc âm thanh riêng của từng đáp án.
 export const assignmentItemOptions = pgTable(
   'assignment_item_options',
   {
@@ -343,9 +360,28 @@ export const assignmentItemOptions = pgTable(
       .references(() => assignmentItems.id, { onDelete: 'cascade' }),
     position: integer('position').notNull(),
     label: varchar('label', { length: 300 }).notNull(),
+    imageFileId: integer('image_file_id').references(() => uploadedFiles.id, { onDelete: 'set null' }),
+    audioFileId: integer('audio_file_id').references(() => uploadedFiles.id, { onDelete: 'set null' }),
     isCorrect: boolean('is_correct').notNull().default(false),
   },
   (t) => [index('assignment_item_options_item_idx').on(t.itemId)],
+);
+
+// Các cặp ghép đôi cho câu hỏi dạng match (P35)
+export const assignmentItemPairs = pgTable(
+  'assignment_item_pairs',
+  {
+    id: serial('id').primaryKey(),
+    itemId: integer('item_id')
+      .notNull()
+      .references(() => assignmentItems.id, { onDelete: 'cascade' }),
+    position: integer('position').notNull(),
+    leftLabel: varchar('left_label', { length: 300 }).notNull(),
+    leftImageFileId: integer('left_image_file_id').references(() => uploadedFiles.id, { onDelete: 'set null' }),
+    rightLabel: varchar('right_label', { length: 300 }).notNull(),
+    rightImageFileId: integer('right_image_file_id').references(() => uploadedFiles.id, { onDelete: 'set null' }),
+  },
+  (t) => [index('assignment_item_pairs_item_idx').on(t.itemId)],
 );
 
 export const materialKindEnum = pgEnum('material_kind', ['link', 'file']);
@@ -511,16 +547,22 @@ export const questions = pgTable(
     skill: skillEnum('skill').notNull(),
     itemType: itemTypeEnum('item_type').notNull(),
     prompt: text('prompt').notNull().default(''),
+    promptVi: text('prompt_vi').notNull().default(''),
     passage: text('passage').notNull().default(''),
     points: integer('points').notNull().default(1),
     audioFileId: integer('audio_file_id').references(() => uploadedFiles.id, { onDelete: 'set null' }),
+    imageFileId: integer('image_file_id').references(() => uploadedFiles.id, { onDelete: 'set null' }),
+    modelAudioFileId: integer('model_audio_file_id').references(() => uploadedFiles.id, { onDelete: 'set null' }),
+    referenceText: text('reference_text').notNull().default(''),
+    maxSeconds: integer('max_seconds').notNull().default(10),
+    sourceLicense: varchar('source_license', { length: 300 }).notNull().default(''),
     createdByAccountId: integer('created_by_account_id').references(() => accounts.id, { onDelete: 'set null' }),
     ...timestamps,
   },
   (t) => [index('questions_skill_idx').on(t.skill)],
 );
 
-// Đáp án của câu trong ngân hàng (trắc nghiệm)
+// Đáp án của câu trong ngân hàng (trắc nghiệm / chọn tranh)
 export const questionOptions = pgTable(
   'question_options',
   {
@@ -530,9 +572,28 @@ export const questionOptions = pgTable(
       .references(() => questions.id, { onDelete: 'cascade' }),
     position: integer('position').notNull(),
     label: varchar('label', { length: 300 }).notNull(),
+    imageFileId: integer('image_file_id').references(() => uploadedFiles.id, { onDelete: 'set null' }),
+    audioFileId: integer('audio_file_id').references(() => uploadedFiles.id, { onDelete: 'set null' }),
     isCorrect: boolean('is_correct').notNull().default(false),
   },
   (t) => [index('question_options_question_idx').on(t.questionId)],
+);
+
+// Các cặp ghép đôi cho câu hỏi dạng match trong ngân hàng
+export const questionPairs = pgTable(
+  'question_pairs',
+  {
+    id: serial('id').primaryKey(),
+    questionId: integer('question_id')
+      .notNull()
+      .references(() => questions.id, { onDelete: 'cascade' }),
+    position: integer('position').notNull(),
+    leftLabel: varchar('left_label', { length: 300 }).notNull(),
+    leftImageFileId: integer('left_image_file_id').references(() => uploadedFiles.id, { onDelete: 'set null' }),
+    rightLabel: varchar('right_label', { length: 300 }).notNull(),
+    rightImageFileId: integer('right_image_file_id').references(() => uploadedFiles.id, { onDelete: 'set null' }),
+  },
+  (t) => [index('question_pairs_question_idx').on(t.questionId)],
 );
 
 // Tiêu chí chấm của câu trong ngân hàng (viết, nộp tệp)

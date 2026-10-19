@@ -9,14 +9,15 @@ import { ITEM_TYPE_LABELS, SKILL_LABELS } from '@/lib/assignment-scoring';
 import type { StudentAssignmentView } from '@/lib/queries/student-portal';
 import { vnDateTimeLabel } from '@/lib/datetime';
 import { Btn } from '@/components/ui/Btn';
-import { Field, FileInput, textareaClass } from '@/components/ui/Field';
+import { Field, FileInput, inputClass, textareaClass } from '@/components/ui/Field';
 import { ActIcon } from '@/components/ui/ActIcon';
 import { SubmissionPill } from '@/components/assignments/SubmissionPill';
 import { Alert, Pill } from '@/components/ui/primitives';
 import { Toast, useToast } from '@/components/ui/Toast';
 import { Notice, Card } from '@/components/ui/surfaces';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { UPLOAD_ACCEPT } from '@/lib/upload-types';
+import { AUDIO_ACCEPT, UPLOAD_ACCEPT } from '@/lib/upload-types';
+import { InteractiveExercisePlayer } from '@/components/student/InteractiveExercisePlayer';
 
 // Các loại tệp học sinh có thể nộp. Khớp với danh sách máy chủ kiểm khi tải lên.
 
@@ -34,6 +35,14 @@ export function StudentAssignmentForm({ view }: { view: StudentAssignmentView })
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const locked = view.status === 'graded';
+
+  const hasInteractiveItems = view.items.some((i) =>
+    ['picture_choice', 'match', 'order', 'gap_fill', 'speak_repeat', 'speak_read', 'speak_picture'].includes(i.itemType),
+  );
+
+  const [isInteractive, setIsInteractive] = useState<boolean>(() => {
+    return !locked && hasInteractiveItems;
+  });
 
   function patch(itemId: number, next: Partial<Draft>) {
     setDrafts((prev) => ({ ...prev, [itemId]: { ...prev[itemId], ...next } }));
@@ -56,9 +65,9 @@ export function StudentAssignmentForm({ view }: { view: StudentAssignmentView })
       const d = drafts[i.id];
       return {
         itemId: i.id,
-        selectedOptionId: i.itemType === 'choice' ? d.selectedOptionId : null,
-        answerText: i.itemType === 'text' ? d.answerText : '',
-        fileId: i.itemType === 'file' ? d.fileId : null,
+        selectedOptionId: ['choice', 'picture_choice'].includes(i.itemType) ? d.selectedOptionId : null,
+        answerText: ['text', 'order', 'gap_fill', 'match'].includes(i.itemType) ? d.answerText : '',
+        fileId: ['file', 'speak_repeat', 'speak_read', 'speak_picture'].includes(i.itemType) ? d.fileId : null,
       };
     });
     startTransition(async () => {
@@ -68,6 +77,26 @@ export function StudentAssignmentForm({ view }: { view: StudentAssignmentView })
       notify(r.message ?? 'Đã nộp bài');
       router.refresh();
     });
+  }
+
+  if (isInteractive) {
+    return (
+      <div className="flex flex-col gap-4 py-2">
+        <div className="mx-auto flex w-full max-w-[420px] items-center justify-between text-xs">
+          <Link href="/cua-toi" className="font-bold text-ink underline">
+            ← Danh sách bài
+          </Link>
+          <button
+            type="button"
+            onClick={() => setIsInteractive(false)}
+            className="font-bold text-muted hover:text-ink underline"
+          >
+            📋 Chuyển sang dạng danh sách
+          </button>
+        </div>
+        <InteractiveExercisePlayer view={view} onExit={() => setIsInteractive(false)} />
+      </div>
+    );
   }
 
   return (
@@ -80,7 +109,16 @@ export function StudentAssignmentForm({ view }: { view: StudentAssignmentView })
           crumbs={['Khu học sinh', 'Bài của tôi']}
           title={view.title}
           subtitle={`Hạn ${vnDateTimeLabel(view.dueAt)} · tối đa ${view.maxScore} điểm${locked && view.score !== null ? ` · Điểm ${view.score}/${view.maxScore}` : ''}`}
-          actions={<SubmissionPill status={view.status} />}
+          actions={
+            <div className="flex items-center gap-2">
+              {!locked && hasInteractiveItems && (
+                <Btn variant="primary" onClick={() => setIsInteractive(true)}>
+                  🎮 Chế độ tương tác sinh động
+                </Btn>
+              )}
+              <SubmissionPill status={view.status} />
+            </div>
+          }
           titleOnTopbar={false}
         />
         {view.description && <Notice className="whitespace-pre-line">{view.description}</Notice>}
@@ -108,12 +146,14 @@ export function StudentAssignmentForm({ view }: { view: StudentAssignmentView })
                 </span>
               </header>
 
-              {item.prompt && <p className="whitespace-pre-line text-base text-ink">{item.prompt}</p>}
+              {item.prompt && <p className="whitespace-pre-line text-base text-ink font-bold">{item.prompt}</p>}
+              {item.promptVi && <p className="text-xs text-muted">🇻🇳 {item.promptVi}</p>}
               {item.passage && <Notice className="whitespace-pre-line">{item.passage}</Notice>}
               {item.audioFileId !== null && (
                 <audio controls preload="none" src={`/api/files/${item.audioFileId}`} aria-label={`Âm thanh câu ${item.position}`} className="w-full" />
               )}
 
+              {/* Trắc nghiệm chữ */}
               {item.itemType === 'choice' && (
                 <fieldset className="flex flex-col gap-1">
                   <legend className="mb-1 text-sm font-normal text-ink-2">Chọn một đáp án</legend>
@@ -135,6 +175,84 @@ export function StudentAssignmentForm({ view }: { view: StudentAssignmentView })
                 </fieldset>
               )}
 
+              {/* Nghe / Chọn tranh */}
+              {item.itemType === 'picture_choice' && (
+                <fieldset className="flex flex-col gap-2">
+                  <legend className="mb-1 text-sm font-normal text-ink-2">Chọn tranh đúng</legend>
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    {item.options.map((o) => {
+                      const isSel = d.selectedOptionId === o.id;
+                      return (
+                        <label
+                          key={o.id}
+                          className={`flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 p-3 text-center transition-all ${
+                            isSel ? 'border-[var(--accent)] bg-[var(--mint)] text-[var(--mint-ink)] font-bold' : 'border-line bg-surface hover:bg-stone text-ink'
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name={`answer-${item.id}`}
+                            checked={isSel}
+                            onChange={() => patch(item.id, { selectedOptionId: o.id })}
+                            disabled={locked}
+                            className="sr-only"
+                          />
+                          {o.imageFileId ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={`/api/files/${o.imageFileId}`} alt={o.label} className="max-h-20 max-w-full rounded object-contain" />
+                          ) : (
+                            <span className="text-4xl">🖼️</span>
+                          )}
+                          <span className="mt-1 text-xs truncate max-w-full">{o.label}</span>
+                          {isSel && <span className="mt-1 text-xs font-bold text-[var(--accent)]">✓ Đã chọn</span>}
+                        </label>
+                      );
+                    })}
+                  </div>
+                </fieldset>
+              )}
+
+              {/* Sắp xếp câu hoặc điền từ */}
+              {(item.itemType === 'order' || item.itemType === 'gap_fill') && (
+                <Field label={item.itemType === 'order' ? 'Xếp các từ thành câu đúng' : 'Điền từ vào chỗ trống'}>
+                  <input
+                    type="text"
+                    value={d.answerText}
+                    onChange={(e) => patch(item.id, { answerText: e.target.value })}
+                    disabled={locked}
+                    placeholder={item.itemType === 'order' ? 'Nhập câu hoàn chỉnh…' : 'Nhập từ còn thiếu…'}
+                    className={inputClass()}
+                  />
+                </Field>
+              )}
+
+              {/* Ghép đôi */}
+              {item.itemType === 'match' && (
+                <div className="flex flex-col gap-2">
+                  <span className="text-xs font-bold text-muted">Các cặp cần ghép đôi:</span>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    {item.pairs.map((p, pi) => (
+                      <div key={p.id} className="flex items-center justify-between rounded-lg border border-line bg-stone/40 p-2">
+                        <span className="font-bold">{pi + 1}. {p.leftLabel}</span>
+                        <span className="text-muted">⇄</span>
+                        <span className="font-bold text-ink">{p.rightLabel}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <Field label="Bài làm ghép đôi của bạn (hoặc vào Chế độ tương tác để chạm nối sinh động)">
+                    <input
+                      type="text"
+                      value={d.answerText}
+                      onChange={(e) => patch(item.id, { answerText: e.target.value })}
+                      disabled={locked}
+                      placeholder='VD: [{"left":"mother","right":"mẹ"}]'
+                      className={inputClass()}
+                    />
+                  </Field>
+                </div>
+              )}
+
+              {/* Tự luận viết */}
               {item.itemType === 'text' && (
                 <Field label="Bài làm của bạn">
                   <textarea
@@ -148,13 +266,16 @@ export function StudentAssignmentForm({ view }: { view: StudentAssignmentView })
                 </Field>
               )}
 
-              {item.itemType === 'file' && (
+              {/* Nộp tệp hoặc Ghi âm */}
+              {(item.itemType === 'file' || item.itemType === 'speak_repeat' || item.itemType === 'speak_read' || item.itemType === 'speak_picture') && (
                 <div className="flex flex-col gap-2">
-                  <span className="text-sm font-normal text-ink-2">Tệp bài làm</span>
+                  <span className="text-sm font-normal text-ink-2">
+                    {item.itemType === 'file' ? 'Tệp bài làm' : 'Bản ghi âm bài nói'}
+                  </span>
                   {d.fileId !== null ? (
                     <div className="flex flex-wrap items-center gap-2 text-sm">
                       <Paperclip className="size-4 text-muted" aria-hidden />
-                      <span className="text-ink">{d.fileName}</span>
+                      <span className="text-ink">{d.fileName || `Tệp ghi âm #${d.fileId}`}</span>
                       {!locked && (
                         <ActIcon label={`Bỏ tệp của câu ${item.position}`} onClick={() => patch(item.id, { fileId: null, fileName: null })}>
                           <X className="size-4" aria-hidden />
@@ -163,8 +284,8 @@ export function StudentAssignmentForm({ view }: { view: StudentAssignmentView })
                     </div>
                   ) : (
                     <FileInput
-                      label={`Tải tệp bài làm câu ${item.position}`}
-                      accept={UPLOAD_ACCEPT}
+                      label={item.itemType === 'file' ? `Tải tệp bài làm câu ${item.position}` : `Tải tệp ghi âm câu ${item.position}`}
+                      accept={item.itemType === 'file' ? UPLOAD_ACCEPT : AUDIO_ACCEPT}
                       disabled={locked || pending}
                       onFile={(file) => uploadFile(item.id, file)}
                     />

@@ -38,7 +38,20 @@ export type StudentItem = {
   points: number;
   audioFileId: number | null;
   audioName: string | null;
-  options: { id: number; label: string }[];
+  imageFileId: number | null;
+  modelAudioFileId: number | null;
+  promptVi: string | null;
+  referenceText: string | null;
+  maxSeconds: number | null;
+  options: { id: number; label: string; imageFileId: number | null; audioFileId: number | null }[];
+  pairs: {
+    id: number;
+    position: number;
+    leftLabel: string;
+    leftImageFileId: number | null;
+    rightLabel: string;
+    rightImageFileId: number | null;
+  }[];
   criteriaCount: number;
 };
 
@@ -112,7 +125,25 @@ export async function studentAssignment(assignmentId: number, studentId: number)
       points: i.points,
       audioFileId: i.audioFileId,
       audioName: i.audioName,
-      options: i.options.map((o) => ({ id: o.id, label: o.label })),
+      imageFileId: i.imageFileId,
+      modelAudioFileId: i.modelAudioFileId,
+      promptVi: i.promptVi,
+      referenceText: i.referenceText,
+      maxSeconds: i.maxSeconds,
+      options: i.options.map((o) => ({
+        id: o.id,
+        label: o.label,
+        imageFileId: o.imageFileId,
+        audioFileId: o.audioFileId,
+      })),
+      pairs: i.pairs.map((p) => ({
+        id: p.id,
+        position: p.position,
+        leftLabel: p.leftLabel,
+        leftImageFileId: p.leftImageFileId,
+        rightLabel: p.rightLabel,
+        rightImageFileId: p.rightImageFileId,
+      })),
       criteriaCount: i.criteria.length,
     })),
     answers: items.map((i) => {

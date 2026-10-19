@@ -5,9 +5,36 @@ export const SKILLS = ['listening', 'speaking', 'reading', 'writing'] as const;
 export type Skill = (typeof SKILLS)[number];
 export const SKILL_LABELS: Record<Skill, string> = { listening: 'Nghe', speaking: 'Nói', reading: 'Đọc', writing: 'Viết' };
 
-export const ITEM_TYPES = ['choice', 'text', 'file'] as const;
+export const ITEM_TYPES = [
+  'choice',
+  'text',
+  'file',
+  'picture_choice',
+  'match',
+  'order',
+  'gap_fill',
+  'speak_repeat',
+  'speak_read',
+  'speak_picture',
+] as const;
 export type ItemType = (typeof ITEM_TYPES)[number];
-export const ITEM_TYPE_LABELS: Record<ItemType, string> = { choice: 'Trắc nghiệm', text: 'Trả lời viết', file: 'Nộp tệp' };
+export const ITEM_TYPE_LABELS: Record<ItemType, string> = {
+  choice: 'Trắc nghiệm',
+  text: 'Trả lời viết',
+  file: 'Nộp tệp',
+  picture_choice: 'Nghe / Chọn tranh',
+  match: 'Ghép đôi',
+  order: 'Sắp xếp câu / từ',
+  gap_fill: 'Điền chỗ trống',
+  speak_repeat: 'Nghe nhắc lại',
+  speak_read: 'Đọc to',
+  speak_picture: 'Nói về tranh',
+};
+
+// Các dạng câu được chấm tự động ngay khi học sinh nộp bài
+export function isAutoScoredItem(itemType: ItemType): boolean {
+  return itemType === 'choice' || itemType === 'picture_choice' || itemType === 'match' || itemType === 'order' || itemType === 'gap_fill';
+}
 
 // Mẫu tiêu chí IELTS (P23): mỗi tiêu chí tối đa 5 điểm, câu có bốn tiêu chí là 20 điểm.
 // Một câu nhiều nhất 8 tiêu chí, mỗi tiêu chí tối đa 10 điểm.
@@ -25,14 +52,19 @@ export const RUBRIC_PRESETS: Record<'writing' | 'speaking', { label: string; cri
   },
 };
 
-export type ScoringOption = { id: number; isCorrect: boolean };
+export type ScoringOption = { id: number; label?: string; isCorrect: boolean };
+export type ScoringPair = { id: number; leftLabel: string; rightLabel: string };
 export type ScoringCriterion = { id: number; maxPoints: number };
 export type ScoringItem = {
   id: number;
   skill: Skill;
   itemType: ItemType;
   points: number; // điểm tối đa của câu; câu có tiêu chí thì bằng tổng điểm tối đa các tiêu chí
+  prompt?: string;
+  promptVi?: string;
+  referenceText?: string;
   options: ScoringOption[];
+  pairs?: ScoringPair[];
   criteria: ScoringCriterion[];
 };
 export type ScoringAnswer = {
@@ -55,14 +87,71 @@ export type SubmissionSummary = {
   points: Record<number, number | null>; // điểm từng câu theo id; null khi chưa chấm
 };
 
-// Điểm một câu. Trắc nghiệm không chọn thì 0. Câu có tiêu chí: đủ mọi tiêu chí thì bằng tổng, thiếu thì chưa chấm.
-// Câu viết và nộp tệp không có tiêu chí: lấy điểm giáo viên đã nhập.
+// Chuẩn hoá câu để so khớp dạng sắp xếp và điền từ: bỏ dấu câu, chữ thường, gọn khoảng trắng
+export function normalizeSentence(str: string): string {
+  return str
+    .toLowerCase()
+    .replace(/[.,/#!$%^&*;:{}=\-_`~()?]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+// Điểm một câu. Tự động chấm cho choice, picture_choice, match, order, gap_fill.
+// Câu có tiêu chí: đủ mọi tiêu chí thì bằng tổng, thiếu thì chưa chấm.
+// Câu viết, nộp tệp và các dạng nói tự do: lấy điểm giáo viên đã nhập.
 export function itemPoints(item: ScoringItem, answer: ScoringAnswer | undefined): number | null {
-  if (item.itemType === 'choice') {
+  // 1. Trắc nghiệm & Chọn tranh: chọn đúng được điểm tối đa, sai hoặc chưa chọn thì 0
+  if (item.itemType === 'choice' || item.itemType === 'picture_choice') {
     if (!answer || answer.selectedOptionId === null) return 0;
     const picked = item.options.find((o) => o.id === answer.selectedOptionId);
     return picked?.isCorrect ? item.points : 0;
   }
+
+  // 2. Sắp xếp câu / từ (order): so khớp câu hoàn chỉnh sau khi chuẩn hoá
+  if (item.itemType === 'order') {
+    if (!answer || !answer.answerText.trim()) return 0;
+    const target = normalizeSentence(item.referenceText || '');
+    const user = normalizeSentence(answer.answerText);
+    return target === user ? item.points : 0;
+  }
+
+  // 3. Điền chỗ trống (gap_fill): so khớp với đáp án chấp nhận được
+  if (item.itemType === 'gap_fill') {
+    if (!answer || !answer.answerText.trim()) return 0;
+    const user = answer.answerText.trim().toLowerCase();
+    const acceptable = (item.referenceText || '')
+      .split(/[|,]/)
+      .map((s) => s.trim().toLowerCase())
+      .filter(Boolean);
+    for (const opt of item.options.filter((o) => o.isCorrect)) {
+      if (opt.label) acceptable.push(opt.label.trim().toLowerCase());
+    }
+    return acceptable.includes(user) ? item.points : 0;
+  }
+
+  // 4. Ghép đôi (match): tính điểm theo tỷ lệ cặp ghép đúng
+  if (item.itemType === 'match') {
+    if (!answer || !answer.answerText.trim() || !item.pairs || item.pairs.length === 0) return 0;
+    try {
+      const userPairs = JSON.parse(answer.answerText) as { left?: string; right?: string }[];
+      if (!Array.isArray(userPairs)) return 0;
+      let matchedCount = 0;
+      for (const pair of item.pairs) {
+        const found = userPairs.find(
+          (up) =>
+            up.left?.trim().toLowerCase() === pair.leftLabel.trim().toLowerCase() &&
+            up.right?.trim().toLowerCase() === pair.rightLabel.trim().toLowerCase(),
+        );
+        if (found) matchedCount++;
+      }
+      const score = (matchedCount / item.pairs.length) * item.points;
+      return Math.round(score * 100) / 100;
+    } catch {
+      return 0;
+    }
+  }
+
+  // 5. Câu có tiêu chí chấm (kể cả nói hoặc viết)
   if (item.criteria.length > 0) {
     let total = 0;
     for (const c of item.criteria) {
@@ -72,13 +161,17 @@ export function itemPoints(item: ScoringItem, answer: ScoringAnswer | undefined)
     }
     return total;
   }
+
+  // 6. Câu viết, nộp tệp và câu nói do giáo viên cho điểm
   return answer?.points ?? null;
 }
 
 // Câu đã được làm: có đáp án, có chữ, có tệp, có điểm, hoặc có điểm ở một tiêu chí
 function isAnswered(item: ScoringItem, answer: ScoringAnswer | undefined): boolean {
   if (!answer) return false;
-  if (item.itemType === 'choice') return answer.selectedOptionId !== null;
+  if (item.itemType === 'choice' || item.itemType === 'picture_choice') {
+    return answer.selectedOptionId !== null;
+  }
   const criterionDone = item.criteria.some((c) => (answer.criterionPoints?.[c.id] ?? null) !== null);
   return answer.answerText.trim() !== '' || answer.fileId !== null || answer.points !== null || criterionDone;
 }

@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { db } from '@/db/client';
 import { assignmentSubmissions, submissionCriterionScores, submissionItemScores, uploadedFiles } from '@/db/schema';
 import { writeAudit } from '@/lib/authz';
-import { storedScore, summarizeSubmission, type ScoringAnswer } from '@/lib/assignment-scoring';
+import { isAutoScoredItem, storedScore, summarizeSubmission, type ScoringAnswer } from '@/lib/assignment-scoring';
 import { listItemsOfAssignment, toScoringItems } from '@/lib/queries/assignment-items';
 import { getAssignmentBase } from '@/lib/queries/assignments';
 import { criterionScoresOf, enrolledStudent, existingSubmissionScores } from '@/lib/queries/student-portal';
@@ -91,7 +91,7 @@ export async function submitMyAnswersAction(assignmentId: number, input: Student
         selectedOptionId: row?.selectedOptionId ?? null,
         answerText: row?.answerText ?? '',
         fileId: row?.fileId ?? null,
-        points: item.itemType === 'choice' ? null : (prior?.points ?? null),
+        points: isAutoScoredItem(item.itemType) ? null : (prior?.points ?? null),
         criterionPoints: Object.fromEntries(item.criteria.map((c) => [c.id, keptCriteria.find((k) => k.criterionId === c.id)?.points ?? null])),
       };
     });

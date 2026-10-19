@@ -5,6 +5,7 @@ import {
   accounts,
   assignmentItemCriteria,
   assignmentItemOptions,
+  assignmentItemPairs,
   assignmentItems,
   assignmentSubmissions,
   students,
@@ -15,8 +16,23 @@ import {
 } from '@/db/schema';
 import { summarizeSubmission, type ItemType, type ScoringAnswer, type ScoringItem, type Skill, type SubmissionSummary } from '@/lib/assignment-scoring';
 
-export type ItemOption = { id: number; position: number; label: string; isCorrect: boolean };
+export type ItemOption = {
+  id: number;
+  position: number;
+  label: string;
+  isCorrect: boolean;
+  imageFileId: number | null;
+  audioFileId: number | null;
+};
 export type ItemCriterion = { id: number; position: number; name: string; maxPoints: number };
+export type ItemPair = {
+  id: number;
+  position: number;
+  leftLabel: string;
+  leftImageFileId: number | null;
+  rightLabel: string;
+  rightImageFileId: number | null;
+};
 
 export type AssignmentItem = {
   id: number;
@@ -29,8 +45,15 @@ export type AssignmentItem = {
   audioFileId: number | null;
   audioName: string | null;
   bankQuestionId: number | null;
+  imageFileId: number | null;
+  modelAudioFileId: number | null;
+  promptVi: string | null;
+  referenceText: string | null;
+  maxSeconds: number | null;
+  sourceLicense: string | null;
   options: ItemOption[];
   criteria: ItemCriterion[];
+  pairs: ItemPair[];
 };
 
 // Câu hỏi của một bài, theo thứ tự, kèm đáp án, tiêu chí và tên tệp âm thanh
@@ -53,6 +76,12 @@ export async function listItemsForAssignments(assignmentIds: number[]): Promise<
       points: assignmentItems.points,
       audioFileId: assignmentItems.audioFileId,
       bankQuestionId: assignmentItems.bankQuestionId,
+      imageFileId: assignmentItems.imageFileId,
+      modelAudioFileId: assignmentItems.modelAudioFileId,
+      promptVi: assignmentItems.promptVi,
+      referenceText: assignmentItems.referenceText,
+      maxSeconds: assignmentItems.maxSeconds,
+      sourceLicense: assignmentItems.sourceLicense,
       audioName: uploadedFiles.originalName,
     })
     .from(assignmentItems)
@@ -69,6 +98,8 @@ export async function listItemsForAssignments(assignmentIds: number[]): Promise<
       position: assignmentItemOptions.position,
       label: assignmentItemOptions.label,
       isCorrect: assignmentItemOptions.isCorrect,
+      imageFileId: assignmentItemOptions.imageFileId,
+      audioFileId: assignmentItemOptions.audioFileId,
     })
     .from(assignmentItemOptions)
     .where(inArray(assignmentItemOptions.itemId, itemIds))
@@ -86,6 +117,20 @@ export async function listItemsForAssignments(assignmentIds: number[]): Promise<
     .where(inArray(assignmentItemCriteria.itemId, itemIds))
     .orderBy(asc(assignmentItemCriteria.position), asc(assignmentItemCriteria.id));
 
+  const pairs = await db
+    .select({
+      id: assignmentItemPairs.id,
+      itemId: assignmentItemPairs.itemId,
+      position: assignmentItemPairs.position,
+      leftLabel: assignmentItemPairs.leftLabel,
+      leftImageFileId: assignmentItemPairs.leftImageFileId,
+      rightLabel: assignmentItemPairs.rightLabel,
+      rightImageFileId: assignmentItemPairs.rightImageFileId,
+    })
+    .from(assignmentItemPairs)
+    .where(inArray(assignmentItemPairs.itemId, itemIds))
+    .orderBy(asc(assignmentItemPairs.position), asc(assignmentItemPairs.id));
+
   const byAssignment = new Map<number, AssignmentItem[]>();
   for (const id of assignmentIds) byAssignment.set(id, []);
   for (const i of items) {
@@ -100,12 +145,35 @@ export async function listItemsForAssignments(assignmentIds: number[]): Promise<
       audioFileId: i.audioFileId,
       audioName: i.audioName ?? null,
       bankQuestionId: i.bankQuestionId,
+      imageFileId: i.imageFileId,
+      modelAudioFileId: i.modelAudioFileId,
+      promptVi: i.promptVi,
+      referenceText: i.referenceText,
+      maxSeconds: i.maxSeconds,
+      sourceLicense: i.sourceLicense,
       options: options
         .filter((o) => o.itemId === i.id)
-        .map((o) => ({ id: o.id, position: o.position, label: o.label, isCorrect: o.isCorrect })),
+        .map((o) => ({
+          id: o.id,
+          position: o.position,
+          label: o.label,
+          isCorrect: o.isCorrect,
+          imageFileId: o.imageFileId,
+          audioFileId: o.audioFileId,
+        })),
       criteria: criteria
         .filter((c) => c.itemId === i.id)
         .map((c) => ({ id: c.id, position: c.position, name: c.name, maxPoints: c.maxPoints })),
+      pairs: pairs
+        .filter((p) => p.itemId === i.id)
+        .map((p) => ({
+          id: p.id,
+          position: p.position,
+          leftLabel: p.leftLabel,
+          leftImageFileId: p.leftImageFileId,
+          rightLabel: p.rightLabel,
+          rightImageFileId: p.rightImageFileId,
+        })),
     };
     byAssignment.get(i.assignmentId)?.push(list);
   }
@@ -119,7 +187,11 @@ export function toScoringItems(items: AssignmentItem[]): ScoringItem[] {
     skill: i.skill,
     itemType: i.itemType,
     points: i.points,
-    options: i.options.map((o) => ({ id: o.id, isCorrect: o.isCorrect })),
+    prompt: i.prompt,
+    promptVi: i.promptVi ?? undefined,
+    referenceText: i.referenceText ?? undefined,
+    options: i.options.map((o) => ({ id: o.id, label: o.label, isCorrect: o.isCorrect })),
+    pairs: i.pairs.map((p) => ({ id: p.id, leftLabel: p.leftLabel, rightLabel: p.rightLabel })),
     criteria: i.criteria.map((c) => ({ id: c.id, maxPoints: c.maxPoints })),
   }));
 }

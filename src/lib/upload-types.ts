@@ -3,3 +3,6 @@ export const UPLOAD_ACCEPT = 'audio/*,application/pdf,image/png,image/jpeg,text/
 
 // Âm thanh của câu hỏi (đề nghe)
 export const AUDIO_ACCEPT = 'audio/*';
+
+// Hình ảnh câu hỏi và đáp án tranh (P35)
+export const IMAGE_ACCEPT = 'image/png,image/jpeg,image/webp,image/gif';

@@ -6,6 +6,7 @@ import { db } from '@/db/client';
 import {
   assignmentItemCriteria,
   assignmentItemOptions,
+  assignmentItemPairs,
   assignmentItems,
   assignmentSubmissions,
   assignments,
@@ -47,7 +48,27 @@ export type ItemInput = {
   points: number;
   audioFileId: number | null;
   bankQuestionId: number | null;
-  options: { id: number | null; label: string; isCorrect: boolean }[];
+  imageFileId?: number | null;
+  modelAudioFileId?: number | null;
+  promptVi?: string | null;
+  referenceText?: string | null;
+  maxSeconds?: number | null;
+  sourceLicense?: string | null;
+  options: {
+    id: number | null;
+    label: string;
+    isCorrect: boolean;
+    imageFileId?: number | null;
+    audioFileId?: number | null;
+  }[];
+  pairs?: {
+    id: number | null;
+    position: number;
+    leftLabel: string;
+    leftImageFileId: number | null;
+    rightLabel: string;
+    rightImageFileId: number | null;
+  }[];
   criteria: CriterionInput[];
 };
 
@@ -63,11 +84,19 @@ export async function saveAssignmentItemsAction(assignmentId: number, input: Ite
     if (!parsed.success) return { ok: false, message: parsed.error.issues[0]?.message ?? 'Câu hỏi không hợp lệ' };
     const items = parsed.data;
 
-    // Tệp âm thanh phải còn trên máy chủ
-    const audioIds = [...new Set(items.map((i) => i.audioFileId).filter((x): x is number => x !== null))];
-    if (audioIds.length > 0) {
-      const found = await db.select({ id: uploadedFiles.id }).from(uploadedFiles).where(inArray(uploadedFiles.id, audioIds));
-      if (found.length !== audioIds.length) return { ok: false, message: 'Có tệp âm thanh không còn trên máy chủ. Tải lại tệp rồi lưu.' };
+    // Tệp âm thanh/hình ảnh phải còn trên máy chủ
+    const fileIds = [
+      ...new Set([
+        ...items.map((i) => i.audioFileId),
+        ...items.map((i) => i.imageFileId),
+        ...items.map((i) => i.modelAudioFileId),
+        ...items.flatMap((i) => i.options.flatMap((o) => [o.imageFileId, o.audioFileId])),
+        ...items.flatMap((i) => (i.pairs ?? []).flatMap((p) => [p.leftImageFileId, p.rightImageFileId])),
+      ].filter((x): x is number => x !== null && x !== undefined)),
+    ];
+    if (fileIds.length > 0) {
+      const found = await db.select({ id: uploadedFiles.id }).from(uploadedFiles).where(inArray(uploadedFiles.id, fileIds));
+      if (found.length !== fileIds.length) return { ok: false, message: 'Có tệp hình ảnh/âm thanh không còn trên máy chủ. Tải lại tệp rồi lưu.' };
     }
 
     const existing = await listItemsOfAssignment(assignmentId);
@@ -111,7 +140,8 @@ export async function saveAssignmentItemsAction(assignmentId: number, input: Ite
       if (item.id === null) continue;
       const before = existingById.get(item.id);
       if (!before) continue;
-      const keptOptionIds = new Set(item.itemType === 'choice' ? item.options.map((o) => o.id).filter((x): x is number => x !== null) : []);
+      const hasOptions = ['choice', 'picture_choice', 'gap_fill', 'order'].includes(item.itemType);
+      const keptOptionIds = new Set(hasOptions ? item.options.map((o) => o.id).filter((x): x is number => x !== null) : []);
       const dropped = before.options.find((o) => !keptOptionIds.has(o.id) && usedOptionIds.has(o.id));
       if (dropped) return { ok: false, message: `Đáp án "${dropped.label}" đã được chọn trong bài làm nên không bỏ được.` };
 
@@ -143,6 +173,12 @@ export async function saveAssignmentItemsAction(assignmentId: number, input: Ite
           points: item.points,
           audioFileId: item.audioFileId,
           bankQuestionId: item.bankQuestionId,
+          imageFileId: item.imageFileId ?? null,
+          modelAudioFileId: item.modelAudioFileId ?? null,
+          promptVi: item.promptVi ?? null,
+          referenceText: item.referenceText ?? null,
+          maxSeconds: item.maxSeconds ?? null,
+          sourceLicense: item.sourceLicense ?? null,
           updatedAt: new Date(),
         };
         let itemId: number;
@@ -154,19 +190,46 @@ export async function saveAssignmentItemsAction(assignmentId: number, input: Ite
           itemId = created.id;
         }
 
-        // Đáp án: câu không phải trắc nghiệm không có đáp án. Đáp án cũ giữ id, bỏ đáp án không còn.
-        const wanted = item.itemType === 'choice' ? item.options : [];
-        const keep = new Set(wanted.map((o) => o.id).filter((x): x is number => x !== null));
+        // Đáp án: các dạng choice, picture_choice, gap_fill, order có đáp án
+        const hasOptions = ['choice', 'picture_choice', 'gap_fill', 'order'].includes(item.itemType);
+        const wanted = hasOptions ? item.options : [];
+        const keep = new Set(wanted.map((o) => o.id).filter((x): x is number => x !== null && x !== undefined));
         const current = existingById.get(itemId)?.options ?? [];
         const drop = current.map((o) => o.id).filter((id) => !keep.has(id));
         if (drop.length > 0) await tx.delete(assignmentItemOptions).where(inArray(assignmentItemOptions.id, drop));
         for (const [oi, opt] of wanted.entries()) {
-          const optionValues = { itemId, position: oi + 1, label: opt.label, isCorrect: opt.isCorrect };
-          if (opt.id !== null && keep.has(opt.id)) await tx.update(assignmentItemOptions).set(optionValues).where(eq(assignmentItemOptions.id, opt.id));
+          const optionValues = {
+            itemId,
+            position: oi + 1,
+            label: opt.label,
+            isCorrect: opt.isCorrect,
+            imageFileId: opt.imageFileId ?? null,
+            audioFileId: opt.audioFileId ?? null,
+          };
+          if (opt.id && keep.has(opt.id)) await tx.update(assignmentItemOptions).set(optionValues).where(eq(assignmentItemOptions.id, opt.id));
           else await tx.insert(assignmentItemOptions).values(optionValues);
         }
 
-        // Tiêu chí: câu viết và nộp tệp có thể có; bỏ tiêu chí không còn, giữ id tiêu chí cũ
+        // Cặp ghép đôi: chỉ dạng match
+        const wantedPairs = item.itemType === 'match' ? (item.pairs ?? []) : [];
+        const keepPairs = new Set(wantedPairs.map((p) => p.id).filter((x): x is number => x !== null && x !== undefined));
+        const currentPairs = existingById.get(itemId)?.pairs ?? [];
+        const dropPairs = currentPairs.map((p) => p.id).filter((id) => !keepPairs.has(id));
+        if (dropPairs.length > 0) await tx.delete(assignmentItemPairs).where(inArray(assignmentItemPairs.id, dropPairs));
+        for (const [pi, pair] of wantedPairs.entries()) {
+          const pairValues = {
+            itemId,
+            position: pi + 1,
+            leftLabel: pair.leftLabel,
+            leftImageFileId: pair.leftImageFileId ?? null,
+            rightLabel: pair.rightLabel,
+            rightImageFileId: pair.rightImageFileId ?? null,
+          };
+          if (pair.id && keepPairs.has(pair.id)) await tx.update(assignmentItemPairs).set(pairValues).where(eq(assignmentItemPairs.id, pair.id));
+          else await tx.insert(assignmentItemPairs).values(pairValues);
+        }
+
+        // Tiêu chí: câu viết, nộp tệp và các dạng nói có thể có; bỏ tiêu chí không còn, giữ id tiêu chí cũ
         const keepCriteria = new Set(item.criteria.map((c) => c.id).filter((x): x is number => x !== null));
         const currentCriteria = existingById.get(itemId)?.criteria ?? [];
         const dropCriteria = currentCriteria.map((c) => c.id).filter((id) => !keepCriteria.has(id));
