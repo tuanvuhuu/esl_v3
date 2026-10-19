@@ -82,3 +82,15 @@ export async function POST(request: Request) {
   }
   return new Response('ok');
 }
+
+export async function GET() {
+  const { botToken, webhookSecret } = await import('@/lib/telegram/api');
+  const token = botToken();
+  const secret = webhookSecret();
+  return Response.json({
+    hasToken: !!token,
+    tokenPrefix: token ? token.slice(0, 10) + '...' : null,
+    hasSecret: !!secret,
+    timestamp: new Date().toISOString(),
+  });
+}

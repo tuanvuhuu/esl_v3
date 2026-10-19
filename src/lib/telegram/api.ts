@@ -20,7 +20,10 @@ type ApiResult<T> = { ok: true; result: T } | { ok: false; description: string }
 
 async function call<T>(method: string, body: Record<string, unknown>): Promise<ApiResult<T>> {
   const token = botToken();
-  if (!token) return { ok: false, description: 'Chưa cấu hình TELEGRAM_BOT_TOKEN' };
+  if (!token) {
+    console.error('❌ Lỗi gọi Telegram: Thiếu TELEGRAM_BOT_TOKEN trong biến môi trường!');
+    return { ok: false, description: 'Chưa cấu hình TELEGRAM_BOT_TOKEN' };
+  }
   try {
     const response = await fetch(`${API}/bot${token}/${method}`, {
       method: 'POST',
@@ -29,10 +32,13 @@ async function call<T>(method: string, body: Record<string, unknown>): Promise<A
       signal: AbortSignal.timeout(10_000),
     });
     const data = (await response.json()) as { ok: boolean; result?: T; description?: string };
+    if (!data.ok) {
+      console.error(`❌ Telegram ${method} thất bại:`, data.description ?? `HTTP ${response.status}`);
+    }
     return data.ok ? { ok: true, result: data.result as T } : { ok: false, description: data.description ?? `HTTP ${response.status}` };
   } catch (error) {
     // Không ghi token vào log: chỉ ghi tên phương thức và lỗi
-    console.error(`Lỗi gọi Telegram ${method}:`, error instanceof Error ? error.message : error);
+    console.error(`❌ Lỗi mạng khi gọi Telegram ${method}:`, error instanceof Error ? error.message : error);
     return { ok: false, description: 'Không kết nối được Telegram' };
   }
 }
