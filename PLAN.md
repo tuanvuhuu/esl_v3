@@ -1,6 +1,6 @@
 # ESL Center: kế hoạch và tiến độ
 
-> **Tiến độ tổng: 143/154 task (92%)**
+> **Tiến độ tổng: 143/165 task (86%)**
 > Cập nhật lần cuối: 2026-10-17. Hoàn thành và kiểm chứng E2E toàn bộ 142/142 task: 15.3 (chuẩn giao diện trang học sinh), 15.4 (sửa phụ huynh qua modal), 15.6 (thanh hành động mobile dính dưới cho điểm danh), 15.8 (chuẩn UI toàn diện mọi route, modal, profile), 18.5 (bài giảng đa cơ sở), 22.7 (hoàn thành qua P23–P29), P25 (bài giảng và tài liệu: 25.1, 25.2, 25.3), P28 (cổng học sinh: 28.1, 28.2, 28.3, 28.4), 30.2 (mật khẩu mặc định esl123 cho nhân viên mới), 32.3 (Server Action chặn hành vi ngoài phạm vi cơ sở). Số đếm lấy từ các ô `[x]` và `[ ]` trong file.
 
 ## 🎯 Các task vừa hoàn thành & Lệnh test riêng (Không chạy all)
@@ -309,7 +309,7 @@ Nghiên cứu ở `docs/NGHIEN-CUU-BAI-TAP-ONLINE.md` (mục 10 và 13.5 là ph�
 
 ## P34. Lưu tệp trên Supabase Storage và bot Telegram hai chiều
 
-Bối cảnh (2026-10-19): tệp tải lên (âm thanh đề, bài nộp, tài liệu, sau này là bản ghi âm bài nói) đang lưu trên ổ đĩa máy chủ, nên chạy trên Vercel sẽ mất. Người dùng chốt: lưu tệp trên **Supabase Storage**, kết hợp **bot Telegram** để gửi và nhận tin với phụ huynh, nhân viên. Đã cân nhắc và bỏ: dùng Telegram làm kho tệp (dữ liệu trẻ em nằm ở ứng dụng nước ngoài, không cam kết lưu trữ, khó xoá theo yêu cầu), Cloudflare R2, Firebase Storage (bắt buộc gói Blaze).
+Bối cảnh (2026-10-19): tệp tải lên (âm thanh đề, bài nộp, tài liệu, sau này là bản ghi âm bài nói) đang lưu trên ổ đĩa máy chủ, nên chạy trên Vercel sẽ mất. Người dùng chốt: chỉ lưu tệp trên **Supabase Storage** (database giữ ở Neon), kết hợp **bot Telegram** để gửi và nhận tin với phụ huynh, nhân viên. Đã cân nhắc và bỏ: dùng Telegram làm kho tệp (dữ liệu trẻ em nằm ở ứng dụng nước ngoài, không cam kết lưu trữ, khó xoá theo yêu cầu), Cloudflare R2, Firebase Storage (bắt buộc gói Blaze).
 
 **Mã đã viết dở, giữ lại để dùng tiếp:** nhánh `wip/telegram-luu-tep` (commit b5863d5), chưa merge. Gồm `lib/telegram` (gọi API, đọc lệnh, nghiệp vụ), webhook `/api/telegram/webhook`, màn `/tin-nhan`, nút Kết nối Telegram ở màn Phụ huynh và menu tài khoản, nhắc học phí, báo giáo viên khi học sinh nộp bài, khối Telegram trong Cài đặt, `lib/blob-store.ts` (driver Firebase, cần thay bằng Supabase). Typecheck, lint và unit đạt; E2E Telegram còn một lỗi (hai nút cùng tên "Đóng" trong hộp thoại).
 
@@ -333,16 +333,33 @@ Bối cảnh (2026-10-19): tệp tải lên (âm thanh đề, bài nộp, tài l
 ### Bot Telegram hai chiều
 - [ ] **34.6** Merge phần Telegram từ nhánh WIP (schema 0014 đã áp dụng): kết nối bằng mã dùng một lần 7 ngày (`/start <mã>`), cho phụ huynh (màn Phụ huynh, nút ⋯ và nút trên thẻ điện thoại) và cho nhân viên (menu tài khoản → Kết nối Telegram). Sửa lỗi E2E hai nút "Đóng". Kiểm chứng: E2E webhook giả lập `/start`, sai mã bí mật thì 401, mã dùng lần hai bị từ chối.
 - [ ] **34.7** Lệnh cho phụ huynh: `/lich` (lịch 7 ngày tới của con), `/hocphi` (còn thiếu, đã đóng), `/baitap` (bài chưa nộp), `/huy` (ngừng nhận tin), `/help`. Tin thường lưu vào hộp tin, bot báo đã nhận tối đa một lần mỗi 6 giờ. Kiểm chứng: E2E từng lệnh, nội dung đúng con của phụ huynh đó.
-- [ ] **34.8** Màn **Tin nhắn** (`/tin-nhan`, quyền quản lý phụ huynh): danh sách cuộc trò chuyện chỉ gồm phụ huynh có con ở cơ sở trong phạm vi (P32), tin mới có nhãn, khung tin, trả lời gửi qua bot; số tin chưa đọc trên menu. Kiểm chứng: E2E trả lời; tài khoản một cơ sở không thấy phụ huynh cơ sở khác.
+- [ ] **34.8** Màn **Tin nhắn** (`/tin-nhan`, quyền quản lý phụ huynh; giáo viên xem theo lớp ở 34.12): danh sách cuộc trò chuyện chỉ gồm phụ huynh có con ở cơ sở trong phạm vi (P32), tin mới có nhãn, khung tin, trả lời gửi qua bot; số tin chưa đọc trên menu. Kiểm chứng: E2E trả lời; tài khoản một cơ sở không thấy phụ huynh cơ sở khác.
 - [ ] **34.9** Thông báo tự động: nút Nhắc học phí gửi cho phụ huynh đã kết nối; học sinh nộp bài thì báo giáo viên chủ nhiệm, trợ giảng, giáo viên nước ngoài đã kết nối; (sau P33) giáo viên chấm bài nói xong thì gửi nhận xét và mẫu nói cho phụ huynh. Gửi lỗi không làm hỏng việc chính. Kiểm chứng: E2E ghi đúng tin ra trong `telegram_messages`.
 - [ ] **34.10** Cài webhook từ Cài đặt trên bản deploy (nút Cài webhook, kiểm `X-Telegram-Bot-Api-Secret-Token`), xem trạng thái bot và lỗi gần nhất. Kiểm chứng: gửi `/help` cho bot thật, bot trả lời.
 - [ ] **34.11** Quyền riêng tư: ghi trong điều khoản cho phụ huynh rằng kết nối Telegram là đồng ý nhận tin; `/huy` ngừng ngay; xoá tin nhắn cũ theo thời hạn lưu (cùng thời hạn với bản ghi âm ở P33). Kiểm chứng: `/huy` thì không còn tin nào được gửi.
 
-### Câu hỏi cần người dùng chốt
-1. Chỉ dùng Supabase để **lưu tệp**, hay chuyển luôn **database** từ Neon sang Supabase Postgres? (Chuyển database cần thêm việc: dump/restore dữ liệu, đổi `DATABASE_URL`, chạy lại E2E.)
-2. Tin gửi phụ huynh đứng tên trung tâm chung, hay ghi tên giáo viên trả lời?
-3. Ngoài nhắc học phí và báo nộp bài, còn muốn bot gửi tự động gì: nhắc lịch học trước buổi, báo vắng học, điểm danh, kết quả bài?
-4. Nhân viên có được nhận tin từ phụ huynh ngay trên Telegram của mình không, hay chỉ xem trong màn Tin nhắn của app?
+### Đã chốt với người dùng (2026-10-19)
+1. Supabase **chỉ dùng để lưu tệp**. Database giữ ở Neon (`esl_center`).
+2. Tin trung tâm gửi phụ huynh **ghi tên giáo viên trả lời**, ví dụ "— Cô Thu Hà, GV lớp IELTS-K12". Tin tự động của hệ thống ghi "ESL Center".
+3. Bot **làm được càng nhiều việc càng tốt** (thêm nhóm việc 34.12–34.22 dưới đây).
+4. **Super admin nhận bản sao mọi trao đổi giữa giáo viên và phụ huynh** qua Telegram (34.13).
+
+### Trao đổi giáo viên và phụ huynh
+- [ ] **34.12** Giáo viên trả lời phụ huynh: giáo viên (kể cả không có quyền quản lý phụ huynh) thấy trong màn Tin nhắn các phụ huynh có con học lớp mình dạy (chủ nhiệm, trợ giảng, giáo viên nước ngoài). Tin gửi đi kèm chữ ký tên giáo viên và lớp. Tin của phụ huynh được chuyển tới Telegram của giáo viên các lớp của con (nếu giáo viên đã kết nối); giáo viên bấm **Trả lời** ngay trên tin đó trong Telegram thì bot gửi lại cho phụ huynh (ghép theo tin được trả lời), không cần mở app. Kiểm chứng: E2E giả lập phụ huynh nhắn → giáo viên nhận bản chuyển → giáo viên trả lời bằng reply → phụ huynh nhận tin có chữ ký.
+- [ ] **34.13** Bản sao cho super admin: mọi tin giữa giáo viên và phụ huynh (cả hai chiều, cả trả lời từ app và từ Telegram) được gửi kèm một bản sao tới Telegram của super admin, ghi rõ ai gửi ai, học sinh nào, lớp nào. Super admin là tài khoản quản trị được đánh dấu "nhận bản sao" trong màn Tài khoản (mặc định: các tài khoản quản trị đã kết nối Telegram). Super admin cũng trả lời được bằng reply. Kiểm chứng: E2E bản sao có đủ người gửi, người nhận, học sinh.
+- [ ] **34.14** Phụ huynh nhiều con: bot hỏi "Tin này về con nào?" bằng nút chọn (inline keyboard) khi phụ huynh có từ hai con trở lên, để chuyển đúng giáo viên lớp đó; lệnh tra cứu cũng cho chọn con. Kiểm chứng: unit chọn người nhận theo con.
+
+### Bot cho phụ huynh
+- [ ] **34.15** Tra cứu thêm: `/diem` (điểm và nhận xét gần nhất), `/chuyencan` (chuyên cần 10 buổi gần nhất), `/nhanxet` (nhận xét bài nói, kèm âm thanh mẫu của giáo viên khi có P33), menu nút bấm thay cho gõ lệnh.
+- [ ] **34.16** Xin nghỉ học: `/nghi` → chọn con, chọn buổi, gõ lý do → giáo viên nhận yêu cầu, bấm Đồng ý; buổi đó điểm danh sẵn là vắng có phép; phụ huynh nhận xác nhận. Kiểm chứng: E2E từ xin nghỉ tới điểm danh.
+- [ ] **34.17** Tự động gửi phụ huynh: nhắc buổi học trước 2 giờ (hoặc tối hôm trước), báo vắng khi điểm danh vắng, báo buổi bị huỷ hoặc đổi giờ, bài tập mới được giao, nhắc hạn nộp trước 1 ngày, có điểm hoặc nhận xét mới, nhắc học phí đến hạn theo ngày hạn trong Cài đặt, báo cáo tuần (chuyên cần, bài đã nộp, điểm). Phụ huynh tắt từng loại bằng `/caidat`.
+- [ ] **34.18** Thông báo chung: nhân viên soạn một tin gửi cả lớp, cả cơ sở hoặc toàn trung tâm (nghỉ lễ, sự kiện) từ app; chỉ gửi trong phạm vi cơ sở của người soạn (P32); có xem trước số người nhận. Kiểm chứng: tài khoản một cơ sở không gửi được cho cơ sở khác.
+
+### Bot cho giáo viên và quản trị
+- [ ] **34.19** Giáo viên: `/homnay` (lịch dạy hôm nay, phòng), `/chocham` (bài đang chờ chấm, link mở thẳng màn chấm), nhắc chấm bài nói quá 2 ngày chưa chấm, báo học sinh nộp bài (đã có ở 34.9), báo đơn xin nghỉ cần duyệt.
+- [ ] **34.20** Super admin: báo cáo cuối ngày (số buổi đã dạy, số vắng, bài nộp, tiền thu trong ngày, học phí quá hạn), cảnh báo học sinh vắng 3 buổi liên tiếp, lệnh `/baocao` xem nhanh.
+- [ ] **34.21** Lịch chạy tự động cho các việc ở 34.17, 34.19, 34.20: route `/api/cron/telegram` có khoá bí mật, gọi bằng Vercel Cron (gói Hobby chỉ chạy tối đa mỗi ngày một lần, cần gói Pro hoặc dịch vụ hẹn giờ ngoài như cron-job.org cho nhắc trước 2 giờ). Gửi theo lô, chống gửi trùng bằng bảng ghi đã gửi. Kiểm chứng: gọi route hai lần không gửi trùng.
+- [ ] **34.22** Nhật ký và giới hạn: mọi tin ra vào lưu trong `telegram_messages`; giới hạn tốc độ gửi (Telegram giới hạn khoảng 30 tin mỗi giây cho mỗi bot); tin lỗi được thử lại; Cài đặt hiện số tin gửi lỗi gần đây.
 
 Nguồn tham khảo: giới hạn bot (tải lên 50 MB, tải xuống 20 MB) https://fast.io/resources/telegram-file-size-limit.md ; Supabase Storage gói miễn phí 1 GB, tệp 50 MB https://aiagencyplus.com/supabase-free-tier-limits/ , https://supabase.com/blog/storage-500gb-uploads-cheaper-egress-pricing ; signed upload URL https://skills.sh/adaptationio/skrillz/supabase-storage ; Firebase bắt buộc gói Blaze https://firebase.google.cn/docs/storage/faqs-storage-changes-announced-sept-2024 .
 
