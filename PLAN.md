@@ -1,6 +1,6 @@
 # ESL Center: kế hoạch và tiến độ
 
-> **Tiến độ tổng: 170/170 task (100%)**
+> **Tiến độ tổng: 170/193 task (88%)**
 > Cập nhật lần cuối: 2026-10-19. Hoàn thành toàn diện 170/170 task: toàn bộ 34 task P34 (Supabase Storage, lưu trữ & sao lưu Google Drive 30 TB, bot Telegram hai chiều mở rộng), cùng tất cả các giai đoạn P1–P33 trước đó. Số đếm lấy từ các ô `[x]` và `[ ]` trong file.
 
 ## 🎯 Các task vừa hoàn thành & Lệnh test riêng (Không chạy all)
@@ -376,6 +376,53 @@ Giới hạn Drive API: tải lên tối đa 750 GB mỗi ngày mỗi tài kho�
 Nguồn: giới hạn Drive API https://developers.google.com/drive/api/guides/limits ; service account phải dùng shared drive https://fivetran.com/docs/activations/destinations/available-destinations/google-drive/troubleshooting/service-accounts-storage-quota , https://mastra.ai/reference/workspace/google-drive-filesystem ; quyền `drive.file` https://www.rapidevelopers.com/md/api-automations/how-to-automate-google-drive-file-sharing-using-the-api .
 
 Nguồn tham khảo: giới hạn bot (tải lên 50 MB, tải xuống 20 MB) https://fast.io/resources/telegram-file-size-limit.md ; Supabase Storage gói miễn phí 1 GB, tệp 50 MB https://aiagencyplus.com/supabase-free-tier-limits/ , https://supabase.com/blog/storage-500gb-uploads-cheaper-egress-pricing ; signed upload URL https://skills.sh/adaptationio/skrillz/supabase-storage ; Firebase bắt buộc gói Blaze https://firebase.google.cn/docs/storage/faqs-storage-changes-announced-sept-2024 .
+
+## P35. Bài tập online cho trẻ 3–11 tuổi: dạng câu mới, ghi âm, chấm nói, trò chơi
+
+Nguồn: `docs/NGHIEN-CUU-BAI-TAP-ONLINE.md` (P33.1). Điều kiện đã có: lưu tệp Supabase và tải thẳng từ trình duyệt (P34), lưu trữ Google Drive, bot Telegram gửi tin có chữ ký giáo viên, bản sao cho super admin. App đang có: 3 dạng câu (trắc nghiệm, viết, nộp tệp), bốn kỹ năng, chấm theo tiêu chí, chấm chéo, ngân hàng câu hỏi, khu học sinh `/cua-toi`, làm lại bài.
+
+Thứ tự làm (mỗi giai đoạn dùng được ngay, không chờ giai đoạn sau): **A** dạng câu và làm bài → **B** ghi âm → **C** chấm nói → **D** đồng ý của phụ huynh (bắt buộc trước khi cho học sinh thật ghi âm) → **E** trò chơi và động lực → **F** công cụ cho giáo viên → **G** chấm phát âm tự động.
+
+Mặc định đề xuất cho các câu hỏi chưa chốt ở tài liệu nghiên cứu (người dùng sửa ở 35.1 nếu khác): giọng mẫu do giáo viên tự thu là chính, giọng máy để bổ sung, giọng Mỹ; trẻ 3–5 tuổi luôn có phụ huynh hoặc giáo viên ngồi cùng; bản ghi âm giữ 12 tháng rồi chuyển sang Google Drive, xoá sau 24 tháng; chưa bật chấm tự động cho tới khi thử nghiệm ở G.
+
+### Chốt trước
+- [ ] **35.1** (người dùng) Chốt hoặc sửa các mặc định trên; chọn bộ bài mẫu đầu tiên (đề xuất: Starters, 3 bài theo giáo trình đang dạy); linh vật của trung tâm (có sẵn hay cần thiết kế); có cần chế độ trình chiếu trên lớp ngay ở giai đoạn F không.
+
+### A. Dạng câu mới và màn làm bài
+- [ ] **35.2** Schema: `assignment_items.item_type` thêm `picture_choice`, `match`, `order`, `gap_fill`, `speak_repeat`, `speak_read`, `speak_picture`; câu có `image_file_id`, `model_audio_file_id`, `reference_text`, `max_seconds`; đáp án có `image_file_id`, `audio_file_id`; bảng `assignment_item_pairs` (ghép đôi); cột thứ tự đúng cho dạng sắp xếp; danh sách đáp án chấp nhận cho điền chỗ trống. Migration mới, không sửa migration cũ. Kiểm chứng: migrate trên DB thử, unit validate từng dạng.
+- [ ] **35.3** Chấm tự động cho các dạng chạm và kéo (chọn tranh, ghép đôi tính điểm từng cặp, sắp xếp, điền chỗ trống không phân biệt hoa thường và khoảng trắng) trong `assignment-scoring`. Kiểm chứng: unit cho từng dạng, kể cả điểm lẻ.
+- [ ] **35.4** Màn soạn câu cho từng dạng mới trong `ItemsEditor`: chọn tranh và âm thanh (tải thẳng lên Supabase), ghi âm giọng mẫu ngay trong màn soạn, xem trước như học sinh thấy. Ngân hàng câu hỏi nhận các dạng mới và có ô nguồn và giấy phép. Kiểm chứng: E2E soạn một bài đủ 7 dạng.
+- [ ] **35.5** Màn làm bài của học sinh theo nhóm tuổi: mỗi màn một câu, nút to (từ 64px cho 3–5 tuổi), hướng dẫn bằng giọng nói (có bản tiếng Việt), nút nghe lại; kéo thả bằng dnd-kit (chạm và bàn phím đều dùng được); hai chế độ **luyện** (sai được làm lại ngay, có hiệu ứng khi đúng) và **kiểm tra** (làm một lần). Kiểm chứng: E2E làm bài ở 390px và 1024px; `chuan.spec` không lỗi kích thước.
+
+### B. Ghi âm trên trình duyệt
+- [ ] **35.6** Ghi âm cho ba dạng nói: bấm để nói, đếm giây theo `max_seconds`, nghe lại, nói lại, nộp; Android và Chrome ghi webm, iOS ghi m4a; tải thẳng lên Supabase rồi ghi `uploaded_files`; hướng dẫn cấp quyền micro. Chỉ bật khi học sinh đã có đồng ý của phụ huynh (35.12). Kiểm chứng: E2E với micro giả của Chromium; thử tay trên iPhone và Android.
+- [ ] **35.7** Karaoke đọc theo cho dạng đọc to: chữ sáng dần theo giọng mẫu (mốc thời gian từng từ do giáo viên chỉnh hoặc chia đều), rồi trẻ ghi âm đọc theo. Kiểm chứng: E2E phát mẫu và ghi âm.
+
+### C. Chấm nói và chỉ lỗi
+- [ ] **35.8** Màn chấm nói: thanh phát có vạch thời gian; bấm vào giây có lỗi để thêm ghi chú gồm loại lỗi (danh sách lỗi thường gặp của người Việt: mất âm cuối, /θ/ /ð/, /ʃ/ /s/, /z/, s/es, -ed, trọng âm, ngữ điệu, thiếu thừa từ, sai thì), chữ đúng, ghi âm mẫu của giáo viên, đánh dấu "nói lại câu này". Bảng `speaking_feedback`. Kiểm chứng: E2E thêm, sửa, xoá ghi chú lỗi.
+- [ ] **35.9** Tiêu chí bài nói: 3–8 tuổi chấm sao (phát âm, trôi chảy, hoàn thành yêu cầu), 9–11 tuổi chấm điểm 0–5 thêm từ vựng và ngữ pháp; ô "Điều con làm tốt" bắt buộc; gợi ý chỉ nêu 1–2 lỗi quan trọng nhất với trẻ nhỏ. Dùng lại chấm theo tiêu chí đã có. Kiểm chứng: unit quy đổi sao và điểm.
+- [ ] **35.10** Học sinh xem nhận xét: danh sách lỗi theo mốc giây, nghe đoạn mình nói và mẫu của giáo viên, chỉ ghi âm lại những câu bị đánh dấu; giáo viên thấy bản cũ và bản mới cạnh nhau. Kiểm chứng: E2E vòng chấm, nói lại, chấm lại.
+- [ ] **35.11** Gửi nhận xét bài nói cho phụ huynh qua Telegram (chữ ký giáo viên, kèm âm thanh mẫu, bản sao cho super admin như P34); lệnh `/nhanxet` của bot đọc từ dữ liệu này. Kiểm chứng: E2E ghi đúng tin ra trong `telegram_messages`.
+
+### D. Đồng ý của phụ huynh và thời hạn lưu
+- [ ] **35.12** Bảng `parent_consents` (học sinh, loại: ghi âm cho giáo viên chấm / gửi giọng nói ra dịch vụ chấm tự động, người đồng ý, thời điểm, thời điểm rút lại). Lấy đồng ý bằng nút bấm trên bot Telegram, hoặc nhân viên ghi nhận trong hồ sơ học sinh (kèm ghi chú đã có giấy đồng ý). Rút lại thì ngừng ghi âm và xoá bản ghi theo yêu cầu. Kiểm chứng: E2E học sinh chưa có đồng ý thì không thấy nút ghi âm.
+- [ ] **35.13** Thời hạn lưu bản ghi âm: tự chuyển sang Google Drive sau 12 tháng (dùng 34.25), tự xoá sau 24 tháng hoặc khi học sinh nghỉ quá thời hạn; nút xoá theo yêu cầu phụ huynh; ghi nhật ký. Kiểm chứng: chạy job hai lần không lỗi, tệp quá hạn bị xoá ở cả Supabase và Drive.
+
+### E. Trò chơi và động lực
+- [ ] **35.14** Danh sách từ: từ, tranh, âm thanh, nghĩa tiếng Việt; gắn với bài giảng hoặc lớp; dùng lại cho mọi trò chơi. Kiểm chứng: E2E thêm, sửa, xoá danh sách từ.
+- [ ] **35.15** Bốn trò chơi đầu tiên từ danh sách từ: lật thẻ nhớ, đập chuột từ vựng (nghe rồi chạm tranh), ghép chữ, xây câu. Làm bằng React (không cần Phaser). Kiểm chứng: E2E chơi hết một lượt mỗi trò; không tràn ngang ở 360px.
+- [ ] **35.16** Bốn trò chơi tiếp theo: bingo nghe, Simon says / tìm trong tranh (chạm đúng chỗ trong tranh lớn), đoán chữ, đua xe trả lời nhanh. Kiểm chứng: như 35.15.
+- [ ] **35.17** Động lực: sao theo bài, bộ sưu tập sticker và truyện mở khoá bằng sao, đường học theo bài, chuỗi học theo tuần (không theo ngày), mục tiêu chung của lớp thay cho xếp hạng cá nhân; không trừ sao khi sai. Kiểm chứng: unit tính sao và chuỗi tuần.
+- [ ] **35.18** Hộp từ của từng học sinh với lịch ôn lặp lại ngắt quãng (ts-fsrs): mỗi ngày gợi ý 5–10 từ cần ôn qua một trò chơi ngắn. Kiểm chứng: unit lịch ôn; E2E ôn một lượt.
+
+### F. Công cụ cho giáo viên
+- [ ] **35.19** Chế độ trình chiếu: giáo viên chọn trò chơi hoặc bài, chiếu lên màn hình lớn, cả lớp chơi chung, giáo viên điều khiển bằng điện thoại hoặc bàn phím. Kiểm chứng: E2E mở chế độ trình chiếu và chuyển câu.
+- [ ] **35.20** Bảng theo dõi lớp: em nào chưa làm, từ nào cả lớp hay sai, bài nói đang chờ chấm (liên kết thẳng màn chấm); bot nhắc giáo viên chấm bài nói quá 2 ngày (34.19). Kiểm chứng: E2E số liệu khớp dữ liệu thử.
+- [ ] **35.21** Bộ bài mẫu đầu tiên theo 35.1 (ví dụ 3 bài Starters đủ dạng câu, giọng mẫu, tranh, một danh sách từ), dùng để demo và kiểm thử đầu cuối. Kiểm chứng: học sinh thử làm trọn một bài trên điện thoại.
+
+### G. Chấm phát âm tự động (gợi ý cho giáo viên)
+- [ ] **35.22** Thử nghiệm độ chính xác trên giọng học sinh của trung tâm (chỉ những em đã có đồng ý loại thứ hai): OpenPronounce chạy trên máy chủ riêng (MIT, không gửi giọng ra ngoài) so với Azure Pronunciation Assessment; so với điểm giáo viên chấm trên khoảng 50 bản ghi. Chọn một, hoặc dừng nếu sai nhiều. Kiểm chứng: bảng so sánh ghi vào `docs/`.
+- [ ] **35.23** Nếu 35.22 đạt: màn chấm nói tô màu từ nghi sai và gợi ý điểm; giáo viên luôn quyết định điểm cuối; không hiện điểm máy cho trẻ 3–5 tuổi. Kiểm chứng: E2E gợi ý hiện, giáo viên sửa được.
 
 ## Quyết định đã chốt
 
