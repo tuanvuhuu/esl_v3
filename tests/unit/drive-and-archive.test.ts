@@ -1,6 +1,5 @@
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
-import { extractDriveFileId } from '@/app/(app)/bai-giang/actions';
-import { driveConfig, isDriveConfigured } from '@/lib/drive-store';
+import { driveConfig, extractDriveFileId, isDriveConfigured } from '@/lib/drive-store';
 
 describe('Google Drive & Lưu trữ tệp (P34.23 - P34.27)', () => {
   const originalEnv = process.env;

@@ -9,7 +9,7 @@ import { CAMPUS_FORBIDDEN, getAllowedCampusIds, requireLessonAccess } from '@/li
 import { campusesExist } from '@/lib/queries/campuses';
 import { countAssignmentsOfLesson } from '@/lib/queries/lessons';
 import { getCurrentAccount } from '@/lib/session';
-import { getFileInfoFromDrive, isDriveConfigured } from '@/lib/drive-store';
+import { extractDriveFileId, getFileInfoFromDrive, isDriveConfigured } from '@/lib/drive-store';
 import { registerDriveUpload } from '@/lib/storage';
 import { lessonFormSchema, materialFormSchema } from '@/lib/validation/lesson';
 import type { ActionResult } from '@/lib/validation/student';
@@ -156,20 +156,6 @@ export async function deleteMaterialAction(id: number): Promise<ActionResult> {
   } catch (error) {
     return errorResult(error);
   }
-}
-
-// Trích xuất ID tệp Google Drive từ URL hoặc mã tệp (P34.27)
-export function extractDriveFileId(input: string): string | null {
-  const trimmed = input.trim();
-  if (!trimmed) return null;
-  const matchFileD = trimmed.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
-  if (matchFileD) return matchFileD[1];
-  const matchId = trimmed.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-  if (matchId) return matchId[1];
-  if (/^[a-zA-Z0-9_-]{20,}$/.test(trimmed)) {
-    return trimmed;
-  }
-  return null;
 }
 
 // Gắn tệp dung lượng lớn từ Google Drive của trung tâm vào bài giảng (P34.27)

@@ -22,6 +22,20 @@ export function isDriveConfigured(): boolean {
   return driveConfig().configured;
 }
 
+// Trích xuất ID tệp Google Drive từ URL hoặc mã tệp (P34.27)
+export function extractDriveFileId(input: string): string | null {
+  const trimmed = input.trim();
+  if (!trimmed) return null;
+  const matchFileD = trimmed.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+  if (matchFileD) return matchFileD[1];
+  const matchId = trimmed.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+  if (matchId) return matchId[1];
+  if (/^[a-zA-Z0-9_-]{20,}$/.test(trimmed)) {
+    return trimmed;
+  }
+  return null;
+}
+
 function getDriveClient() {
   const config = driveConfig();
   if (!config.configured) {
