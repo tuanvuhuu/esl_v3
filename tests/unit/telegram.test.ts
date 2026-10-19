@@ -1,5 +1,5 @@
 import { afterAll, describe, expect, it } from 'vitest';
-import { blobDriver, deleteBlob, getBlob, putBlob } from '@/lib/blob-store';
+import { blobDriver, createSignedUploadUrl, deleteBlob, getBlob, putBlob } from '@/lib/blob-store';
 import { deepLink, newLinkCode, parseCommand } from '@/lib/telegram/commands';
 
 describe('đọc lệnh Telegram', () => {
@@ -29,7 +29,7 @@ describe('đọc lệnh Telegram', () => {
   });
 });
 
-describe('nơi lưu tệp (ổ đĩa khi chưa cấu hình Firebase)', () => {
+describe('nơi lưu tệp (ổ đĩa khi chưa cấu hình Supabase)', () => {
   const key = `unittest${Date.now()}`;
   afterAll(() => deleteBlob(key));
 
@@ -40,5 +40,21 @@ describe('nơi lưu tệp (ổ đĩa khi chưa cấu hình Firebase)', () => {
     await deleteBlob(key);
     expect(await getBlob(key)).toBeNull();
     await expect(putBlob('../ngoai', Buffer.from('x'), 'text/plain')).rejects.toThrow('Khoá tệp không hợp lệ');
+  });
+
+  it('chuyển sang driver supabase và tạo signed upload URL khi có cấu hình S3', async () => {
+    const prev = { ...process.env };
+    try {
+      process.env.SUPABASE_ACCESS_KEY_ID = 'test_id';
+      process.env.SUPABASE_SECRET_ACCESS_KEY = 'test_secret';
+      process.env.SUPABASE_STORAGE_BUCKET = 'esl';
+      process.env.SUPABASE_S3_ENDPOINT = 'https://example.supabase.co/storage/v1/s3';
+      expect(blobDriver()).toBe('supabase');
+
+      const url = await createSignedUploadUrl('testfile123', 'audio/mpeg');
+      expect(url).toContain('https://example.supabase.co/storage/v1/s3/esl/uploads/testfile123');
+    } finally {
+      process.env = prev;
+    }
   });
 });

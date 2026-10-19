@@ -938,7 +938,7 @@ test.describe('bài tập, điểm danh, học phí', () => {
       await page.getByRole('button', { name: 'Tạo link' }).click();
       const code = ((await page.getByLabel('Mã kết nối', { exact: true }).textContent()) ?? '').trim();
       expect(code).toMatch(/^[a-f0-9]{20}$/);
-      await page.getByRole('button', { name: 'Đóng', exact: true }).click();
+      await page.getByRole('button', { name: 'Đóng', exact: true }).first().click();
 
       // Phụ huynh bấm link: Telegram gửi /start <mã> vào webhook
       expect((await hook(`/start ${code}`)).status()).toBe(200);

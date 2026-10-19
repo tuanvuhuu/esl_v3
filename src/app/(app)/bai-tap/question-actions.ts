@@ -21,7 +21,7 @@ import { markGap, storedScore, summarizeSubmission, type ScoringAnswer } from '@
 import { getAssignmentBase } from '@/lib/queries/assignments';
 import { listItemGradingRows, listItemsOfAssignment, toScoringItems, type AssignmentItem } from '@/lib/queries/assignment-items';
 import { getCurrentAccount } from '@/lib/session';
-import { saveUpload } from '@/lib/storage';
+import { completeDirectUpload, prepareDirectUpload, saveUpload, type PrepareDirectUploadResult } from '@/lib/storage';
 import { answersPayloadSchema, itemsPayloadSchema, secondMarkSchema } from '@/lib/validation/assignment';
 import type { ActionResult } from '@/lib/validation/student';
 
@@ -204,6 +204,43 @@ export async function uploadFileAction(formData: FormData): Promise<{ ok: true; 
     if (error instanceof ForbiddenError) return { ok: false, message: error.message };
     console.error('Lỗi tải tệp bài tập:', error);
     return { ok: false, message: 'Không tải được tệp. Thử lại sau ít phút.' };
+  }
+}
+
+// Yêu cầu cấp signed upload URL cho tệp lớn (P34.3)
+export async function requestDirectUploadAction(fileInfo: {
+  name: string;
+  type: string;
+  size: number;
+}): Promise<PrepareDirectUploadResult> {
+  try {
+    await requirePermission('assignments.manage');
+    return await prepareDirectUpload(fileInfo);
+  } catch (error) {
+    if (error instanceof ForbiddenError) return { ok: false, message: error.message };
+    console.error('Lỗi cấp URL tải trực tiếp:', error);
+    return { ok: false, message: 'Không tạo được URL tải tệp.' };
+  }
+}
+
+// Xác nhận tệp lớn đã tải trực tiếp lên Supabase Storage (P34.3)
+export async function confirmDirectUploadAction(params: {
+  storageKey: string;
+  fileName: string;
+  mimeType: string;
+  sizeBytes: number;
+}): Promise<{ ok: true; fileId: number; name: string } | { ok: false; message: string }> {
+  try {
+    await requirePermission('assignments.manage');
+    const account = await getCurrentAccount();
+    const result = await completeDirectUpload({ ...params, accountId: account?.id ?? null });
+    if (!result.ok) return result;
+    await writeAudit({ action: 'upload', entity: 'file', entityId: result.id, summary: `Tải lên trực tiếp tệp ${result.name}` });
+    return { ok: true, fileId: result.id, name: result.name };
+  } catch (error) {
+    if (error instanceof ForbiddenError) return { ok: false, message: error.message };
+    console.error('Lỗi xác nhận tải tệp:', error);
+    return { ok: false, message: 'Không xác nhận được tệp tải lên.' };
   }
 }
 

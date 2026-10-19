@@ -7,7 +7,7 @@ import { Alert, Pill } from '@/components/ui/primitives';
 import { Notice, Panel } from '@/components/ui/surfaces';
 
 export type IntegrationStatus = {
-  storage: 'firebase' | 'disk';
+  storage: 'supabase' | 'disk';
   botConfigured: boolean;
   botUsername: string | null;
   botError: string | null;
@@ -27,8 +27,8 @@ export function TelegramSettings({ status, canSetup }: { status: IntegrationStat
         <dl className="grid grid-cols-1 gap-x-4 gap-y-2 text-sm min-[768px]:grid-cols-[180px_1fr]">
           <dt className="text-ink-2">Nơi lưu tệp</dt>
           <dd>
-            {status.storage === 'firebase' ? (
-              <Pill tone="mint">Firebase Storage</Pill>
+            {status.storage === 'supabase' ? (
+              <Pill tone="mint">Supabase Storage</Pill>
             ) : (
               <Pill tone="butter">Ổ đĩa máy chủ (chỉ dùng khi chạy thử trên máy)</Pill>
             )}
@@ -44,7 +44,7 @@ export function TelegramSettings({ status, canSetup }: { status: IntegrationStat
         {(!status.botConfigured || !status.secretConfigured || status.storage === 'disk') && (
           <Notice>
             Đặt trong biến môi trường (Vercel → Settings → Environment Variables): TELEGRAM_BOT_TOKEN, TELEGRAM_BOT_USERNAME, TELEGRAM_WEBHOOK_SECRET (chuỗi ngẫu nhiên từ 16 ký tự) và
-            FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY, FIREBASE_STORAGE_BUCKET. Sau đó deploy lại rồi bấm Cài webhook trên bản đã deploy.
+            SUPABASE_S3_ENDPOINT, SUPABASE_ACCESS_KEY_ID, SUPABASE_SECRET_ACCESS_KEY, SUPABASE_STORAGE_BUCKET. Sau đó deploy lại rồi bấm Cài webhook trên bản đã deploy.
           </Notice>
         )}
         {result && (result.ok ? <Alert tone="ok">{result.message}</Alert> : <Alert>{result.message}</Alert>)}

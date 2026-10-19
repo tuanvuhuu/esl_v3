@@ -5,7 +5,7 @@ import { randomBytes } from 'node:crypto';
 import { eq } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { uploadedFiles } from '@/db/schema';
-import { deleteBlob, getBlob, putBlob } from './blob-store';
+import { createSignedUploadUrl, deleteBlob, getBlob, putBlob } from './blob-store';
 
 export { uploadDir } from './blob-store';
 
@@ -70,3 +70,60 @@ export async function readUpload(id: number): Promise<{ originalName: string; mi
 export async function removeUploadFile(storageKey: string): Promise<void> {
   await deleteBlob(storageKey);
 }
+
+export type PrepareDirectUploadResult =
+  | { ok: true; mode: 'direct'; uploadUrl: string; storageKey: string; name: string }
+  | { ok: true; mode: 'server' }
+  | { ok: false; message: string };
+
+// Cấp signed upload URL để trình duyệt tải thẳng tệp lên Supabase Storage (P34.3)
+export async function prepareDirectUpload(fileInfo: {
+  name: string;
+  type: string;
+  size: number;
+}): Promise<PrepareDirectUploadResult> {
+  const limit = ALLOWED_TYPES[fileInfo.type];
+  if (!limit) {
+    return { ok: false, message: 'Loại tệp này chưa được hỗ trợ. Dùng âm thanh (mp3, m4a, wav), PDF, ảnh PNG hoặc JPG, văn bản (txt, docx).' };
+  }
+  if (fileInfo.size <= 0) return { ok: false, message: 'Tệp này trống.' };
+  if (fileInfo.size > limit) return { ok: false, message: `Tệp quá lớn. Tối đa ${Math.round(limit / MB)} MB.` };
+
+  const storageKey = randomBytes(24).toString('hex');
+  const name = safeFileName(fileInfo.name);
+  const uploadUrl = await createSignedUploadUrl(storageKey, fileInfo.type);
+  if (!uploadUrl) {
+    return { ok: true, mode: 'server' };
+  }
+  return { ok: true, mode: 'direct', uploadUrl, storageKey, name };
+}
+
+// Xác nhận tệp đã tải xong lên Supabase Storage và ghi vào cơ sở dữ liệu (P34.3)
+export async function completeDirectUpload(params: {
+  storageKey: string;
+  fileName: string;
+  mimeType: string;
+  sizeBytes: number;
+  accountId: number | null;
+}): Promise<UploadResult> {
+  if (!/^[a-z0-9]+$/.test(params.storageKey)) {
+    return { ok: false, message: 'Khoá tệp không hợp lệ.' };
+  }
+  const blob = await getBlob(params.storageKey);
+  if (!blob) {
+    return { ok: false, message: 'Tệp chưa được tải lên hoặc tải lên không thành công.' };
+  }
+  const name = safeFileName(params.fileName);
+  const [row] = await db
+    .insert(uploadedFiles)
+    .values({
+      storageKey: params.storageKey,
+      originalName: name,
+      mimeType: params.mimeType,
+      sizeBytes: blob.length || params.sizeBytes,
+      uploadedByAccountId: params.accountId,
+    })
+    .returning({ id: uploadedFiles.id });
+  return { ok: true, id: row.id, name };
+}
+
