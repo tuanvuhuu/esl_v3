@@ -1,6 +1,6 @@
 # ESL Center: kế hoạch và tiến độ
 
-> **Tiến độ tổng: 142/142 task (100%)**
+> **Tiến độ tổng: 143/143 task (100%)**
 > Cập nhật lần cuối: 2026-10-17. Hoàn thành và kiểm chứng E2E toàn bộ 142/142 task: 15.3 (chuẩn giao diện trang học sinh), 15.4 (sửa phụ huynh qua modal), 15.6 (thanh hành động mobile dính dưới cho điểm danh), 15.8 (chuẩn UI toàn diện mọi route, modal, profile), 18.5 (bài giảng đa cơ sở), 22.7 (hoàn thành qua P23–P29), P25 (bài giảng và tài liệu: 25.1, 25.2, 25.3), P28 (cổng học sinh: 28.1, 28.2, 28.3, 28.4), 30.2 (mật khẩu mặc định esl123 cho nhân viên mới), 32.3 (Server Action chặn hành vi ngoài phạm vi cơ sở). Số đếm lấy từ các ô `[x]` và `[ ]` trong file.
 
 ## 🎯 Các task vừa hoàn thành & Lệnh test riêng (Không chạy all)
@@ -300,6 +300,12 @@ Quyết định (2026-10-16): bảng `account_campuses`, tài khoản làm việ
 - [x] **32.2** Bộ chọn cơ sở (máy tính và điện thoại) chỉ liệt kê cơ sở được gán; danh sách lớp, giáo viên, phụ huynh, bài giảng, cơ sở, tài khoản lọc theo phạm vi; trang học sinh, lớp, bài tập mở bằng id ngoài phạm vi thì không tìm thấy; tệp tải lên kiểm theo cơ sở. *(2026-10-16, E2E `work.spec.ts` "phân quyền theo cơ sở", unit `campus.test.ts`.)*
 - [x] **32.3** 🆕 [VỪA HOÀN THÀNH] Mọi server action theo lớp, học sinh, buổi học, bài tập, học phí, phụ huynh, giáo viên, bài giảng kiểm cơ sở ở server; việc toàn trung tâm (thêm, xoá cơ sở, cài đặt, dọn tệp) chỉ tài khoản không giới hạn; nhập dữ liệu chặn cơ sở ngoài phạm vi. *(2026-10-17, `campus-access.ts`, E2E `work.spec.ts` kiểm chứng Server Action chặn tạo lớp ngoài phạm vi cơ sở thành công.)*
 - [x] **32.4** Màn Tài khoản: chọn cơ sở làm việc trong form, cột Cơ sở trong danh sách; người bị giới hạn chỉ gán cơ sở trong phạm vi, không tạo quản trị. *(2026-10-16, unit `account-validation.test.ts`.)*
+
+## P33. Bài tập online, trò chơi và chấm nói cho học sinh 3–11 tuổi
+
+Nghiên cứu ở `docs/NGHIEN-CUU-BAI-TAP-ONLINE.md` (mục 10 và 13.5 là phân kỳ đề xuất). Các bước làm sẽ thêm vào đây sau khi người dùng trả lời câu hỏi ở mục 11.
+
+- [x] **33.1** Nghiên cứu: nền tảng cho trẻ (Lingokids, Duolingo ABC, Monkey Junior, ELSA, Raz-Kids, Seesaw, Wordwall), dạng câu, nguồn tài liệu mở, giọng đọc máy, dịch, chấm nói và chỉ lỗi, dữ liệu trẻ em, mã nguồn mở (H5P, GCompris, Oppia, OpenPronounce, ts-fsrs, dnd-kit, Phaser), trò chơi. *(2026-10-19, tài liệu có nguồn trích dẫn.)*
 
 ## Quyết định đã chốt
 
