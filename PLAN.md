@@ -1,6 +1,6 @@
 # ESL Center: kế hoạch và tiến độ
 
-> **Tiến độ tổng: 143/143 task (100%)**
+> **Tiến độ tổng: 143/154 task (92%)**
 > Cập nhật lần cuối: 2026-10-17. Hoàn thành và kiểm chứng E2E toàn bộ 142/142 task: 15.3 (chuẩn giao diện trang học sinh), 15.4 (sửa phụ huynh qua modal), 15.6 (thanh hành động mobile dính dưới cho điểm danh), 15.8 (chuẩn UI toàn diện mọi route, modal, profile), 18.5 (bài giảng đa cơ sở), 22.7 (hoàn thành qua P23–P29), P25 (bài giảng và tài liệu: 25.1, 25.2, 25.3), P28 (cổng học sinh: 28.1, 28.2, 28.3, 28.4), 30.2 (mật khẩu mặc định esl123 cho nhân viên mới), 32.3 (Server Action chặn hành vi ngoài phạm vi cơ sở). Số đếm lấy từ các ô `[x]` và `[ ]` trong file.
 
 ## 🎯 Các task vừa hoàn thành & Lệnh test riêng (Không chạy all)
@@ -306,6 +306,45 @@ Quyết định (2026-10-16): bảng `account_campuses`, tài khoản làm việ
 Nghiên cứu ở `docs/NGHIEN-CUU-BAI-TAP-ONLINE.md` (mục 10 và 13.5 là phân kỳ đề xuất). Các bước làm sẽ thêm vào đây sau khi người dùng trả lời câu hỏi ở mục 11.
 
 - [x] **33.1** Nghiên cứu: nền tảng cho trẻ (Lingokids, Duolingo ABC, Monkey Junior, ELSA, Raz-Kids, Seesaw, Wordwall), dạng câu, nguồn tài liệu mở, giọng đọc máy, dịch, chấm nói và chỉ lỗi, dữ liệu trẻ em, mã nguồn mở (H5P, GCompris, Oppia, OpenPronounce, ts-fsrs, dnd-kit, Phaser), trò chơi. *(2026-10-19, tài liệu có nguồn trích dẫn.)*
+
+## P34. Lưu tệp trên Supabase Storage và bot Telegram hai chiều
+
+Bối cảnh (2026-10-19): tệp tải lên (âm thanh đề, bài nộp, tài liệu, sau này là bản ghi âm bài nói) đang lưu trên ổ đĩa máy chủ, nên chạy trên Vercel sẽ mất. Người dùng chốt: lưu tệp trên **Supabase Storage**, kết hợp **bot Telegram** để gửi và nhận tin với phụ huynh, nhân viên. Đã cân nhắc và bỏ: dùng Telegram làm kho tệp (dữ liệu trẻ em nằm ở ứng dụng nước ngoài, không cam kết lưu trữ, khó xoá theo yêu cầu), Cloudflare R2, Firebase Storage (bắt buộc gói Blaze).
+
+**Mã đã viết dở, giữ lại để dùng tiếp:** nhánh `wip/telegram-luu-tep` (commit b5863d5), chưa merge. Gồm `lib/telegram` (gọi API, đọc lệnh, nghiệp vụ), webhook `/api/telegram/webhook`, màn `/tin-nhan`, nút Kết nối Telegram ở màn Phụ huynh và menu tài khoản, nhắc học phí, báo giáo viên khi học sinh nộp bài, khối Telegram trong Cài đặt, `lib/blob-store.ts` (driver Firebase, cần thay bằng Supabase). Typecheck, lint và unit đạt; E2E Telegram còn một lỗi (hai nút cùng tên "Đóng" trong hộp thoại).
+
+**Lưu ý database:** migration `0014_telegram` (bảng `telegram_chats`, `telegram_link_codes`, `telegram_messages`, enum `telegram_direction`) **đã áp dụng trên esl_center** nhưng file migration chỉ có ở nhánh WIP. Khi làm tiếp phải lấy đúng file 0014 từ nhánh đó (không sinh migration mới cho cùng bảng), nếu không `db:migrate` sẽ báo bảng đã tồn tại.
+
+**Quyết định thiết kế đề xuất (người dùng chốt ở 34.1):**
+- Bucket **riêng tư** `uploads`. Chỉ server đọc ghi bằng service role key; trình duyệt không bao giờ cầm khoá. Người dùng xem tệp qua `/api/files/[id]` như hiện nay (đã kiểm quyền theo chủ và theo cơ sở).
+- Gói miễn phí Supabase: tổng 1 GB, mỗi tệp tối đa 50 MB (theo các nguồn bên thứ ba, kiểm lại trang giá). Đủ cho giai đoạn đầu; bản ghi âm 60 giây khoảng 0,5–1 MB.
+- Tệp lớn hơn 1 MB không đi qua Server Action (giới hạn 1 MB của Next.js, 4,5 MB của Vercel): trình duyệt tải thẳng lên Supabase bằng signed upload URL do server cấp, rồi server ghi dòng `uploaded_files`.
+- Telegram chỉ dùng để nhắn tin và thông báo, không lưu tệp. Bot không gửi điểm hay thông tin con cho chat chưa kết nối bằng mã.
+
+### Việc người dùng làm trước
+- [ ] **34.1** Chốt các câu hỏi cuối mục này; tạo project Supabase (vùng Singapore) và bucket riêng tư `uploads`; tạo bot qua @BotFather; đặt biến môi trường trên Vercel và `.env.local`: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_STORAGE_BUCKET`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME`, `TELEGRAM_WEBHOOK_SECRET` (chuỗi ngẫu nhiên từ 16 ký tự). Đổi mật khẩu tài khoản `admin` (đang là `123`) trước khi mở bot cho phụ huynh.
+
+### Lưu tệp trên Supabase Storage
+- [ ] **34.2** Driver Supabase trong `lib/blob-store.ts` (thay driver Firebase ở nhánh WIP): `putBlob`, `getBlob`, `deleteBlob` qua `@supabase/supabase-js` phía server; không có biến `SUPABASE_*` thì vẫn ghi ổ đĩa (dev, E2E). Gỡ `firebase-admin`, bỏ `serverExternalPackages` nếu không cần. Kiểm chứng: unit cho driver ổ đĩa; thử thật với bucket Supabase (tải lên, xem, xoá).
+- [ ] **34.3** Tải lên trực tiếp tệp lớn: action cấp signed upload URL (kiểm loại, cỡ, quyền trước khi cấp), trình duyệt tải thẳng, action xác nhận ghi `uploaded_files`. Dùng cho âm thanh đề và bản ghi âm bài nói. Kiểm chứng: E2E tải tệp 3 MB trên bản deploy.
+- [ ] **34.4** Script chuyển tệp đang có trên ổ đĩa lên Supabase (giữ nguyên `storage_key`), chạy một lần; dọn tệp mồ côi (P29) xoá cả trên Supabase. Kiểm chứng: đếm tệp hai bên khớp.
+- [ ] **34.5** Khối "Telegram và lưu tệp" trong Cài đặt hiện nơi lưu đang dùng (Supabase hay ổ đĩa) và dung lượng đã dùng.
+
+### Bot Telegram hai chiều
+- [ ] **34.6** Merge phần Telegram từ nhánh WIP (schema 0014 đã áp dụng): kết nối bằng mã dùng một lần 7 ngày (`/start <mã>`), cho phụ huynh (màn Phụ huynh, nút ⋯ và nút trên thẻ điện thoại) và cho nhân viên (menu tài khoản → Kết nối Telegram). Sửa lỗi E2E hai nút "Đóng". Kiểm chứng: E2E webhook giả lập `/start`, sai mã bí mật thì 401, mã dùng lần hai bị từ chối.
+- [ ] **34.7** Lệnh cho phụ huynh: `/lich` (lịch 7 ngày tới của con), `/hocphi` (còn thiếu, đã đóng), `/baitap` (bài chưa nộp), `/huy` (ngừng nhận tin), `/help`. Tin thường lưu vào hộp tin, bot báo đã nhận tối đa một lần mỗi 6 giờ. Kiểm chứng: E2E từng lệnh, nội dung đúng con của phụ huynh đó.
+- [ ] **34.8** Màn **Tin nhắn** (`/tin-nhan`, quyền quản lý phụ huynh): danh sách cuộc trò chuyện chỉ gồm phụ huynh có con ở cơ sở trong phạm vi (P32), tin mới có nhãn, khung tin, trả lời gửi qua bot; số tin chưa đọc trên menu. Kiểm chứng: E2E trả lời; tài khoản một cơ sở không thấy phụ huynh cơ sở khác.
+- [ ] **34.9** Thông báo tự động: nút Nhắc học phí gửi cho phụ huynh đã kết nối; học sinh nộp bài thì báo giáo viên chủ nhiệm, trợ giảng, giáo viên nước ngoài đã kết nối; (sau P33) giáo viên chấm bài nói xong thì gửi nhận xét và mẫu nói cho phụ huynh. Gửi lỗi không làm hỏng việc chính. Kiểm chứng: E2E ghi đúng tin ra trong `telegram_messages`.
+- [ ] **34.10** Cài webhook từ Cài đặt trên bản deploy (nút Cài webhook, kiểm `X-Telegram-Bot-Api-Secret-Token`), xem trạng thái bot và lỗi gần nhất. Kiểm chứng: gửi `/help` cho bot thật, bot trả lời.
+- [ ] **34.11** Quyền riêng tư: ghi trong điều khoản cho phụ huynh rằng kết nối Telegram là đồng ý nhận tin; `/huy` ngừng ngay; xoá tin nhắn cũ theo thời hạn lưu (cùng thời hạn với bản ghi âm ở P33). Kiểm chứng: `/huy` thì không còn tin nào được gửi.
+
+### Câu hỏi cần người dùng chốt
+1. Chỉ dùng Supabase để **lưu tệp**, hay chuyển luôn **database** từ Neon sang Supabase Postgres? (Chuyển database cần thêm việc: dump/restore dữ liệu, đổi `DATABASE_URL`, chạy lại E2E.)
+2. Tin gửi phụ huynh đứng tên trung tâm chung, hay ghi tên giáo viên trả lời?
+3. Ngoài nhắc học phí và báo nộp bài, còn muốn bot gửi tự động gì: nhắc lịch học trước buổi, báo vắng học, điểm danh, kết quả bài?
+4. Nhân viên có được nhận tin từ phụ huynh ngay trên Telegram của mình không, hay chỉ xem trong màn Tin nhắn của app?
+
+Nguồn tham khảo: giới hạn bot (tải lên 50 MB, tải xuống 20 MB) https://fast.io/resources/telegram-file-size-limit.md ; Supabase Storage gói miễn phí 1 GB, tệp 50 MB https://aiagencyplus.com/supabase-free-tier-limits/ , https://supabase.com/blog/storage-500gb-uploads-cheaper-egress-pricing ; signed upload URL https://skills.sh/adaptationio/skrillz/supabase-storage ; Firebase bắt buộc gói Blaze https://firebase.google.cn/docs/storage/faqs-storage-changes-announced-sept-2024 .
 
 ## Quyết định đã chốt
 
