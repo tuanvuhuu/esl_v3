@@ -1,11 +1,12 @@
-// Nghiệp vụ của bot Telegram (P34): kết nối chat, lưu và gửi tin, trả lời lệnh của phụ huynh. Chỉ chạy trên server.
+// Nghiệp vụ của bot Telegram (P34): kết nối chat, lưu và gửi tin, trả lời lệnh của phụ huynh,
+// trao đổi 2 chiều giữa giáo viên và phụ huynh, bản sao cho super admin. Chỉ chạy trên server.
 import { and, desc, eq, gt, inArray, isNull, sql } from 'drizzle-orm';
 import { db } from '@/db/client';
-import { accounts, parents, studentParents, telegramChats, telegramLinkCodes, telegramMessages } from '@/db/schema';
+import { accounts, parents, studentParents, students, teachers, telegramChats, telegramLinkCodes, telegramMessages } from '@/db/schema';
 import { vnDateTimeLabel } from '@/lib/datetime';
 import { formatVND } from '@/lib/money';
-import { sendMessage } from './api';
-import { HELP_TEXT, LINK_CODE_DAYS, newLinkCode, parseCommand } from './commands';
+import { answerCallbackQuery, sendMessage } from './api';
+import { HELP_TEXT, LINK_CODE_DAYS, newLinkCode, PARENT_KEYBOARD, parseCommand, STAFF_HELP_TEXT, STAFF_KEYBOARD } from './commands';
 
 export type LinkTarget = { parentId: number } | { accountId: number };
 
@@ -54,13 +55,105 @@ async function record(entry: {
 }
 
 // Gửi một tin tới một chat đã kết nối và lưu lại. Trả về true nếu Telegram nhận.
-async function sendAndRecord(chat: Chat, text: string, kind: string, sentByAccountId: number | null): Promise<boolean> {
-  const delivered = await sendMessage(chat.chatId, text);
-  await record({ chatId: chat.chatId, parentId: chat.parentId, accountId: chat.accountId, direction: 'out', kind, text, sentByAccountId, delivered, read: true });
+async function sendAndRecord(
+  chat: Chat,
+  text: string,
+  kind: string,
+  sentByAccountId: number | null,
+  replyMarkup?: Record<string, unknown>,
+): Promise<boolean> {
+  const delivered = await sendMessage(chat.chatId, text, replyMarkup);
+  await record({
+    chatId: chat.chatId,
+    parentId: chat.parentId,
+    accountId: chat.accountId,
+    direction: 'out',
+    kind,
+    text,
+    sentByAccountId,
+    delivered,
+    read: true,
+  });
   return delivered;
 }
 
 export type SendSummary = { chats: number; delivered: number };
+
+// Gửi bản sao tới các tài khoản Quản trị viên (Super Admin) đã kết nối Telegram (P34.13)
+export async function sendCopyToSuperAdmins(text: string, excludeAccountId?: number | null): Promise<void> {
+  const adminChats = await db
+    .select({
+      chatId: telegramChats.chatId,
+      accountId: telegramChats.accountId,
+    })
+    .from(telegramChats)
+    .innerJoin(accounts, eq(accounts.id, telegramChats.accountId))
+    .where(and(eq(accounts.role, 'admin'), eq(telegramChats.active, true)));
+
+  for (const c of adminChats) {
+    if (excludeAccountId && c.accountId === excludeAccountId) continue;
+    await sendMessage(c.chatId, text);
+  }
+}
+
+// Lấy chữ ký nhân viên / giáo viên kèm tên lớp (P34.12)
+async function getStaffSignature(accountId: number, parentId?: number | null): Promise<string> {
+  const [acc] = await db
+    .select({
+      id: accounts.id,
+      fullName: accounts.fullName,
+      teacherId: accounts.teacherId,
+    })
+    .from(accounts)
+    .where(eq(accounts.id, accountId))
+    .limit(1);
+
+  if (!acc) return '\n\n— ESL Center';
+
+  if (acc.teacherId) {
+    const [t] = await db
+      .select({ name: teachers.name })
+      .from(teachers)
+      .where(eq(teachers.id, acc.teacherId))
+      .limit(1);
+    const teacherName = t?.name || acc.fullName;
+
+    if (parentId) {
+      const classRows = await db.execute<{ class_name: string }>(sql`
+        SELECT DISTINCT c.name AS class_name
+        FROM classes c
+        JOIN students s ON s.class_id = c.id
+        JOIN student_parents sp ON sp.student_id = s.id
+        WHERE sp.parent_id = ${parentId}
+          AND (c.teacher_id = ${acc.teacherId} OR c.assistant_id = ${acc.teacherId} OR c.foreign_teacher_id = ${acc.teacherId})
+        LIMIT 2`);
+      if (classRows.rows.length > 0) {
+        const classNames = classRows.rows.map((r) => r.class_name).join(', ');
+        return `\n\n— Thầy/Cô ${teacherName}, GV lớp ${classNames}`;
+      }
+    }
+    return `\n\n— Thầy/Cô ${teacherName}, Giáo viên ESL Center`;
+  }
+
+  return `\n\n— ${acc.fullName}, ESL Center`;
+}
+
+// Chuyển tiếp tin nhắn của phụ huynh tới Telegram của các giáo viên phụ trách (P34.12)
+async function forwardParentMessageToTeachers(parentId: number, parentName: string, text: string): Promise<void> {
+  const teacherRows = await db.execute<{ account_id: number; chat_id: number; class_name: string; student_name: string }>(sql`
+    SELECT DISTINCT tc.account_id, tc.chat_id, c.name AS class_name, s.full_name AS student_name
+    FROM student_parents sp
+    JOIN students s ON s.id = sp.student_id
+    JOIN classes c ON c.id = s.class_id
+    JOIN accounts a ON (a.teacher_id = c.teacher_id OR a.teacher_id = c.assistant_id OR a.teacher_id = c.foreign_teacher_id)
+    JOIN telegram_chats tc ON tc.account_id = a.id
+    WHERE sp.parent_id = ${parentId} AND tc.active = true`);
+
+  for (const row of teacherRows.rows) {
+    const notifyText = `[Tin từ PH #${parentId} - ${parentName} (PH em ${row.student_name} - lớp ${row.class_name})]:\n"${text}"\n\n👉 Bấm Reply (Trả lời) tin nhắn này để gửi lại cho phụ huynh.`;
+    await sendMessage(row.chat_id, notifyText);
+  }
+}
 
 // Gửi cho mọi chat đang hoạt động của các phụ huynh của một học sinh
 export async function notifyParentsOfStudent(studentId: number, text: string, kind: string, sentByAccountId: number | null): Promise<SendSummary> {
@@ -83,11 +176,27 @@ export async function notifyAccounts(accountIds: number[], text: string, kind: s
   return { chats: chats.length, delivered };
 }
 
-// Trả lời phụ huynh từ màn Tin nhắn
+// Trả lời phụ huynh từ màn Tin nhắn hoặc từ Telegram reply (P34.12, 34.13)
 export async function replyToParent(parentId: number, text: string, sentByAccountId: number): Promise<SendSummary> {
   const chats = await db.select().from(telegramChats).where(and(eq(telegramChats.parentId, parentId), eq(telegramChats.active, true)));
+  const sig = await getStaffSignature(sentByAccountId, parentId);
+  const fullText = `${text}${sig}`;
+
   let delivered = 0;
-  for (const chat of chats) if (await sendAndRecord(chat, text, 'reply', sentByAccountId)) delivered++;
+  for (const chat of chats) {
+    if (await sendAndRecord(chat, fullText, 'reply', sentByAccountId)) delivered++;
+  }
+
+  // Gửi bản sao cho Super Admin
+  const [sender] = await db.select({ name: accounts.fullName }).from(accounts).where(eq(accounts.id, sentByAccountId)).limit(1);
+  const [p] = await db.select({ name: parents.fullName }).from(parents).where(eq(parents.id, parentId)).limit(1);
+  const kids = await childrenOf(parentId);
+  const kidsStr = kids.map((k) => k.full_name).join(', ') || 'học sinh';
+  await sendCopyToSuperAdmins(
+    `[Bản sao] ${sender?.name ?? 'Nhân viên'} trả lời PH #${parentId} ${p?.name ?? ''} (con: ${kidsStr}):\n"${text}"`,
+    sentByAccountId,
+  );
+
   return { chats: chats.length, delivered };
 }
 
@@ -160,9 +269,151 @@ async function homeworkText(parentId: number): Promise<string> {
   return lines.join('\n');
 }
 
+// Tra cứu điểm và nhận xét bài tập gần nhất (P34.15)
+async function scoresText(parentId: number): Promise<string> {
+  const kids = await childrenOf(parentId);
+  if (kids.length === 0) return 'Chưa có học sinh nào gắn với phụ huynh này.';
+  const lines: string[] = [];
+  for (const kid of kids) {
+    lines.push(`Điểm & nhận xét của ${kid.full_name}:`);
+    const rows = await db.execute<{ title: string; score: number | null; max_score: number; updated_at: Date; feedback: string | null }>(sql`
+      SELECT a.title, sub.score, a.max_score, sub.updated_at, sub.feedback
+      FROM assignment_submissions sub
+      JOIN assignments a ON a.id = sub.assignment_id
+      WHERE sub.student_id = ${kid.id} AND sub.status = 'graded'
+      ORDER BY sub.updated_at DESC LIMIT 5`);
+    if (rows.rows.length === 0) {
+      lines.push('  Chưa có bài tập nào được chấm điểm gần đây.');
+    } else {
+      for (const r of rows.rows) {
+        const timeStr = r.updated_at ? vnDateTimeLabel(new Date(r.updated_at)) : '';
+        const comment = r.feedback ? ` · Nhận xét: "${r.feedback}"` : '';
+        lines.push(`  • ${r.title}: ${r.score ?? 0}/${r.max_score} điểm (${timeStr})${comment}`);
+      }
+    }
+  }
+  return lines.join('\n');
+}
+
+// Tra cứu tình hình chuyên cần 10 buổi gần nhất (P34.15)
+async function attendanceText(parentId: number): Promise<string> {
+  const kids = await childrenOf(parentId);
+  if (kids.length === 0) return 'Chưa có học sinh nào gắn với phụ huynh này.';
+  const lines: string[] = [];
+  for (const kid of kids) {
+    const rows = await db.execute<{ session_date: string; mark: string }>(sql`
+      SELECT session_date::text, mark
+      FROM attendance
+      WHERE student_id = ${kid.id}
+      ORDER BY session_date DESC LIMIT 10`);
+    if (rows.rows.length === 0) {
+      lines.push(`${kid.full_name}: Chưa có dữ liệu điểm danh gần đây.`);
+    } else {
+      const presentCount = rows.rows.filter((r) => r.mark === 'present').length;
+      const lateCount = rows.rows.filter((r) => r.mark === 'late').length;
+      const absentCount = rows.rows.filter((r) => r.mark === 'absent').length;
+      lines.push(`${kid.full_name} (10 buổi gần nhất: ${presentCount} có mặt, ${lateCount} trễ, ${absentCount} vắng):`);
+      for (const r of rows.rows) {
+        const statusLabel = r.mark === 'present' ? 'Có mặt' : r.mark === 'late' ? 'Đi trễ' : 'Vắng mặt';
+        lines.push(`  • Ngày ${r.session_date}: ${statusLabel}`);
+      }
+    }
+  }
+  return lines.join('\n');
+}
+
+// Lịch dạy hôm nay của giáo viên (P34.19)
+async function todayScheduleText(accountId: number): Promise<string> {
+  const [acc] = await db.select().from(accounts).where(eq(accounts.id, accountId)).limit(1);
+  if (!acc || !acc.teacherId) return 'Tài khoản này chưa gắn với giáo viên nào.';
+  const teacherId = acc.teacherId;
+  const rows = await db.execute<{ class_name: string; starts_at: Date; room: string; role: string }>(sql`
+    SELECT c.name AS class_name, cs.starts_at, cs.room,
+      CASE
+        WHEN c.teacher_id = ${teacherId} THEN 'GV chủ nhiệm'
+        WHEN c.assistant_id = ${teacherId} THEN 'Trợ giảng'
+        ELSE 'GV nước ngoài'
+      END AS role
+    FROM class_sessions cs
+    JOIN classes c ON c.id = cs.class_id
+    WHERE (c.teacher_id = ${teacherId} OR c.assistant_id = ${teacherId} OR c.foreign_teacher_id = ${teacherId})
+      AND cs.status = 'planned'
+      AND cs.starts_at >= CURRENT_DATE AND cs.starts_at < CURRENT_DATE + interval '1 day'
+    ORDER BY cs.starts_at`);
+  if (rows.rows.length === 0) return 'Hôm nay bạn không có ca dạy nào.';
+  const lines = ['Lịch dạy hôm nay của bạn:'];
+  for (const r of rows.rows) {
+    lines.push(`  • Lớp ${r.class_name} (${r.role}) – ${vnDateTimeLabel(new Date(r.starts_at))}${r.room ? ` · phòng ${r.room}` : ''}`);
+  }
+  return lines.join('\n');
+}
+
+// Danh sách bài tập chờ chấm của giáo viên (P34.19)
+async function pendingGradingText(accountId: number): Promise<string> {
+  const [acc] = await db.select().from(accounts).where(eq(accounts.id, accountId)).limit(1);
+  if (!acc || !acc.teacherId) return 'Tài khoản này chưa gắn với giáo viên nào.';
+  const teacherId = acc.teacherId;
+  const rows = await db.execute<{ class_name: string; title: string; pending_count: number }>(sql`
+    SELECT c.name AS class_name, a.title, COUNT(sub.id)::int AS pending_count
+    FROM assignments a
+    JOIN classes c ON c.id = a.class_id
+    JOIN assignment_submissions sub ON sub.assignment_id = a.id
+    WHERE (c.teacher_id = ${teacherId} OR c.assistant_id = ${teacherId} OR c.foreign_teacher_id = ${teacherId})
+      AND sub.status = 'submitted'
+    GROUP BY c.name, a.title
+    HAVING COUNT(sub.id) > 0
+    ORDER BY c.name, a.title`);
+  if (rows.rows.length === 0) return 'Hiện không có bài tập nào đang chờ bạn chấm.';
+  const lines = ['Danh sách bài đang chờ bạn chấm:'];
+  for (const r of rows.rows) {
+    lines.push(`  • Lớp ${r.class_name} – Bài "${r.title}": ${r.pending_count} bài nộp`);
+  }
+  return lines.join('\n');
+}
+
+// Báo cáo nhanh trong ngày cho Quản trị viên (P34.20)
+async function dailyReportText(accountId: number): Promise<string> {
+  const [acc] = await db.select().from(accounts).where(eq(accounts.id, accountId)).limit(1);
+  if (!acc || acc.role !== 'admin') return 'Chỉ Quản trị viên (Admin) mới có quyền xem báo cáo nhanh.';
+  const [sessions] = (await db.execute<{ total: number; done: number }>(sql`
+    SELECT COUNT(*)::int AS total,
+           COUNT(*) FILTER (WHERE status = 'done')::int AS done
+    FROM class_sessions
+    WHERE starts_at >= CURRENT_DATE AND starts_at < CURRENT_DATE + interval '1 day'`)).rows;
+  const [att] = (await db.execute<{ absent: number }>(sql`
+    SELECT COUNT(*) FILTER (WHERE mark = 'absent')::int AS absent
+    FROM attendance
+    WHERE session_date = CURRENT_DATE`)).rows;
+  const [tuition] = (await db.execute<{ collected: number }>(sql`
+    SELECT COALESCE(SUM(amount), 0)::int AS collected
+    FROM tuition_payments
+    WHERE paid_at >= CURRENT_DATE AND paid_at < CURRENT_DATE + interval '1 day'`)).rows;
+  const [debt] = (await db.execute<{ count: number }>(sql`
+    SELECT COUNT(DISTINCT s.id)::int AS count
+    FROM students s
+    JOIN classes c ON c.id = s.class_id
+    WHERE s.status = 'active'
+      AND (c.fee - COALESCE((SELECT SUM(amount) FROM tuition_payments WHERE student_id = s.id), 0)) > 0`)).rows;
+
+  return [
+    '📊 Báo cáo nhanh trong ngày (ESL Center):',
+    `• Buổi học hôm nay: ${sessions?.done ?? 0}/${sessions?.total ?? 0} buổi đã hoàn thành`,
+    `• Số lượt học sinh vắng hôm nay: ${att?.absent ?? 0} lượt`,
+    `• Học phí thu trong ngày: ${formatVND(tuition?.collected ?? 0)}`,
+    `• Số học sinh đang còn công nợ: ${debt?.count ?? 0} học sinh`,
+    '',
+    'Đăng nhập trang quản trị để xem chi tiết.',
+  ].join('\n');
+}
+
 // ---------- Xử lý tin nhắn đến (webhook) ----------
 
-export type IncomingMessage = { chatId: number; text: string; fromName: string };
+export type IncomingMessage = {
+  chatId: number;
+  text: string;
+  fromName: string;
+  replyToText?: string;
+};
 
 // Xử lý một tin đến và trả lời ngay qua bot. Mọi tin đến của chat đã kết nối đều được lưu.
 export async function handleIncoming(message: IncomingMessage): Promise<void> {
@@ -179,33 +430,85 @@ export async function handleIncoming(message: IncomingMessage): Promise<void> {
     return;
   }
 
-  await record({ chatId: chat.chatId, parentId: chat.parentId, accountId: chat.accountId, direction: 'in', kind: command.kind === 'text' ? 'text' : 'command', text: message.text });
+  // Nếu là giáo viên / nhân viên bấm Reply tin nhắn trên Telegram để trả lời phụ huynh (P34.12)
+  if (message.replyToText && chat.accountId !== null) {
+    const matchParent = /\[Tin từ PH #(\d+)/.exec(message.replyToText);
+    if (matchParent) {
+      const targetParentId = parseInt(matchParent[1], 10);
+      const [p] = await db.select().from(parents).where(eq(parents.id, targetParentId)).limit(1);
+      if (p) {
+        await replyToParent(targetParentId, message.text, chat.accountId);
+        await sendMessage(message.chatId, `✓ Đã gửi câu trả lời tới phụ huynh ${p.fullName}.`);
+        return;
+      }
+    }
+  }
+
+  await record({
+    chatId: chat.chatId,
+    parentId: chat.parentId,
+    accountId: chat.accountId,
+    direction: 'in',
+    kind: command.kind === 'text' ? 'text' : 'command',
+    text: message.text,
+  });
 
   if (command.kind === 'stop') {
     await db.update(telegramChats).set({ active: false, updatedAt: new Date() }).where(eq(telegramChats.id, chat.id));
     await sendAndRecord(chat, 'Đã ngừng nhận tin từ trung tâm. Muốn nhận lại, hãy mở link kết nối mới do trung tâm gửi.', 'system', null);
     return;
   }
-  if (command.kind === 'help' || command.kind === 'start') {
-    await sendAndRecord(chat, HELP_TEXT, 'system', null);
-    return;
-  }
-  if (chat.parentId === null) {
-    // Tài khoản nhân viên chỉ nhận thông báo, không có lệnh tra cứu
-    if (command.kind !== 'text') await sendAndRecord(chat, 'Các lệnh tra cứu dành cho phụ huynh. Tài khoản nhân viên nhận thông báo từ hệ thống.', 'system', null);
-    return;
-  }
-  if (command.kind === 'schedule') return void (await sendAndRecord(chat, await scheduleText(chat.parentId), 'command', null));
-  if (command.kind === 'tuition') return void (await sendAndRecord(chat, await tuitionText(chat.parentId), 'command', null));
-  if (command.kind === 'homework') return void (await sendAndRecord(chat, await homeworkText(chat.parentId), 'command', null));
 
-  // Tin thường: chỉ báo nhận một lần mỗi 6 giờ, để không trả lời tự động mọi tin
-  const [recentAck] = await db
-    .select({ id: telegramMessages.id })
-    .from(telegramMessages)
-    .where(and(eq(telegramMessages.chatId, chat.chatId), eq(telegramMessages.kind, 'ack'), gt(telegramMessages.createdAt, new Date(Date.now() - 6 * 3_600_000))))
-    .limit(1);
-  if (!recentAck) await sendAndRecord(chat, 'Trung tâm đã nhận tin nhắn và sẽ trả lời sớm. Gõ /help để xem các lệnh tra cứu.', 'ack', null);
+  // Lệnh trợ giúp
+  if (command.kind === 'help' || command.kind === 'start') {
+    const isParent = chat.parentId !== null;
+    const helpMsg = isParent ? HELP_TEXT : STAFF_HELP_TEXT;
+    const keyboard = isParent ? PARENT_KEYBOARD : STAFF_KEYBOARD;
+    await sendAndRecord(chat, helpMsg, 'system', null, keyboard);
+    return;
+  }
+
+  // Xử lý chat của nhân viên / giáo viên
+  if (chat.parentId === null && chat.accountId !== null) {
+    if (command.kind === 'today') return void (await sendAndRecord(chat, await todayScheduleText(chat.accountId), 'command', null));
+    if (command.kind === 'pending_grading') return void (await sendAndRecord(chat, await pendingGradingText(chat.accountId), 'command', null));
+    if (command.kind === 'report') return void (await sendAndRecord(chat, await dailyReportText(chat.accountId), 'command', null));
+    if (command.kind !== 'text') {
+      await sendAndRecord(chat, STAFF_HELP_TEXT, 'system', null, STAFF_KEYBOARD);
+    }
+    return;
+  }
+
+  // Xử lý lệnh của phụ huynh
+  if (chat.parentId !== null) {
+    if (command.kind === 'schedule') return void (await sendAndRecord(chat, await scheduleText(chat.parentId), 'command', null));
+    if (command.kind === 'tuition') return void (await sendAndRecord(chat, await tuitionText(chat.parentId), 'command', null));
+    if (command.kind === 'homework') return void (await sendAndRecord(chat, await homeworkText(chat.parentId), 'command', null));
+    if (command.kind === 'scores') return void (await sendAndRecord(chat, await scoresText(chat.parentId), 'command', null));
+    if (command.kind === 'attendance') return void (await sendAndRecord(chat, await attendanceText(chat.parentId), 'command', null));
+    if (command.kind === 'leave') return void (await handleLeaveCommand(chat));
+
+    // Nếu phụ huynh gửi tin nhắn thường (không phải lệnh):
+    // 1. Chuyển tiếp tới giáo viên dạy con của phụ huynh này (P34.12)
+    const [p] = await db.select({ name: parents.fullName }).from(parents).where(eq(parents.id, chat.parentId)).limit(1);
+    const parentName = p?.name ?? 'Phụ huynh';
+    await forwardParentMessageToTeachers(chat.parentId, parentName, message.text);
+
+    // 2. Gửi bản sao cho Super Admin (P34.13)
+    const kids = await childrenOf(chat.parentId);
+    const kidsStr = kids.map((k) => k.full_name).join(', ') || 'học sinh';
+    await sendCopyToSuperAdmins(`[Bản sao] Phụ huynh #${chat.parentId} ${parentName} (con: ${kidsStr}) nhắn:\n"${message.text}"`);
+
+    // 3. Tin nhắn tự động phản hồi cho phụ huynh (tối đa 1 lần mỗi 6 giờ)
+    const [recentAck] = await db
+      .select({ id: telegramMessages.id })
+      .from(telegramMessages)
+      .where(and(eq(telegramMessages.chatId, chat.chatId), eq(telegramMessages.kind, 'ack'), gt(telegramMessages.createdAt, new Date(Date.now() - 6 * 3_600_000))))
+      .limit(1);
+    if (!recentAck) {
+      await sendAndRecord(chat, 'Trung tâm đã nhận tin nhắn và sẽ trả lời sớm. Gõ /help hoặc chọn menu bên dưới để tra cứu nhanh.', 'ack', null, PARENT_KEYBOARD);
+    }
+  }
 }
 
 async function linkByCode(message: IncomingMessage, code: string): Promise<void> {
@@ -231,7 +534,453 @@ async function linkByCode(message: IncomingMessage, code: string): Promise<void>
       });
   });
   const chat = await chatOf(message.chatId);
-  if (chat) await sendAndRecord(chat, `Đã kết nối với ESL Center${name ? ` cho ${name}` : ''}.\n\n${HELP_TEXT}`, 'system', null);
+  if (chat) {
+    const isParent = chat.parentId !== null;
+    const keyboard = isParent ? PARENT_KEYBOARD : STAFF_KEYBOARD;
+    const helpText = isParent ? HELP_TEXT : STAFF_HELP_TEXT;
+    await sendAndRecord(chat, `Đã kết nối với ESL Center${name ? ` cho ${name}` : ''}.\n\n${helpText}`, 'system', null, keyboard);
+  }
+}
+
+// ---------- Đơn xin nghỉ học & Menu chọn con (P34.14, 34.16) ----------
+
+async function handleLeaveCommand(chat: Chat): Promise<void> {
+  if (!chat.parentId) return;
+  const kids = await childrenOf(chat.parentId);
+  if (kids.length === 0) {
+    await sendAndRecord(chat, 'Chưa có học sinh nào gắn với tài khoản phụ huynh này.', 'command', null);
+    return;
+  }
+  if (kids.length === 1) {
+    await promptSelectSession(chat, kids[0].id, kids[0].full_name);
+    return;
+  }
+  // Nếu có nhiều hơn 1 con: cho chọn con
+  const inlineButtons = kids.map((k) => [
+    { text: `Em ${k.full_name} (${k.class_name})`, callback_data: `leave_kid:${k.id}` },
+  ]);
+  await sendMessage(chat.chatId, 'Bạn muốn gửi đơn xin nghỉ học cho con nào?', {
+    inline_keyboard: inlineButtons,
+  });
+}
+
+async function promptSelectSession(chat: Chat, studentId: number, kidName?: string): Promise<void> {
+  const [s] = await db.select({ name: students.fullName }).from(students).where(eq(students.id, studentId)).limit(1);
+  const studentName = kidName || s?.name || 'con';
+
+  const sessions = await db.execute<{ id: number; starts_at: Date; room: string; class_name: string }>(sql`
+    SELECT cs.id, cs.starts_at, cs.room, c.name AS class_name
+    FROM class_sessions cs
+    JOIN classes c ON c.id = cs.class_id
+    JOIN students s ON s.class_id = c.id
+    WHERE s.id = ${studentId}
+      AND cs.status = 'planned'
+      AND cs.starts_at >= CURRENT_DATE
+    ORDER BY cs.starts_at
+    LIMIT 5`);
+
+  if (sessions.rows.length === 0) {
+    await sendMessage(chat.chatId, `Hiện không có buổi học nào sắp tới trong lịch của em ${studentName}.`);
+    return;
+  }
+
+  const buttons = sessions.rows.map((row) => [
+    {
+      text: `${vnDateTimeLabel(new Date(row.starts_at))}${row.room ? ` · P.${row.room}` : ''}`,
+      callback_data: `leave_sess:${studentId}:${row.id}`,
+    },
+  ]);
+
+  await sendMessage(chat.chatId, `Chọn buổi học muốn xin phép nghỉ cho em ${studentName}:`, {
+    inline_keyboard: buttons,
+  });
+}
+
+async function submitLeaveRequest(chat: Chat, studentId: number, sessionId: number): Promise<void> {
+  if (!chat.parentId) return;
+  const [info] = (await db.execute<{
+    starts_at: Date;
+    room: string;
+    class_id: number;
+    class_name: string;
+    student_name: string;
+    parent_name: string;
+  }>(sql`
+    SELECT cs.starts_at, cs.room, c.id AS class_id, c.name AS class_name, s.full_name AS student_name, p.full_name AS parent_name
+    FROM class_sessions cs
+    JOIN classes c ON c.id = cs.class_id
+    JOIN students s ON s.id = ${studentId}
+    JOIN parents p ON p.id = ${chat.parentId}
+    WHERE cs.id = ${sessionId}
+    LIMIT 1`)).rows;
+
+  if (!info) return;
+
+  const sessionTime = vnDateTimeLabel(new Date(info.starts_at));
+  await sendMessage(chat.chatId, `✓ Đã gửi đơn xin nghỉ buổi ${sessionTime} cho em ${info.student_name}. Giáo viên phụ trách lớp ${info.class_name} sẽ xem xét và phản hồi sớm.`);
+
+  // Gửi thông báo cho các giáo viên phụ trách lớp
+  const teacherRows = await db.execute<{ account_id: number; chat_id: number }>(sql`
+    SELECT DISTINCT a.id AS account_id, tc.chat_id
+    FROM accounts a
+    JOIN classes c ON (a.teacher_id = c.teacher_id OR a.teacher_id = c.assistant_id OR a.teacher_id = c.foreign_teacher_id)
+    JOIN telegram_chats tc ON tc.account_id = a.id
+    WHERE c.id = ${info.class_id} AND tc.active = true`);
+
+  const promptText = `📢 ĐƠN XIN NGHỈ HỌC:\nPhụ huynh ${info.parent_name} xin nghỉ cho em ${info.student_name} (lớp ${info.class_name}) vào buổi ${sessionTime}.\n\nThầy/Cô vui lòng duyệt đơn:`;
+  const teacherKeyboard = {
+    inline_keyboard: [
+      [
+        { text: '✓ Đồng ý duyệt', callback_data: `leave_appr:${studentId}:${sessionId}` },
+        { text: '✕ Từ chối', callback_data: `leave_deny:${studentId}:${sessionId}` },
+      ],
+    ],
+  };
+
+  for (const t of teacherRows.rows) {
+    await sendMessage(t.chat_id, promptText, teacherKeyboard);
+  }
+
+  // Gửi bản sao tới Super Admin
+  await sendCopyToSuperAdmins(`[Bản sao] Phụ huynh ${info.parent_name} gửi đơn xin nghỉ cho em ${info.student_name} (lớp ${info.class_name}) buổi ${sessionTime}.`);
+}
+
+async function approveLeaveRequest(chat: Chat, studentId: number, sessionId: number): Promise<void> {
+  if (!chat.accountId) return;
+  const [row] = (await db.execute<{
+    class_id: number;
+    starts_at: Date;
+    student_name: string;
+    class_name: string;
+    parent_id: number | null;
+  }>(sql`
+    SELECT cs.class_id, cs.starts_at, s.full_name AS student_name, c.name AS class_name, sp.parent_id
+    FROM class_sessions cs
+    JOIN classes c ON c.id = cs.class_id
+    JOIN students s ON s.id = ${studentId}
+    LEFT JOIN student_parents sp ON sp.student_id = s.id
+    WHERE cs.id = ${sessionId}
+    LIMIT 1`)).rows;
+
+  if (!row) return;
+
+  const sessionDateStr = new Date(row.starts_at).toISOString().slice(0, 10);
+  const timeLabel = vnDateTimeLabel(new Date(row.starts_at));
+
+  // Ghi nhận vắng có phép vào bảng attendance
+  await db.execute(sql`
+    INSERT INTO attendance (student_id, class_id, session_date, mark, created_at, updated_at)
+    VALUES (${studentId}, ${row.class_id}, ${sessionDateStr}::date, 'absent', NOW(), NOW())
+    ON CONFLICT (student_id, session_date) DO UPDATE
+    SET mark = 'absent', updated_at = NOW()`);
+
+  // Báo giáo viên đã duyệt
+  await sendMessage(chat.chatId, `✓ Đã phê duyệt đơn xin nghỉ buổi ${timeLabel} cho em ${row.student_name}. Đã đánh dấu vắng trong sổ điểm danh.`);
+
+  // Báo phụ huynh
+  if (row.parent_id) {
+    const parentChats = await db.select().from(telegramChats).where(and(eq(telegramChats.parentId, row.parent_id), eq(telegramChats.active, true)));
+    const sig = await getStaffSignature(chat.accountId, row.parent_id);
+    for (const pc of parentChats) {
+      await sendAndRecord(pc, `✓ Đơn xin nghỉ buổi ${timeLabel} cho em ${row.student_name} đã được giáo viên phê duyệt.${sig}`, 'system', chat.accountId);
+    }
+  }
+
+  // Báo Super Admin
+  const [t] = await db.select({ name: accounts.fullName }).from(accounts).where(eq(accounts.id, chat.accountId)).limit(1);
+  await sendCopyToSuperAdmins(`[Bản sao] Thầy/Cô ${t?.name ?? 'Giáo viên'} đã DUYỆT đơn xin nghỉ buổi ${timeLabel} cho em ${row.student_name}.`);
+}
+
+async function denyLeaveRequest(chat: Chat, studentId: number, sessionId: number): Promise<void> {
+  if (!chat.accountId) return;
+  const [row] = (await db.execute<{
+    starts_at: Date;
+    student_name: string;
+    parent_id: number | null;
+  }>(sql`
+    SELECT cs.starts_at, s.full_name AS student_name, sp.parent_id
+    FROM class_sessions cs
+    JOIN students s ON s.id = ${studentId}
+    LEFT JOIN student_parents sp ON sp.student_id = s.id
+    WHERE cs.id = ${sessionId}
+    LIMIT 1`)).rows;
+
+  if (!row) return;
+  const timeLabel = vnDateTimeLabel(new Date(row.starts_at));
+  await sendMessage(chat.chatId, `Đã từ chối đơn xin nghỉ buổi ${timeLabel} của em ${row.student_name}.`);
+
+  if (row.parent_id) {
+    const parentChats = await db.select().from(telegramChats).where(and(eq(telegramChats.parentId, row.parent_id), eq(telegramChats.active, true)));
+    const sig = await getStaffSignature(chat.accountId, row.parent_id);
+    for (const pc of parentChats) {
+      await sendAndRecord(pc, `Thông báo: Đơn xin nghỉ buổi ${timeLabel} cho em ${row.student_name} chưa được phê duyệt. Thầy/Cô sẽ liên hệ trực tiếp với phụ huynh.${sig}`, 'system', chat.accountId);
+    }
+  }
+
+  const [t] = await db.select({ name: accounts.fullName }).from(accounts).where(eq(accounts.id, chat.accountId)).limit(1);
+  await sendCopyToSuperAdmins(`[Bản sao] Thầy/Cô ${t?.name ?? 'Giáo viên'} đã TỪ CHỐI đơn xin nghỉ buổi ${timeLabel} của em ${row.student_name}.`);
+}
+
+export type IncomingCallback = {
+  id: string;
+  chatId: number;
+  data: string;
+  fromName: string;
+};
+
+export async function handleCallbackQuery(cb: IncomingCallback): Promise<void> {
+  const chat = await chatOf(cb.chatId);
+  if (!chat || !chat.active) {
+    await answerCallbackQuery(cb.id, 'Tài khoản chưa kết nối với hệ thống.');
+    return;
+  }
+
+  try {
+    if (cb.data.startsWith('leave_kid:')) {
+      const studentId = parseInt(cb.data.replace('leave_kid:', ''), 10);
+      await promptSelectSession(chat, studentId);
+      await answerCallbackQuery(cb.id);
+      return;
+    }
+
+    if (cb.data.startsWith('leave_sess:')) {
+      const parts = cb.data.split(':');
+      const studentId = parseInt(parts[1], 10);
+      const sessionId = parseInt(parts[2], 10);
+      await submitLeaveRequest(chat, studentId, sessionId);
+      await answerCallbackQuery(cb.id, 'Đã gửi đơn xin nghỉ');
+      return;
+    }
+
+    if (cb.data.startsWith('leave_appr:')) {
+      const parts = cb.data.split(':');
+      const studentId = parseInt(parts[1], 10);
+      const sessionId = parseInt(parts[2], 10);
+      await approveLeaveRequest(chat, studentId, sessionId);
+      await answerCallbackQuery(cb.id, 'Đã phê duyệt đơn');
+      return;
+    }
+
+    if (cb.data.startsWith('leave_deny:')) {
+      const parts = cb.data.split(':');
+      const studentId = parseInt(parts[1], 10);
+      const sessionId = parseInt(parts[2], 10);
+      await denyLeaveRequest(chat, studentId, sessionId);
+      await answerCallbackQuery(cb.id, 'Đã từ chối đơn');
+      return;
+    }
+
+    await answerCallbackQuery(cb.id);
+  } catch (error) {
+    console.error('Lỗi xử lý callback query:', error);
+    await answerCallbackQuery(cb.id, 'Đã xảy ra lỗi khi xử lý.');
+  }
+}
+
+// ---------- Tự động chạy định kỳ Cron & Thông báo chung (P34.17, 34.18, 34.21) ----------
+
+export type CronTaskResult = {
+  scheduleReminders: number;
+  homeworkReminders: number;
+  reportSent: boolean;
+};
+
+export async function runTelegramCronTasks(options?: { sendDailyReport?: boolean }): Promise<CronTaskResult> {
+  let scheduleReminders = 0;
+  let homeworkReminders = 0;
+  let reportSent = false;
+
+  try {
+    // 1. Nhắc lịch học hôm nay (P34.17)
+    const todaySessions = await db.execute<{
+      session_id: number;
+      starts_at: Date;
+      room: string;
+      class_name: string;
+      student_name: string;
+      chat_id: number;
+      parent_id: number;
+    }>(sql`
+      SELECT cs.id AS session_id, cs.starts_at, cs.room, c.name AS class_name,
+             s.full_name AS student_name, tc.chat_id, tc.parent_id
+      FROM class_sessions cs
+      JOIN classes c ON c.id = cs.class_id
+      JOIN students s ON s.class_id = c.id
+      JOIN student_parents sp ON sp.student_id = s.id
+      JOIN telegram_chats tc ON tc.parent_id = sp.parent_id
+      WHERE cs.starts_at >= CURRENT_DATE AND cs.starts_at < CURRENT_DATE + interval '1 day'
+        AND cs.status = 'planned'
+        AND tc.active = true
+        AND s.status IN ('active', 'trial')`);
+
+    for (const row of todaySessions.rows) {
+      const sessionTag = `[Lịch #${row.session_id}]`;
+      const [alreadySent] = await db
+        .select({ id: telegramMessages.id })
+        .from(telegramMessages)
+        .where(
+          and(
+            eq(telegramMessages.chatId, row.chat_id),
+            eq(telegramMessages.kind, 'remind_schedule'),
+            gt(telegramMessages.createdAt, new Date(Date.now() - 20 * 3600 * 1000)),
+          ),
+        )
+        .limit(1);
+
+      if (!alreadySent) {
+        const timeStr = vnDateTimeLabel(new Date(row.starts_at));
+        const roomStr = row.room ? ` · Phòng ${row.room}` : '';
+        const msg = `⏰ Nhắc lịch học hôm nay:\nEm ${row.student_name} có buổi học lớp ${row.class_name} lúc ${timeStr}${roomStr}.\nChúc em có buổi học thật tốt! ${sessionTag}`;
+        const delivered = await sendMessage(row.chat_id, msg);
+        await record({
+          chatId: row.chat_id,
+          parentId: row.parent_id,
+          accountId: null,
+          direction: 'out',
+          kind: 'remind_schedule',
+          text: msg,
+          delivered,
+          read: true,
+        });
+        if (delivered) scheduleReminders++;
+      }
+    }
+
+    // 2. Nhắc nộp bài tập sắp đến hạn trong vòng 24 giờ tới (P34.17)
+    const pendingHomework = await db.execute<{
+      assignment_id: number;
+      title: string;
+      due_at: Date;
+      class_name: string;
+      student_name: string;
+      chat_id: number;
+      parent_id: number;
+    }>(sql`
+      SELECT a.id AS assignment_id, a.title, a.due_at, c.name AS class_name,
+             s.full_name AS student_name, tc.chat_id, tc.parent_id
+      FROM assignments a
+      JOIN classes c ON c.id = a.class_id
+      JOIN students s ON s.class_id = c.id
+      JOIN student_parents sp ON sp.student_id = s.id
+      JOIN telegram_chats tc ON tc.parent_id = sp.parent_id
+      LEFT JOIN assignment_submissions sub ON sub.assignment_id = a.id AND sub.student_id = s.id
+      WHERE a.due_at >= NOW() AND a.due_at < NOW() + interval '24 hours'
+        AND COALESCE(sub.status, 'not_submitted') = 'not_submitted'
+        AND tc.active = true
+        AND s.status IN ('active', 'trial')`);
+
+    for (const row of pendingHomework.rows) {
+      const hwTag = `[BT #${row.assignment_id}]`;
+      const [alreadySent] = await db
+        .select({ id: telegramMessages.id })
+        .from(telegramMessages)
+        .where(
+          and(
+            eq(telegramMessages.chatId, row.chat_id),
+            eq(telegramMessages.kind, 'remind_homework'),
+            gt(telegramMessages.createdAt, new Date(Date.now() - 20 * 3600 * 1000)),
+          ),
+        )
+        .limit(1);
+
+      if (!alreadySent) {
+        const dueStr = vnDateTimeLabel(new Date(row.due_at));
+        const msg = `📝 Nhắc nộp bài tập:\nEm ${row.student_name} (lớp ${row.class_name}) có bài tập "${row.title}" hạn nộp: ${dueStr}.\nPhụ huynh hãy nhắc con hoàn thành nhé! ${hwTag}`;
+        const delivered = await sendMessage(row.chat_id, msg);
+        await record({
+          chatId: row.chat_id,
+          parentId: row.parent_id,
+          accountId: null,
+          direction: 'out',
+          kind: 'remind_homework',
+          text: msg,
+          delivered,
+          read: true,
+        });
+        if (delivered) homeworkReminders++;
+      }
+    }
+
+    // 3. Gửi báo cáo ngày cho Super Admin nếu có yêu cầu
+    if (options?.sendDailyReport) {
+      const [firstAdmin] = await db.select({ id: accounts.id }).from(accounts).where(eq(accounts.role, 'admin')).limit(1);
+      if (firstAdmin) {
+        const report = await dailyReportText(firstAdmin.id);
+        await sendCopyToSuperAdmins(report);
+        reportSent = true;
+      }
+    }
+  } catch (error) {
+    console.error('Lỗi khi chạy Telegram cron tasks:', error);
+  }
+
+  return { scheduleReminders, homeworkReminders, reportSent };
+}
+
+export type BroadcastParams = {
+  scope: 'all' | 'campus' | 'class';
+  scopeId?: number;
+  text: string;
+  sentByAccountId: number;
+};
+
+export async function broadcastTelegramMessage(params: BroadcastParams): Promise<{ total: number; delivered: number }> {
+  let targetChats: { chat_id: number; parent_id: number }[] = [];
+
+  if (params.scope === 'class' && params.scopeId) {
+    const rows = await db.execute<{ chat_id: number; parent_id: number }>(sql`
+      SELECT DISTINCT tc.chat_id, tc.parent_id
+      FROM telegram_chats tc
+      JOIN student_parents sp ON sp.parent_id = tc.parent_id
+      JOIN students s ON s.id = sp.student_id
+      WHERE s.class_id = ${params.scopeId} AND tc.active = true`);
+    targetChats = rows.rows;
+  } else if (params.scope === 'campus' && params.scopeId) {
+    const rows = await db.execute<{ chat_id: number; parent_id: number }>(sql`
+      SELECT DISTINCT tc.chat_id, tc.parent_id
+      FROM telegram_chats tc
+      JOIN student_parents sp ON sp.parent_id = tc.parent_id
+      JOIN students s ON s.id = sp.student_id
+      JOIN classes c ON c.id = s.class_id
+      WHERE c.campus_id = ${params.scopeId} AND tc.active = true`);
+    targetChats = rows.rows;
+  } else {
+    // Toàn bộ phụ huynh đã kết nối
+    const rows = await db.execute<{ chat_id: number; parent_id: number }>(sql`
+      SELECT DISTINCT tc.chat_id, tc.parent_id
+      FROM telegram_chats tc
+      WHERE tc.parent_id IS NOT NULL AND tc.active = true`);
+    targetChats = rows.rows;
+  }
+
+  const [sender] = await db.select({ name: accounts.fullName }).from(accounts).where(eq(accounts.id, params.sentByAccountId)).limit(1);
+  const sig = `\n\n— ${sender?.name ?? 'Ban Quản trị'}, ESL Center`;
+  const fullText = `${params.text}${sig}`;
+
+  let deliveredCount = 0;
+  for (const chat of targetChats) {
+    const ok = await sendMessage(chat.chat_id, fullText);
+    await record({
+      chatId: chat.chat_id,
+      parentId: chat.parent_id,
+      accountId: null,
+      direction: 'out',
+      kind: 'broadcast',
+      text: fullText,
+      sentByAccountId: params.sentByAccountId,
+      delivered: ok,
+      read: true,
+    });
+    if (ok) deliveredCount++;
+  }
+
+  // Gửi bản sao tới Super Admin
+  await sendCopyToSuperAdmins(
+    `[Bản sao Thông báo chung - gửi ${deliveredCount}/${targetChats.length} PH]:\n"${params.text}"`,
+    params.sentByAccountId,
+  );
+
+  return { total: targetChats.length, delivered: deliveredCount };
 }
 
 async function targetName(parentId: number | null, accountId: number | null): Promise<string> {

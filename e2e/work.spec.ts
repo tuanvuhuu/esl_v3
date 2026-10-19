@@ -948,12 +948,25 @@ test.describe('bài tập, điểm danh, học phí', () => {
       const used = (await db.query<{ used: boolean }>(`select used_at is not null as used from telegram_link_codes where code = $1`, [code])).rows;
       expect(used).toEqual([{ used: true }]);
 
-      // Tin thường được lưu cho trung tâm đọc; lệnh /hocphi được trả lời
+      // Tin thường được lưu cho trung tâm đọc; lệnh /hocphi, /diem, /chuyencan được trả lời
       await hook('Cô ơi con xin nghỉ học hôm nay');
       await hook('/hocphi');
+      await hook('/diem');
+      await hook('/chuyencan');
+      await hook('/lich');
+      await hook('/baitap');
+      await hook('/nghi');
       const msgs = (await db.query<{ direction: string; kind: string; text: string }>(`select direction, kind, text from telegram_messages where chat_id = $1 order by id`, [chatId])).rows;
       expect(msgs.some((m) => m.direction === 'in' && m.text === 'Cô ơi con xin nghỉ học hôm nay')).toBe(true);
       expect(msgs.some((m) => m.direction === 'out' && m.kind === 'command' && /còn thiếu|đã đóng đủ/.test(m.text))).toBe(true);
+      expect(msgs.some((m) => m.direction === 'out' && m.kind === 'command' && /Điểm|chấm điểm/.test(m.text))).toBe(true);
+      expect(msgs.some((m) => m.direction === 'out' && m.kind === 'command' && /chuyên cần|buổi gần nhất|điểm danh/.test(m.text))).toBe(true);
+
+      // Route cron Telegram kiểm tra token và chạy thành công
+      const cronRes = await page.request.get(`/api/cron/telegram?key=${secret}`);
+      expect(cronRes.status()).toBe(200);
+      const cronJson = await cronRes.json();
+      expect(cronJson.ok).toBe(true);
 
       // Màn Tin nhắn: thấy cuộc trò chuyện, trả lời được (chưa có token nên ghi là chưa gửi được)
       await page.goto(`/tin-nhan?p=${parentId}`);
@@ -964,6 +977,12 @@ test.describe('bài tập, điểm danh, học phí', () => {
       await expect(page.getByRole('list', { name: 'Tin nhắn' })).toContainText('Cô đã nhận tin, chúc con mau khoẻ.');
       const unread = (await db.query<{ n: number }>(`select count(*)::int as n from telegram_messages where parent_id = $1 and direction = 'in' and read_at is null`, [parentId])).rows[0].n;
       expect(unread).toBe(0);
+
+      // Thử mở hộp thoại gửi thông báo chung (Broadcast)
+      await page.getByRole('button', { name: 'Thông báo chung', exact: true }).click();
+      await page.getByLabel('Nội dung thông báo (tối đa 3000 ký tự)').fill('Thông báo kiểm thử E2E hệ thống');
+      await page.getByRole('dialog').getByRole('button', { name: 'Gửi thông báo', exact: true }).click();
+      await expectToast(page, 'Đã gửi thông báo tới');
 
       // /huy: ngừng nhận tin
       await hook('/huy');

@@ -3,13 +3,23 @@
 import { timingSafeEqual } from 'node:crypto';
 import { connection } from 'next/server';
 import { webhookSecret } from '@/lib/telegram/api';
-import { handleIncoming } from '@/lib/telegram/service';
+import { handleCallbackQuery, handleIncoming } from '@/lib/telegram/service';
 
 type Update = {
   message?: {
     chat?: { id?: number; type?: string };
     from?: { first_name?: string; last_name?: string; username?: string; is_bot?: boolean };
     text?: string;
+    reply_to_message?: {
+      message_id?: number;
+      text?: string;
+    };
+  };
+  callback_query?: {
+    id: string;
+    from: { id: number; first_name?: string; last_name?: string; username?: string };
+    message?: { chat?: { id?: number } };
+    data?: string;
   };
 };
 
@@ -33,6 +43,26 @@ export async function POST(request: Request) {
   } catch {
     return new Response('ok');
   }
+
+  // Xử lý khi người dùng bấm nút Inline Keyboard
+  const cb = update.callback_query;
+  const cbChatId = cb?.message?.chat?.id;
+  const cbData = cb?.data;
+  if (cb?.id && cbData && typeof cbChatId === 'number') {
+    const fromName = [cb.from?.first_name, cb.from?.last_name].filter(Boolean).join(' ') || cb.from?.username || '';
+    try {
+      await handleCallbackQuery({
+        id: cb.id,
+        chatId: cbChatId,
+        data: cbData,
+        fromName,
+      });
+    } catch (error) {
+      console.error('Lỗi xử lý callback query:', error);
+    }
+    return new Response('ok');
+  }
+
   const message = update.message;
   // Chỉ xử lý tin chữ trong chat riêng với bot. Nhóm, kênh, ảnh, tệp thì bỏ qua.
   if (!message?.text || message.chat?.type !== 'private' || typeof message.chat.id !== 'number' || message.from?.is_bot) {
@@ -40,7 +70,12 @@ export async function POST(request: Request) {
   }
   const fromName = [message.from?.first_name, message.from?.last_name].filter(Boolean).join(' ') || message.from?.username || '';
   try {
-    await handleIncoming({ chatId: message.chat.id, text: message.text.slice(0, 4000), fromName });
+    await handleIncoming({
+      chatId: message.chat.id,
+      text: message.text.slice(0, 4000),
+      fromName,
+      replyToText: message.reply_to_message?.text,
+    });
   } catch (error) {
     // Vẫn trả 200 để Telegram không gửi lại cùng một tin nhiều lần
     console.error('Lỗi xử lý tin Telegram:', error);

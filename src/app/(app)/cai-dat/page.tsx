@@ -1,4 +1,6 @@
-﻿import { Suspense } from 'react';
+import { Suspense } from 'react';
+import { sql } from 'drizzle-orm';
+import { db } from '@/db/client';
 import { LevelSettings } from '@/components/levels/LevelSettings';
 import { FileCleanup } from '@/components/settings/FileCleanup';
 import { SettingsForm } from '@/components/settings/SettingsForm';
@@ -52,7 +54,23 @@ async function SettingsData() {
 // Trạng thái Telegram và nơi lưu tệp. Gọi Telegram chỉ khi đã có token.
 async function integrationStatus(): Promise<IntegrationStatus> {
   const configured = botToken() !== null;
-  const [me, hook] = configured ? await Promise.all([getMe(), getWebhookInfo()]) : [null, null];
+  const [me, hook, statsRow] = await Promise.all([
+    configured ? getMe() : null,
+    configured ? getWebhookInfo() : null,
+    db.execute<{
+      parents_count: number;
+      staff_count: number;
+      failed_recent: number;
+    }>(sql`
+      SELECT
+        (SELECT COUNT(*)::int FROM telegram_chats WHERE parent_id IS NOT NULL AND active = true) AS parents_count,
+        (SELECT COUNT(*)::int FROM telegram_chats WHERE account_id IS NOT NULL AND active = true) AS staff_count,
+        (SELECT COUNT(*)::int FROM telegram_messages WHERE delivered = false AND created_at >= NOW() - interval '7 days') AS failed_recent
+    `),
+  ]);
+
+  const stats = statsRow.rows[0];
+
   return {
     storage: blobDriver(),
     botConfigured: configured,
@@ -61,5 +79,8 @@ async function integrationStatus(): Promise<IntegrationStatus> {
     webhookUrl: hook && hook.ok ? hook.result.url || null : null,
     webhookError: hook && hook.ok ? (hook.result.last_error_message ?? null) : null,
     secretConfigured: webhookSecret() !== null,
+    linkedParentsCount: stats?.parents_count ?? 0,
+    linkedStaffCount: stats?.staff_count ?? 0,
+    failedMessagesRecentCount: stats?.failed_recent ?? 0,
   };
 }

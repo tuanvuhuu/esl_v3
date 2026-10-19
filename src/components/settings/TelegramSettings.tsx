@@ -14,6 +14,9 @@ export type IntegrationStatus = {
   webhookUrl: string | null;
   webhookError: string | null;
   secretConfigured: boolean;
+  linkedParentsCount: number;
+  linkedStaffCount: number;
+  failedMessagesRecentCount: number;
 };
 
 // Trạng thái Telegram và nơi lưu tệp, kèm nút cài webhook (P34). Khoá và token chỉ nằm trong biến môi trường.
@@ -39,6 +42,18 @@ export function TelegramSettings({ status, canSetup }: { status: IntegrationStat
           </dd>
           <dt className="text-ink-2">Webhook</dt>
           <dd className="break-all text-ink">{status.webhookUrl || 'Chưa cài'}</dd>
+          <dt className="text-ink-2">Phụ huynh kết nối</dt>
+          <dd className="text-ink">{status.linkedParentsCount} phụ huynh</dd>
+          <dt className="text-ink-2">Nhân sự kết nối</dt>
+          <dd className="text-ink">{status.linkedStaffCount} tài khoản</dd>
+          <dt className="text-ink-2">Tin lỗi gần đây (7 ngày)</dt>
+          <dd className="text-ink">
+            {status.failedMessagesRecentCount > 0 ? (
+              <span className="font-semibold text-blush-ink">{status.failedMessagesRecentCount} tin chưa gửi được</span>
+            ) : (
+              <span className="text-ink-2">0 tin lỗi</span>
+            )}
+          </dd>
         </dl>
         {status.webhookError && <Alert>Lỗi gần nhất từ Telegram: {status.webhookError}</Alert>}
         {(!status.botConfigured || !status.secretConfigured || status.storage === 'disk') && (

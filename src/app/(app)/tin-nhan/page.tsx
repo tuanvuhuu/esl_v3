@@ -1,9 +1,12 @@
 import { Suspense } from 'react';
+import { asc } from 'drizzle-orm';
+import { db } from '@/db/client';
+import { campuses as campusesTable, classes as classesTable } from '@/db/schema';
 import { MyTelegramPanel, TelegramInbox } from '@/components/telegram/TelegramInbox';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { passes, requireParentAccess } from '@/lib/campus-access';
+import { isUnrestricted, passes, requireParentAccess, withinScope } from '@/lib/campus-access';
 import { hasPermission } from '@/lib/permissions';
-import { visibleParentIds } from '@/lib/queries/parents';
+import { teacherVisibleParentIds, visibleParentIds } from '@/lib/queries/parents';
 import { getCurrentAccount, getCurrentPermissions } from '@/lib/session';
 import { isAccountLinked, listConversations, listThread, markThreadRead } from '@/lib/telegram/service';
 
@@ -21,20 +24,56 @@ export default function MessagesPage({ searchParams }: { searchParams: Promise<S
 
 async function MessagesData({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const sp = await searchParams;
-  const [granted, account] = await Promise.all([getCurrentPermissions(), getCurrentAccount()]);
+  const [granted, account, unrestricted] = await Promise.all([
+    getCurrentPermissions(),
+    getCurrentAccount(),
+    isUnrestricted(),
+  ]);
   const linked = account ? await isAccountLinked(account.id) : false;
-  const canInbox = hasPermission(new Set(granted), 'parents.manage');
+  const canManage = hasPermission(new Set(granted), 'parents.manage');
+  const isTeacher = Boolean(account?.teacherId);
+  const canInbox = canManage || isTeacher;
 
   let inbox = null;
   if (canInbox) {
-    const visible = await visibleParentIds();
+    let visible: Set<number> | null = null;
+    if (canManage) {
+      visible = await visibleParentIds();
+    } else if (account?.teacherId) {
+      visible = await teacherVisibleParentIds(account.teacherId);
+    }
     const conversations = await listConversations(visible);
     const raw = Array.isArray(sp.p) ? sp.p[0] : sp.p;
     const id = raw && /^\d+$/.test(raw) ? Number(raw) : null;
-    const selected = id !== null && (await passes(() => requireParentAccess(id))) ? (conversations.find((c) => c.parentId === id) ?? null) : null;
+    const allowed = id !== null && (canManage ? await passes(() => requireParentAccess(id)) : (visible?.has(id) ?? false));
+    const selected = allowed ? (conversations.find((c) => c.parentId === id) ?? null) : null;
     const thread = selected ? await listThread(selected.parentId) : [];
     if (selected && selected.unread > 0) await markThreadRead(selected.parentId);
-    inbox = <TelegramInbox conversations={conversations} selected={selected} thread={thread} />;
+
+    // Dữ liệu cho gửi thông báo chung (P34.18)
+    let broadcastCampuses: { id: number; name: string }[] = [];
+    let broadcastClasses: { id: number; name: string }[] = [];
+    if (canManage) {
+      const allCampuses = await db.select({ id: campusesTable.id, name: campusesTable.name, campusId: campusesTable.id }).from(campusesTable).orderBy(asc(campusesTable.id));
+      const scopedCampuses = await withinScope(allCampuses);
+      broadcastCampuses = scopedCampuses.map((c) => ({ id: c.id, name: c.name }));
+
+      const allClasses = await db.select({ id: classesTable.id, name: classesTable.name, campusId: classesTable.campusId }).from(classesTable).orderBy(asc(classesTable.name));
+      const scopedClasses = await withinScope(allClasses);
+      broadcastClasses = scopedClasses.map((c) => ({ id: c.id, name: c.name }));
+    }
+
+    inbox = (
+      <TelegramInbox
+        conversations={conversations}
+        selected={selected}
+        thread={thread}
+        canManage={canManage}
+        canBroadcastAll={canManage && unrestricted}
+        broadcastCampuses={broadcastCampuses}
+        broadcastClasses={broadcastClasses}
+      />
+    );
   }
 
   return (

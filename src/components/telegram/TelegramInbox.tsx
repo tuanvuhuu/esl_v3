@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowLeft, Send } from 'lucide-react';
+import { ArrowLeft, Megaphone, Send } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
@@ -11,6 +11,7 @@ import { Field, textareaClass } from '@/components/ui/Field';
 import { Pill } from '@/components/ui/primitives';
 import { EmptyPanel, Notice, Panel } from '@/components/ui/surfaces';
 import { Toast, useToast } from '@/components/ui/Toast';
+import { BroadcastDialog } from './BroadcastDialog';
 import { TelegramLinkDialog } from './TelegramLinkDialog';
 
 function timeLabel(iso: string): string {
@@ -46,14 +47,23 @@ export function TelegramInbox({
   conversations,
   selected,
   thread,
+  canManage = false,
+  canBroadcastAll = false,
+  broadcastCampuses = [],
+  broadcastClasses = [],
 }: {
   conversations: Conversation[];
   selected: Conversation | null;
   thread: ThreadMessage[];
+  canManage?: boolean;
+  canBroadcastAll?: boolean;
+  broadcastCampuses?: { id: number; name: string }[];
+  broadcastClasses?: { id: number; name: string }[];
 }) {
   const router = useRouter();
   const [text, setText] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [broadcastOpen, setBroadcastOpen] = useState(false);
   const [pending, startTransition] = useTransition();
   const { message, notify } = useToast();
 
@@ -73,12 +83,50 @@ export function TelegramInbox({
   }
 
   if (conversations.length === 0) {
-    return <EmptyPanel title="Chưa có tin nhắn nào" hint="Tạo link kết nối Telegram cho phụ huynh ở màn Phụ huynh (nút ⋯ → Kết nối Telegram). Phụ huynh nhắn bot thì tin hiện ở đây." />;
+    return (
+      <div className="flex flex-col gap-3">
+        <EmptyPanel
+          title="Chưa có tin nhắn nào"
+          hint="Tạo link kết nối Telegram cho phụ huynh ở màn Phụ huynh (nút ⋯ → Kết nối Telegram). Phụ huynh nhắn bot thì tin hiện ở đây."
+        />
+        {canManage && (
+          <div className="flex justify-center">
+            <Btn onClick={() => setBroadcastOpen(true)}>
+              <Megaphone className="size-4" aria-hidden />
+              Gửi thông báo chung
+            </Btn>
+          </div>
+        )}
+        <BroadcastDialog
+          open={broadcastOpen}
+          canBroadcastAll={canBroadcastAll}
+          campuses={broadcastCampuses}
+          classes={broadcastClasses}
+          onClose={() => setBroadcastOpen(false)}
+          onSuccess={(msg) => {
+            notify(msg);
+            router.refresh();
+          }}
+        />
+        <Toast message={message} />
+      </div>
+    );
   }
 
   return (
     <div className="grid grid-cols-1 gap-4 min-[1024px]:grid-cols-[minmax(260px,340px)_1fr]">
-      <Panel title="Cuộc trò chuyện" className={selected ? 'max-[1023px]:hidden' : ''}>
+      <Panel
+        title="Cuộc trò chuyện"
+        className={selected ? 'max-[1023px]:hidden' : ''}
+        action={
+          canManage ? (
+            <Btn onClick={() => setBroadcastOpen(true)}>
+              <Megaphone className="size-4" aria-hidden />
+              Thông báo chung
+            </Btn>
+          ) : undefined
+        }
+      >
         <ul aria-label="Cuộc trò chuyện" className="-mx-2 flex flex-col">
           {conversations.map((c) => (
             <li key={c.parentId}>
@@ -152,6 +200,17 @@ export function TelegramInbox({
           <EmptyPanel title="Chọn một cuộc trò chuyện" hint="Tin mới của phụ huynh có nhãn đỏ." />
         </div>
       )}
+      <BroadcastDialog
+        open={broadcastOpen}
+        canBroadcastAll={canBroadcastAll}
+        campuses={broadcastCampuses}
+        classes={broadcastClasses}
+        onClose={() => setBroadcastOpen(false)}
+        onSuccess={(msg) => {
+          notify(msg);
+          router.refresh();
+        }}
+      />
       <Toast message={message} />
     </div>
   );

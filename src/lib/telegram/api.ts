@@ -38,13 +38,33 @@ async function call<T>(method: string, body: Record<string, unknown>): Promise<A
 }
 
 // Gửi tin dạng chữ thường (không bật HTML/Markdown, để nội dung do người dùng gõ không phá định dạng)
-export async function sendMessage(chatId: number, text: string): Promise<boolean> {
-  const result = await call('sendMessage', { chat_id: chatId, text: text.slice(0, 4000), disable_web_page_preview: true });
+export async function sendMessage(chatId: number, text: string, replyMarkup?: Record<string, unknown>): Promise<boolean> {
+  const body: Record<string, unknown> = {
+    chat_id: chatId,
+    text: text.slice(0, 4000),
+    disable_web_page_preview: true,
+  };
+  if (replyMarkup) {
+    body.reply_markup = replyMarkup;
+  }
+  const result = await call('sendMessage', body);
+  return result.ok;
+}
+
+export async function answerCallbackQuery(callbackQueryId: string, text?: string): Promise<boolean> {
+  const body: Record<string, unknown> = { callback_query_id: callbackQueryId };
+  if (text) body.text = text;
+  const result = await call('answerCallbackQuery', body);
   return result.ok;
 }
 
 export async function setWebhook(url: string, secret: string): Promise<ApiResult<boolean>> {
-  return call<boolean>('setWebhook', { url, secret_token: secret, allowed_updates: ['message'], drop_pending_updates: true });
+  return call<boolean>('setWebhook', {
+    url,
+    secret_token: secret,
+    allowed_updates: ['message', 'callback_query'],
+    drop_pending_updates: true,
+  });
 }
 
 export async function getMe(): Promise<ApiResult<{ username: string; first_name: string }>> {
@@ -54,3 +74,4 @@ export async function getMe(): Promise<ApiResult<{ username: string; first_name:
 export async function getWebhookInfo(): Promise<ApiResult<{ url: string; pending_update_count: number; last_error_message?: string }>> {
   return call('getWebhookInfo', {});
 }
+

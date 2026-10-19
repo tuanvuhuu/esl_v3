@@ -1,5 +1,5 @@
 // Truy vấn phụ huynh và liên kết với học sinh. Chỉ chạy trên server.
-import { asc, eq } from 'drizzle-orm';
+import { asc, eq, sql } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { campuses, classes, parents, studentParents, students, telegramChats } from '@/db/schema';
 import { getAllowedCampusIds } from '@/lib/campus-access';
@@ -94,4 +94,17 @@ export async function listStudentChoicesForParents(): Promise<StudentChoice[]> {
 export async function getParent(id: number) {
   const [row] = await db.select().from(parents).where(eq(parents.id, id)).limit(1);
   return row ?? null;
+}
+
+// Danh sách id phụ huynh có con học các lớp mà giáo viên này dạy (P34.12)
+export async function teacherVisibleParentIds(teacherId: number): Promise<Set<number>> {
+  const rows = await db
+    .select({ parentId: studentParents.parentId })
+    .from(studentParents)
+    .innerJoin(students, eq(students.id, studentParents.studentId))
+    .innerJoin(classes, eq(classes.id, students.classId))
+    .where(
+      sql`(${classes.teacherId} = ${teacherId} OR ${classes.assistantId} = ${teacherId} OR ${classes.foreignTeacherId} = ${teacherId})`
+    );
+  return new Set(rows.map((r) => r.parentId));
 }

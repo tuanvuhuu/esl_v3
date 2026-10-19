@@ -42,7 +42,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/hoc-sinh', label: 'Học sinh', icon: 'users', permission: 'students.view' },
       { href: '/phu-huynh', label: 'Phụ huynh', icon: 'contact', permission: 'students.view' },
-      { href: '/tin-nhan', label: 'Tin nhắn', icon: 'message', permission: 'parents.manage' },
+      { href: '/tin-nhan', label: 'Tin nhắn', icon: 'message', permission: 'students.view' },
       { href: '/lop-hoc', label: 'Lớp học', icon: 'book', permission: 'students.view' },
       { href: '/lich-hoc', label: 'Lịch học', icon: 'calendar', permission: 'students.view' },
       { href: '/giao-vien', label: 'Giáo viên', icon: 'idcard', permission: 'students.view' },

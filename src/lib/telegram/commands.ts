@@ -8,6 +8,12 @@ export type BotCommand =
   | { kind: 'schedule' }
   | { kind: 'tuition' }
   | { kind: 'homework' }
+  | { kind: 'scores' }
+  | { kind: 'attendance' }
+  | { kind: 'leave'; arg?: string }
+  | { kind: 'today' }
+  | { kind: 'pending_grading' }
+  | { kind: 'report' }
   | { kind: 'stop' }
   | { kind: 'help' }
   | { kind: 'text'; text: string };
@@ -31,6 +37,26 @@ export function parseCommand(raw: string): BotCommand {
     case 'baitap':
     case 'homework':
       return { kind: 'homework' };
+    case 'diem':
+    case 'scores':
+    case 'grade':
+    case 'nhanxet':
+      return { kind: 'scores' };
+    case 'chuyencan':
+    case 'attendance':
+      return { kind: 'attendance' };
+    case 'nghi':
+    case 'leave':
+      return { kind: 'leave', arg: arg || undefined };
+    case 'homnay':
+    case 'today':
+      return { kind: 'today' };
+    case 'chocham':
+    case 'pending':
+      return { kind: 'pending_grading' };
+    case 'baocao':
+    case 'report':
+      return { kind: 'report' };
     case 'huy':
     case 'stop':
       return { kind: 'stop' };
@@ -51,11 +77,46 @@ export function deepLink(username: string, code: string): string {
   return `https://t.me/${username}?start=${code}`;
 }
 
+export const PARENT_KEYBOARD = {
+  keyboard: [
+    [{ text: '/lich' }, { text: '/diem' }],
+    [{ text: '/chuyencan' }, { text: '/hocphi' }],
+    [{ text: '/baitap' }, { text: '/nghi' }],
+    [{ text: '/help' }],
+  ],
+  resize_keyboard: true,
+  is_persistent: true,
+};
+
+export const STAFF_KEYBOARD = {
+  keyboard: [
+    [{ text: '/homnay' }, { text: '/chocham' }],
+    [{ text: '/baocao' }, { text: '/help' }],
+  ],
+  resize_keyboard: true,
+  is_persistent: true,
+};
+
 export const HELP_TEXT = [
-  'Các lệnh của trung tâm:',
+  'Các lệnh tra cứu dành cho phụ huynh:',
   '/lich – lịch học 7 ngày tới của con',
-  '/hocphi – học phí còn thiếu',
+  '/diem – điểm và nhận xét bài tập gần nhất',
+  '/chuyencan – tình hình chuyên cần 10 buổi gần nhất',
+  '/hocphi – học phí còn thiếu và đã đóng',
   '/baitap – bài tập chưa nộp',
+  '/nghi – gửi đơn xin nghỉ học cho con',
   '/huy – ngừng nhận tin từ trung tâm',
-  'Nhắn tin bình thường để gửi câu hỏi cho trung tâm.',
+  '/help – xem hướng dẫn lệnh',
+  '',
+  'Nhắn tin trực tiếp để trao đổi với giáo viên và trung tâm.',
 ].join('\n');
+
+export const STAFF_HELP_TEXT = [
+  'Các lệnh cho giáo viên & quản trị:',
+  '/homnay – lịch dạy hôm nay và phòng học',
+  '/chocham – các bài tập đang chờ chấm điểm',
+  '/baocao – báo cáo tổng quan hôm nay (Quản trị)',
+  '/huy – huỷ nhận thông báo từ hệ thống',
+  '/help – xem hướng dẫn',
+].join('\n');
+
