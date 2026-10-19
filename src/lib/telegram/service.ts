@@ -436,7 +436,20 @@ export async function handleIncoming(message: IncomingMessage): Promise<void> {
   }
 
   if (!chat || !chat.active) {
-    await sendMessage(message.chatId, 'Xin chào! Để nhận tin từ trung tâm, hãy mở link kết nối mà trung tâm gửi cho bạn (bắt đầu bằng t.me/...).');
+    // Tự động kết nối nếu tin nhắn chứa số điện thoại (ví dụ: 0963882797 hoặc +84963882797)
+    const rawNoSpace = message.text.replace(/[\s.-]/g, '');
+    const phoneMatch = /(?:(?:\+84|0)(?:3|5|7|8|9)\d{8})/.exec(rawNoSpace);
+    if (phoneMatch) {
+      const rawPhone = phoneMatch[0];
+      const normalizedPhone = rawPhone.startsWith('+84') ? '0' + rawPhone.slice(3) : rawPhone;
+      const linked = await linkByPhone(message, normalizedPhone);
+      if (linked) return;
+    }
+
+    await sendMessage(
+      message.chatId,
+      '👋 Xin chào Quý phụ huynh!\n\nĐể kết nối nhận thông báo từ trung tâm ESL Center:\n\n📱 Quý phụ huynh hãy gửi SỐ ĐIỆN THOẠI đã đăng ký với trung tâm (Ví dụ: 0963882797).\n\n🔗 Hoặc bấm vào đường link kết nối cá nhân do trung tâm gửi.',
+    );
     return;
   }
 
@@ -576,6 +589,62 @@ async function linkByCode(message: IncomingMessage, code: string): Promise<void>
       await sendAndRecord(chat, `Đã kết nối với ESL Center cho cán bộ/giáo viên: ${name}.\n\n${STAFF_HELP_TEXT}`, 'system', null, STAFF_KEYBOARD);
     }
   }
+}
+
+async function linkByPhone(message: IncomingMessage, phone: string): Promise<boolean> {
+  const parentsList = await db.execute<{ id: number; full_name: string }>(sql`
+    SELECT id, full_name
+    FROM parents
+    WHERE replace(replace(phone, ' ', ''), '-', '') = ${phone}
+    LIMIT 1`);
+
+  if (parentsList.rows.length === 0) {
+    await sendMessage(
+      message.chatId,
+      `⚠️ Trung tâm chưa tìm thấy hồ sơ phụ huynh nào có số điện thoại "${phone}".\n\nQuý phụ huynh vui lòng kiểm tra lại số điện thoại hoặc liên hệ văn phòng trung tâm để được hỗ trợ.`,
+    );
+    return false;
+  }
+
+  const p = parentsList.rows[0];
+  await db.transaction(async (tx) => {
+    await tx
+      .insert(telegramChats)
+      .values({
+        chatId: message.chatId,
+        parentId: p.id,
+        accountId: null,
+        displayName: message.fromName.slice(0, 160),
+        active: true,
+      })
+      .onConflictDoUpdate({
+        target: telegramChats.chatId,
+        set: {
+          parentId: p.id,
+          accountId: null,
+          displayName: message.fromName.slice(0, 160),
+          active: true,
+          updatedAt: new Date(),
+        },
+      });
+  });
+
+  const chat = await chatOf(message.chatId);
+  if (chat) {
+    await sendAndRecord(
+      chat,
+      `🎉 Chúc mừng Phụ huynh ${p.full_name} đã kết nối thành công với ESL Center qua SĐT ${phone}!\n\n${HELP_TEXT}`,
+      'system',
+      null,
+      PARENT_INLINE_MENU,
+    );
+    await sendMessage(
+      chat.chatId,
+      '💡 Bàn phím tra cứu nhanh đã sẵn sàng ở phía dưới màn hình của bạn. Quý phụ huynh chỉ cần chạm nhẹ vào nút để xem thông tin ngay lập tức.',
+      PARENT_KEYBOARD,
+    );
+  }
+  return true;
 }
 
 // ---------- Đơn xin nghỉ học & Menu chọn con (P34.14, 34.16) ----------
