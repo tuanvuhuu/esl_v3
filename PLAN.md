@@ -1,6 +1,6 @@
 # ESL Center: kế hoạch và tiến độ
 
-> **Tiến độ tổng: 143/165 task (86%)**
+> **Tiến độ tổng: 149/170 task (87%)**
 > Cập nhật lần cuối: 2026-10-17. Hoàn thành và kiểm chứng E2E toàn bộ 142/142 task: 15.3 (chuẩn giao diện trang học sinh), 15.4 (sửa phụ huynh qua modal), 15.6 (thanh hành động mobile dính dưới cho điểm danh), 15.8 (chuẩn UI toàn diện mọi route, modal, profile), 18.5 (bài giảng đa cơ sở), 22.7 (hoàn thành qua P23–P29), P25 (bài giảng và tài liệu: 25.1, 25.2, 25.3), P28 (cổng học sinh: 28.1, 28.2, 28.3, 28.4), 30.2 (mật khẩu mặc định esl123 cho nhân viên mới), 32.3 (Server Action chặn hành vi ngoài phạm vi cơ sở). Số đếm lấy từ các ô `[x]` và `[ ]` trong file.
 
 ## 🎯 Các task vừa hoàn thành & Lệnh test riêng (Không chạy all)
@@ -307,7 +307,7 @@ Nghiên cứu ở `docs/NGHIEN-CUU-BAI-TAP-ONLINE.md` (mục 10 và 13.5 là ph�
 
 - [x] **33.1** Nghiên cứu: nền tảng cho trẻ (Lingokids, Duolingo ABC, Monkey Junior, ELSA, Raz-Kids, Seesaw, Wordwall), dạng câu, nguồn tài liệu mở, giọng đọc máy, dịch, chấm nói và chỉ lỗi, dữ liệu trẻ em, mã nguồn mở (H5P, GCompris, Oppia, OpenPronounce, ts-fsrs, dnd-kit, Phaser), trò chơi. *(2026-10-19, tài liệu có nguồn trích dẫn.)*
 
-## P34. Lưu tệp trên Supabase Storage và bot Telegram hai chiều
+## P34. Lưu tệp trên Supabase Storage, lưu trữ và sao lưu trên Google Drive, bot Telegram hai chiều
 
 Bối cảnh (2026-10-19): tệp tải lên (âm thanh đề, bài nộp, tài liệu, sau này là bản ghi âm bài nói) đang lưu trên ổ đĩa máy chủ, nên chạy trên Vercel sẽ mất. Người dùng chốt: chỉ lưu tệp trên **Supabase Storage** (database giữ ở Neon), kết hợp **bot Telegram** để gửi và nhận tin với phụ huynh, nhân viên. Đã cân nhắc và bỏ: dùng Telegram làm kho tệp (dữ liệu trẻ em nằm ở ứng dụng nước ngoài, không cam kết lưu trữ, khó xoá theo yêu cầu), Cloudflare R2, Firebase Storage (bắt buộc gói Blaze).
 
@@ -360,6 +360,20 @@ Bối cảnh (2026-10-19): tệp tải lên (âm thanh đề, bài nộp, tài l
 - [ ] **34.20** Super admin: báo cáo cuối ngày (số buổi đã dạy, số vắng, bài nộp, tiền thu trong ngày, học phí quá hạn), cảnh báo học sinh vắng 3 buổi liên tiếp, lệnh `/baocao` xem nhanh.
 - [ ] **34.21** Lịch chạy tự động cho các việc ở 34.17, 34.19, 34.20: route `/api/cron/telegram` có khoá bí mật, gọi bằng Vercel Cron (gói Hobby chỉ chạy tối đa mỗi ngày một lần, cần gói Pro hoặc dịch vụ hẹn giờ ngoài như cron-job.org cho nhắc trước 2 giờ). Gửi theo lô, chống gửi trùng bằng bảng ghi đã gửi. Kiểm chứng: gọi route hai lần không gửi trùng.
 - [ ] **34.22** Nhật ký và giới hạn: mọi tin ra vào lưu trong `telegram_messages`; giới hạn tốc độ gửi (Telegram giới hạn khoảng 30 tin mỗi giây cho mỗi bot); tin lỗi được thử lại; Cài đặt hiện số tin gửi lỗi gần đây.
+
+### Google Drive làm kho lưu trữ và sao lưu (đề xuất 2026-10-19)
+
+Người dùng có gói Google 30 TB. Phương án: **Supabase lưu tệp đang dùng** (nhanh, trình duyệt tải thẳng lên được), **Google Drive lưu trữ lâu dài và sao lưu** (dung lượng gần như không giới hạn). Drive không làm nơi lưu chính vì mở tệp chậm hơn, tải thẳng từ trình duyệt phức tạp, và qua server thì vướng giới hạn khoảng 4,5 MB mỗi lần gửi của Vercel. Nếu sau này muốn dùng Drive thay hẳn Supabase thì driver ở 34.24 dùng được cho `blob-store` (thêm `drive` cạnh `supabase` và `disk`).
+
+Giới hạn Drive API: tải lên tối đa 750 GB mỗi ngày mỗi tài khoản; số lần gọi API có hạn mức theo phút, phải thử lại khi bị báo 429. Cả hai đều dư cho một trung tâm.
+
+- [ ] **34.23** (người dùng chốt) Loại tài khoản Google: **Workspace** thì tạo shared drive "ESL Center" và cho service account làm thành viên (service account không có dung lượng riêng nên phải ghi vào shared drive). **Google One cá nhân** thì dùng OAuth với quyền `drive.file` (app chỉ thấy tệp do nó tạo), xuất bản ứng dụng OAuth để token không hết hạn, và chấp nhận rủi ro dữ liệu trung tâm nằm trong tài khoản cá nhân. Khuyến nghị: Workspace của trung tâm. Biến môi trường: `GOOGLE_DRIVE_FOLDER_ID` (hoặc `GOOGLE_SHARED_DRIVE_ID`), `GOOGLE_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_SERVICE_ACCOUNT_KEY` (Workspace) hoặc `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, `GOOGLE_OAUTH_REFRESH_TOKEN` (Google One).
+- [ ] **34.24** Driver Google Drive phía server (`googleapis`): tải lên vào thư mục theo năm và tháng, tải về, xoá; tệp luôn riêng tư (không bật chia sẻ bằng link); thử lại khi bị 429. Kiểm chứng: thử thật tải lên, tải về, xoá với thư mục Drive của trung tâm.
+- [ ] **34.25** Lưu trữ tệp cũ: `uploaded_files` thêm cột nơi lưu (`supabase`, `drive`, `disk`) và mã tệp trên Drive. Mỗi tháng tự chuyển bản ghi âm và bài nộp của các bài đã chấm quá 90 ngày từ Supabase sang Drive (sao chép, kiểm kích thước khớp, rồi mới xoá ở Supabase) để giữ dưới 1 GB miễn phí. `/api/files/[id]` đọc đúng nơi lưu, người dùng không thấy khác biệt. Kiểm chứng: chạy chuyển hai lần không nhân đôi tệp; mở tệp đã chuyển vẫn nghe được.
+- [ ] **34.26** Sao lưu database hằng ngày lên Drive: dump `esl_center` (nén), giữ 30 bản hằng ngày và 12 bản hằng tháng, xoá bản cũ hơn; báo super admin qua Telegram khi sao lưu lỗi. Có hướng dẫn khôi phục trong `README.md`. Kiểm chứng: khôi phục thử một bản vào database tạm, đếm số dòng các bảng chính khớp.
+- [ ] **34.27** Tài liệu bài giảng dung lượng lớn (video, sách PDF dày): giáo viên chọn tệp đã có trên Drive của trung tâm (Google Picker) để gắn vào bài giảng, thay vì tải lên app. Học sinh vẫn xem qua app, quyền xem theo lớp và cơ sở như tài liệu hiện có.
+
+Nguồn: giới hạn Drive API https://developers.google.com/drive/api/guides/limits ; service account phải dùng shared drive https://fivetran.com/docs/activations/destinations/available-destinations/google-drive/troubleshooting/service-accounts-storage-quota , https://mastra.ai/reference/workspace/google-drive-filesystem ; quyền `drive.file` https://www.rapidevelopers.com/md/api-automations/how-to-automate-google-drive-file-sharing-using-the-api .
 
 Nguồn tham khảo: giới hạn bot (tải lên 50 MB, tải xuống 20 MB) https://fast.io/resources/telegram-file-size-limit.md ; Supabase Storage gói miễn phí 1 GB, tệp 50 MB https://aiagencyplus.com/supabase-free-tier-limits/ , https://supabase.com/blog/storage-500gb-uploads-cheaper-egress-pricing ; signed upload URL https://skills.sh/adaptationio/skrillz/supabase-storage ; Firebase bắt buộc gói Blaze https://firebase.google.cn/docs/storage/faqs-storage-changes-announced-sept-2024 .
 
