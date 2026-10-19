@@ -4,13 +4,13 @@ import { Readable } from 'node:stream';
 import { google } from 'googleapis';
 
 export function driveConfig() {
-  const folderId = process.env.GOOGLE_DRIVE_FOLDER_ID || null;
+  const folderId = process.env.GOOGLE_DRIVE_FOLDER_ID || 'root';
   const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID || null;
   const clientSecret = process.env.GOOGLE_OAUTH_CLIENT_SECRET || null;
   const refreshToken = process.env.GOOGLE_OAUTH_REFRESH_TOKEN || null;
 
   return {
-    configured: Boolean(folderId && clientId && clientSecret && refreshToken),
+    configured: Boolean(clientId && clientSecret && refreshToken),
     folderId,
     clientId,
     clientSecret,
@@ -91,12 +91,16 @@ export async function getOrCreateFolder(folderName: string, parentFolderId: stri
 
 // Lấy thư mục lưu trữ theo Năm/Tháng: YYYY/MM
 export async function getDatedFolderId(): Promise<string> {
-  const rootFolderId = driveConfig().folderId!;
+  const rootFolderId = driveConfig().folderId || 'root';
+  const baseFolderId = rootFolderId === 'root'
+    ? await getOrCreateFolder('ESL_Center', 'root')
+    : rootFolderId;
+
   const now = new Date();
   const yearStr = String(now.getFullYear());
   const monthStr = String(now.getMonth() + 1).padStart(2, '0');
 
-  const yearFolderId = await getOrCreateFolder(yearStr, rootFolderId);
+  const yearFolderId = await getOrCreateFolder(yearStr, baseFolderId);
   return getOrCreateFolder(monthStr, yearFolderId);
 }
 

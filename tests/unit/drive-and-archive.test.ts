@@ -38,7 +38,7 @@ describe('Google Drive & Lưu trữ tệp (P34.23 - P34.27)', () => {
   });
 
   describe('Cấu hình Google Drive (isDriveConfigured)', () => {
-    it('báo chưa cấu hình khi thiếu bất kỳ biến nào trong 4 biến môi trường', () => {
+    it('báo chưa cấu hình khi thiếu bất kỳ biến nào trong 3 biến OAuth cốt lõi', () => {
       delete process.env.GOOGLE_DRIVE_FOLDER_ID;
       delete process.env.GOOGLE_OAUTH_CLIENT_ID;
       delete process.env.GOOGLE_OAUTH_CLIENT_SECRET;
@@ -47,9 +47,6 @@ describe('Google Drive & Lưu trữ tệp (P34.23 - P34.27)', () => {
       expect(isDriveConfigured()).toBe(false);
       expect(driveConfig().configured).toBe(false);
 
-      process.env.GOOGLE_DRIVE_FOLDER_ID = 'test-folder-id';
-      expect(isDriveConfigured()).toBe(false);
-
       process.env.GOOGLE_OAUTH_CLIENT_ID = 'test-client-id';
       expect(isDriveConfigured()).toBe(false);
 
@@ -57,8 +54,13 @@ describe('Google Drive & Lưu trữ tệp (P34.23 - P34.27)', () => {
       expect(isDriveConfigured()).toBe(false);
 
       process.env.GOOGLE_OAUTH_REFRESH_TOKEN = 'test-refresh-token';
+      // Chỉ cần 3 biến OAuth là đã hợp lệ, folderId mặc định là 'root'
       expect(isDriveConfigured()).toBe(true);
       expect(driveConfig().configured).toBe(true);
+      expect(driveConfig().folderId).toBe('root');
+
+      // Nếu có GOOGLE_DRIVE_FOLDER_ID thì nhận đúng ID đó
+      process.env.GOOGLE_DRIVE_FOLDER_ID = 'test-folder-id';
       expect(driveConfig().folderId).toBe('test-folder-id');
     });
   });

@@ -45,14 +45,14 @@ if (!dbUrl) {
   process.exit(1);
 }
 
-const driveFolderId = process.env.GOOGLE_DRIVE_FOLDER_ID;
+const driveFolderId = process.env.GOOGLE_DRIVE_FOLDER_ID || 'root';
 const driveClientId = process.env.GOOGLE_OAUTH_CLIENT_ID;
 const driveClientSecret = process.env.GOOGLE_OAUTH_CLIENT_SECRET;
 const driveRefreshToken = process.env.GOOGLE_OAUTH_REFRESH_TOKEN;
 
-if (!driveFolderId || !driveClientId || !driveClientSecret || !driveRefreshToken) {
+if (!driveClientId || !driveClientSecret || !driveRefreshToken) {
   console.error('❌ Thiếu cấu hình Google Drive trong .env.local!');
-  console.error('Cần: GOOGLE_DRIVE_FOLDER_ID, GOOGLE_OAUTH_CLIENT_ID, GOOGLE_OAUTH_CLIENT_SECRET, GOOGLE_OAUTH_REFRESH_TOKEN');
+  console.error('Cần: GOOGLE_OAUTH_CLIENT_ID, GOOGLE_OAUTH_CLIENT_SECRET, GOOGLE_OAUTH_REFRESH_TOKEN');
   process.exit(1);
 }
 
@@ -97,10 +97,14 @@ async function getOrCreateFolder(name, parentId) {
 
 // Thư mục lưu trữ theo Năm/Tháng: YYYY/MM
 async function getArchiveTargetFolderId() {
+  const baseFolderId = (driveFolderId && driveFolderId !== 'root')
+    ? driveFolderId
+    : await getOrCreateFolder('ESL_Center', 'root');
+
   const now = new Date();
   const year = String(now.getFullYear());
   const month = String(now.getMonth() + 1).padStart(2, '0');
-  const yearId = await getOrCreateFolder(year, driveFolderId);
+  const yearId = await getOrCreateFolder(year, baseFolderId);
   return getOrCreateFolder(month, yearId);
 }
 

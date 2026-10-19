@@ -175,8 +175,8 @@ async function main() {
   if (!dbUrl) {
     throw new Error('Thiếu DATABASE_URL trong .env.local');
   }
-  if (!driveFolderId || !driveClientId || !driveClientSecret || !driveRefreshToken) {
-    throw new Error('Thiếu cấu hình Google Drive trong .env.local (GOOGLE_DRIVE_FOLDER_ID, GOOGLE_OAUTH_CLIENT_ID, ...)');
+  if (!driveClientId || !driveClientSecret || !driveRefreshToken) {
+    throw new Error('Thiếu cấu hình Google Drive trong .env.local (GOOGLE_OAUTH_CLIENT_ID, GOOGLE_OAUTH_CLIENT_SECRET, GOOGLE_OAUTH_REFRESH_TOKEN)');
   }
 
   // Khởi tạo OAuth client
@@ -188,8 +188,12 @@ async function main() {
   oauth2Client.setCredentials({ refresh_token: driveRefreshToken });
   const drive = google.drive({ version: 'v3', auth: oauth2Client });
 
-  // 1. Tạo thư mục backups/daily và backups/monthly
-  const backupsFolderId = await getOrCreateFolder(drive, 'backups', driveFolderId);
+  // 1. Tạo thư mục backups/daily và backups/monthly (mặc định trong ESL_Center)
+  const baseFolderId = (driveFolderId && driveFolderId !== 'root')
+    ? driveFolderId
+    : await getOrCreateFolder(drive, 'ESL_Center', 'root');
+
+  const backupsFolderId = await getOrCreateFolder(drive, 'backups', baseFolderId);
   const dailyFolderId = await getOrCreateFolder(drive, 'daily', backupsFolderId);
   const monthlyFolderId = await getOrCreateFolder(drive, 'monthly', backupsFolderId);
 
