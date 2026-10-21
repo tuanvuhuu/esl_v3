@@ -120,6 +120,13 @@
       "when": 1792402908572,
       "tag": "0016_online_exercise_types",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1792606184325,
+      "tag": "0017_pre_a1_level",
+      "breakpoints": true
     }
   ]
 }

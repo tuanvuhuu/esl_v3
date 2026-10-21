@@ -542,11 +542,11 @@ test.describe('bài tập, điểm danh, học phí', () => {
       await page.getByRole('link', { name: student.full_name, exact: true }).first().click();
       await page.getByRole('link', { name: 'Kỹ năng', exact: true }).first().click();
       const level = page.getByRole('region', { name: 'Trình độ' });
-      await expect(level.getByText('A1 · Sơ cấp A1')).toBeVisible();
-      await expect(level.getByText('Đủ điều kiện lên A2 (Sơ cấp A2)')).toBeVisible();
+      await expect(level.getByText('A1 · Movers')).toBeVisible();
+      await expect(level.getByText('Đủ điều kiện lên A2 (Flyers)')).toBeVisible();
       await level.getByRole('button', { name: 'Xác nhận lên A2' }).click();
       await expectToast(page, `Lên trình độ A2 · ${student.full_name}`);
-      await expect(level.getByText('A2 · Sơ cấp A2')).toBeVisible();
+      await expect(level.getByText('A2 · Flyers')).toBeVisible();
 
       const events = await db.query<{ title: string; event_type: string }>(
         `select title, event_type from learning_events where student_id = $1 and title = 'Lên trình độ A2'`,
