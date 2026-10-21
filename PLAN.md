@@ -1,7 +1,7 @@
 # ESL Center: kế hoạch và tiến độ
 
-> **Tiến độ tổng: 173/196 task (88%)**
-> Cập nhật lần cuối: 2026-10-22. P1–P34 xong. P35 đang làm: 35.2, 35.3, 35.24 đã kiểm chứng; 35.4–35.6 làm dở. Thêm 35.26–35.27 từ nghiên cứu kỹ thuật (35.25 hồ sơ chuyển dữ liệu ra nước ngoài đã bỏ theo người dùng) (`docs/NGHIEN-CUU-TINH-NANG-P35.md`). Số đếm lấy từ các ô `[x]` và `[ ]` trong file.
+> **Tiến độ tổng: 173/203 task (85%)**
+> Cập nhật lần cuối: 2026-10-22. P1–P34 xong. P35 đang làm (35.2, 35.3, 35.24 đã kiểm chứng; 35.4–35.6 làm dở). Thêm P36 Soạn câu nhanh theo trình độ (`docs/NGHIEN-CUU-SOAN-CAU-HOI.md`). Số đếm lấy từ các ô `[x]` và `[ ]` trong file.
 
 ## 🎯 Các task vừa hoàn thành & Lệnh test riêng (Không chạy all)
 
@@ -397,7 +397,7 @@ Nghiên cứu kỹ thuật cho các mục còn mở (thư viện, định dạng
 - [ ] **35.5** Màn làm bài của học sinh theo nhóm tuổi: mỗi màn một câu, nút to (từ 64px cho 3–5 tuổi), hướng dẫn bằng giọng nói (có bản tiếng Việt), nút nghe lại; kéo thả bằng dnd-kit (chạm và bàn phím đều dùng được); hai chế độ **luyện** (sai được làm lại ngay, có hiệu ứng khi đúng) và **kiểm tra** (làm một lần). Kiểm chứng: E2E làm bài ở 390px và 1024px; `chuan.spec` không lỗi kích thước. ⏳ Rà soát 2026-10-19: đã có màn mỗi câu một trang, thanh tiến độ, nút to, tiếng Việt dưới đề, màn chúc mừng có sticker. Còn thiếu: kéo thả dnd-kit (đang chạm để chọn), hai chế độ luyện và kiểm tra, hướng dẫn bằng giọng nói, màn chúc mừng chưa theo điểm thật (luôn 3 sao), E2E 390px và 1024px.
 
 - [x] **35.24** Học thử không cần đăng nhập: nút "Vào học thử" trên trang đăng nhập và link `/hoc-thu` mở thẳng một bài mẫu đủ dạng câu bằng tài khoản học sinh học thử (không mật khẩu, không đổi mật khẩu được). Dữ liệu riêng ở "Cơ sở học thử", lớp HOC-THU, tự tạo lần đầu; mỗi lần vào xoá bài làm cũ. Tắt bằng `DEMO_LOGIN=off`. Bộ bài mẫu ở `src/lib/demo-lessons.ts`: 5 bài theo chủ đề (Animals, Colors & Numbers, My Family, Food & Drinks, At School), 70 câu đủ 8 dạng; sửa dữ liệu thì lần vào sau tự dựng lại bài. ✅ 2026-10-19: unit `demo-lessons` (mọi câu qua schema máy chủ, đáp án mẫu chấm đủ điểm); E2E `hoc-thu.spec` 2 test pass (vào thẳng bài, nộp rồi vào lại thì về Chưa nộp); không tràn ngang ở 360px.
-- [ ] **35.26** AI soạn câu nháp: giáo viên dán danh sách từ, Claude (`claude-opus-5-5`, structured outputs theo `itemFormSchema`) trả câu nháp, giáo viên duyệt rồi lưu; không gửi dữ liệu học sinh. Ước tính 0,1–0,2 USD một bài 20 câu. Kiểm chứng: unit chạy câu nháp qua schema và chấm đáp án mẫu; E2E soạn nháp rồi lưu (dùng phản hồi giả).
+- [ ] **35.26** (tạm dừng: người dùng chốt không dùng dịch vụ nước ngoài; thay bằng Soạn nhanh theo mẫu ở P36) AI soạn câu nháp: giáo viên dán danh sách từ, Claude (`claude-opus-5-5`, structured outputs theo `itemFormSchema`) trả câu nháp, giáo viên duyệt rồi lưu; không gửi dữ liệu học sinh. Ước tính 0,1–0,2 USD một bài 20 câu. Kiểm chứng: unit chạy câu nháp qua schema và chấm đáp án mẫu; E2E soạn nháp rồi lưu (dùng phản hồi giả).
 - [ ] **35.27** Sửa nhỏ từ nghiên cứu: ghi âm chọn định dạng bằng `isTypeSupported` và cắt tham số MIME trước khi tải lên; thống nhất loại ảnh giữa `IMAGE_ACCEPT` và `ALLOWED_TYPES` (WebP, GIF); màn chúc mừng hiện sao theo điểm thật. Kiểm chứng: unit chọn MIME, E2E ghi âm với micro giả.
 
 ### B. Ghi âm trên trình duyệt
@@ -429,6 +429,18 @@ Nghiên cứu kỹ thuật cho các mục còn mở (thư viện, định dạng
 ### G. Chấm phát âm tự động (gợi ý cho giáo viên)
 - [ ] **35.22** Thử nghiệm độ chính xác trên giọng học sinh của trung tâm (chỉ những em đã có đồng ý loại thứ hai): OpenPronounce chạy trên máy chủ riêng (MIT, không gửi giọng ra ngoài) so với Azure Pronunciation Assessment; so với điểm giáo viên chấm trên khoảng 50 bản ghi. Chọn một, hoặc dừng nếu sai nhiều. Kiểm chứng: bảng so sánh ghi vào `docs/`.
 - [ ] **35.23** Nếu 35.22 đạt: màn chấm nói tô màu từ nghi sai và gợi ý điểm; giáo viên luôn quyết định điểm cuối; không hiện điểm máy cho trẻ 3–5 tuổi. Kiểm chứng: E2E gợi ý hiện, giáo viên sửa được.
+
+## P36. Soạn câu nhanh và gợi ý câu theo trình độ
+
+Nguồn: `docs/NGHIEN-CUU-SOAN-CAU-HOI.md` (2026-10-22). Mục tiêu: một bài 15–20 câu đủ dạng trong vài phút, đúng trình độ của lớp. Chạy hoàn toàn trong app, không cần AI hay dịch vụ nước ngoài.
+
+- [ ] **36.1** Trình độ cho thiếu nhi: thêm Pre-A1 vào `course_levels`, tên hiển thị "Pre-A1 (Starters)", "A1 (Movers)", "A2 (Flyers)" (migration mới). Tham số theo trình độ (số lựa chọn, số cặp ghép, độ dài câu sắp xếp, cách điền chỗ trống, giây nói, số câu một bài) thành hằng trong code theo mục 5 tài liệu. Kiểm chứng: migrate chạy hai lần không lỗi; unit tham số.
+- [ ] **36.2** Bộ sinh câu thuần: đầu vào danh sách từ (từ, nghĩa, emoji), câu, trình độ, các dạng chọn; đầu ra `ItemInput[]`. Đáp án nhiễu cùng chủ đề, cùng trình độ, không trùng đáp án đúng. Kiểm chứng: unit mọi câu qua `itemFormSchema`, đáp án mẫu chấm đủ điểm, nhiễu không trùng; chạy được với bộ học thử.
+- [ ] **36.3** Màn Soạn nhanh, cách vào "Dán danh sách từ" (tự nhận tab, ` - `, `|`, dấu phẩy; xem bảng đã tách), tick dạng câu (dạng chưa đủ điều kiện thì tắt và nêu lý do), màn xem lại một trang (bỏ câu, bốc lại nhiễu, đổi dạng tương thích, sửa chi tiết), "Thêm vào bài" đưa câu vào `ItemsEditor`. Kiểm chứng: E2E dán 8 từ, sinh 3 dạng, bỏ một câu, lưu bài; không tràn ngang 360–1440px.
+- [ ] **36.4** Kho từ `vocab_items` (từ, từ loại, trình độ, chủ đề, nghĩa tiếng Việt, emoji, ảnh, âm thanh, nguồn, câu ví dụ). Nạp A1, A2 từ CEFR-J 1.5 kèm chủ đề, ghi nguồn. Cách vào "Chọn từ kho" theo trình độ và chủ đề. Từ giáo viên thêm chờ duyệt. Kiểm chứng: nạp lại không trùng; E2E chọn 8 từ A1 chủ đề Food rồi sinh bài.
+- [ ] **36.5** Cách vào "Dán câu": tách câu, đánh dấu từ thuộc trình độ, sinh sắp xếp (lọc theo độ dài), điền chỗ trống (đục từ trong danh sách), đọc to. Kiểm chứng: unit tách câu và chọn từ đục; E2E dán đoạn 4 câu.
+- [ ] **36.6** Ngân hàng câu có trình độ và chủ đề: cột mới cho `questions`, lọc theo trình độ, chủ đề, dạng, kỹ năng; chép nhiều câu một lần; câu sinh từ Soạn nhanh lưu được vào ngân hàng. Kiểm chứng: E2E lọc và chép 5 câu.
+- [ ] **36.7** (người dùng và giáo viên) Điền nghĩa tiếng Việt và emoji cho khoảng 300–400 từ hay dạy nhất cho trẻ; chỉnh bảng tham số theo trình độ sau vài tuần dùng. Khi xong: đổi bộ học thử sang sinh bằng Soạn nhanh.
 
 ## Quyết định đã chốt
 
