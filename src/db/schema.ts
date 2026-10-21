@@ -537,6 +537,32 @@ export const lessonMaterials = pgTable(
   (t) => [index('lesson_materials_lesson_idx').on(t.lessonId, t.position)],
 );
 
+// ---------- Kho từ cho Soạn nhanh (P36.4) ----------
+
+// Từ dùng chung toàn trung tâm: nạp sẵn bộ từ khởi đầu (src/lib/vocab-starter.ts) và từ A1, A2 của CEFR-J Wordlist 1.5
+// (Tono Laboratory, ĐH Ngoại ngữ Tokyo; dùng thương mại miễn phí, phải ghi nguồn). Giáo viên thêm từ thì chờ người có quyền Cài đặt duyệt.
+// Một từ có thể nằm ở hai chủ đề với hai nghĩa (chicken: con gà, thịt gà), nên khoá là (từ, chủ đề).
+export const vocabItems = pgTable(
+  'vocab_items',
+  {
+    id: serial('id').primaryKey(),
+    headword: varchar('headword', { length: 60 }).notNull(),
+    pos: varchar('pos', { length: 30 }).notNull().default(''),
+    level: varchar('level', { length: 10 }).notNull(), // mã trình độ: Pre-A1, A1, A2...
+    topic: varchar('topic', { length: 60 }).notNull().default(''), // khoá chủ đề (Animals...) hoặc tên chủ đề CEFR-J; rỗng là chưa xếp
+    meaningVi: varchar('meaning_vi', { length: 120 }).notNull().default(''),
+    emoji: varchar('emoji', { length: 16 }).notNull().default(''),
+    imageFileId: integer('image_file_id').references(() => uploadedFiles.id, { onDelete: 'set null' }),
+    audioFileId: integer('audio_file_id').references(() => uploadedFiles.id, { onDelete: 'set null' }),
+    source: varchar('source', { length: 20 }).notNull(), // starter | cefrj | teacher
+    approved: boolean('approved').notNull().default(true),
+    exampleSentence: text('example_sentence').notNull().default(''),
+    createdByAccountId: integer('created_by_account_id').references(() => accounts.id, { onDelete: 'set null' }),
+    ...timestamps,
+  },
+  (t) => [uniqueIndex('vocab_items_word_topic_key').on(t.headword, t.topic), index('vocab_items_level_idx').on(t.level), index('vocab_items_topic_idx').on(t.topic)],
+);
+
 // ---------- Ngân hàng câu hỏi (P24) ----------
 
 // Câu hỏi dùng chung toàn trung tâm. Thêm vào bài thì chép nội dung, nên sửa ngân hàng không đổi bài đã giao.

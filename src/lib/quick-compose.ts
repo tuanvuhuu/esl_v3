@@ -42,9 +42,11 @@ type Rng = () => number;
 const EMOJI = /\p{Extended_Pictographic}/u;
 const isEmojiPart = (s: string) => EMOJI.test(s) || /^[\d#*]️?⃣$/u.test(s) || /^\u{1F51F}$/u.test(s);
 
+export type WordLookup = Map<string, { vi: string; emoji: string; topic: string }>;
+
 // Mỗi dòng một từ: "từ - nghĩa - emoji". Ngăn bằng tab, " - ", "|" hoặc dấu phẩy. Thứ tự nghĩa và emoji tuỳ ý.
-// Thiếu nghĩa hoặc emoji thì lấy từ bộ từ có sẵn. Từ lặp lại chỉ giữ lần đầu.
-export function parseWordList(raw: string): QuickWord[] {
+// Thiếu nghĩa hoặc emoji thì lấy từ kho từ (lookup, khoá chữ thường), không có thì từ bộ từ khởi đầu. Từ lặp lại chỉ giữ lần đầu.
+export function parseWordList(raw: string, lookup?: WordLookup): QuickWord[] {
   const seen = new Set<string>();
   const out: QuickWord[] = [];
   for (const line of raw.split(/\r?\n/)) {
@@ -56,16 +58,19 @@ export function parseWordList(raw: string): QuickWord[] {
     const en = (texts[0] ?? '').replace(/\s+/g, ' ');
     if (!en || en.length > 60 || seen.has(en.toLowerCase())) continue;
     seen.add(en.toLowerCase());
-    const bank = findStarterWord(en);
+    const fromDb = lookup?.get(en.toLowerCase());
+    const starter = findStarterWord(en);
+    const bankVi = fromDb?.vi || starter?.vi || '';
+    const bankEmoji = fromDb?.emoji || starter?.emoji || '';
     const vi = texts.slice(1).join(', ').slice(0, 120);
     const emoji = parts.find(isEmojiPart) ?? '';
     out.push({
       en,
-      vi: vi || bank?.vi || '',
-      emoji: emoji || bank?.emoji || '',
-      viFromBank: !vi && !!bank?.vi,
-      emojiFromBank: !emoji && !!bank?.emoji,
-      topic: bank?.topic ?? null,
+      vi: vi || bankVi,
+      emoji: emoji || bankEmoji,
+      viFromBank: !vi && !!bankVi,
+      emojiFromBank: !emoji && !!bankEmoji,
+      topic: fromDb?.topic || starter?.topic || null,
     });
   }
   return out;

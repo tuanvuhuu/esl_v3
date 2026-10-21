@@ -1,70 +1,103 @@
 'use client';
 
-// Soạn nhanh (P36.3): dán danh sách từ, chọn từ có sẵn hoặc dán câu → chọn dạng câu → xem lại → thêm vào bài.
+// Soạn nhanh (P36.3, kho từ P36.4): dán danh sách từ, chọn từ có sẵn hoặc dán câu → chọn dạng câu → xem lại → thêm vào bài.
 // Bản mẫu: docs/mockups/soan-nhanh.html. Máy tính: menu ⋯ trên từng câu. Điện thoại: thẻ có nút chữ, nút chính dính đáy (chân Modal).
-import { ArrowLeftRight, Check, Shuffle, Trash2, Zap } from 'lucide-react';
-import { useMemo, useState, type KeyboardEvent } from 'react';
+import { ArrowLeftRight, Check, Save, Shuffle, Trash2 } from 'lucide-react';
+import { useEffect, useMemo, useState, useTransition, type KeyboardEvent } from 'react';
+import { lookupVocabAction, saveVocabWordsAction } from '@/app/(app)/bai-tap/vocab-actions';
+import type { VocabWord } from '@/lib/queries/vocab';
+import { levelsUpTo } from '@/lib/vocab-topics';
 import type { ItemInput } from '@/app/(app)/bai-tap/question-actions';
 import { LEVEL_LABELS, LEVEL_PARAMS, levelParams, type LevelParams } from '@/lib/level-params';
 import {
   canReroll,
   canSwitch,
   defaultCounts,
-  fromStarter,
+  gapTarget,
   generateItems,
   maxCount,
   parseWordList,
   QUICK_TYPES,
   rerollItem,
+  sentencesForOrder,
   splitSentences,
   switchItem,
   typeAvailability,
   type GeneratedItem,
   type QuickType,
   type QuickWord,
+  type WordLookup,
 } from '@/lib/quick-compose';
-import { STARTER_TOPIC_LABELS, starterWordsUpTo, type StarterTopic, type StarterWord } from '@/lib/vocab-starter';
 import { Btn } from '@/components/ui/Btn';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Chip, ChipGroup } from '@/components/ui/controls';
 import { Field, FormFooter, textareaClass } from '@/components/ui/Field';
 import { Modal } from '@/components/ui/Modal';
-import { Pill } from '@/components/ui/primitives';
+import { Alert, Pill } from '@/components/ui/primitives';
 import { RowMenu, type RowMenuItem } from '@/components/ui/RowMenu';
 import { Notice } from '@/components/ui/surfaces';
+import { VocabPicker } from './VocabPicker';
 
 type Source = 'paste' | 'bank' | 'sentences';
 type Step = 1 | 2 | 3;
 const LEVEL_CODES = ['Pre-A1', 'A1', 'A2'] as const;
-const TOPICS = Object.keys(STARTER_TOPIC_LABELS) as StarterTopic[];
 const STEP_NAMES = ['Nguồn', 'Dạng câu', 'Xem lại'];
 const typeMeta = (id: QuickType) => QUICK_TYPES.find((t) => t.id === id)!;
-const pickId = (w: StarterWord) => `${w.topic}:${w.en}`;
 
 export function QuickCompose({ open, levelCode, onClose, onAdd }: { open: boolean; levelCode: string | null; onClose: () => void; onAdd: (items: ItemInput[]) => void }) {
   const [step, setStep] = useState<Step>(1);
   const [source, setSource] = useState<Source>('paste');
   const [raw, setRaw] = useState('');
   const [sentRaw, setSentRaw] = useState('');
-  const [picked, setPicked] = useState<string[]>([]);
+  const [picked, setPicked] = useState<VocabWord[]>([]);
+  const [lookup, setLookup] = useState<WordLookup>(() => new Map());
   const [level, setLevel] = useState<LevelParams>(() => levelParams(levelCode));
-  const [topic, setTopic] = useState<StarterTopic>('Animals');
   const [counts, setCounts] = useState<Record<QuickType, number> | null>(null);
   const [items, setItems] = useState<GeneratedItem[]>([]);
   const [dropKey, setDropKey] = useState<string | null>(null);
 
-  // Từ dán vào và từ chọn trong bộ từ có sẵn gộp thành một danh sách, không lặp.
-  // Từ chọn ghi theo "chủ đề:từ" vì một từ có thể nằm ở hai chủ đề với hai nghĩa (chicken: con gà, thịt gà).
+  // Tra kho từ cho các từ giáo viên dán vào (chờ ngừng gõ một chút), để điền nghĩa và emoji còn thiếu
+  useEffect(() => {
+    const heads = parseWordList(raw).map((w) => w.en);
+    if (heads.length === 0) return;
+    const timer = setTimeout(async () => {
+      const r = await lookupVocabAction(heads);
+      if (!r.ok) return;
+      const map: WordLookup = new Map();
+      for (const w of r.words) if (!map.has(w.en.toLowerCase())) map.set(w.en.toLowerCase(), { vi: w.vi, emoji: w.emoji, topic: w.topic });
+      setLookup(map);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [raw]);
+
+  // Từ trong câu đã dán thuộc trình độ của lớp (tra kho từ), để gạch chân khi xem trước câu
+  const [sentenceVocab, setSentenceVocab] = useState<VocabWord[]>([]);
+  useEffect(() => {
+    const tokens = [...new Set(sentRaw.toLowerCase().match(/[a-z][a-z'-]*/g) ?? [])];
+    if (tokens.length === 0) return;
+    const timer = setTimeout(async () => {
+      const r = await lookupVocabAction(tokens.slice(0, 200));
+      if (r.ok) setSentenceVocab(r.words);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [sentRaw]);
+  const knownInLevel = useMemo(() => {
+    const allowed = new Set(levelsUpTo(level.code));
+    return new Set(sentenceVocab.filter((w) => allowed.has(w.level)).map((w) => w.en.toLowerCase()));
+  }, [sentenceVocab, level.code]);
+
+  // Từ dán vào và từ chọn trong kho gộp thành một danh sách, không lặp. Từ chọn giữ theo id vì một từ có thể ở hai chủ đề
+  // với hai nghĩa (chicken: con gà, thịt gà).
   const words = useMemo<QuickWord[]>(() => {
-    const out = parseWordList(raw);
+    const out = parseWordList(raw, lookup);
     const seen = new Set(out.map((w) => w.en.toLowerCase()));
-    for (const w of starterWordsUpTo('A2')) {
-      if (!picked.includes(pickId(w)) || seen.has(w.en.toLowerCase())) continue;
+    for (const w of picked) {
+      if (seen.has(w.en.toLowerCase())) continue;
       seen.add(w.en.toLowerCase());
-      out.push(fromStarter(w));
+      out.push({ en: w.en, vi: w.vi, emoji: w.emoji, viFromBank: true, emojiFromBank: true, topic: w.topic || null });
     }
     return out;
-  }, [raw, picked]);
+  }, [raw, lookup, picked]);
   const sentences = useMemo(() => splitSentences(sentRaw), [sentRaw]);
   const hasInput = words.length > 0 || sentences.length > 0;
 
@@ -91,15 +124,6 @@ export function QuickCompose({ open, levelCode, onClose, onAdd }: { open: boolea
   function changeLevel(code: (typeof LEVEL_CODES)[number]) {
     setLevel(LEVEL_PARAMS[code]);
     setCounts(null);
-  }
-
-  function togglePick(id: string) {
-    setPicked((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
-  }
-
-  function pickCommon() {
-    const pool = starterWordsUpTo(level.code, topic).map(pickId);
-    setPicked((prev) => [...new Set([...prev, ...pool.slice(0, 8)])]);
   }
 
   const replaceItem = (key: string, next: GeneratedItem | null) => {
@@ -188,60 +212,23 @@ export function QuickCompose({ open, levelCode, onClose, onAdd }: { open: boolea
                       <textarea value={sentRaw} onChange={(e) => setSentRaw(e.target.value)} rows={8} spellCheck={false} placeholder="I have a little dog. The monkey likes bananas." aria-label="Câu tiếng Anh" className={textareaClass()} />
                     </Field>
                     <Notice>
-                      Đã nhận {sentences.length} câu. Câu dài {level.orderWords[0]}–{level.orderWords[1]} từ dùng cho sắp xếp; từ có trong danh sách được chọn để đục lỗ.
+                      Đã nhận {sentences.length} câu. Câu dài {level.orderWords[0]}–{level.orderWords[1]} từ dùng cho sắp xếp; từ có trong danh sách được chọn để đục lỗ. Từ gạch chân là từ thuộc trình độ {LEVEL_LABELS[level.code]} trong kho từ.
                     </Notice>
+                    <SentencePreview sentences={sentences} words={words} level={level} known={knownInLevel} />
                   </>
                 )}
                 {source === 'bank' && (
-                  <>
-                    <ChipGroup label="Trình độ">
-                      {LEVEL_CODES.map((c) => (
-                        <Chip key={c} selected={level.code === c} onClick={() => changeLevel(c)}>
-                          {LEVEL_LABELS[c]}
-                        </Chip>
-                      ))}
-                    </ChipGroup>
-                    <ChipGroup label="Chủ đề">
-                      {TOPICS.map((t) => (
-                        <Chip key={t} selected={topic === t} onClick={() => setTopic(t)}>
-                          {STARTER_TOPIC_LABELS[t]}
-                        </Chip>
-                      ))}
-                    </ChipGroup>
-                    <div>
-                      <Btn onClick={pickCommon}>
-                        <Zap className="size-4" aria-hidden />
-                        Chọn 8 từ hay gặp
-                      </Btn>
-                    </div>
-                    <div role="group" aria-label="Từ có sẵn" className="grid grid-cols-2 gap-2 min-[1200px]:grid-cols-3">
-                      {starterWordsUpTo(level.code, topic).map((w) => {
-                        const on = picked.includes(pickId(w));
-                        return (
-                          <button
-                            key={w.en}
-                            type="button"
-                            aria-pressed={on}
-                            onClick={() => togglePick(pickId(w))}
-                            className={`flex min-h-[52px] min-w-0 items-center gap-2.5 rounded-[var(--radius-ctl)] border px-2.5 py-1.5 text-left transition-colors ${on ? 'border-primary-deep bg-primary-soft' : 'border-line bg-surface hover:bg-row-hover'}`}
-                          >
-                            <span aria-hidden className="grid size-9 shrink-0 place-items-center rounded-[10px] bg-stone text-[22px]">{w.emoji || '·'}</span>
-                            <span className="min-w-0 flex-1">
-                              <b className="block truncate text-md text-ink">{w.en}</b>
-                              <span className="block truncate text-sm text-muted">{w.vi}</span>
-                            </span>
-                            <span aria-hidden className={`grid size-5 shrink-0 place-items-center rounded-md border-2 ${on ? 'border-accent bg-accent text-white' : 'border-line'}`}>
-                              {on && <Check className="size-3.5" />}
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </>
+                  <VocabPicker
+                    level={level}
+                    onLevel={changeLevel}
+                    picked={picked}
+                    onToggle={(w) => setPicked((prev) => (prev.some((x) => x.id === w.id) ? prev.filter((x) => x.id !== w.id) : [...prev, w]))}
+                    onPickMany={(ws) => setPicked((prev) => [...prev, ...ws.filter((w) => !prev.some((x) => x.id === w.id))])}
+                  />
                 )}
               </div>
 
-              <ParsedWords words={words} />
+              <ParsedWords words={words} levelCode={level.code} />
             </div>
           </>
         )}
@@ -413,8 +400,21 @@ export function QuickCompose({ open, levelCode, onClose, onAdd }: { open: boolea
 }
 
 // Danh sách từ đã nhận: máy tính là bảng, điện thoại là chip. Nghĩa và emoji lấy từ bộ từ có sẵn hiện chữ xanh.
-function ParsedWords({ words }: { words: QuickWord[] }) {
+function ParsedWords({ words, levelCode }: { words: QuickWord[]; levelCode: string }) {
   const missing = words.filter((w) => !w.vi).length;
+  // Từ giáo viên tự gõ nghĩa: lưu được vào kho chung để lần sau tự điền
+  const typed = words.filter((w) => w.vi && !w.viFromBank);
+  const [saving, startSave] = useTransition();
+  const [saved, setSaved] = useState<{ ok: boolean; text: string } | null>(null);
+  function save() {
+    startSave(async () => {
+      const r = await saveVocabWordsAction(
+        typed.map((w) => ({ en: w.en, vi: w.vi, emoji: w.emoji })),
+        levelCode,
+      );
+      setSaved({ ok: r.ok, text: r.message });
+    });
+  }
   return (
     <section aria-label="Từ đã nhận" className="flex min-w-0 flex-col gap-2">
       <div className="flex items-baseline justify-between gap-2">
@@ -443,10 +443,55 @@ function ParsedWords({ words }: { words: QuickWord[] }) {
               </li>
             ))}
           </ul>
-          <p className="text-sm text-muted">Chữ xanh là nghĩa lấy từ bộ từ có sẵn. Từ chưa có nghĩa vẫn dùng được cho nghe nhắc lại và viết.</p>
+          <p className="text-sm text-muted">Chữ xanh là nghĩa lấy từ kho từ. Từ chưa có nghĩa vẫn dùng được cho nghe nhắc lại và viết.</p>
+          {typed.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2">
+              <Btn onClick={save} disabled={saving}>
+                <Save className="size-4" aria-hidden />
+                {saving ? 'Đang lưu…' : `Lưu ${typed.length} từ vào kho chung`}
+              </Btn>
+              {saved && (
+                <Alert inline tone={saved.ok ? 'ok' : 'error'}>
+                  {saved.text}
+                </Alert>
+              )}
+            </div>
+          )}
         </>
       )}
     </section>
+  );
+}
+
+// Xem trước câu đã dán: dùng được cho sắp xếp không, từ nào bị đục, từ nào thuộc trình độ của lớp (gạch chân)
+function SentencePreview({ sentences, words, level, known }: { sentences: string[]; words: QuickWord[]; level: LevelParams; known: Set<string> }) {
+  if (sentences.length === 0) return null;
+  const orderable = new Set(sentencesForOrder(sentences, level));
+  return (
+    <ol aria-label="Câu đã nhận" className="flex flex-col">
+      {sentences.map((s, i) => {
+        const gap = gapTarget(s, words);
+        return (
+          <li key={`${i}-${s}`} className="flex flex-col gap-1.5 border-b border-line py-2 last:border-b-0">
+            <p className="text-md leading-relaxed text-ink">
+              {s.split(/\s+/).map((t, k) => {
+                const bare = t.toLowerCase().replace(/[^a-z'-]/g, '');
+                const cls = k === gap ? 'rounded bg-primary-soft px-0.5 font-bold text-ink' : known.has(bare) ? 'underline decoration-accent decoration-2 underline-offset-4' : '';
+                return (
+                  <span key={k}>
+                    <span className={cls}>{t}</span>{' '}
+                  </span>
+                );
+              })}
+            </p>
+            <span className="flex flex-wrap gap-1.5">
+              {orderable.has(s) ? <Pill tone="mint">Sắp xếp được</Pill> : <Pill tone="stone">Không hợp độ dài để sắp xếp</Pill>}
+              <Pill tone="butter">Đục: {s.split(/\s+/)[gap]?.replace(/[^A-Za-z'-]/g, '')}</Pill>
+            </span>
+          </li>
+        );
+      })}
+    </ol>
   );
 }
 
