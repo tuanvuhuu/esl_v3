@@ -31,7 +31,7 @@ export function GradingView({
   bank,
   canManage,
 }: {
-  assignment: { id: number; title: string; className: string; dueAt: string; maxScore: number; description: string };
+  assignment: { id: number; title: string; className: string; dueAt: string; maxScore: number; description: string; levelCode: string | null };
   rows: GradingRow[];
   bank: BankQuestion[];
   canManage: boolean;
@@ -225,6 +225,7 @@ export function GradingView({
 
       <ItemsEditor
         assignmentId={assignment.id}
+        levelCode={assignment.levelCode}
         initial={[]}
         bank={bank}
         open={editingItems}

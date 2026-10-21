@@ -1,6 +1,6 @@
 'use client';
 
-import { Library, Plus } from 'lucide-react';
+import { Library, Plus, Zap } from 'lucide-react';
 import { useState, useTransition } from 'react';
 import { saveAssignmentItemsAction } from '@/app/(app)/bai-tap/question-actions';
 import type { AssignmentItem } from '@/lib/queries/assignment-items';
@@ -9,21 +9,25 @@ import { Btn } from '@/components/ui/Btn';
 import { FORM_BTN_CANCEL, FORM_BTN_SUBMIT, FormFooter } from '@/components/ui/Field';
 import { Modal } from '@/components/ui/Modal';
 import { BankPicker } from '@/components/questions/BankPicker';
-import { blankDraft, draftFromBank, draftToInput, toDraft, type Draft } from './item-draft';
+import { blankDraft, draftFromBank, draftFromInput, draftToInput, toDraft, type Draft } from './item-draft';
+import { QuickCompose } from './QuickCompose';
 import { ItemDraftCard } from './ItemDraftCard';
 import { Alert } from '@/components/ui/primitives';
 import { Notice } from '@/components/ui/surfaces';
 
-// Hộp thoại soạn câu hỏi của bài tập: thêm, sửa, sắp xếp, xoá câu, chép câu từ ngân hàng.
+// Hộp thoại soạn câu hỏi của bài tập: thêm, sửa, sắp xếp, xoá câu, chép câu từ ngân hàng, Soạn nhanh (P36).
+// Khi mở Soạn nhanh thì tạm ẩn hộp này (không lồng hai hộp thoại); bản nháp vẫn giữ vì state nằm ở component này.
 export function ItemsEditor({
   assignmentId,
   initial,
   bank,
+  levelCode,
   open,
   onClose,
   onDone,
 }: {
   assignmentId: number;
+  levelCode: string | null; // trình độ của lớp, để Soạn nhanh chỉnh độ khó
   initial: AssignmentItem[];
   bank: BankQuestion[];
   open: boolean;
@@ -32,6 +36,7 @@ export function ItemsEditor({
 }) {
   const [drafts, setDrafts] = useState<Draft[]>(() => initial.map((i) => toDraft(i, i.bankQuestionId)));
   const [picking, setPicking] = useState(false);
+  const [quick, setQuick] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -60,7 +65,8 @@ export function ItemsEditor({
   }
 
   return (
-    <Modal open={open} title="Câu hỏi của bài tập" subtitle="Mỗi câu có kỹ năng, loại và điểm. Điểm tối đa của bài là tổng điểm các câu." onClose={onClose} labelledBy="items-editor-title">
+    <>
+    <Modal open={open && !quick} title="Câu hỏi của bài tập" subtitle="Mỗi câu có kỹ năng, loại và điểm. Điểm tối đa của bài là tổng điểm các câu." onClose={onClose} labelledBy="items-editor-title">
       <div className="flex flex-col gap-4">
         {error && (
           <Alert>
@@ -88,6 +94,10 @@ export function ItemsEditor({
         ))}
 
         <div className="flex flex-wrap gap-2">
+          <Btn variant="primary" onClick={() => setQuick(true)}>
+            <Zap className="size-4" aria-hidden />
+            Soạn nhanh
+          </Btn>
           <Btn variant="ghost" onClick={() => setDrafts((prev) => [...prev, blankDraft()])}>
             <Plus className="size-4" aria-hidden />
             Thêm câu
@@ -118,5 +128,17 @@ export function ItemsEditor({
         }}
       />
     </Modal>
+    {open && quick && (
+      <QuickCompose
+        open
+        levelCode={levelCode}
+        onClose={() => setQuick(false)}
+        onAdd={(items) => {
+          setDrafts((prev) => [...prev, ...items.map(draftFromInput)]);
+          setQuick(false);
+        }}
+      />
+    )}
+    </>
   );
 }

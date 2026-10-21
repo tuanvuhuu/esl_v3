@@ -49,6 +49,7 @@ async function GradingData({ params }: { params: Promise<{ id: string }> }) {
     dueAt: base.dueAt.toISOString(),
     maxScore: base.maxScore,
     description: base.description,
+    levelCode: base.levelCode,
   };
 
   // Ngân hàng câu hỏi chỉ đọc khi người xem được soạn câu (để chép vào bài)

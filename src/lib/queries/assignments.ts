@@ -3,7 +3,7 @@ import { and, asc, eq, inArray, sql } from 'drizzle-orm';
 import { db } from '@/db/client';
 import type { CampusScope } from '@/lib/campus';
 import { campusCond } from '@/lib/queries/campuses';
-import { assignmentSubmissions, assignments, classes, students } from '@/db/schema';
+import { assignmentSubmissions, assignments, classes, courseLevels, students } from '@/db/schema';
 
 export type AssignmentRow = {
   id: number;
@@ -82,9 +82,11 @@ export async function getAssignmentBase(id: number) {
       maxScore: assignments.maxScore,
       lessonId: assignments.lessonId,
       campusId: classes.campusId,
+      levelCode: courseLevels.code, // trình độ của lớp, Soạn nhanh dùng để chỉnh độ khó (P36)
     })
     .from(assignments)
     .innerJoin(classes, eq(classes.id, assignments.classId))
+    .leftJoin(courseLevels, eq(courseLevels.id, classes.levelId))
     .where(eq(assignments.id, id))
     .limit(1);
   return row ?? null;

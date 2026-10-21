@@ -120,6 +120,32 @@ export function toDraft(source: DraftSource, bankQuestionId: number | null = nul
   };
 }
 
+// Câu sinh từ Soạn nhanh (P36): dữ liệu gửi đi thành bản nháp mới, để giáo viên sửa tiếp trong màn soạn như câu tự soạn
+export function draftFromInput(input: ItemInput): Draft {
+  return {
+    key: newKey(),
+    id: null,
+    skill: input.skill as Skill,
+    itemType: input.itemType as ItemType,
+    prompt: input.prompt,
+    promptVi: input.promptVi ?? '',
+    passage: input.passage,
+    referenceText: input.referenceText ?? '',
+    points: String(input.points),
+    audioFileId: input.audioFileId,
+    audioName: null,
+    imageFileId: input.imageFileId ?? null,
+    modelAudioFileId: input.modelAudioFileId ?? null,
+    modelAudioName: null,
+    maxSeconds: String(input.maxSeconds ?? 15),
+    sourceLicense: input.sourceLicense ?? '',
+    options: input.options.map((o) => ({ key: newKey(), id: null, label: o.label, isCorrect: o.isCorrect, imageFileId: o.imageFileId ?? null, audioFileId: o.audioFileId ?? null })),
+    criteria: [],
+    pairs: (input.pairs ?? []).map((p, i) => ({ key: newKey(), id: null, position: i + 1, leftLabel: p.leftLabel, leftImageFileId: p.leftImageFileId, rightLabel: p.rightLabel, rightImageFileId: p.rightImageFileId })),
+    bankQuestionId: null,
+  };
+}
+
 // Câu mới: trắc nghiệm hai đáp án, đáp án đầu tiên là đáp án đúng để giáo viên sửa
 export function blankDraft(): Draft {
   return {

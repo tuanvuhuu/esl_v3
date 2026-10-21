@@ -30,7 +30,7 @@ export function ItemGradingView({
   canManage,
   currentAccountId,
 }: {
-  assignment: { id: number; title: string; className: string; dueAt: string; maxScore: number; description: string };
+  assignment: { id: number; title: string; className: string; dueAt: string; maxScore: number; description: string; levelCode: string | null };
   items: AssignmentItem[];
   rows: ItemGradingRow[];
   bank: BankQuestion[];
@@ -173,6 +173,7 @@ export function ItemGradingView({
 
       <ItemsEditor
         assignmentId={assignment.id}
+        levelCode={assignment.levelCode}
         initial={items}
         bank={bank}
         open={editingItems}

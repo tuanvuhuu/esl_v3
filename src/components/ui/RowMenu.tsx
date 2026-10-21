@@ -85,7 +85,7 @@ export function RowMenu({ items, label }: { items: RowMenuItem[]; label: string 
             role="menu"
             aria-label={label}
             style={{ top: pos.top, right: pos.right }}
-            className="fixed z-[60] min-w-[190px] rounded-[var(--radius-panel)] border border-line bg-surface p-1.5 shadow-lift"
+            className="fixed z-[75] min-w-[190px] rounded-[var(--radius-panel)] border border-line bg-surface p-1.5 shadow-lift"
           >
             {items.map((item) => {
               const Icon = item.icon;
