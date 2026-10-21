@@ -184,4 +184,62 @@ test.describe('soạn nhanh', () => {
       await db.end();
     }
   });
+
+  test('ngân hàng: lưu câu Soạn nhanh vào ngân hàng có trình độ và chủ đề, lọc, chép nhiều câu vào bài giữ đủ nội dung', async ({ page }) => {
+    loadEnvLocal();
+    const db = new Client({ connectionString: process.env.DATABASE_URL });
+    await db.connect();
+    const [{ max }] = (await db.query<{ max: number }>('select coalesce(max(id), 0)::int as max from questions')).rows;
+    const [{ id }] = (await db.query<{ id: number }>(`insert into assignments (class_id, title, description, due_at, max_score) values (2, $1, '', now() + interval '7 days', 10) returning id`, [uniq('BT E2E ngân hàng')])).rows;
+    try {
+      await login(page);
+      const dialog = await openQuickCompose(page, id);
+      await dialog.getByLabel('Danh sách từ').fill('cat\ndog\nfish\nbird\nrabbit\nduck');
+      await dialog.getByRole('button', { name: 'Tiếp: chọn dạng câu' }).click();
+      await dialog.getByRole('button', { name: /^Sinh \d+ câu$/ }).click();
+      const generated = await dialog.getByRole('list', { name: 'Câu đã sinh' }).getByRole('listitem').count();
+      await dialog.getByRole('button', { name: 'Lưu vào ngân hàng' }).click();
+      await expect(dialog.getByText(`Đã lưu ${generated} câu vào ngân hàng (A1 (Movers) · Con vật).`)).toBeVisible();
+      const saved = (await db.query<{ level: string; topic: string }>('select level, topic from questions where id > $1', [max])).rows;
+      expect(saved).toHaveLength(generated);
+      expect(saved.every((r) => r.level === 'A1' && r.topic === 'Animals')).toBe(true);
+      // Câu ghép đôi trong ngân hàng giữ đủ cặp
+      const [{ n }] = (await db.query<{ n: number }>(`select count(*)::int n from question_pairs p join questions q on q.id = p.question_id where q.id > $1`, [max])).rows;
+      expect(n).toBeGreaterThanOrEqual(4);
+
+      // Trang ngân hàng: lọc theo trình độ và chủ đề
+      await page.keyboard.press('Escape');
+      await page.goto('/ngan-hang-cau-hoi');
+      await page.getByRole('button', { name: 'Lọc theo trình độ' }).click();
+      await page.getByRole('option', { name: 'A1 (Movers)', exact: true }).click();
+      await page.getByRole('button', { name: 'Lọc theo chủ đề' }).click();
+      await page.getByRole('option', { name: 'Con vật', exact: true }).click();
+      await expect(page.getByText(/^\d+ câu$/)).toHaveText(new RegExp(`^(${generated}|\d+) câu$`));
+      await expect(page.getByText('Listen and touch: cat').first()).toBeVisible();
+
+      // Chép tất cả câu đang lọc vào bài: câu ghép đôi trong bài giữ đủ cặp
+      await page.goto(`/bai-tap/${id}`);
+      await page.getByRole('button', { name: 'Soạn câu hỏi' }).click();
+      const editor = dialogById(page, 'items-editor-title');
+      await editor.getByRole('button', { name: 'Thêm từ ngân hàng' }).click();
+      const picker = dialogById(page, 'bank-picker-title');
+      await picker.getByRole('button', { name: 'Lọc theo trình độ' }).click();
+      await page.getByRole('option', { name: 'A1 (Movers)', exact: true }).click();
+      await picker.getByRole('button', { name: 'Lọc theo chủ đề' }).click();
+      await page.getByRole('option', { name: 'Con vật', exact: true }).click();
+      await picker.getByRole('button', { name: /^Chọn tất cả \(\d+\)$/ }).click();
+      const copied = Number((await picker.getByRole('button', { name: /^Chép vào bài/ }).textContent())!.match(/\d+/)![0]);
+      expect(copied).toBeGreaterThanOrEqual(generated);
+      await picker.getByRole('button', { name: /^Chép vào bài/ }).click();
+      await expect(editor.locator('section[aria-label^="Câu "]')).toHaveCount(copied);
+      await editor.getByRole('button', { name: 'Lưu câu hỏi' }).click();
+      await expectToast(page, new RegExp(`Đã lưu ${copied} câu hỏi`));
+      const [{ pairs }] = (await db.query<{ pairs: number }>(`select count(*)::int pairs from assignment_item_pairs p join assignment_items i on i.id = p.item_id where i.assignment_id = $1`, [id])).rows;
+      expect(pairs).toBeGreaterThanOrEqual(4);
+    } finally {
+      await db.query('delete from assignments where id = $1', [id]);
+      await db.query('delete from questions where id > $1', [max]);
+      await db.end();
+    }
+  });
 });

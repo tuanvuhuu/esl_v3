@@ -12,10 +12,19 @@ const bank: BankQuestion = {
   points: 2,
   audioFileId: 3,
   audioName: 'day.mp3',
+  promptVi: 'Nghe và chọn ngày',
+  referenceText: '',
+  maxSeconds: 10,
+  sourceLicense: '',
+  imageFileId: null,
+  modelAudioFileId: null,
+  level: 'A1',
+  topic: 'School',
   options: [
-    { id: 71, position: 1, label: 'Monday', isCorrect: true },
-    { id: 72, position: 2, label: 'Tuesday', isCorrect: false },
+    { id: 71, position: 1, label: 'Monday', isCorrect: true, imageFileId: null, audioFileId: null },
+    { id: 72, position: 2, label: 'Tuesday', isCorrect: false, imageFileId: null, audioFileId: null },
   ],
+  pairs: [],
   criteria: [],
   usageCount: 2,
 };
@@ -94,5 +103,29 @@ describe('nội dung ngắn để nhận diện câu', () => {
     d.options = d.options.map((o, i) => ({ ...o, label: i === 0 ? 'Monday' : 'Tuesday' }));
     const parsed = itemFormSchema.safeParse(draftToInput(d));
     expect(parsed.success).toBe(true);
+  });
+
+  it('chép câu ghép đôi và sắp xếp từ ngân hàng giữ đủ cặp, câu chuẩn, tiếng Việt (P36.6)', () => {
+    const match: BankQuestion = {
+      ...bank,
+      id: 9,
+      itemType: 'match',
+      skill: 'reading',
+      options: [],
+      promptVi: 'Ghép từ với nghĩa',
+      pairs: [
+        { id: 1, position: 1, leftLabel: '🐱 cat', leftImageFileId: null, rightLabel: 'con mèo', rightImageFileId: null },
+        { id: 2, position: 2, leftLabel: '🐶 dog', leftImageFileId: null, rightLabel: 'con chó', rightImageFileId: null },
+      ],
+    };
+    const d = draftFromBank(match);
+    expect(d.pairs.map((p) => [p.leftLabel, p.rightLabel, p.id])).toEqual([
+      ['🐱 cat', 'con mèo', null],
+      ['🐶 dog', 'con chó', null],
+    ]);
+    expect(d.promptVi).toBe('Ghép từ với nghĩa');
+    const order = draftFromBank({ ...bank, id: 10, itemType: 'order', skill: 'writing', options: [], referenceText: 'I have a red ball' });
+    expect(itemFormSchema.safeParse(draftToInput(order)).success).toBe(true);
+    expect(draftToInput(order).referenceText).toBe('I have a red ball');
   });
 });

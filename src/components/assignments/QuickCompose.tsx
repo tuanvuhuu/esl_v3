@@ -2,11 +2,12 @@
 
 // Soạn nhanh (P36.3, kho từ P36.4): dán danh sách từ, chọn từ có sẵn hoặc dán câu → chọn dạng câu → xem lại → thêm vào bài.
 // Bản mẫu: docs/mockups/soan-nhanh.html. Máy tính: menu ⋯ trên từng câu. Điện thoại: thẻ có nút chữ, nút chính dính đáy (chân Modal).
-import { ArrowLeftRight, Check, Save, Shuffle, Trash2 } from 'lucide-react';
+import { ArrowLeftRight, Check, Library, Save, Shuffle, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useState, useTransition, type KeyboardEvent } from 'react';
 import { lookupVocabAction, saveVocabWordsAction } from '@/app/(app)/bai-tap/vocab-actions';
+import { saveQuestionsAction } from '@/app/(app)/ngan-hang-cau-hoi/actions';
 import type { VocabWord } from '@/lib/queries/vocab';
-import { levelsUpTo } from '@/lib/vocab-topics';
+import { levelsUpTo, topicLabel } from '@/lib/vocab-topics';
 import type { ItemInput } from '@/app/(app)/bai-tap/question-actions';
 import { LEVEL_LABELS, LEVEL_PARAMS, levelParams, type LevelParams } from '@/lib/level-params';
 import {
@@ -55,6 +56,8 @@ export function QuickCompose({ open, levelCode, onClose, onAdd }: { open: boolea
   const [counts, setCounts] = useState<Record<QuickType, number> | null>(null);
   const [items, setItems] = useState<GeneratedItem[]>([]);
   const [dropKey, setDropKey] = useState<string | null>(null);
+  const [banking, startBank] = useTransition();
+  const [banked, setBanked] = useState<{ ok: boolean; text: string } | null>(null);
 
   // Tra kho từ cho các từ giáo viên dán vào (chờ ngừng gõ một chút), để điền nghĩa và emoji còn thiếu
   useEffect(() => {
@@ -107,7 +110,10 @@ export function QuickCompose({ open, levelCode, onClose, onAdd }: { open: boolea
   function goTo(next: Step) {
     if (next >= 2 && !hasInput) return;
     if (next === 2 && !counts) setCounts(defaultCounts(words, sentences, level));
-    if (next === 3) setItems(generateItems({ words, sentences, level, counts: activeCounts }));
+    if (next === 3) {
+      setItems(generateItems({ words, sentences, level, counts: activeCounts }));
+      setBanked(null);
+    }
     setStep(next);
   }
 
@@ -131,6 +137,23 @@ export function QuickCompose({ open, levelCode, onClose, onAdd }: { open: boolea
   };
 
   const totalPoints = items.reduce((s, it) => s + it.input.points, 0);
+
+  // Chủ đề của bài: chủ đề gặp nhiều nhất trong các từ (từ kho hoặc bộ từ có sẵn), không có thì để trống
+  const mainTopic = useMemo(() => {
+    const tally = new Map<string, number>();
+    for (const w of words) if (w.topic) tally.set(w.topic, (tally.get(w.topic) ?? 0) + 1);
+    return [...tally.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? '';
+  }, [words]);
+
+  function saveToBank() {
+    startBank(async () => {
+      const r = await saveQuestionsAction(
+        items.map((x) => x.input),
+        { level: level.code, topic: mainTopic },
+      );
+      setBanked({ ok: r.ok, text: r.message ?? (r.ok ? 'Đã lưu vào ngân hàng' : 'Không lưu được') });
+    });
+  }
   const dropItem = items.find((x) => x.key === dropKey);
 
   const footer =
@@ -327,8 +350,19 @@ export function QuickCompose({ open, levelCode, onClose, onAdd }: { open: boolea
                   </div>
                 ))}
               </dl>
-              <Pill tone="lav">{LEVEL_LABELS[level.code]}</Pill>
+              <span className="flex flex-wrap items-center gap-2">
+                <Pill tone="lav">{LEVEL_LABELS[level.code]}</Pill>
+                <Btn onClick={saveToBank} disabled={banking || items.length === 0 || banked?.ok === true}>
+                  <Library className="size-4" aria-hidden />
+                  {banking ? 'Đang lưu…' : banked?.ok ? 'Đã lưu vào ngân hàng' : 'Lưu vào ngân hàng'}
+                </Btn>
+              </span>
             </div>
+            {banked && (
+              <Alert inline tone={banked.ok ? 'ok' : 'error'}>
+                {banked.ok ? `${banked.text} (${LEVEL_LABELS[level.code]}${mainTopic ? ` · ${topicLabel(mainTopic)}` : ''}).` : banked.text}
+              </Alert>
+            )}
 
             {items.length === 0 ? (
               <Notice>Chưa có câu nào. Quay lại bước 2 để chọn dạng câu.</Notice>

@@ -582,10 +582,13 @@ export const questions = pgTable(
     referenceText: text('reference_text').notNull().default(''),
     maxSeconds: integer('max_seconds').notNull().default(10),
     sourceLicense: varchar('source_license', { length: 300 }).notNull().default(''),
+    // Trình độ (mã: Pre-A1, A1...) và chủ đề để lọc ngân hàng (P36.6). Rỗng là chưa xếp.
+    level: varchar('level', { length: 10 }).notNull().default(''),
+    topic: varchar('topic', { length: 60 }).notNull().default(''),
     createdByAccountId: integer('created_by_account_id').references(() => accounts.id, { onDelete: 'set null' }),
     ...timestamps,
   },
-  (t) => [index('questions_skill_idx').on(t.skill)],
+  (t) => [index('questions_skill_idx').on(t.skill), index('questions_level_topic_idx').on(t.level, t.topic)],
 );
 
 // Đáp án của câu trong ngân hàng (trắc nghiệm / chọn tranh)

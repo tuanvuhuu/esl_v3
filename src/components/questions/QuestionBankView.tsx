@@ -17,38 +17,45 @@ import { SelectPanel } from '@/components/ui/SelectPanel';
 import { Pill, Alert } from '@/components/ui/primitives';
 import { Card, EmptyPanel } from '@/components/ui/surfaces';
 import { Toast, useToast } from '@/components/ui/Toast';
-import { ITEM_TYPE_LABELS, SKILL_LABELS, SKILLS, type Skill } from '@/lib/assignment-scoring';
+import { ITEM_TYPE_LABELS, SKILL_LABELS, type ItemType, type Skill } from '@/lib/assignment-scoring';
+import { Field } from '@/components/ui/Field';
+import { topicLabel } from '@/lib/vocab-topics';
+import { EMPTY_FILTER, filterBank, LEVEL_FIELD_OPTIONS, LEVEL_OPTIONS, levelLabel, SKILL_OPTIONS, topicFieldOptions, topicOptions, TYPE_OPTIONS, type BankFilter } from './bank-filters';
 import type { BankQuestion } from '@/lib/queries/question-bank';
 
 const COLUMNS: GridColumn[] = [
   { key: 'prompt', label: 'Nội dung', width: 'minmax(220px,2.4fr)' },
   { key: 'skill', label: 'Kỹ năng', width: 'minmax(110px,0.8fr)' },
+  { key: 'level', label: 'Trình độ', width: 'minmax(110px,0.8fr)' },
   { key: 'type', label: 'Loại', width: 'minmax(120px,1fr)' },
   { key: 'points', label: 'Điểm', width: '80px' },
   { key: 'usage', label: 'Dùng ở', width: 'minmax(110px,1fr)' },
   { key: 'action', label: 'Thao tác', width: '64px', align: 'end', srOnly: true },
 ];
 
-// Ngân hàng câu hỏi: danh sách có lọc theo kỹ năng, thêm, sửa, xoá. Bảng trên web, thẻ trên điện thoại.
+// Ngân hàng câu hỏi: danh sách có lọc theo kỹ năng, trình độ, chủ đề, dạng câu (P36.6); thêm, sửa, xoá. Bảng trên web, thẻ trên điện thoại.
 export function QuestionBankView({ questions }: { questions: BankQuestion[] }) {
   const router = useRouter();
   const { message, notify } = useToast();
-  const [skill, setSkill] = useState<'all' | Skill>('all');
+  const [filter, setFilter] = useState<BankFilter>(EMPTY_FILTER);
   const [editor, setEditor] = useState<Draft | null>(null);
+  const [meta, setMeta] = useState({ level: '', topic: '' });
   const [error, setError] = useState<string | null>(null);
   const [toDelete, setToDelete] = useState<BankQuestion | null>(null);
   const [pending, startTransition] = useTransition();
 
-  const shown = skill === 'all' ? questions : questions.filter((q) => q.skill === skill);
+  const shown = filterBank(questions, filter);
   const usageText = (q: BankQuestion) => (q.usageCount > 0 ? `${q.usageCount} bài` : 'Chưa dùng');
 
   function openNew() {
     setError(null);
+    setMeta({ level: filter.level === 'all' || filter.level === '__none__' ? '' : filter.level, topic: filter.topic === 'all' || filter.topic === '__none__' ? '' : filter.topic });
     setEditor(blankDraft());
   }
 
   function openEdit(q: BankQuestion) {
     setError(null);
+    setMeta({ level: q.level, topic: q.topic });
     setEditor(toDraft(q, null));
   }
 
@@ -56,7 +63,7 @@ export function QuestionBankView({ questions }: { questions: BankQuestion[] }) {
     if (!editor) return;
     const payload = draftToInput(editor);
     startTransition(async () => {
-      const r = await saveQuestionAction(payload);
+      const r = await saveQuestionAction(payload, meta);
       if (!r.ok) return setError(r.message ?? 'Không lưu được');
       setEditor(null);
       notify(r.message ?? 'Đã lưu câu hỏi');
@@ -83,7 +90,14 @@ export function QuestionBankView({ questions }: { questions: BankQuestion[] }) {
   const cell = (q: BankQuestion, key: string) => {
     switch (key) {
       case 'prompt':
-        return <span className="min-w-0 text-base text-ink [overflow-wrap:anywhere]">{snippet(q.prompt, q.audioName)}</span>;
+        return (
+          <span className="flex min-w-0 flex-col">
+            <span className="text-base text-ink [overflow-wrap:anywhere]">{snippet(q.prompt, q.audioName)}</span>
+            {q.topic && <span className="text-sm text-muted">{topicLabel(q.topic)}</span>}
+          </span>
+        );
+      case 'level':
+        return <span className={`text-sm ${q.level ? 'text-ink-2' : 'text-muted'}`}>{q.level ? levelLabel(q.level) : ''}</span>;
       case 'skill':
         return <Pill tone="lav">{SKILL_LABELS[q.skill]}</Pill>;
       case 'type':
@@ -117,18 +131,16 @@ export function QuestionBankView({ questions }: { questions: BankQuestion[] }) {
         <EmptyPanel title="Chưa có câu hỏi trong ngân hàng" hint="Bấm Thêm câu hỏi để soạn câu đầu tiên. Câu đó sẽ dùng được ở mọi bài tập." />
       ) : (
         <>
-          <div className="mb-4">
-            <SelectPanel
-              label="Lọc theo kỹ năng"
-              auto
-              value={skill}
-              onChange={(v) => setSkill(v as 'all' | Skill)}
-              options={[{ value: 'all', label: 'Tất cả kỹ năng' }, ...SKILLS.map((s) => ({ value: s, label: SKILL_LABELS[s] }))]}
-            />
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <SelectPanel label="Lọc theo trình độ" auto value={filter.level} onChange={(v) => setFilter((f) => ({ ...f, level: v }))} options={LEVEL_OPTIONS} />
+            <SelectPanel label="Lọc theo chủ đề" auto value={filter.topic} onChange={(v) => setFilter((f) => ({ ...f, topic: v }))} options={topicOptions(questions)} />
+            <SelectPanel label="Lọc theo kỹ năng" auto value={filter.skill} onChange={(v) => setFilter((f) => ({ ...f, skill: v as 'all' | Skill }))} options={SKILL_OPTIONS} />
+            <SelectPanel label="Lọc theo dạng câu" auto value={filter.type} onChange={(v) => setFilter((f) => ({ ...f, type: v as 'all' | ItemType }))} options={TYPE_OPTIONS} />
+            <span className="text-sm text-muted">{shown.length} câu</span>
           </div>
 
           {shown.length === 0 ? (
-            <EmptyPanel title="Không có câu nào thuộc kỹ năng này" />
+            <EmptyPanel title="Không có câu nào khớp bộ lọc" hint="Đổi trình độ, chủ đề, kỹ năng hoặc dạng câu." />
           ) : (
             // Điện thoại: thẻ của DataGrid, mỗi câu một thẻ với hai nút có chữ
             <DataGrid
@@ -146,6 +158,8 @@ export function QuestionBankView({ questions }: { questions: BankQuestion[] }) {
                     <Pill tone="lav">{SKILL_LABELS[q.skill]}</Pill>
                     <span>
                       {ITEM_TYPE_LABELS[q.itemType]} · {q.points} điểm · {usageText(q).toLowerCase()}
+                      {q.level ? ` · ${levelLabel(q.level)}` : ''}
+                      {q.topic ? ` · ${topicLabel(q.topic)}` : ''}
                     </span>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
@@ -179,6 +193,14 @@ export function QuestionBankView({ questions }: { questions: BankQuestion[] }) {
                 {error}
               </Alert>
             )}
+            <div className="grid grid-cols-1 gap-3 min-[768px]:grid-cols-2">
+              <Field label="Trình độ">
+                <SelectPanel label="Trình độ của câu" block value={meta.level} onChange={(v) => setMeta((m) => ({ ...m, level: v }))} options={LEVEL_FIELD_OPTIONS} />
+              </Field>
+              <Field label="Chủ đề">
+                <SelectPanel label="Chủ đề của câu" block value={meta.topic} onChange={(v) => setMeta((m) => ({ ...m, topic: v }))} options={topicFieldOptions(questions)} />
+              </Field>
+            </div>
             <ItemDraftCard
               draft={editor}
               index={0}

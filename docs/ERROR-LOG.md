@@ -638,3 +638,12 @@ Mỗi lỗi gặp phải được ghi ở đây, theo mẫu dưới đây. Trư�
 - Cách sửa: Gửi chuỗi đã cắt khoảng trắng và `maxSeconds` mặc định 15. Unit test: câu mới để trống các ô phụ qua được `itemFormSchema`.
 - Quy tắc phòng ngừa: Dữ liệu gửi từ form phải khớp đúng schema của máy chủ. Mỗi hàm chuyển form sang dữ liệu gửi đi có unit test chạy qua schema zod tương ứng.
 - Đã áp dụng ở: `src/components/assignments/item-draft.ts`, `tests/unit/item-draft.test.ts`.
+
+## E-070 · Ngân hàng câu hỏi làm mất nội dung của các dạng câu P35
+- Ngày: 2026-10-22
+- Khu vực: Ngân hàng câu hỏi (`src/app/(app)/ngan-hang-cau-hoi/actions.ts`, `src/lib/queries/question-bank.ts`)
+- Triệu chứng: Lưu câu chọn tranh, ghép đôi, sắp xếp, điền chỗ trống, nói vào ngân hàng rồi chép sang bài thì câu mất đáp án, mất cặp ghép, mất câu chuẩn, mất hướng dẫn tiếng Việt. Câu chép sang bài không chấm được.
+- Nguyên nhân: Khi thêm dạng câu ở P35, bảng `questions` và `question_pairs` đã có cột mới nhưng action lưu chỉ ghi đề, đoạn đọc, điểm, âm thanh; đáp án chỉ ghi khi dạng là `choice`; truy vấn đọc ngân hàng không đọc các cột mới.
+- Cách sửa: Hàm `writeQuestion` ghi đủ mọi trường, đáp án cho chọn tranh và trắc nghiệm, cặp ghép cho ghép đôi, kiểm mọi tệp được trỏ tới; truy vấn đọc đủ trường và cặp ghép. Unit chép câu ghép đôi và sắp xếp từ ngân hàng; E2E lưu từ Soạn nhanh vào ngân hàng rồi chép vào bài, kiểm cặp ghép trong DB.
+- Quy tắc phòng ngừa: Thêm cột cho câu hỏi thì sửa cùng lúc mọi nơi ghi và đọc câu: bài tập, ngân hàng, chép qua lại. Có test đi hết vòng lưu → đọc → chép cho từng dạng câu mới.
+- Đã áp dụng ở: `src/app/(app)/ngan-hang-cau-hoi/actions.ts`, `src/lib/queries/question-bank.ts`, `tests/unit/item-draft.test.ts`, `e2e/soan-nhanh.spec.ts`.

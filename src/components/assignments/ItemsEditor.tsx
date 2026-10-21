@@ -121,6 +121,7 @@ export function ItemsEditor({
       <BankPicker
         open={picking}
         bank={bank}
+        levelCode={levelCode}
         onClose={() => setPicking(false)}
         onAdd={(picked) => {
           setDrafts((prev) => [...prev, ...picked.map(draftFromBank)]);
