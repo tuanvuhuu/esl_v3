@@ -1,7 +1,7 @@
 # ESL Center: kế hoạch và tiến độ
 
-> **Tiến độ tổng: 173/194 task (89%)**
-> Cập nhật lần cuối: 2026-10-19. P1–P34 xong. P35 đang làm: 35.2, 35.3 (dạng câu mới, chấm tự động) và 35.24 (học thử không cần đăng nhập) đã kiểm chứng; 35.4–35.6 làm dở, ghi chú phần còn thiếu ở từng mục. Số đếm lấy từ các ô `[x]` và `[ ]` trong file.
+> **Tiến độ tổng: 173/197 task (87%)**
+> Cập nhật lần cuối: 2026-10-22. P1–P34 xong. P35 đang làm: 35.2, 35.3, 35.24 đã kiểm chứng; 35.4–35.6 làm dở. Thêm 35.25–35.27 từ nghiên cứu kỹ thuật (`docs/NGHIEN-CUU-TINH-NANG-P35.md`). Số đếm lấy từ các ô `[x]` và `[ ]` trong file.
 
 ## 🎯 Các task vừa hoàn thành & Lệnh test riêng (Không chạy all)
 
@@ -385,6 +385,8 @@ Thứ tự làm (mỗi giai đoạn dùng được ngay, không chờ giai đo�
 
 Mặc định đề xuất cho các câu hỏi chưa chốt ở tài liệu nghiên cứu (người dùng sửa ở 35.1 nếu khác): giọng mẫu do giáo viên tự thu là chính, giọng máy để bổ sung, giọng Mỹ; trẻ 3–5 tuổi luôn có phụ huynh hoặc giáo viên ngồi cùng; bản ghi âm giữ 12 tháng rồi chuyển sang Google Drive, xoá sau 24 tháng; chưa bật chấm tự động cho tới khi thử nghiệm ở G.
 
+Nghiên cứu kỹ thuật cho các mục còn mở (thư viện, định dạng ghi âm theo máy, giá dịch vụ, pháp lý): `docs/NGHIEN-CUU-TINH-NANG-P35.md` (2026-10-22). Thứ tự làm đề xuất ở mục 12 của tài liệu đó.
+
 ### Chốt trước
 - [ ] **35.1** (người dùng) Chốt hoặc sửa các mặc định trên; chọn bộ bài mẫu đầu tiên (đề xuất: Starters, 3 bài theo giáo trình đang dạy); linh vật của trung tâm (có sẵn hay cần thiết kế); có cần chế độ trình chiếu trên lớp ngay ở giai đoạn F không.
 
@@ -395,6 +397,9 @@ Mặc định đề xuất cho các câu hỏi chưa chốt ở tài liệu nghi
 - [ ] **35.5** Màn làm bài của học sinh theo nhóm tuổi: mỗi màn một câu, nút to (từ 64px cho 3–5 tuổi), hướng dẫn bằng giọng nói (có bản tiếng Việt), nút nghe lại; kéo thả bằng dnd-kit (chạm và bàn phím đều dùng được); hai chế độ **luyện** (sai được làm lại ngay, có hiệu ứng khi đúng) và **kiểm tra** (làm một lần). Kiểm chứng: E2E làm bài ở 390px và 1024px; `chuan.spec` không lỗi kích thước. ⏳ Rà soát 2026-10-19: đã có màn mỗi câu một trang, thanh tiến độ, nút to, tiếng Việt dưới đề, màn chúc mừng có sticker. Còn thiếu: kéo thả dnd-kit (đang chạm để chọn), hai chế độ luyện và kiểm tra, hướng dẫn bằng giọng nói, màn chúc mừng chưa theo điểm thật (luôn 3 sao), E2E 390px và 1024px.
 
 - [x] **35.24** Học thử không cần đăng nhập: nút "Vào học thử" trên trang đăng nhập và link `/hoc-thu` mở thẳng một bài mẫu đủ dạng câu bằng tài khoản học sinh học thử (không mật khẩu, không đổi mật khẩu được). Dữ liệu riêng ở "Cơ sở học thử", lớp HOC-THU, tự tạo lần đầu; mỗi lần vào xoá bài làm cũ. Tắt bằng `DEMO_LOGIN=off`. Bộ bài mẫu ở `src/lib/demo-lessons.ts`: 5 bài theo chủ đề (Animals, Colors & Numbers, My Family, Food & Drinks, At School), 70 câu đủ 8 dạng; sửa dữ liệu thì lần vào sau tự dựng lại bài. ✅ 2026-10-19: unit `demo-lessons` (mọi câu qua schema máy chủ, đáp án mẫu chấm đủ điểm); E2E `hoc-thu.spec` 2 test pass (vào thẳng bài, nộp rồi vào lại thì về Chưa nộp); không tràn ngang ở 360px.
+- [ ] **35.25** (người dùng, có luật sư) Hồ sơ đánh giá tác động chuyển dữ liệu ra nước ngoài (Luật 91/2025/QH15 Điều 20): CSDL ở Singapore, tệp ở Tokyo, Google Drive, Telegram, sắp có Azure và Anthropic. Nộp trong 60 ngày kể từ lần chuyển đầu; miễn trừ doanh nghiệp nhỏ không áp dụng. Làm trước khi bật ghi âm cho học sinh thật. Chi tiết: mục 10 tài liệu nghiên cứu.
+- [ ] **35.26** AI soạn câu nháp: giáo viên dán danh sách từ, Claude (`claude-opus-5-5`, structured outputs theo `itemFormSchema`) trả câu nháp, giáo viên duyệt rồi lưu; không gửi dữ liệu học sinh. Ước tính 0,1–0,2 USD một bài 20 câu. Kiểm chứng: unit chạy câu nháp qua schema và chấm đáp án mẫu; E2E soạn nháp rồi lưu (dùng phản hồi giả).
+- [ ] **35.27** Sửa nhỏ từ nghiên cứu: ghi âm chọn định dạng bằng `isTypeSupported` và cắt tham số MIME trước khi tải lên; thống nhất loại ảnh giữa `IMAGE_ACCEPT` và `ALLOWED_TYPES` (WebP, GIF); màn chúc mừng hiện sao theo điểm thật. Kiểm chứng: unit chọn MIME, E2E ghi âm với micro giả.
 
 ### B. Ghi âm trên trình duyệt
 - [ ] **35.6** Ghi âm cho ba dạng nói: bấm để nói, đếm giây theo `max_seconds`, nghe lại, nói lại, nộp; Android và Chrome ghi webm, iOS ghi m4a; tải thẳng lên Supabase rồi ghi `uploaded_files`; hướng dẫn cấp quyền micro. Chỉ bật khi học sinh đã có đồng ý của phụ huynh (35.12). Kiểm chứng: E2E với micro giả của Chromium; thử tay trên iPhone và Android. ⏳ Rà soát 2026-10-19: có nút ghi âm MediaRecorder, đếm giây, tự dừng khi hết giờ (đã sửa lỗi gọi dừng ghi âm trong hàm cập nhật state). Còn thiếu: nghe lại trước khi nộp, m4a cho iOS, tải thẳng lên Supabase, chặn khi chưa có đồng ý phụ huynh.
