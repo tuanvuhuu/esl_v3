@@ -1,6 +1,6 @@
 # Nghiên cứu kỹ thuật cho các tính năng còn lại của P35
 
-Ngày: 2026-10-22. Tiếp theo `docs/NGHIEN-CUU-BAI-TAP-ONLINE.md` (P33.1). Tài liệu trước trả lời "nên làm gì". Tài liệu này trả lời "làm bằng gì, thế nào, tốn bao nhiêu, vướng gì" cho từng mục 35.4–35.23 còn mở, và thêm hai việc mới phát hiện khi tìm hiểu.
+Ngày: 2026-10-22. Tiếp theo `docs/NGHIEN-CUU-BAI-TAP-ONLINE.md` (P33.1). Tài liệu trước trả lời "nên làm gì". Tài liệu này trả lời "làm bằng gì, thế nào, tốn bao nhiêu, vướng gì" cho từng mục 35.4–35.23 còn mở, và thêm một việc mới (AI soạn câu nháp).
 
 Phiên bản thư viện lấy trực tiếp từ npm ngày 2026-10-22. Giá dịch vụ lấy từ các trang tổng hợp vì trang giá chính thức của Azure không hiện số khi đọc tự động; cần đối chiếu lại trên trang giá hoặc máy tính giá của nhà cung cấp trước khi chốt ngân sách.
 
@@ -16,7 +16,7 @@ Phiên bản thư viện lấy trực tiếp từ npm ngày 2026-10-22. Giá d�
 | Lịch ôn (35.18) | `ts-fsrs` 5.4.2 (MIT, Node ≥ 20). Bản 6 còn beta và đổi API, yêu cầu Node ≥ 24; chờ bản 6 ổn định rồi mới nâng. |
 | Trình chiếu (35.19) | Giáo viên điều khiển bằng bàn phím trên cùng máy chiếu: không cần máy chủ thời gian thực. Điều khiển bằng điện thoại thì dùng Supabase Realtime Broadcast (gói miễn phí 200 kết nối đồng thời, 100 tin/giây). |
 | Chấm tự động (35.22–35.23) | Ba ứng viên: Azure Pronunciation Assessment, SpeechSuper, OpenPronounce (MIT, tự cài). Có bộ dữ liệu mở speechocean762 (một nửa là giọng trẻ em, CC BY 4.0) để thử trước khi dùng giọng học sinh thật. |
-| Pháp lý (35.12, mới) | **Việc mới, quan trọng:** dữ liệu học sinh đang nằm ở nước ngoài (CSDL Neon ở Singapore, tệp Supabase ở Tokyo, Google Drive). Theo Luật 91/2025/QH15 Điều 20, đây là chuyển dữ liệu xuyên biên giới, phải lập hồ sơ đánh giá tác động và nộp trong 60 ngày kể từ lần chuyển đầu. Miễn trừ cho doanh nghiệp nhỏ không áp dụng cho hồ sơ này. |
+| Pháp lý (35.12) | Đồng ý của phụ huynh theo từng mục đích, lưu bằng chứng, trẻ từ 7 tuổi cùng đồng ý, rút lại thì ngừng xử lý (Luật 91/2025/QH15, Nghị định 356/2025/NĐ-CP). |
 | AI soạn câu nháp (mới) | Giáo viên dán danh sách từ, Claude (`claude-opus-5-5`) trả về câu nháp đúng định dạng JSON của app, giáo viên duyệt rồi lưu. Ước tính khoảng 0,1–0,2 USD cho một bài 20 câu. |
 
 ## 2. Ghi âm trên trình duyệt (35.6)
@@ -123,7 +123,7 @@ Hai mức, làm mức 1 trước:
 
 **Cách thử không cần giọng học sinh thật:** bộ dữ liệu speechocean762 (OpenSLR 101, CC BY 4.0) có 5.000 câu tiếng Anh của người học, khoảng một nửa là trẻ em, mỗi câu do 5 chuyên gia chấm. Chạy cả ba lựa chọn trên bộ này, so điểm máy với điểm chuyên gia, rồi mới thử với khoảng 50 bản ghi của học sinh đã có đồng ý loại thứ hai (35.12). Lưu ý người nói trong bộ này có tiếng mẹ đẻ là tiếng Trung, nên kết quả chỉ để loại bớt lựa chọn, không thay cho thử trên giọng học sinh Việt.
 
-## 10. Pháp lý: đồng ý của phụ huynh và chuyển dữ liệu ra nước ngoài (35.12, 35.13, mới)
+## 10. Pháp lý: đồng ý của phụ huynh (35.12, 35.13)
 
 Tóm tắt từ các trang tổng hợp, chưa đối chiếu toàn văn. **Cần luật sư đọc văn bản gốc trước khi chạy thật.**
 
@@ -138,27 +138,11 @@ Tóm tắt từ các trang tổng hợp, chưa đối chiếu toàn văn. **Cầ
 - Mỗi dòng một mục đích: `voice_teacher_review` (ghi âm cho giáo viên chấm), `voice_auto_scoring` (gửi giọng ra dịch vụ chấm tự động), sau này thêm mục đích khác thì thêm dòng, không gộp.
 - Lưu: ai đồng ý (phụ huynh nào, qua kênh nào: nút Telegram, nhân viên ghi nhận kèm ảnh giấy), thời điểm, phiên bản nội dung điều khoản đã hiện, thời điểm rút lại. Không xoá dòng khi rút lại, chỉ ghi thời điểm rút.
 - Trẻ từ 7 tuổi: thêm bước trẻ tự bấm đồng ý trong khu học sinh (một câu đơn giản, có giọng đọc), lưu riêng.
-- Nội dung hiện cho phụ huynh nêu rõ: dữ liệu gì (giọng nói), để làm gì, ai nghe được, lưu bao lâu, lưu ở đâu (nước ngoài), cách rút lại.
+- Nội dung hiện cho phụ huynh nêu rõ: dữ liệu gì (giọng nói), để làm gì, ai nghe được, lưu bao lâu, cách rút lại.
 
-### 10.2 Chuyển dữ liệu ra nước ngoài (Điều 20)
+### 10.2 Nơi lưu dữ liệu
 
-Hiện trạng của app:
-
-| Dữ liệu | Nơi lưu |
-|---|---|
-| CSDL (hồ sơ học sinh, phụ huynh, điểm, bài làm) | Neon, vùng `ap-southeast-1` (Singapore) |
-| Tệp (bài nộp, âm thanh, sắp có giọng học sinh) | Supabase, vùng `ap-northeast-1` (Tokyo) |
-| Lưu trữ và sao lưu | Google Drive |
-| Tin nhắn với phụ huynh | Máy chủ Telegram |
-| Sắp tới: chấm phát âm, giọng máy, AI soạn câu | Azure, Anthropic (Mỹ) |
-
-Luật coi việc lưu dữ liệu thu thập tại Việt Nam trên hệ thống ở nước ngoài là chuyển dữ liệu xuyên biên giới. Bên chuyển phải lập **hồ sơ đánh giá tác động chuyển dữ liệu** và nộp một bản chính cho cơ quan chuyên trách trong 60 ngày kể từ lần chuyển đầu; hồ sơ lập một lần, cập nhật khi thay đổi. Miễn trừ 5 năm cho doanh nghiệp nhỏ và khởi nghiệp (Điều 38) **không bao gồm** hồ sơ này, và cũng không áp dụng nếu trực tiếp xử lý dữ liệu nhạy cảm. Mức phạt tối đa cho vi phạm chuyển dữ liệu là 5% doanh thu năm trước.
-
-Việc cần làm (người dùng, có luật sư hỗ trợ), nên làm trước khi bật ghi âm cho học sinh thật:
-1. Lập danh sách nơi lưu như bảng trên, mỗi nơi một dòng (nhà cung cấp, nước, loại dữ liệu, mục đích).
-2. Lập và nộp hồ sơ đánh giá tác động chuyển dữ liệu; cân nhắc lập luôn hồ sơ đánh giá tác động xử lý dữ liệu (Điều 21) vì có dữ liệu trẻ em và giọng nói.
-3. Đưa nội dung "lưu ở nước ngoài" vào thông báo cho phụ huynh ở 10.1.
-4. Phương án giảm rủi ro nếu cần: chuyển tệp ghi âm sang máy chủ đặt tại Việt Nam; OpenPronounce tự cài cũng giữ giọng trẻ trong nước.
+Người dùng chốt ngày 2026-10-22: không làm hồ sơ chuyển dữ liệu ra nước ngoài. Mục này không còn trong kế hoạch.
 
 ## 11. Việc mới đề xuất: AI soạn câu nháp
 
@@ -173,7 +157,7 @@ Việc cần làm (người dùng, có luật sư hỗ trợ), nên làm trướ
 ## 12. Thứ tự làm đề xuất (cập nhật phân kỳ P35)
 
 1. **Sửa nhỏ ngay:** định dạng ghi âm theo `isTypeSupported` và cắt tham số MIME (mục 2.1); loại ảnh WebP, GIF lệch giữa màn soạn và máy chủ (mục 2.1); màn chúc mừng hiện sao theo điểm thật (mục 6).
-2. **Pháp lý trước khi ghi âm thật:** 35.12 bảng đồng ý theo mục 10.1; người dùng làm hồ sơ ở mục 10.2.
+2. **Đồng ý của phụ huynh trước khi ghi âm thật:** 35.12 bảng đồng ý theo mục 10.1.
 3. **35.6 hoàn chỉnh:** nghe lại trước khi nộp, tải thẳng Supabase, chặn khi chưa đồng ý.
 4. **35.5 kéo thả** bằng dnd-kit, giữ cách chạm chọn.
 5. **35.8–35.10 chấm nói** với wavesurfer.js.
@@ -224,7 +208,6 @@ Pháp lý:
 - [Điểm mới của Nghị định 356/2025 so với Nghị định 13/2023](https://luatvietnam.vn/dan-su/diem-moi-cua-nghi-dinh-356-2025-so-voi-nghi-dinh-13-2023-ve-bao-ve-du-lieu-ca-nhan-568-106269-article.html)
 - [Bổ sung danh mục dữ liệu cá nhân nhạy cảm từ 01/01/2026](https://thuvienphapluat.vn/chinh-sach-phap-luat-moi/vn/ho-tro-phap-luat/chinh-sach-moi/102178/bo-sung-danh-muc-du-lieu-ca-nhan-nhay-cam-tu-01-01-2026)
 - [Tuổi Trẻ: dữ liệu sinh trắc học giọng nói là thông tin nhạy cảm](https://tuoitre.vn/bo-cong-an-du-lieu-sinh-trac-hoc-giong-noi-mong-mat-la-thong-tin-nhay-cam-phai-quan-ly-chat-che-2025101511361673.htm)
-- [Khung pháp lý chuyển dữ liệu xuyên biên giới](https://phaply.net.vn/khung-phap-ly-chuyen-du-lieu-xuyen-bien-gioi-cua-viet-nam-goc-nhin-tu-luat-du-lieu-2024-va-luat-bao-ve-du-lieu-ca-nhan-2025-a260526.html)
 - [Bảo vệ dữ liệu cá nhân của trẻ em trên website trường học](https://uptech.vn/thiet-ke-website/truong-hoc/du-lieu-hoc-sinh)
 
 AI soạn câu: giá và mã mô hình Claude lấy từ tài liệu Claude API (bảng mô hình cập nhật 2026-10-06).
