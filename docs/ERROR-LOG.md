@@ -665,3 +665,12 @@ Mỗi lỗi gặp phải được ghi ở đây, theo mẫu dưới đây. Trư�
 - Cách sửa: Hàm `canDecideLeave` kiểm lại mỗi lần bấm: tài khoản còn hoạt động, có quyền `attendance.record` theo `role_permissions` (quản trị có mọi quyền), có dòng `account_campuses` ở cơ sở của lớp (quản trị không cần), và buổi học thuộc đúng lớp của học sinh. Không đủ thì trả lời callback "Bạn không có quyền duyệt đơn này" và không đổi dữ liệu. E2E gửi callback giả từ kế toán, giáo viên khác cơ sở, buổi của lớp khác, id không phải số; kiểm sổ điểm danh và tin gửi không đổi, rồi giáo viên đủ điều kiện duyệt được.
 - Quy tắc phòng ngừa: Mọi hành động qua webhook hoặc callback (không có phiên đăng nhập) phải tự kiểm quyền, cơ sở và quan hệ giữa các id ngay trên máy chủ, theo đúng quy tắc của server action tương ứng. Không tin id trong callback_data, URL hay nút bấm.
 - Đã áp dụng ở: `src/lib/telegram/service.ts`, `e2e/work.spec.ts`.
+
+## E-073 · Màn Phụ huynh thiếu Gán học sinh, sửa ghi chú tại ô và thẻ sửa quan hệ; test lớp học ghi cứng ngày
+- Ngày: 2026-10-22
+- Khu vực: Màn Phụ huynh (`src/components/parents/ParentList.tsx`), E2E `e2e/catalog.spec.ts`
+- Triệu chứng: Ba bài trong `catalog.spec` hỏng: không thấy mục menu "Gán học sinh", không thấy nút "Sửa ghi chú", và không thấy "Buổi 1 · 19/10/2026" ở trang lớp. Project `work` phụ thuộc `catalog` nên khi chạy cả bộ thì toàn bộ E2E của `work` bị bỏ qua.
+- Nguyên nhân: Commit P22–P29 đã viết `ParentAssignForm`, `InlineText`, `ChildEditor`, các server action và test, nhưng `ParentList` chưa gắn các component này, nên tính năng chưa từng có trên màn. Bài tạo lớp ghi cứng ngày khai giảng 19/10/2026; ngày đó qua rồi thì buổi 1 không còn trong "Buổi học sắp tới".
+- Cách sửa: `ParentList` có mục ⋯ "Gán học sinh" (và nút đầy chiều rộng trên thẻ điện thoại), cột Ghi chú sửa tại ô, chip học sinh mở thẻ sửa quan hệ hoặc gỡ liên kết, và nút "+ Thêm" hiện khi rê chuột hoặc Tab vào. Bài tạo lớp lấy ngày khai giảng là thứ Hai tuần sau. Cả 10 bài `catalog.spec` đạt; kiểm không tràn ngang ở 360, 390, 768, 1024, 1440px.
+- Quy tắc phòng ngừa: Component viết xong phải được dùng ở màn trước khi commit; test E2E của tính năng phải chạy đạt trong cùng commit, không commit test cho giao diện chưa có. Test E2E không ghi cứng ngày tương lai: tính ngày theo hôm nay.
+- Đã áp dụng ở: `src/components/parents/ParentList.tsx`, `e2e/catalog.spec.ts`.

@@ -56,13 +56,18 @@ test.describe('giáo viên, lớp học, phụ huynh', () => {
     await create.getByRole('button', { name: 'Tạo lớp', exact: true }).click();
     await expect(dialogFieldErrors(page).first()).toContainText('Chọn ít nhất một ngày học');
     await create.locator('label:has(input[value="T2"])').click();
-    await create.getByLabel('Ngày khai giảng *').fill('2026-10-19');
+    // Khai giảng thứ Hai tuần sau, để buổi 1 luôn nằm trong "Buổi học sắp tới" (ghi cứng ngày thì test hỏng khi ngày đó đã qua)
+    const start = new Date();
+    start.setDate(start.getDate() + ((8 - start.getDay()) % 7 || 7));
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const [y, m, d] = [start.getFullYear(), pad(start.getMonth() + 1), pad(start.getDate())];
+    await create.getByLabel('Ngày khai giảng *').fill(`${y}-${m}-${d}`);
     await create.getByRole('button', { name: 'Tạo lớp', exact: true }).click();
     await expectToast(page, `Đã tạo lớp ${code} với 4 buổi học`);
 
     await page.locator('article', { hasText: code }).getByRole('link', { name: code }).click();
     await expect(page.getByText('Đã học 0/4 buổi')).toBeVisible();
-    await expect(page.getByText('Buổi 1 · 19/10/2026')).toBeVisible();
+    await expect(page.getByText(`Buổi 1 · ${d}/${m}/${y}`)).toBeVisible();
 
     // Xoá lớp không có học sinh: xác nhận rồi về danh sách
     await page.getByRole('button', { name: 'Xoá lớp', exact: true }).click();

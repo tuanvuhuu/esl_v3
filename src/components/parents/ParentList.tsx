@@ -1,10 +1,10 @@
 'use client';
 
-import { Pencil, Phone, Plus, Search, Send, Trash2, Users } from 'lucide-react';
+import { Pencil, Phone, Plus, Search, Send, Trash2, UserPlus, Users } from 'lucide-react';
 import Link from 'next/link';
-import { useCallback, useMemo, useState, useTransition } from 'react';
+import { useCallback, useMemo, useState, useTransition, type MouseEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { deleteParentAction, loadParentForm, type ParentFormValues } from '@/app/(app)/phu-huynh/actions';
+import { deleteParentAction, loadParentForm, updateParentFieldAction, type ParentFormValues } from '@/app/(app)/phu-huynh/actions';
 import { createParentLinkAction } from '@/app/(app)/tin-nhan/actions';
 import { TelegramLinkDialog } from '@/components/telegram/TelegramLinkDialog';
 import type { ParentRow, StudentChoice } from '@/lib/queries/parents';
@@ -21,6 +21,9 @@ import { Toast, useToast } from '@/components/ui/Toast';
 import { DataGrid, type GridColumn, type GridSort } from '@/components/ui/datagrid';
 import { Btn, BTN_BASE, BTN_GHOST } from '@/components/ui/Btn';
 import { Pagination, TextInput } from '@/components/ui/controls';
+import { ChildEditor } from './ChildEditor';
+import { InlineText } from './InlineText';
+import { ParentAssignForm } from './ParentAssignForm';
 import { ParentForm } from './ParentForm';
 
 const PAGE_SIZE = 10;
@@ -35,6 +38,7 @@ const COLUMNS: GridColumn<ParentRow>[] = [
     sortable: true,
     sortValue: (r) => r.children.map((c) => c.studentName).join(', '),
   },
+  { key: 'note', label: 'Ghi chú', width: 'minmax(160px,1.2fr)', sortable: true },
   { key: 'actions', label: 'Thao tác', width: '44px', align: 'end', srOnly: true },
 ];
 
@@ -43,7 +47,7 @@ export function ParentList(props: {
   students?: StudentChoice[];
   canManage: boolean;
 }) {
-  const { parents, canManage } = props;
+  const { parents, students = [], canManage } = props;
   const router = useRouter();
   const [q, setQ] = useState('');
   const [page, setPage] = useState(1);
@@ -53,6 +57,9 @@ export function ParentList(props: {
   const [editing, setEditing] = useState<{ id: number; values: ParentFormValues } | null>(null);
   const [toDelete, setToDelete] = useState<ParentRow | null>(null);
   const [telegramFor, setTelegramFor] = useState<ParentRow | null>(null);
+  const [assigning, setAssigning] = useState<ParentRow | null>(null);
+  // Thẻ sửa quan hệ mở dưới ô học sinh vừa bấm
+  const [childEdit, setChildEdit] = useState<{ row: ParentRow; studentId: number; anchor: DOMRect } | null>(null);
   const { message, notify } = useToast();
   const [pending, startTransition] = useTransition();
 
@@ -97,6 +104,7 @@ export function ParentList(props: {
     (text: string) => {
       setCreating(false);
       setEditing(null);
+      setAssigning(null);
       notify(text);
       router.refresh();
     },
@@ -123,6 +131,7 @@ export function ParentList(props: {
   }
 
   const menuItems = (row: ParentRow): RowMenuItem[] => [
+    { kind: 'action', label: 'Gán học sinh', icon: UserPlus, onSelect: () => setAssigning(row), disabled: !canManage, disabledHint: 'Không có quyền quản lý phụ huynh' },
     { kind: 'action', label: 'Sửa', icon: Pencil, onSelect: () => openEdit(row), disabled: !canManage, disabledHint: 'Không có quyền quản lý phụ huynh' },
     { kind: 'action', label: 'Kết nối Telegram', icon: Send, onSelect: () => setTelegramFor(row), disabled: !canManage, disabledHint: 'Không có quyền quản lý phụ huynh' },
     { kind: 'action', label: 'Xoá', icon: Trash2, danger: true, onSelect: () => setToDelete(row), disabled: !canManage, disabledHint: 'Không có quyền quản lý phụ huynh' },
@@ -156,9 +165,43 @@ export function ParentList(props: {
         );
       case 'children':
         return (
-          <div className="flex min-w-0 flex-wrap gap-1.5">
-            <ChildChips row={row} />
+          <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+            {row.children.map((c) => (
+              <button
+                key={c.studentId}
+                type="button"
+                onClick={(e: MouseEvent<HTMLButtonElement>) => setChildEdit({ row, studentId: c.studentId, anchor: e.currentTarget.getBoundingClientRect() })}
+                aria-label={`Sửa ${c.studentName}, ${PARENT_RELATION_LABELS[c.relation]}${c.isPrimary ? ', liên hệ chính' : ''}`}
+                className="inline-flex items-center gap-1.5 rounded-full bg-bg px-2.5 py-1 text-left text-sm"
+              >
+                <Users className="size-3.5 text-ink-2" aria-hidden />
+                <span className="text-link underline underline-offset-2">{c.studentName}</span>
+                <span className="text-xs text-relation">· {PARENT_RELATION_LABELS[c.relation]}{c.isPrimary ? ' · chính' : ''}</span>
+              </button>
+            ))}
+            {/* Gán thêm học sinh: chữ chỉ hiện khi rê chuột hoặc Tab vào (DESIGN.md mục 155) */}
+            {canManage && (
+              <button
+                type="button"
+                onClick={() => setAssigning(row)}
+                className="rounded-[var(--radius-ctl)] px-1.5 py-1 text-sm text-link underline underline-offset-2 opacity-0 transition-opacity hover:opacity-100 focus-visible:opacity-100 group-hover:opacity-100"
+              >
+                + Thêm
+              </button>
+            )}
           </div>
+        );
+      case 'note':
+        return (
+          <InlineText
+            value={row.note}
+            label="ghi chú"
+            placeholder="Thêm ghi chú"
+            multiline
+            canEdit={canManage}
+            className="text-sm text-ink-2"
+            onSave={(next) => updateParentFieldAction(row.id, 'note', next)}
+          />
         );
       case 'actions':
         return (
@@ -255,6 +298,7 @@ export function ParentList(props: {
                 onEdit={() => openEdit(row)}
                 onDelete={() => setToDelete(row)}
                 onTelegram={() => setTelegramFor(row)}
+                onAssign={() => setAssigning(row)}
               />
             ))}
           </div>
@@ -279,6 +323,28 @@ export function ParentList(props: {
       <Modal open={!!editing} title="Sửa phụ huynh" subtitle="Các trường có dấu * là bắt buộc." onClose={() => setEditing(null)} labelledBy="parent-edit-title">
         {editing && <ParentForm mode="edit" parentId={editing.id} initial={editing.values} onDone={onDone} onCancel={() => setEditing(null)} />}
       </Modal>
+
+      <Modal open={!!assigning} title={`Gán học sinh · ${assigning?.fullName ?? ''}`} subtitle="Học sinh đã liên kết được bỏ qua." onClose={() => setAssigning(null)} labelledBy="parent-assign-title">
+        {assigning && <ParentAssignForm parentId={assigning.id} students={students} onDone={onDone} onCancel={() => setAssigning(null)} />}
+      </Modal>
+
+      {childEdit &&
+        (() => {
+          // Lấy dòng mới nhất sau router.refresh để thẻ hiện đúng quan hệ vừa đổi; liên kết đã gỡ thì đóng
+          const row = parents.find((p) => p.id === childEdit.row.id);
+          const child = row?.children.find((c) => c.studentId === childEdit.studentId);
+          if (!row || !child) return null;
+          return (
+            <ChildEditor
+              parentId={row.id}
+              parentName={row.fullName}
+              child={child}
+              anchor={childEdit.anchor}
+              canManage={canManage}
+              onClose={() => setChildEdit(null)}
+            />
+          );
+        })()}
 
       <TelegramLinkDialog
         open={telegramFor !== null}
@@ -311,12 +377,14 @@ function ParentCard({
   onEdit,
   onDelete,
   onTelegram,
+  onAssign,
 }: {
   row: ParentRow;
   canManage: boolean;
   onEdit: () => void;
   onDelete: () => void;
   onTelegram: () => void;
+  onAssign: () => void;
 }) {
   return (
     <Card>
@@ -333,6 +401,12 @@ function ParentCard({
       <div className="flex flex-wrap gap-1.5">
         <ChildChips row={row} />
       </div>
+      {row.note && <p className="text-sm text-ink-2">{row.note}</p>}
+      {/* Điện thoại: "Gán học sinh" đầy chiều rộng, các nút còn lại cạnh nhau (DESIGN.md mục 74) */}
+      <Btn block onClick={onAssign} disabled={!canManage}>
+        <UserPlus className="size-4" aria-hidden />
+        Gán học sinh
+      </Btn>
       <div className="grid grid-cols-3 gap-2">
         <Btn block onClick={onEdit} disabled={!canManage}>
           <Pencil className="size-4" aria-hidden />
