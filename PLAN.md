@@ -1,6 +1,6 @@
 # ESL Center: kế hoạch và tiến độ
 
-> **Tiến độ tổng: 202/228 task (89%)**
+> **Tiến độ tổng: 203/228 task (89%)**
 > Cập nhật lần cuối: 2026-10-22. P1–P34 xong. P38 (giờ học từng ngày, học phí theo buổi còn lại, mã HS-00001) xong. P37 bot Telegram theo kịch bản: 37.1–37.9 xong, còn đặt cron mỗi giờ trên bản deploy và các việc đợt sau. P35: 35.2, 35.3, 35.12, 35.24, 35.27 xong; 35.4–35.6 làm dở (35.6 chỉ còn thử tay trên điện thoại). P36 Soạn nhanh xong phần code (36.1–36.6). Số đếm lấy từ các ô `[x]` và `[ ]` trong file.
 
 ## 🎯 Các task vừa hoàn thành & Lệnh test riêng (Không chạy all)
@@ -458,7 +458,7 @@ Nguồn: `docs/KICH-BAN-TELEGRAM.md` (2026-10-22). Người dùng thấy bot cò
 - [x] **37.8** Lệnh `/lich` ghi giáo viên, chủ đề, trạng thái đơn nghỉ; báo cáo ngày tính theo giờ Việt Nam, thêm bài nộp, bài chờ chấm, đơn chờ duyệt. ✅ 2026-10-22: typecheck; E2E lệnh tra cứu của phụ huynh đạt.
 - [x] **37.9** E2E không gửi tin thật: chọn dữ liệu không có phụ huynh kết nối thật, cron giới hạn `?chat=`, thông báo chung trong test gửi theo lớp (E-081). ✅ 2026-10-22: sau khi chạy, chat thật không nhận tin mới.
 - [ ] **37.10** (người dùng) Đặt lịch gọi `/api/cron/telegram` mỗi giờ trên bản deploy (cron-job.org hoặc Vercel Cron gói Pro), kèm `Authorization: Bearer <CRON_SECRET>`. Chưa đặt thì chỉ có thông báo sự kiện, không có nhắc theo giờ.
-- [ ] **37.11** Màn Đơn nghỉ trong app cho giáo vụ: danh sách, lọc theo lớp và trạng thái, duyệt hoặc từ chối, cùng quy tắc với bot.
+- [x] **37.11** Màn Đơn nghỉ trong app cho giáo vụ: danh sách, lọc theo lớp và trạng thái, duyệt hoặc từ chối, cùng quy tắc với bot. ✅ 2026-10-22: màn `/don-nghi` (menu Đào tạo, huy hiệu số đơn chờ), lọc trạng thái và lớp, duyệt hoặc từ chối (có xác nhận) dùng chung `applyLeaveDecision` với bot, thêm "Ghi đơn nghỉ" cho giáo vụ khi phụ huynh gọi điện (duyệt ngay, ghi vắng có phép). E2E `don-nghi.spec.ts` và luồng xin nghỉ trên bot xanh; ảnh 1440px và 390px không tràn.
 - [ ] **37.12** Học bù: phụ huynh chọn buổi bù của lớp khác cùng trình độ khi con nghỉ có phép.
 - [ ] **37.13** Mã QR chuyển khoản (VietQR) trong tin nhắc học phí; khảo sát hài lòng cuối khoá bằng nút bấm.
 

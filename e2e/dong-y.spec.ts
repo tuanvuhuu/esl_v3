@@ -31,7 +31,7 @@ test('nhân viên ghi nhận đồng ý, rút lại; phụ huynh bấm Đồng �
   const c = await db();
   const stamp = String(Date.now()).slice(-6);
   const chatId = 9_100_000_000 + Number(stamp);
-  const [student] = (await c.query<{ id: number }>(`select id from students where status = 'active' order by id desc limit 1`)).rows;
+  const [student] = (await c.query<{ id: number }>(`select s.id from students s join classes c on c.id = s.class_id where s.status = 'active' and c.campus_id = (select id from campuses where name = 'Cơ sở test') and not exists (select 1 from student_parents sp join telegram_chats tc on tc.parent_id = sp.parent_id where sp.student_id = s.id) order by s.id desc limit 1`)).rows;
   const parentId = (await c.query<{ id: number }>(`insert into parents (full_name, phone) values ($1, $2) returning id`, [`PH E2E đồng ý ${stamp}`, `08${stamp}66`])).rows[0].id;
   await c.query(`insert into student_parents (student_id, parent_id, relation, is_primary) values ($1, $2, 'mother', false)`, [student.id, parentId]);
   await c.query(`insert into telegram_chats (chat_id, parent_id, display_name) values ($1, $2, 'PH E2E')`, [chatId, parentId]);

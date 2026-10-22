@@ -764,3 +764,12 @@ Mỗi lỗi gặp phải được ghi ở đây, theo mẫu dưới đây. Trư�
 - Cách sửa: Lớp thử có `weekdays = 'T2,T5'`. Đầu bài test dọn lớp `TELE-E2E-%` còn sót. Đã xoá lớp, tài khoản thử còn sót trong DB dev.
 - Quy tắc phòng ngừa: Dữ liệu thử chèn bằng SQL phải thoả mọi điều kiện mà form của app bắt buộc, không chỉ ràng buộc của DB. Test tạo dữ liệu có tên riêng thì dọn bản sót của lần chạy trước ngay ở đầu test.
 - Đã áp dụng ở: `e2e/telegram.spec.ts`.
+
+## E-083 · E2E chọn "học sinh đang học bất kỳ" có thể trúng học sinh thật
+- Ngày: 2026-10-22
+- Khu vực: E2E (`e2e/dong-y.spec.ts`, `e2e/work.spec.ts`, `e2e/telegram.spec.ts`)
+- Triệu chứng: Sau khi nhập lớp thật GS 02 (ESL Mầm Xanh), `dong-y.spec.ts` lấy học sinh đang học có id lớn nhất, đúng là một học sinh thật; test này xoá `parent_consents` và gắn phụ huynh giả vào học sinh đó. `work.spec.ts` lấy buổi học muộn nhất, có thể là buổi của GS 02, rồi ghi điểm danh. Phát hiện khi rà code, chưa chạy vào dữ liệu thật.
+- Nguyên nhân: Các truy vấn chọn dữ liệu thử chỉ lọc theo trạng thái, không lọc theo cơ sở. Trước đây DB chỉ có dữ liệu mẫu nên không lộ ra.
+- Cách sửa: Mọi truy vấn chọn học sinh, buổi học có sẵn trong E2E thêm `c.campus_id = (select id from campuses where name = 'Cơ sở test')` và loại học sinh có phụ huynh nối Telegram thật.
+- Quy tắc phòng ngừa: E2E chỉ đọc, ghi dữ liệu có sẵn trong "Cơ sở test" hoặc dữ liệu do chính test tạo. Không chọn bản ghi "bất kỳ" theo id hay thời gian mà không lọc cơ sở.
+- Đã áp dụng ở: `e2e/dong-y.spec.ts`, `e2e/work.spec.ts`, `e2e/telegram.spec.ts`, `e2e/don-nghi.spec.ts`.

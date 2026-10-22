@@ -46,7 +46,7 @@ export async function getFeatureBadges(todayKey: string, scope: CampusScope): Pr
   const { start, end } = vnDayBounds(todayKey);
   const campus = campusCond(scope, sql`c.campus_id`);
   const result = await db.execute<{
-    students: number; parents: number; classes: number; teachers: number; accounts: number; pending_attendance: number; today_sessions: number;
+    students: number; parents: number; classes: number; teachers: number; accounts: number; pending_attendance: number; today_sessions: number; pending_leaves: number;
   }>(sql`
     SELECT
       (SELECT COUNT(*)::int FROM students s JOIN classes c ON c.id = s.class_id WHERE ${campus}) AS students,
@@ -57,7 +57,9 @@ export async function getFeatureBadges(todayKey: string, scope: CampusScope): Pr
       (SELECT COUNT(*)::int FROM class_sessions cs JOIN classes c ON c.id = cs.class_id
         WHERE cs.status = 'planned' AND cs.starts_at < NOW() AND ${campus}) AS pending_attendance,
       (SELECT COUNT(*)::int FROM class_sessions cs JOIN classes c ON c.id = cs.class_id
-        WHERE cs.status <> 'cancelled' AND cs.starts_at >= ${start} AND cs.starts_at < ${end} AND ${campus}) AS today_sessions
+        WHERE cs.status <> 'cancelled' AND cs.starts_at >= ${start} AND cs.starts_at < ${end} AND ${campus}) AS today_sessions,
+      (SELECT COUNT(*)::int FROM leave_requests lr JOIN class_sessions cs ON cs.id = lr.session_id JOIN classes c ON c.id = cs.class_id
+        WHERE lr.status = 'pending' AND cs.starts_at > NOW() AND ${campus}) AS pending_leaves
   `);
   const r = result.rows[0];
   return {
@@ -67,6 +69,7 @@ export async function getFeatureBadges(todayKey: string, scope: CampusScope): Pr
     '/lich-hoc': Number(r?.today_sessions ?? 0),
     '/giao-vien': Number(r?.teachers ?? 0),
     '/diem-danh': Number(r?.pending_attendance ?? 0),
+    '/don-nghi': Number(r?.pending_leaves ?? 0),
     '/tai-khoan': Number(r?.accounts ?? 0),
   };
 }

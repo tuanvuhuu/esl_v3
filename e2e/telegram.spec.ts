@@ -82,6 +82,8 @@ test.describe('bot Telegram: kịch bản P37', () => {
         await db.query<{ student_id: number; campus_id: number; teacher_id: number }>(`
           select s.id as student_id, c.campus_id, c.teacher_id from students s join classes c on c.id = s.class_id
           where s.status = 'active'
+            -- Chỉ dữ liệu thử ở Cơ sở test, không đụng học sinh thật của các cơ sở khác
+            and c.campus_id = (select id from campuses where name = 'Cơ sở test')
             -- Không chọn học sinh có phụ huynh đang kết nối thật (dev server có bot token thật, tin sẽ tới điện thoại thật)
             and not exists (select 1 from student_parents sp join telegram_chats tc on tc.parent_id = sp.parent_id where sp.student_id = s.id)
             and (select count(*) from class_sessions cs where cs.class_id = c.id and cs.status = 'planned' and cs.starts_at > now() + interval '1 hour') >= 2

@@ -34,7 +34,7 @@ async function isParentOfStudent(parentId: number, studentId: number): Promise<b
   return rows.rows.length > 0;
 }
 
-type LeaveRow = {
+export type LeaveRow = {
   id: number;
   status: keyof typeof LEAVE_STATUS_LABELS;
   reason: string;
@@ -295,15 +295,20 @@ export async function resolveLeaveRef(accountId: number | null, parts: string[])
   return row ? Number(row.id) : null;
 }
 
-// Duyệt hoặc từ chối. Trả về câu trả lời cho nút bấm. Chỉ đơn đang chờ duyệt mới đổi được (một người quyết).
-export async function decideLeave(chat: Chat, requestId: number | null, approve: boolean): Promise<string> {
-  if (!chat.accountId || requestId === null) return LEAVE_FORBIDDEN;
+// Duyệt hoặc từ chối một đơn, dùng chung cho nút trên bot và màn Đơn nghỉ trong app.
+// Chỉ đơn đang chờ duyệt mới đổi được (một người quyết). Duyệt thì ghi vắng vào sổ điểm danh.
+// Báo phụ huynh qua Telegram và gửi bản sao cho quản trị (trừ chính người duyệt).
+export async function applyLeaveDecision(
+  accountId: number,
+  requestId: number,
+  approve: boolean,
+): Promise<{ ok: true; leave: LeaveRow; when: string } | { ok: false; message: string }> {
   const leave = await loadLeave(requestId);
-  if (!leave || !(await canDecideLeave(chat.accountId, leave.student_id, leave.session_id))) return LEAVE_FORBIDDEN;
+  if (!leave || !(await canDecideLeave(accountId, leave.student_id, leave.session_id))) return { ok: false, message: LEAVE_FORBIDDEN };
 
   const [moved] = (
     await db.execute<{ id: number }>(sql`
-      UPDATE leave_requests SET status = ${approve ? 'approved' : 'denied'}, decided_by_account_id = ${chat.accountId}, decided_at = now(), updated_at = now()
+      UPDATE leave_requests SET status = ${approve ? 'approved' : 'denied'}, decided_by_account_id = ${accountId}, decided_at = now(), updated_at = now()
       WHERE id = ${requestId} AND status = 'pending'
       RETURNING id`)
   ).rows;
@@ -311,14 +316,14 @@ export async function decideLeave(chat: Chat, requestId: number | null, approve:
     if (leave.status === 'approved' || leave.status === 'denied') {
       const by = leave.decided_by_name ? ` bởi ${leave.decided_by_name}` : '';
       const at = leave.decided_at ? ` lúc ${vnDateTimeLabel(new Date(leave.decided_at))}` : '';
-      return `Đơn này đã ${LEAVE_STATUS_LABELS[leave.status]}${by}${at}.`;
+      return { ok: false, message: `Đơn này đã ${LEAVE_STATUS_LABELS[leave.status]}${by}${at}.` };
     }
-    return `Đơn này ${LEAVE_STATUS_LABELS[leave.status]}, không cần duyệt.`;
+    return { ok: false, message: `Đơn này ${LEAVE_STATUS_LABELS[leave.status]}, không cần duyệt.` };
   }
 
   const when = vnDateTimeLabel(new Date(leave.starts_at));
   const [decider] = (await db.execute<{ name: string }>(sql`
-    SELECT COALESCE(t.name, a.full_name) AS name FROM accounts a LEFT JOIN teachers t ON t.id = a.teacher_id WHERE a.id = ${chat.accountId}`)).rows;
+    SELECT COALESCE(t.name, a.full_name) AS name FROM accounts a LEFT JOIN teachers t ON t.id = a.teacher_id WHERE a.id = ${accountId}`)).rows;
   const deciderName = decider?.name ?? 'Giáo viên';
 
   if (approve) {
@@ -329,17 +334,25 @@ export async function decideLeave(chat: Chat, requestId: number | null, approve:
       ON CONFLICT (student_id, session_date) DO UPDATE SET mark = 'absent', updated_at = now()`);
   }
 
-  await sendMessage(
-    chat.chatId,
-    approve
-      ? `✓ Đã duyệt đơn #${leave.id}: em ${leave.student_name} nghỉ buổi ${when}. Đã ghi vắng có phép vào sổ điểm danh.`
-      : `Đã từ chối đơn #${leave.id} của em ${leave.student_name} buổi ${when}. Thầy/Cô nhớ liên hệ phụ huynh.`,
-  );
   const parentText = approve
     ? `✓ Đơn xin nghỉ buổi ${when} của em ${leave.student_name} đã được Thầy/Cô ${deciderName} duyệt. Chúc em mau khoẻ, hẹn em buổi sau!`
     : `Đơn xin nghỉ buổi ${when} của em ${leave.student_name} chưa được duyệt. Thầy/Cô ${deciderName} sẽ liên hệ trực tiếp với Quý phụ huynh.`;
-  for (const pc of await parentChatsOfStudent(leave.student_id)) await sendAndRecord(pc, parentText, 'leave', chat.accountId);
-  await sendCopyToSuperAdmins(`[Bản sao] Thầy/Cô ${deciderName} đã ${approve ? 'DUYỆT' : 'TỪ CHỐI'} đơn nghỉ #${leave.id} của em ${leave.student_name} (lớp ${leave.class_name}) buổi ${when}.`, chat.accountId);
+  for (const pc of await parentChatsOfStudent(leave.student_id)) await sendAndRecord(pc, parentText, 'leave', accountId);
+  await sendCopyToSuperAdmins(`[Bản sao] Thầy/Cô ${deciderName} đã ${approve ? 'DUYỆT' : 'TỪ CHỐI'} đơn nghỉ #${leave.id} của em ${leave.student_name} (lớp ${leave.class_name}) buổi ${when}.`, accountId);
+  return { ok: true, leave, when };
+}
+
+// Nút Duyệt, Từ chối trên bot. Trả về câu trả lời cho nút bấm.
+export async function decideLeave(chat: Chat, requestId: number | null, approve: boolean): Promise<string> {
+  if (!chat.accountId || requestId === null) return LEAVE_FORBIDDEN;
+  const r = await applyLeaveDecision(chat.accountId, requestId, approve);
+  if (!r.ok) return r.message;
+  await sendMessage(
+    chat.chatId,
+    approve
+      ? `✓ Đã duyệt đơn #${r.leave.id}: em ${r.leave.student_name} nghỉ buổi ${r.when}. Đã ghi vắng có phép vào sổ điểm danh.`
+      : `Đã từ chối đơn #${r.leave.id} của em ${r.leave.student_name} buổi ${r.when}. Thầy/Cô nhớ liên hệ phụ huynh.`,
+  );
   return approve ? 'Đã duyệt đơn' : 'Đã từ chối đơn';
 }
 

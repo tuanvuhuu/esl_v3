@@ -3,6 +3,7 @@ import type { LucideIcon } from 'lucide-react';
 import {
   Building2,
   BookOpen,
+  CalendarX,
   CalendarDays,
   ChartColumn,
   ClipboardCheck,
@@ -38,5 +39,6 @@ export const NAV_ICONS: Record<IconKey, LucideIcon> = {
   settings: Settings,
   shield: ShieldCheck,
   upload: Upload,
+  leave: CalendarX,
   message: MessageCircle,
 };

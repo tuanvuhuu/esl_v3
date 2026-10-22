@@ -930,7 +930,7 @@ test.describe('bài tập, điểm danh, học phí', () => {
       });
     let parentId = 0;
     try {
-      const [student] = (await db.query<{ id: number }>(`select id from students where status = 'active' order by id limit 1`)).rows;
+      const [student] = (await db.query<{ id: number }>(`select s.id from students s join classes c on c.id = s.class_id where s.status = 'active' and c.campus_id = (select id from campuses where name = 'Cơ sở test') and not exists (select 1 from student_parents sp join telegram_chats tc on tc.parent_id = sp.parent_id where sp.student_id = s.id) order by s.id limit 1`)).rows;
       parentId = (await db.query<{ id: number }>(`insert into parents (full_name, phone) values ($1, $2) returning id`, [name, `09${stamp}55`])).rows[0].id;
       await db.query(`insert into student_parents (student_id, parent_id, relation, is_primary) values ($1, $2, 'father', false)`, [student.id, parentId]);
 
@@ -1051,6 +1051,8 @@ test.describe('bài tập, điểm danh, học phí', () => {
           select s.id as student_id, c.id as class_id, c.campus_id, cs.id as session_id, to_char(cs.starts_at at time zone 'UTC', 'YYYY-MM-DD') as session_date
           from students s join classes c on c.id = s.class_id join class_sessions cs on cs.class_id = c.id
           where s.status = 'active'
+            -- Chỉ dữ liệu thử ở Cơ sở test, không đụng học sinh thật của các cơ sở khác
+            and c.campus_id = (select id from campuses where name = 'Cơ sở test')
             and not exists (select 1 from attendance a where a.student_id = s.id and a.session_date = to_char(cs.starts_at at time zone 'UTC', 'YYYY-MM-DD')::date)
             -- Không chọn học sinh có phụ huynh kết nối thật: duyệt đơn sẽ gửi tin thật tới phụ huynh
             and not exists (select 1 from student_parents sp join telegram_chats tc on tc.parent_id = sp.parent_id where sp.student_id = s.id)
