@@ -674,3 +674,12 @@ Mỗi lỗi gặp phải được ghi ở đây, theo mẫu dưới đây. Trư�
 - Cách sửa: `ParentList` có mục ⋯ "Gán học sinh" (và nút đầy chiều rộng trên thẻ điện thoại), cột Ghi chú sửa tại ô, chip học sinh mở thẻ sửa quan hệ hoặc gỡ liên kết, và nút "+ Thêm" hiện khi rê chuột hoặc Tab vào. Bài tạo lớp lấy ngày khai giảng là thứ Hai tuần sau. Cả 10 bài `catalog.spec` đạt; kiểm không tràn ngang ở 360, 390, 768, 1024, 1440px.
 - Quy tắc phòng ngừa: Component viết xong phải được dùng ở màn trước khi commit; test E2E của tính năng phải chạy đạt trong cùng commit, không commit test cho giao diện chưa có. Test E2E không ghi cứng ngày tương lai: tính ngày theo hôm nay.
 - Đã áp dụng ở: `src/components/parents/ParentList.tsx`, `e2e/catalog.spec.ts`.
+
+## E-074 · Ô học sinh trên bảng Phụ huynh cao 41px, sai chuẩn chiều cao nút
+- Ngày: 2026-10-22
+- Khu vực: Màn Phụ huynh (`src/components/parents/ParentList.tsx`), E2E `e2e/chuan.spec.ts`
+- Triệu chứng: Sau khi dựng lại bảng theo DESIGN.md mục 155, `chuan.spec` ở 1440px báo `/phu-huynh: cao 41px: button "Hà Quốc ViệtBố"`.
+- Nguyên nhân: Ô học sinh là nút (bấm mở thẻ sửa quan hệ) có hai dòng: tên và quan hệ. Kiểm tra chuẩn coi mọi nút phải cao 32px, chỉ bỏ qua phần tử có `data-link` (tên xuống dòng theo chữ).
+- Cách sửa: Gắn `data-link="true"` cho nút ô học sinh, đúng như quy ước đã có cho liên kết trong ô.
+- Quy tắc phòng ngừa: Nút trong ô bảng mà chiều cao đi theo chữ (tên dài, nhiều dòng) phải có `data-link="true"`. Chạy `chuan.spec` sau mọi thay đổi bảng.
+- Đã áp dụng ở: `src/components/parents/ParentList.tsx`.
