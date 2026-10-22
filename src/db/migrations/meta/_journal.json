@@ -162,6 +162,13 @@
       "when": 1792638254902,
       "tag": "0022_clammy_thunderball",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1792639567709,
+      "tag": "0023_zippy_overlord",
+      "breakpoints": true
     }
   ]
 }

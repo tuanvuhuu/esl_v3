@@ -104,13 +104,13 @@ export const classes = pgTable(
     // Trình độ mục tiêu của lớp (P27), không bắt buộc
     levelId: integer('level_id').references(() => courseLevels.id, { onDelete: 'set null' }),
     // Hiển thị dạng chữ, ví dụ "T2 · T4 · T6 · 18:30–20:30"
-    schedule: varchar('schedule', { length: 120 }).notNull().default(''),
+    schedule: varchar('schedule', { length: 300 }).notNull().default(''),
     // Lịch tuần để sinh buổi học: "T2,T4,T6" và giờ "18:30", "20:30"
     weekdays: varchar('weekdays', { length: 20 }).notNull().default(''),
     startTime: varchar('start_time', { length: 5 }).notNull().default(''),
     endTime: varchar('end_time', { length: 5 }).notNull().default(''),
-    // Giờ riêng của từng ngày học: "T3 18:00-19:30,T7 08:00-09:30" (lib/schedule.ts). Rỗng: mọi ngày dùng start_time, end_time.
-    dayTimes: varchar('day_times', { length: 120 }).notNull().default(''),
+    // Các ca học trong tuần: "T3 18:00-19:30,T7 08:00-09:30,T7 14:00-15:30" (lib/schedule.ts), một ngày nhiều ca thì lặp mã ngày. Rỗng: mọi ngày dùng start_time, end_time.
+    dayTimes: varchar('day_times', { length: 300 }).notNull().default(''),
     sessionsTotal: integer('sessions_total').notNull(),
     fee: integer('fee').notNull(),
     room: varchar('room', { length: 40 }).notNull().default(''),

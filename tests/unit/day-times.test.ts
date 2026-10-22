@@ -32,14 +32,14 @@ describe('giờ học riêng từng ngày', () => {
     expect(describeSchedule('T2,T4', '18:00', '19:30', 'T2 18:00-19:30,T4 18:00-19:30')).toBe('T2 · T4 · 18:00–19:30');
   });
 
-  it('mô tả bảy ngày khác giờ vẫn vừa cột schedule (120 ký tự)', () => {
+  it('mô tả bảy ngày khác giờ vẫn vừa cột schedule (300 ký tự)', () => {
     const all = encodeDayTimes(['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'].map((code, i) => ({ code, start: `0${i + 1}:00`, end: `0${i + 2}:30` })));
-    expect(all.length).toBeLessThanOrEqual(120);
-    expect(describeSchedule('T2,T3,T4,T5,T6,T7,CN', '01:00', '02:30', all).length).toBeLessThanOrEqual(120);
+    expect(all.length).toBeLessThanOrEqual(300);
+    expect(describeSchedule('T2,T3,T4,T5,T6,T7,CN', '01:00', '02:30', all).length).toBeLessThanOrEqual(300);
   });
 
   it('kiểm giờ từng ngày, lỗi theo tên ô', () => {
-    const r = checkDayTimes(['T3', 'T7'], { T3: { start: '18:00', end: '19:30' }, T7: { start: '09:30', end: '08:00' } });
+    const r = checkDayTimes(['T3', 'T7'], { T3: [{ start: '18:00', end: '19:30' }], T7: [{ start: '09:30', end: '08:00' }] });
     expect(r.errors).toEqual({ end_T7: 'Giờ kết thúc phải sau giờ bắt đầu' });
   });
 
@@ -47,7 +47,7 @@ describe('giờ học riêng từng ngày', () => {
     const base = {
       name: 'IELTS-K20', course: 'IELTS', campusId: '1', teacherId: '1', fee: '3000000', capacity: '15',
       weekdays: ['T7', 'T3'], startDate: '2026-10-27', sessionsTotal: '24',
-      dayTimes: { T3: { start: '18:00', end: '19:30' }, T7: { start: '08:00', end: '09:30' } },
+      dayTimes: { T3: [{ start: '18:00', end: '19:30' }], T7: [{ start: '08:00', end: '09:30' }] },
     };
     const v = classCreateSchema.parse(base);
     expect(v.dayTimes).toEqual([
@@ -55,9 +55,55 @@ describe('giờ học riêng từng ngày', () => {
       { code: 'T7', start: '08:00', end: '09:30' },
     ]);
     expect([v.startTime, v.endTime]).toEqual(['18:00', '19:30']);
-    const bad = classCreateSchema.safeParse({ ...base, dayTimes: { ...base.dayTimes, T7: { start: '08:00', end: '' } } });
+    const bad = classCreateSchema.safeParse({ ...base, dayTimes: { ...base.dayTimes, T7: [{ start: '08:00', end: '' }] } });
     expect(bad.success).toBe(false);
     if (!bad.success) expect(fieldErrorsFrom(bad.error).end_T7).toBe('Vui lòng chọn giờ kết thúc');
+  });
+});
+
+describe('một ngày học nhiều ca', () => {
+  const dayTimes = 'T3 18:00-19:30,T7 14:00-15:30,T7 08:00-09:30';
+
+  it('ngày có hai ca sinh hai buổi trong ngày, đúng thứ tự giờ', () => {
+    // 27/10/2026 là thứ Ba
+    const sessions = generateSessions({ weekdays: 'T3,T7', startTime: '18:00', endTime: '19:30', dayTimes, sessionsTotal: 6, fromDate: '2026-10-27' });
+    expect(sessions.map((s) => `${s.date} ${vnTime(s.startsAt)}`)).toEqual([
+      '2026-10-27 18:00',
+      '2026-10-31 08:00',
+      '2026-10-31 14:00',
+      '2026-11-03 18:00',
+      '2026-11-07 08:00',
+      '2026-11-07 14:00',
+    ]);
+    expect(sessions.map((s) => s.sessionNo)).toEqual([1, 2, 3, 4, 5, 6]);
+  });
+
+  it('dừng đúng số buổi kể cả giữa hai ca của một ngày', () => {
+    const sessions = generateSessions({ weekdays: 'T7', startTime: '08:00', endTime: '09:30', dayTimes: 'T7 08:00-09:30,T7 14:00-15:30', sessionsTotal: 3, fromDate: '2026-10-31' });
+    expect(sessions.map((s) => `${s.date} ${vnTime(s.startsAt)}`)).toEqual(['2026-10-31 08:00', '2026-10-31 14:00', '2026-11-07 08:00']);
+  });
+
+  it('mô tả lịch ghi các ca của một ngày cạnh nhau', () => {
+    expect(describeSchedule('T3,T7', '18:00', '19:30', dayTimes)).toBe('T3 18:00–19:30 · T7 08:00–09:30, 14:00–15:30');
+    expect(describeSchedule('T7,CN', '08:00', '09:30', 'T7 08:00-09:30,T7 14:00-15:30,CN 08:00-09:30,CN 14:00-15:30')).toBe('T7 · CN · 08:00–09:30, 14:00–15:30');
+  });
+
+  it('hai ca trùng giờ trong một ngày bị chặn, cả khi sinh buổi và khi kiểm form', () => {
+    expect(() => generateSessions({ weekdays: 'T7', startTime: '08:00', endTime: '09:30', dayTimes: 'T7 08:00-09:30,T7 09:00-10:00', sessionsTotal: 2, fromDate: '2026-10-31' })).toThrow('trùng giờ');
+    const r = checkDayTimes(['T7'], { T7: [{ start: '08:00', end: '09:30' }, { start: '09:00', end: '10:00' }] });
+    expect(r.errors).toEqual({ start_T7_2: 'Trùng giờ với ca khác của T7' });
+    // Ca sau kết thúc đúng lúc ca trước bắt đầu thì không trùng
+    expect(checkDayTimes(['T7'], { T7: [{ start: '09:30', end: '11:00' }, { start: '08:00', end: '09:30' }] }).errors).toEqual({});
+  });
+
+  it('form tạo lớp nhận nhiều ca, xếp ca theo giờ', () => {
+    const v = classCreateSchema.parse({
+      name: 'KIDS-2CA', course: 'Kids', campusId: '1', teacherId: '1', fee: '3000000', capacity: '15',
+      weekdays: ['T7'], startDate: '2026-10-31', sessionsTotal: '8',
+      dayTimes: { T7: [{ start: '14:00', end: '15:30' }, { start: '08:00', end: '09:30' }] },
+    });
+    expect(encodeDayTimes(v.dayTimes)).toBe('T7 08:00-09:30,T7 14:00-15:30');
+    expect([v.startTime, v.endTime]).toEqual(['08:00', '09:30']);
   });
 });
 

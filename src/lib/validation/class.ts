@@ -57,13 +57,25 @@ export const classCoreSchema = z.object({
     .max(100, 'Sĩ số tối đa 100'),
 });
 
-// Giờ học của từng ngày trong form: { T3: { start: '18:00', end: '19:30' }, T7: {...} }
-export type DayTimesInput = Partial<Record<WeekdayCode, { start: string; end: string }>>;
+// Các ca học của từng ngày trong form: { T3: [{ start: '18:00', end: '19:30' }], T7: [{...}, {...}] }.
+// Một ngày có thể có nhiều ca (sáng và chiều), tối đa MAX_SLOTS_PER_DAY.
 export type WeekdayCode = (typeof WEEKDAY_CODES)[number];
+export type SlotInput = { start: string; end: string };
+export type DayTimesInput = Partial<Record<WeekdayCode, SlotInput[]>>;
 export type DayTimeValue = { code: WeekdayCode; start: string; end: string };
+export const MAX_SLOTS_PER_DAY = 4;
+// Tổng số ca trong tuần, để chuỗi lưu (cột day_times, 300 ký tự) luôn vừa
+export const MAX_SLOTS_PER_WEEK = 20;
 
-// Kiểm giờ của từng ngày học. Ngày không có giờ riêng dùng giờ chung (fallback), nếu có.
-// Lỗi trả theo tên ô: start_T3, end_T3. Hàm thuần, dùng cho form tạo và sửa lớp.
+// Tên ô của ca thứ i (từ 0) trong ngày: ca đầu là start_T7, ca sau là start_T7_2, start_T7_3…
+// Lỗi trả theo đúng tên này để form đặt lỗi dưới đúng ca.
+export function slotField(field: 'start' | 'end', code: string, index: number): string {
+  return index === 0 ? `${field}_${code}` : `${field}_${code}_${index + 1}`;
+}
+
+// Kiểm các ca của từng ngày học. Ngày không có giờ riêng dùng giờ chung (fallback), nếu có.
+// Ca trong cùng một ngày không được chồng giờ nhau. Danh sách trả về giữ thứ tự nhập (để form sửa ghép ca cũ với ca mới).
+// Hàm thuần, dùng cho form tạo và sửa lớp.
 export function checkDayTimes(
   codes: readonly WeekdayCode[],
   raw: DayTimesInput,
@@ -73,27 +85,35 @@ export function checkDayTimes(
   const errors: Record<string, string> = {};
   for (const code of WEEKDAY_CODES.filter((c) => codes.includes(c))) {
     const own = raw[code];
-    const start = own?.start ?? fallback?.start ?? '';
-    const end = own?.end ?? fallback?.end ?? '';
-    const startKey = own ? `start_${code}` : 'startTime';
-    const endKey = own ? `end_${code}` : 'endTime';
-    if (!TIME.test(start)) errors[startKey] ??= start ? 'Giờ theo dạng HH:MM' : 'Vui lòng chọn giờ bắt đầu';
-    if (!TIME.test(end)) errors[endKey] ??= end ? 'Giờ theo dạng HH:MM' : 'Vui lòng chọn giờ kết thúc';
-    else if (TIME.test(start) && end <= start) errors[endKey] ??= 'Giờ kết thúc phải sau giờ bắt đầu';
-    list.push({ code, start, end });
+    const slots = own && own.length > 0 ? own : [{ start: fallback?.start ?? '', end: fallback?.end ?? '' }];
+    if (slots.length > MAX_SLOTS_PER_DAY) errors[slotField('start', code, 0)] ??= `Mỗi ngày tối đa ${MAX_SLOTS_PER_DAY} ca`;
+    slots.forEach(({ start, end }, i) => {
+      const startKey = own ? slotField('start', code, i) : 'startTime';
+      const endKey = own ? slotField('end', code, i) : 'endTime';
+      if (!TIME.test(start)) errors[startKey] ??= start ? 'Giờ theo dạng HH:MM' : 'Vui lòng chọn giờ bắt đầu';
+      if (!TIME.test(end)) errors[endKey] ??= end ? 'Giờ theo dạng HH:MM' : 'Vui lòng chọn giờ kết thúc';
+      else if (TIME.test(start) && end <= start) errors[endKey] ??= 'Giờ kết thúc phải sau giờ bắt đầu';
+      list.push({ code, start, end });
+    });
+    // Hai ca chồng giờ: xếp theo giờ bắt đầu, ca sau bắt đầu trước khi ca trước kết thúc thì báo ở ca sau
+    const order = slots.map((s, i) => ({ ...s, i })).filter((s) => TIME.test(s.start) && TIME.test(s.end)).sort((a, b) => a.start.localeCompare(b.start));
+    for (let k = 1; k < order.length; k += 1) {
+      if (order[k].start < order[k - 1].end) errors[slotField('start', code, order[k].i)] ??= `Trùng giờ với ca khác của ${code}`;
+    }
   }
+  if (list.length > MAX_SLOTS_PER_WEEK) errors.weekdays ??= `Mỗi tuần tối đa ${MAX_SLOTS_PER_WEEK} ca`;
   return { list, errors };
 }
 
 // Ô lịch: chỉ nhập khi tạo lớp, để sinh các buổi học.
-// Mỗi ngày học có giờ riêng (dayTimes). startTime, endTime là giờ chung cho ngày không có giờ riêng (dữ liệu cũ, nhập từ Excel).
+// Mỗi ngày học có các ca riêng (dayTimes). startTime, endTime là giờ chung cho ngày không có giờ riêng (dữ liệu cũ, nhập từ Excel).
 const classScheduleShape = {
   weekdays: z
     .array(z.enum(WEEKDAY_CODES, { error: 'Ngày học không hợp lệ' }), { error: 'Chọn ít nhất một ngày học' })
     .min(1, 'Chọn ít nhất một ngày học'),
   startTime: z.string().optional(),
   endTime: z.string().optional(),
-  dayTimes: z.record(z.string(), z.object({ start: z.string(), end: z.string() })).default({}),
+  dayTimes: z.record(z.string(), z.array(z.object({ start: z.string(), end: z.string() }))).default({}),
   startDate: z
     .string({ error: 'Vui lòng chọn ngày khai giảng' })
     .min(1, 'Vui lòng chọn ngày khai giảng')
@@ -105,8 +125,8 @@ const classScheduleShape = {
     .max(200, 'Tối đa 200 buổi'),
 };
 
-// Form tạo lớp: ô chung cộng ô lịch. Kết quả có dayTimes đã chuẩn hoá theo thứ tự tuần,
-// startTime, endTime là giờ của ngày học đầu tuần (giữ cho dữ liệu cũ đọc hai cột này).
+// Form tạo lớp: ô chung cộng ô lịch. Kết quả có dayTimes là các ca theo thứ tự tuần,
+// startTime, endTime là giờ của ca đầu tiên trong tuần (giữ cho dữ liệu cũ đọc hai cột này).
 export const classCreateSchema = z
   .object({ ...classCoreSchema.shape, ...classScheduleShape })
   .superRefine((v, ctx) => {
@@ -115,7 +135,8 @@ export const classCreateSchema = z
   })
   .transform((v) => {
     const { list } = checkDayTimes(v.weekdays, v.dayTimes as DayTimesInput, { start: v.startTime, end: v.endTime });
-    return { ...v, dayTimes: list, startTime: list[0]?.start ?? '', endTime: list[0]?.end ?? '' };
+    const sorted = [...list].sort((a, b) => (a.code === b.code ? a.start.localeCompare(b.start) : 0));
+    return { ...v, dayTimes: sorted, startTime: sorted[0]?.start ?? '', endTime: sorted[0]?.end ?? '' };
   });
 
 export type ClassCoreInput = z.infer<typeof classCoreSchema>;

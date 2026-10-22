@@ -8,9 +8,9 @@ import { ForbiddenError, requirePermission, writeAudit } from '@/lib/authz';
 import { requireCampusAccess, requireClassAccess } from '@/lib/campus-access';
 import { getClassForm } from '@/lib/queries/classes';
 import { teacherTeachesCampus } from '@/lib/queries/teachers';
-import { vnDateKey } from '@/lib/datetime';
+import { vnDateKey, vnTimeLabel } from '@/lib/datetime';
 import { describeSchedule, encodeDayTimes, generateSessions, joinWeekdays, resolveDayTimes } from '@/lib/schedule';
-import { checkDayTimes, classCoreSchema, classCreateSchema, WEEKDAY_CODES, type DayTimesInput, type WeekdayCode } from '@/lib/validation/class';
+import { checkDayTimes, classCoreSchema, classCreateSchema, MAX_SLOTS_PER_DAY, slotField, WEEKDAY_CODES, type DayTimesInput, type WeekdayCode } from '@/lib/validation/class';
 import { fieldErrorsFrom, type ActionResult } from '@/lib/validation/student';
 import type { StaffRole } from '@/lib/validation/teacher';
 
@@ -20,13 +20,18 @@ function errorResult(error: unknown): ActionResult {
   return { ok: false, message: 'Không lưu được. Thử lại sau ít phút.' };
 }
 
-// Giờ riêng của từng ngày: ô start_T3, end_T3 … Ngày không có ô thì không có trong kết quả.
+// Các ca của từng ngày: ô start_T7, end_T7 (ca đầu), start_T7_2, end_T7_2 (ca thứ hai)… Ngày không có ô thì không có trong kết quả.
 function readDayTimes(formData: FormData): DayTimesInput {
   const out: DayTimesInput = {};
   for (const code of WEEKDAY_CODES) {
-    const start = formData.get(`start_${code}`);
-    const end = formData.get(`end_${code}`);
-    if (typeof start === 'string' || typeof end === 'string') out[code] = { start: String(start ?? ''), end: String(end ?? '') };
+    const slots = [];
+    for (let i = 0; i < MAX_SLOTS_PER_DAY + 1; i += 1) {
+      const start = formData.get(slotField('start', code, i));
+      const end = formData.get(slotField('end', code, i));
+      if (typeof start !== 'string' && typeof end !== 'string') break;
+      slots.push({ start: String(start ?? ''), end: String(end ?? '') });
+    }
+    if (slots.length > 0) out[code] = slots;
   }
   return out;
 }
@@ -180,7 +185,7 @@ export async function updateClassAction(id: number, _prev: ActionResult, formDat
     const slotError = await slotErrors(v);
     if (slotError) return slotError;
 
-    // Giờ từng ngày: form sửa có một dòng cho mỗi ngày học hiện có. Không gửi ô giờ thì giữ lịch cũ.
+    // Các ca: form sửa có một dòng cho mỗi ca hiện có (không thêm, bớt ca ở đây). Không gửi ô giờ thì giữ lịch cũ.
     const currentTimes = current.weekdays ? resolveDayTimes(current.weekdays, current.startTime, current.endTime, current.dayTimes) : [];
     const rawTimes = readDayTimes(formData);
     let nextTimes = currentTimes;
@@ -189,12 +194,17 @@ export async function updateClassAction(id: number, _prev: ActionResult, formDat
       if (Object.keys(checked.errors).length > 0) {
         return { ok: false, message: 'Vui lòng kiểm tra lại giờ học.', fieldErrors: checked.errors };
       }
+      const sameSlots = checked.list.length === currentTimes.length && checked.list.every((t, i) => t.code === currentTimes[i].code);
+      if (!sameSlots) return { ok: false, message: 'Số ca học không khớp lịch hiện tại. Tải lại trang rồi thử lại.' };
       nextTimes = checked.list;
     }
-    const changedDays = nextTimes.filter((t, i) => t.start !== currentTimes[i].start || t.end !== currentTimes[i].end);
+    // Ca đổi giờ: ghép ca cũ với ca mới theo vị trí (form giữ đúng thứ tự ca cũ)
+    const changedSlots = nextTimes
+      .map((t, i) => ({ code: t.code, oldStart: currentTimes[i].start, start: t.start, end: t.end, changed: t.start !== currentTimes[i].start || t.end !== currentTimes[i].end }))
+      .filter((t) => t.changed);
     const encoded = encodeDayTimes(nextTimes);
     const scheduleFields =
-      changedDays.length > 0
+      changedSlots.length > 0
         ? {
             dayTimes: encoded,
             startTime: nextTimes[0].start,
@@ -228,9 +238,10 @@ export async function updateClassAction(id: number, _prev: ActionResult, formDat
           .set({ teacherId: v.teacherId, room: v.room, updatedAt: new Date() })
           .where(and(eq(classSessions.classId, id), eq(classSessions.status, 'planned')));
       }
-      // Đổi giờ của một ngày thì dời các buổi chưa học và chưa bắt đầu của ngày đó sang giờ mới, giữ nguyên ngày
-      if (changedDays.length > 0) {
-        const byCode = new Map(changedDays.map((t) => [t.code, t]));
+      // Đổi giờ một ca thì dời các buổi chưa học và chưa bắt đầu của ca đó (cùng ngày trong tuần, cùng giờ bắt đầu cũ)
+      // sang giờ mới, giữ nguyên ngày. Buổi đã được sửa giờ riêng ở màn Lịch học không khớp ca nào nên giữ nguyên.
+      if (changedSlots.length > 0) {
+        const bySlot = new Map(changedSlots.map((t) => [`${t.code} ${t.oldStart}`, t]));
         const upcoming = await tx
           .select({ id: classSessions.id, startsAt: classSessions.startsAt })
           .from(classSessions)
@@ -239,7 +250,7 @@ export async function updateClassAction(id: number, _prev: ActionResult, formDat
           const date = vnDateKey(s.startsAt);
           // getUTCDay: 0 = CN; WEEKDAY_CODES bắt đầu từ T2
           const code = WEEKDAY_CODES[(new Date(`${date}T00:00:00Z`).getUTCDay() + 6) % 7];
-          const time = byCode.get(code);
+          const time = bySlot.get(`${code} ${vnTimeLabel(s.startsAt)}`);
           if (!time) continue;
           await tx
             .update(classSessions)
@@ -250,7 +261,7 @@ export async function updateClassAction(id: number, _prev: ActionResult, formDat
       }
     });
 
-    const timeNote = changedDays.length > 0 ? `, đổi giờ ${changedDays.map((t) => `${t.code} ${t.start}–${t.end}`).join(', ')} (${movedSessions} buổi sắp tới)` : '';
+    const timeNote = changedSlots.length > 0 ? `, đổi giờ ${changedSlots.map((t) => `${t.code} ${t.start}–${t.end}`).join(', ')} (${movedSessions} buổi sắp tới)` : '';
     await writeAudit({ action: 'update', entity: 'class', entityId: id, summary: `Sửa lớp ${v.name}${timeNote}` });
     revalidatePath('/lop-hoc');
     revalidatePath(`/lop-hoc/${id}`);

@@ -9,7 +9,7 @@ import { Field, FORM_BTN_CANCEL, FORM_BTN_SUBMIT, inputClass, FormFooter } from 
 import { SelectPanel } from '@/components/ui/SelectPanel';
 import { Alert } from '@/components/ui/primitives';
 import { Notice } from '@/components/ui/surfaces';
-import { DayTimeRows, type DayTimeDraft } from '@/components/classes/DayTimeRows';
+import { DayTimeRows, type DaySlots, type SlotDraft } from '@/components/classes/DayTimeRows';
 
 // staffRole: vị trí người này có thể giữ (chủ nhiệm, giáo viên nước ngoài, trợ giảng). campusIds: các cơ sở người này dạy.
 // Form lớp chỉ cho chọn đúng vai trò và người dạy ở cơ sở của lớp.
@@ -19,6 +19,17 @@ export type LevelChoice = { id: number; code: string; name: string };
 
 const INITIAL: ActionResult = { ok: false };
 const DEFAULT_TIME = { start: '18:30', end: '20:00' };
+
+const toMinutes = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
+const toTime = (m: number) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+
+// Ca thêm mới: sau ca trước 30 phút, cùng độ dài. Không đủ chỗ trong ngày thì lấy lại giờ ca trước để người nhập tự sửa.
+function nextSlotAfter(prev: { start: string; end: string }): { start: string; end: string } {
+  if (!/^\d{2}:\d{2}$/.test(prev.start) || !/^\d{2}:\d{2}$/.test(prev.end)) return { ...prev };
+  const length = Math.max(30, toMinutes(prev.end) - toMinutes(prev.start));
+  const start = toMinutes(prev.end) + 30;
+  return start + length < 24 * 60 ? { start: toTime(start), end: toTime(start + length) } : { ...prev };
+}
 
 // Form tạo lớp (có lịch học) và sửa lớp (ô chung và giờ từng ngày học). Thêm, bớt ngày hoặc sửa một buổi ở màn Lịch học.
 // Tạo lớp thì cơ sở mặc định là cơ sở đang xem (defaultCampusId).
@@ -83,29 +94,51 @@ export function ClassForm({
   }, INITIAL);
   const errors = state.fieldErrors ?? {};
 
-  // Giờ học theo ngày. Chọn ngày nào thì ngày đó có một dòng giờ, lấy giờ vừa nhập gần nhất.
-  // Sửa giờ một dòng thì các dòng chưa sửa đi theo, nên lớp cùng giờ chỉ cần nhập một lần.
-  const initialTimes = new Map((values.dayTimes ?? []).map((d) => [d.code as WeekdayCode, { start: d.start, end: d.end }]));
+  // Ca học theo ngày. Chọn ngày nào thì ngày đó có một ca, lấy giờ vừa nhập gần nhất; "Thêm ca" cho ngày học nhiều ca.
+  // Sửa giờ ca đầu của một ngày thì ca đầu của các ngày chưa sửa đi theo, nên lớp cùng giờ chỉ cần nhập một lần.
+  const initialTimes = new Map<WeekdayCode, SlotDraft[]>();
+  for (const d of values.dayTimes ?? []) {
+    const code = d.code as WeekdayCode;
+    initialTimes.set(code, [...(initialTimes.get(code) ?? []), { start: d.start, end: d.end }]);
+  }
   const [days, setDays] = useState<WeekdayCode[]>([...initialTimes.keys()]);
   const [times, setTimes] = useState(initialTimes);
   const [touched, setTouched] = useState<Set<WeekdayCode>>(() => new Set(initialTimes.keys()));
-  const [lastTime, setLastTime] = useState(DEFAULT_TIME);
-  const rows: DayTimeDraft[] = WEEKDAY_CODES.filter((c) => days.includes(c)).map((code) => ({ code, ...(times.get(code) ?? lastTime) }));
+  const [lastTime, setLastTime] = useState<SlotDraft>(DEFAULT_TIME);
+  const daySlots: DaySlots[] = WEEKDAY_CODES.filter((c) => days.includes(c)).map((code) => ({ code, slots: times.get(code) ?? [lastTime] }));
 
   function toggleDay(code: WeekdayCode, on: boolean) {
     setDays((prev) => (on ? [...prev, code] : prev.filter((c) => c !== code)));
-    if (on && !times.has(code)) setTimes((prev) => new Map(prev).set(code, lastTime));
+    if (on && !times.has(code)) setTimes((prev) => new Map(prev).set(code, [lastTime]));
   }
 
-  function changeTime(code: WeekdayCode, field: 'start' | 'end', value: string) {
-    const edited = { ...(times.get(code) ?? lastTime), [field]: value };
+  function changeTime(code: WeekdayCode, index: number, field: 'start' | 'end', value: string) {
+    const slots = times.get(code) ?? [lastTime];
+    const edited = { ...slots[index], [field]: value };
     setTimes((prev) => {
-      const next = new Map(prev).set(code, edited);
-      for (const other of days) if (other !== code && !touched.has(other)) next.set(other, edited);
+      const next = new Map(prev).set(code, slots.map((s, i) => (i === index ? edited : s)));
+      if (index === 0) {
+        for (const other of days) {
+          const otherSlots = next.get(other) ?? [lastTime];
+          if (other !== code && !touched.has(other) && otherSlots.length === 1) next.set(other, [edited]);
+        }
+      }
       return next;
     });
     setTouched((prev) => new Set(prev).add(code));
     setLastTime(edited);
+  }
+
+  // Ca mới bắt đầu sau ca cuối 30 phút, cùng độ dài; người nhập sửa lại giờ nếu cần
+  function addSlot(code: WeekdayCode) {
+    const slots = times.get(code) ?? [lastTime];
+    setTimes((prev) => new Map(prev).set(code, [...slots, nextSlotAfter(slots[slots.length - 1])]));
+    setTouched((prev) => new Set(prev).add(code));
+  }
+
+  function removeSlot(code: WeekdayCode, index: number) {
+    const slots = times.get(code) ?? [lastTime];
+    setTimes((prev) => new Map(prev).set(code, slots.filter((_, i) => i !== index)));
   }
 
   // Gọi action thủ công để ô nhập không bị reset khi có lỗi (E-028)
@@ -221,7 +254,7 @@ export function ClassForm({
             {errors.weekdays && <span className="text-sm font-semibold text-blush-ink">{errors.weekdays}</span>}
           </fieldset>
 
-          <DayTimeRows rows={rows} errors={errors} onChange={changeTime} />
+          <DayTimeRows days={daySlots} errors={errors} canEditSlots onChange={changeTime} onAddSlot={addSlot} onRemoveSlot={removeSlot} />
           <Field label="Ngày khai giảng *" error={errors.startDate} hint="Buổi đầu tiên diễn ra vào ngày này hoặc ngày học gần nhất">
             <input name="startDate" type="date" defaultValue={defaultStartDate} className={inputClass(errors.startDate)} />
           </Field>
@@ -231,9 +264,9 @@ export function ClassForm({
         </>
       ) : (
         <>
-          <DayTimeRows rows={rows} errors={errors} onChange={changeTime} />
-          <Notice className={`col-span-full ${rows.length === 0 ? 'hidden' : ''}`}>
-            Đổi giờ của một ngày thì các buổi sắp tới của ngày đó dời sang giờ mới. Thêm, bớt ngày học hoặc sửa, huỷ một buổi riêng làm ở màn Lịch học.
+          <DayTimeRows days={daySlots} errors={errors} canEditSlots={false} onChange={changeTime} onAddSlot={addSlot} onRemoveSlot={removeSlot} />
+          <Notice className={`col-span-full ${daySlots.length === 0 ? 'hidden' : ''}`}>
+            Đổi giờ một ca thì các buổi sắp tới của ca đó dời sang giờ mới. Thêm, bớt ngày học, ca học hoặc sửa, huỷ một buổi riêng làm ở màn Lịch học.
           </Notice>
         </>
       )}
