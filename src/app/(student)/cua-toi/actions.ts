@@ -12,6 +12,8 @@ import { criterionScoresOf, enrolledStudent, existingSubmissionScores } from '@/
 import { getCurrentAccount } from '@/lib/session';
 import { completeDirectUpload, prepareDirectUpload, saveUpload, type PrepareDirectUploadResult } from '@/lib/storage';
 import { recordChildAgreement, studentVoiceAccess } from '@/lib/queries/consents';
+import { safely } from '@/lib/telegram/core';
+import { notifyStudentSubmitted } from '@/lib/telegram/notify';
 import { notifyClassStaff } from '@/lib/telegram/service';
 import { sameClass, studentMayResubmit } from '@/lib/student-access';
 import { studentAnswersSchema } from '@/lib/validation/student-portal';
@@ -189,6 +191,10 @@ export async function submitMyAnswersAction(assignmentId: number, input: Student
     revalidatePath(`/bai-tap/${assignmentId}`);
     // Báo giáo viên của lớp qua Telegram (nếu đã kết nối). Không chờ được thì vẫn trả kết quả nộp bài.
     await notifyClassStaff(base.classId, `${student.fullName} (lớp ${base.className}) vừa nộp bài "${base.title}".${summary.status === 'graded' ? ` Điểm tự chấm: ${summary.total}/${summary.maxTotal}.` : ' Có câu cần giáo viên chấm.'}`, 'submission');
+    // Báo phụ huynh con đã nộp bài (docs/KICH-BAN-TELEGRAM.md mục 1.7)
+    await safely('học sinh nộp bài', () =>
+      notifyStudentSubmitted(assignmentId, student.id, summary.status === 'graded' ? `Điểm tự chấm: ${summary.total}/${summary.maxTotal}.` : 'Có câu Thầy/Cô sẽ chấm sau, bot sẽ báo điểm khi chấm xong.'),
+    );
     const autoItems = items.filter((i) => isAutoScoredItem(i.itemType));
     const progress: SubmitScore = {
       autoPoints: autoItems.reduce((sum, i) => sum + (summary.points[i.id] ?? 0), 0),

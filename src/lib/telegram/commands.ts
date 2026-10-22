@@ -14,6 +14,8 @@ export type BotCommand =
   | { kind: 'today' }
   | { kind: 'pending_grading' }
   | { kind: 'report' }
+  | { kind: 'settings' }
+  | { kind: 'leave_list' }
   | { kind: 'stop' }
   | { kind: 'help' }
   | { kind: 'text'; text: string };
@@ -24,7 +26,7 @@ export const PARENT_KEYBOARD = {
     [{ text: '📅 Lịch học' }, { text: '📊 Điểm số' }],
     [{ text: '📝 Chuyên cần' }, { text: '💳 Học phí' }],
     [{ text: '📚 Bài tập' }, { text: '🩺 Xin nghỉ học' }],
-    [{ text: '❓ Hướng dẫn' }],
+    [{ text: '⚙️ Cài đặt nhận tin' }, { text: '❓ Hướng dẫn' }],
   ],
   resize_keyboard: true,
   is_persistent: true,
@@ -34,7 +36,8 @@ export const PARENT_KEYBOARD = {
 export const STAFF_KEYBOARD = {
   keyboard: [
     [{ text: '📅 Lịch dạy hôm nay' }, { text: '📝 Bài chờ chấm' }],
-    [{ text: '📊 Báo cáo ngày' }, { text: '❓ Hướng dẫn' }],
+    [{ text: '🩺 Đơn nghỉ chờ duyệt' }, { text: '📊 Báo cáo ngày' }],
+    [{ text: '❓ Hướng dẫn' }],
   ],
   resize_keyboard: true,
   is_persistent: true,
@@ -56,6 +59,7 @@ export const PARENT_INLINE_MENU = {
       { text: '🩺 Đơn xin nghỉ học', callback_data: 'cmd:leave' },
     ],
     [
+      { text: '⚙️ Cài đặt nhận tin', callback_data: 'cmd:settings' },
       { text: '❓ Hướng dẫn sử dụng', callback_data: 'cmd:help' },
     ],
   ],
@@ -85,6 +89,7 @@ export const DEFAULT_BOT_COMMANDS = [
   { command: 'hocphi', description: '💳 Tra cứu học phí đã đóng & còn lại' },
   { command: 'baitap', description: '📚 Xem bài tập về nhà chưa nộp' },
   { command: 'nghi', description: '🩺 Gửi đơn xin nghỉ học cho con' },
+  { command: 'caidat', description: '⚙️ Bật, tắt từng loại tin tự động' },
   { command: 'help', description: '❓ Hướng dẫn tra cứu & liên hệ' },
 ];
 
@@ -129,6 +134,11 @@ export function parseCommand(raw: string): BotCommand {
       case 'baocao':
       case 'report':
         return { kind: 'report' };
+      case 'caidat':
+      case 'settings':
+        return { kind: 'settings' };
+      case 'donnghi':
+        return { kind: 'leave_list' };
       case 'huy':
       case 'stop':
         return { kind: 'stop' };
@@ -141,10 +151,10 @@ export function parseCommand(raw: string): BotCommand {
     }
   }
 
-  // 2. Nhận diện nút bấm tiếng Việt (có hoặc không có emoji, viết hoa/thường, không dấu)
+  // 2. Nhận diện nút bấm tiếng Việt (có hoặc không có emoji, viết hoa/thường, không dấu). Bỏ cả U+FE0F, U+200D đi kèm emoji như ⚙️
   const cleaned = text
-    .replace(/^[\p{Emoji}\p{Symbol}\s]+/gu, '')
-    .replace(/[\p{Emoji}\p{Symbol}\s]+$/gu, '')
+    .replace(/^[\p{Emoji}\p{Symbol}️‍\s]+/gu, '')
+    .replace(/[\p{Emoji}\p{Symbol}️‍\s]+$/gu, '')
     .trim();
   const norm = cleaned
     .normalize('NFD')
@@ -172,6 +182,12 @@ export function parseCommand(raw: string): BotCommand {
   if (['xin nghi hoc', 'xin nghi', 'nghi hoc', 'nghi', 'bao nghi', 'leave'].includes(norm)) {
     return { kind: 'leave' };
   }
+  if (['cai dat', 'cai dat nhan tin', 'tat thong bao', 'settings'].includes(norm)) {
+    return { kind: 'settings' };
+  }
+  if (['don nghi', 'don nghi cho duyet', 'duyet don nghi'].includes(norm)) {
+    return { kind: 'leave_list' };
+  }
   if (['huong dan', 'tro giup', 'cach dung', 'menu', 'help'].includes(norm)) {
     return { kind: 'help' };
   }
@@ -190,6 +206,30 @@ export function parseCommand(raw: string): BotCommand {
 
   // 3. Tin nhắn tự do của phụ huynh gửi cho giáo viên & trung tâm
   return { kind: 'text', text };
+}
+
+// Bàn phím xin số điện thoại của chính người dùng (nút request_contact). Dùng khi người lạ nhắn bot (kịch bản 1.2).
+export const SHARE_PHONE_KEYBOARD = {
+  keyboard: [[{ text: '📱 Chia sẻ số điện thoại', request_contact: true }]],
+  resize_keyboard: true,
+  one_time_keyboard: true,
+};
+
+export const CONNECT_HINT = [
+  '👋 Xin chào! Đây là bot của ESL Center.',
+  '',
+  'Để nhận lịch học, điểm, học phí của con, Quý phụ huynh bấm nút 📱 Chia sẻ số điện thoại ở phía dưới.',
+  'Bot chỉ nhận số điện thoại của chính tài khoản Telegram này và số phải trùng với số đã đăng ký ở trung tâm.',
+  '',
+  'Hoặc bấm vào link kết nối riêng do trung tâm gửi.',
+].join('\n');
+
+// Chuẩn hoá số điện thoại Việt Nam: bỏ khoảng trắng, dấu chấm, gạch; +84 hoặc 84 đầu thành 0
+export function normalizePhone(raw: string): string {
+  const digits = raw.replace(/[^\d+]/g, '');
+  if (digits.startsWith('+84')) return `0${digits.slice(3)}`;
+  if (digits.startsWith('84') && digits.length === 11) return `0${digits.slice(2)}`;
+  return digits.replace(/^\+/, '');
 }
 
 // Mã kết nối: 20 ký tự hex ngẫu nhiên, đủ khó đoán, vừa với tham số start của Telegram (tối đa 64 ký tự)
@@ -211,7 +251,8 @@ export const HELP_TEXT = [
   '• 📝 Chuyên cần: Xem số buổi đi học, đi trễ hoặc vắng mặt',
   '• 💳 Học phí: Xem các khoản đã đóng và học phí còn lại',
   '• 📚 Bài tập: Xem danh sách bài tập về nhà và hạn nộp',
-  '• 🩺 Xin nghỉ học: Gửi đơn xin nghỉ phép buổi học cho con',
+  '• 🩺 Xin nghỉ học: Chọn buổi, chọn lý do, Thầy/Cô duyệt và báo lại cho Quý phụ huynh',
+  '• ⚙️ Cài đặt nhận tin: Bật hoặc tắt từng loại tin tự động (nhắc lịch, báo vắng, điểm mới...)',
   '',
   '💬 Trao đổi với Thầy/Cô:',
   'Quý phụ huynh chỉ cần gõ nội dung tin nhắn trực tiếp vào đây, Thầy/Cô phụ trách lớp sẽ nhận được và phản hồi lại sớm nhất ạ!',
@@ -221,6 +262,7 @@ export const STAFF_HELP_TEXT = [
   'Các lệnh cho giáo viên & quản trị:',
   '• /homnay hoặc bấm [📅 Lịch dạy hôm nay]: Lịch dạy hôm nay và phòng học',
   '• /chocham hoặc bấm [📝 Bài chờ chấm]: Các bài tập đang chờ chấm điểm',
+  '• /donnghi hoặc bấm [🩺 Đơn nghỉ chờ duyệt]: Đơn xin nghỉ của lớp bạn đang chờ duyệt',
   '• /baocao hoặc bấm [📊 Báo cáo ngày]: Báo cáo tổng quan hôm nay (Quản trị)',
   '• /huy: Huỷ nhận thông báo từ hệ thống',
   '• /help: Xem lại hướng dẫn',

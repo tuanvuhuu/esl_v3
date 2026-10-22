@@ -54,10 +54,21 @@ test.describe('bài tập, điểm danh, học phí', () => {
   });
 
   test('điểm danh: buổi chưa diễn ra thì khoá nút và báo lý do', async ({ page }) => {
+    // Buổi sắp tới của lớp 1 lấy từ DB (ghi cứng một ngày thì test hỏng khi ngày đó đã qua, E-073)
+    loadEnvLocal();
+    const db = new Client({ connectionString: process.env.DATABASE_URL });
+    await db.connect();
+    const [next] = (
+      await db.query<{ label: string }>(
+        `select to_char(starts_at at time zone 'Asia/Ho_Chi_Minh', 'DD/MM') as label from class_sessions where class_id = 1 and status = 'planned' and starts_at > now() order by starts_at limit 1`,
+      )
+    ).rows;
+    await db.end();
+    expect(next).toBeTruthy();
     await login(page);
     await page.goto('/diem-danh?cls=1');
     // Dải buổi học: mỗi buổi là một chip, có ngày trong nhãn (dd/mm)
-    await page.getByRole('tab', { name: /19\/10/ }).click();
+    await page.getByRole('tab', { name: new RegExp(next.label) }).click();
     await expect(page.getByText('Buổi này chưa diễn ra nên chưa điểm danh được.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Lưu điểm danh' })).toBeDisabled();
     await expect(page.getByRole('button', { name: 'Có mặt', exact: true }).first()).toBeDisabled();
@@ -959,7 +970,8 @@ test.describe('bài tập, điểm danh, học phí', () => {
       expect(msgs.some((m) => m.direction === 'out' && m.kind === 'command' && /chuyên cần|buổi gần nhất|điểm danh/.test(m.text))).toBe(true);
 
       // Route cron Telegram kiểm tra token và chạy thành công
-      const cronRes = await page.request.get(`/api/cron/telegram?key=${secret}`);
+      // Chỉ gửi cho chat thử (?chat=), không gửi tới phụ huynh thật
+      const cronRes = await page.request.get(`/api/cron/telegram?key=${secret}&chat=${chatId}`);
       expect(cronRes.status()).toBe(200);
       const cronJson = await cronRes.json();
       expect(cronJson.ok).toBe(true);
@@ -976,6 +988,9 @@ test.describe('bài tập, điểm danh, học phí', () => {
 
       // Thử mở hộp thoại gửi thông báo chung (Broadcast)
       await page.getByRole('button', { name: 'Thông báo chung', exact: true }).click();
+      // Gửi cho một lớp không có phụ huynh kết nối thật, không gửi toàn trung tâm (dev server có bot token thật)
+      await page.getByRole('dialog').locator('select').first().selectOption('class');
+      await page.getByRole('dialog').locator('select').nth(1).selectOption('2');
       await page.getByLabel('Nội dung thông báo (tối đa 3000 ký tự)').fill('Thông báo kiểm thử E2E hệ thống');
       await page.getByRole('dialog').getByRole('button', { name: 'Gửi thông báo', exact: true }).click();
       await expectToast(page, 'Đã gửi thông báo tới');
@@ -1037,6 +1052,8 @@ test.describe('bài tập, điểm danh, học phí', () => {
           from students s join classes c on c.id = s.class_id join class_sessions cs on cs.class_id = c.id
           where s.status = 'active'
             and not exists (select 1 from attendance a where a.student_id = s.id and a.session_date = to_char(cs.starts_at at time zone 'UTC', 'YYYY-MM-DD')::date)
+            -- Không chọn học sinh có phụ huynh kết nối thật: duyệt đơn sẽ gửi tin thật tới phụ huynh
+            and not exists (select 1 from student_parents sp join telegram_chats tc on tc.parent_id = sp.parent_id where sp.student_id = s.id)
           order by cs.starts_at desc limit 1`)
       ).rows;
       expect(target).toBeTruthy();
@@ -1077,6 +1094,8 @@ test.describe('bài tập, điểm danh, học phí', () => {
       }
       expect(await attendance()).toEqual([]);
       expect(await sentBy()).toBe(0);
+      // Người không có quyền bấm nút kiểu cũ cũng không tạo được đơn
+      expect((await db.query(`select id from leave_requests where student_id = $1 and created_at > now() - interval '10 minutes'`, [target!.student_id])).rows).toEqual([]);
       expect(await foreignAttendance()).toEqual(foreignBefore);
 
       // Đủ điều kiện thì duyệt được: ghi vắng vào sổ điểm danh
@@ -1084,6 +1103,7 @@ test.describe('bài tập, điểm danh, học phí', () => {
       expect(await attendance()).toEqual([{ mark: 'absent' }]);
     } finally {
       if (target) await db.query(`delete from attendance where student_id = $1 and session_date = $2::date and updated_at > now() - interval '10 minutes'`, [target.student_id, target.session_date]);
+      if (target) await db.query(`delete from leave_requests where student_id = $1 and created_at > now() - interval '10 minutes'`, [target.student_id]);
       if (accountIds.length) await db.query(`delete from telegram_messages where sent_by_account_id = any($1::int[])`, [accountIds]);
       if (chatIds.length) await db.query(`delete from telegram_chats where chat_id = any($1::bigint[])`, [chatIds]);
       if (accountIds.length) await db.query(`delete from accounts where id = any($1::int[])`, [accountIds]);

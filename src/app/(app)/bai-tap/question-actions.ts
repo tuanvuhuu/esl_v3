@@ -17,6 +17,8 @@ import {
   uploadedFiles,
 } from '@/db/schema';
 import { ForbiddenError, requirePermission, writeAudit } from '@/lib/authz';
+import { safely } from '@/lib/telegram/core';
+import { notifyGraded } from '@/lib/telegram/notify';
 import { requireAssignmentAccess, requireStudentAccess } from '@/lib/campus-access';
 import { markGap, storedScore, summarizeSubmission, type ScoringAnswer } from '@/lib/assignment-scoring';
 import { getAssignmentBase } from '@/lib/queries/assignments';
@@ -433,6 +435,10 @@ export async function saveStudentAnswersAction(assignmentId: number, studentId: 
       summary: `Chấm bài ${base.title} cho ${student.fullName}: ${summary.total}/${summary.maxTotal} điểm`,
     });
     revalidateItems(assignmentId);
+    // Chấm xong mọi câu thì báo phụ huynh điểm mới (docs/KICH-BAN-TELEGRAM.md mục 1.7)
+    if (status === 'graded') {
+      await safely('điểm mới', () => notifyGraded(assignmentId, studentId, { score: summary.total, max: summary.maxTotal, feedback: '' }));
+    }
     const pending = summary.complete ? '' : ' (còn câu chưa chấm)';
     return { ok: true, message: `Đã lưu bài làm của ${student.fullName}: ${summary.total}/${summary.maxTotal} điểm${pending}` };
   } catch (error) {

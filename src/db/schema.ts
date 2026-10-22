@@ -18,6 +18,7 @@ import {
   uniqueIndex,
   varchar,
 } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 
 // ---------- Enum ----------
 
@@ -792,9 +793,49 @@ export const telegramChats = pgTable(
     accountId: integer('account_id').references(() => accounts.id, { onDelete: 'cascade' }),
     displayName: varchar('display_name', { length: 160 }).notNull().default(''),
     active: boolean('active').notNull().default(true),
+    // Loại tin tự động phụ huynh đã tắt bằng /caidat (P37), mã ở src/lib/telegram/prefs.ts
+    mutedKinds: text('muted_kinds').array().notNull().default(sql`'{}'::text[]`),
     ...timestamps,
   },
   (t) => [uniqueIndex('telegram_chats_chat_key').on(t.chatId), index('telegram_chats_parent_idx').on(t.parentId), index('telegram_chats_account_idx').on(t.accountId)],
+);
+
+// Nhật ký tin tự động đã gửi (P37): mỗi (chat, loại, mã sự kiện) chỉ một dòng, ghi được dòng thì mới gửi.
+// Nhờ vậy chạy cron nhiều lần, lưu điểm danh nhiều lần hay hai máy chủ chạy cùng lúc đều không gửi trùng.
+export const telegramNotificationLog = pgTable(
+  'telegram_notification_log',
+  {
+    id: serial('id').primaryKey(),
+    chatId: bigint('chat_id', { mode: 'number' }).notNull(),
+    kind: varchar('kind', { length: 40 }).notNull(),
+    refKey: varchar('ref_key', { length: 160 }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex('telegram_notification_log_key').on(t.chatId, t.kind, t.refKey), index('telegram_notification_log_created_idx').on(t.createdAt)],
+);
+
+// Đơn xin nghỉ học qua bot (P37). Nháp: phụ huynh đã chọn buổi nhưng chưa chọn lý do, giáo viên chưa thấy.
+export const leaveStatusEnum = pgEnum('leave_status', ['draft', 'pending', 'approved', 'denied', 'cancelled']);
+
+export const leaveRequests = pgTable(
+  'leave_requests',
+  {
+    id: serial('id').primaryKey(),
+    studentId: integer('student_id')
+      .notNull()
+      .references(() => students.id, { onDelete: 'cascade' }),
+    sessionId: integer('session_id')
+      .notNull()
+      .references(() => classSessions.id, { onDelete: 'cascade' }),
+    parentId: integer('parent_id').references(() => parents.id, { onDelete: 'set null' }),
+    reason: varchar('reason', { length: 200 }).notNull().default(''),
+    status: leaveStatusEnum('status').notNull().default('draft'),
+    decidedByAccountId: integer('decided_by_account_id').references(() => accounts.id, { onDelete: 'set null' }),
+    decidedAt: timestamp('decided_at', { withTimezone: true }),
+    ...timestamps,
+  },
+  // Mỗi học sinh một đơn cho mỗi buổi; xin lại sau khi bị từ chối hay đã huỷ thì mở lại đơn đó
+  (t) => [uniqueIndex('leave_requests_student_session_key').on(t.studentId, t.sessionId), index('leave_requests_status_idx').on(t.status)],
 );
 
 // Mã kết nối dùng một lần: người dùng gửi /start <mã> cho bot để gắn chat với phụ huynh hoặc tài khoản

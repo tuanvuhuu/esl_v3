@@ -33,9 +33,9 @@ export default defineConfig({
   // Các spec ghi dữ liệu nối tiếp qua dependencies để không tranh nhau bản ghi dùng chung.
   projects: [
     // Mọi spec không thuộc chuỗi ghi dữ liệu (students, catalog, work) là spec chỉ đọc, chạy song song
-    { name: 'read', testMatch: /^(?!.*[\\/](students|catalog|work)\.spec\.ts$).*\.spec\.ts$/, use: { ...devices['Desktop Chrome'] } },
+    { name: 'read', testMatch: /^(?!.*[\\/](students|catalog|work|telegram)\.spec\.ts$).*\.spec\.ts$/, use: { ...devices['Desktop Chrome'] } },
     { name: 'students', testMatch: /students\.spec\.ts/, use: { ...devices['Desktop Chrome'] } },
     { name: 'catalog', testMatch: /catalog\.spec\.ts/, dependencies: ['students'], use: { ...devices['Desktop Chrome'] } },
-    { name: 'work', testMatch: /work\.spec\.ts/, dependencies: ['catalog'], use: { ...devices['Desktop Chrome'] } },
+    { name: 'work', testMatch: /(work|telegram)\.spec\.ts/, dependencies: ['catalog'], use: { ...devices['Desktop Chrome'] } },
   ],
 });

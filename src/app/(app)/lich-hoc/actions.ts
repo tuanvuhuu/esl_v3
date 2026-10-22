@@ -7,6 +7,8 @@ import { classes, classSessions, teachers } from '@/db/schema';
 import { teacherTeachesCampus } from '@/lib/queries/teachers';
 import { ForbiddenError, requirePermission, writeAudit } from '@/lib/authz';
 import { requireSessionAccess } from '@/lib/campus-access';
+import { safely } from '@/lib/telegram/core';
+import { notifySessionCancelled, notifySessionChanged, notifySessionRestored } from '@/lib/telegram/notify';
 import { cancelReasonSchema, sessionFormSchema } from '@/lib/validation/class';
 import { fieldErrorsFrom, type ActionResult } from '@/lib/validation/student';
 
@@ -18,7 +20,15 @@ function errorResult(error: unknown): ActionResult {
 
 async function loadSession(id: number) {
   const [row] = await db
-    .select({ id: classSessions.id, classId: classSessions.classId, status: classSessions.status, sessionNo: classSessions.sessionNo })
+    .select({
+      id: classSessions.id,
+      classId: classSessions.classId,
+      status: classSessions.status,
+      sessionNo: classSessions.sessionNo,
+      startsAt: classSessions.startsAt,
+      room: classSessions.room,
+      teacherId: classSessions.teacherId,
+    })
     .from(classSessions)
     .where(eq(classSessions.id, id))
     .limit(1);
@@ -69,6 +79,7 @@ export async function updateSessionAction(id: number, _prev: ActionResult, formD
     await writeAudit({ action: 'update', entity: 'session', entityId: id, summary: `Sửa buổi ${session.sessionNo} lúc ${v.date} ${v.startTime}` });
     revalidatePath('/lich-hoc');
     revalidatePath(`/lop-hoc/${session.classId}`);
+    await safely('đổi lịch buổi', () => notifySessionChanged(id, { startsAt: session.startsAt, room: session.room, teacherId: session.teacherId }));
     return { ok: true, message: `Đã lưu buổi ${session.sessionNo}` };
   } catch (error) {
     return errorResult(error);
@@ -93,6 +104,7 @@ export async function cancelSessionAction(id: number, reason: string): Promise<A
     await writeAudit({ action: 'cancel', entity: 'session', entityId: id, summary: `Huỷ buổi ${session.sessionNo}: ${parsed.data}` });
     revalidatePath('/lich-hoc');
     revalidatePath(`/lop-hoc/${session.classId}`);
+    await safely('huỷ buổi', () => notifySessionCancelled(id));
     return { ok: true, message: `Đã huỷ buổi ${session.sessionNo}` };
   } catch (error) {
     return errorResult(error);
@@ -115,6 +127,7 @@ export async function restoreSessionAction(id: number): Promise<ActionResult> {
     await writeAudit({ action: 'restore', entity: 'session', entityId: id, summary: `Khôi phục buổi ${session.sessionNo}` });
     revalidatePath('/lich-hoc');
     revalidatePath(`/lop-hoc/${session.classId}`);
+    await safely('khôi phục buổi', () => notifySessionRestored(id));
     return { ok: true, message: `Đã khôi phục buổi ${session.sessionNo}` };
   } catch (error) {
     return errorResult(error);

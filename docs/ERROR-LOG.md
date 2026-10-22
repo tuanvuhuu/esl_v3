@@ -683,3 +683,75 @@ Mỗi lỗi gặp phải được ghi ở đây, theo mẫu dưới đây. Trư�
 - Cách sửa: Gắn `data-link="true"` cho nút ô học sinh, đúng như quy ước đã có cho liên kết trong ô.
 - Quy tắc phòng ngừa: Nút trong ô bảng mà chiều cao đi theo chữ (tên dài, nhiều dòng) phải có `data-link="true"`. Chạy `chuan.spec` sau mọi thay đổi bảng.
 - Đã áp dụng ở: `src/components/parents/ParentList.tsx`.
+
+## E-075 · Test E2E tin vào toast của lần lưu trước nên kiểm trước khi lưu xong
+- Ngày: 2026-10-22
+- Khu vực: E2E (`e2e/telegram.spec.ts`), màn Điểm danh và Chấm điểm
+- Triệu chứng: Bài điểm danh hỏng ở bước "sửa thành có mặt": không thấy tin cập nhật. Log máy chủ báo `attendance_student_id_students_id_fk` khi lưu điểm danh, như thể học sinh không tồn tại.
+- Nguyên nhân: Lưu hai lần liên tiếp, `expectToast('Đã lưu điểm danh')` khớp ngay với toast của lần lưu trước còn trên màn. Test kiểm DB khi lần lưu sau chưa chạy, hỏng, rồi khối `finally` xoá dữ liệu thử; request lưu đến sau nên đụng khoá ngoại. Bước "không gửi thêm" cũng có thể đạt giả vì kiểm trước khi lưu.
+- Cách sửa: Mỗi lần lưu chờ dòng trong DB đổi `updated_at` (`expect.poll`) rồi mới kiểm; tin gửi ra cũng kiểm bằng `expect.poll`.
+- Quy tắc phòng ngừa: Bấm lưu nhiều lần liên tiếp trong một test thì không dùng toast để biết đã lưu xong. Chờ dữ liệu thật đổi (DB hoặc nội dung trên màn khác với trước khi bấm). Kiểm "không có gì xảy ra" chỉ sau khi chắc việc đã chạy xong.
+- Đã áp dụng ở: `e2e/telegram.spec.ts`.
+
+## E-076 · Người lạ gõ số điện thoại của phụ huynh là kết nối được bot, xem được thông tin của trẻ
+- Ngày: 2026-10-22
+- Khu vực: Bot Telegram (`src/lib/telegram/service.ts`, `linkByPhone` cũ)
+- Triệu chứng: Chat chưa kết nối gửi một tin có số điện thoại trùng hồ sơ phụ huynh thì bot nối chat đó với phụ huynh. Từ đó `/diem`, `/hocphi`, `/lich` trả điểm, học phí, lịch học của trẻ cho bất kỳ ai biết số điện thoại.
+- Nguyên nhân: Bot coi số gõ trong tin là bằng chứng sở hữu số. Số điện thoại phụ huynh không phải bí mật (in trên giấy tờ, nhóm lớp).
+- Cách sửa: Chỉ kết nối qua nút "📱 Chia sẻ số điện thoại" (`request_contact`). Bot nhận danh bạ khi `contact.user_id` trùng người gửi (danh bạ của chính chủ tài khoản Telegram, do Telegram xác nhận số). Gõ số tay chỉ nhận lại hướng dẫn. Số trùng nhiều hồ sơ thì không tự kết nối. E2E: gõ số, gửi danh bạ người khác đều không kết nối; danh bạ của chính mình thì kết nối.
+- Quy tắc phòng ngừa: Không dùng thông tin công khai (số điện thoại, tên, ngày sinh) làm bằng chứng danh tính. Kết nối kênh nhận thông tin của trẻ chỉ bằng mã dùng một lần hoặc bằng xác nhận của nền tảng (danh bạ của chính chủ).
+- Đã áp dụng ở: `src/lib/telegram/service.ts` (`linkByContact`), `src/lib/telegram/commands.ts`, `src/app/api/telegram/webhook/route.ts`, `e2e/telegram.spec.ts`.
+
+## E-077 · Endpoint gỡ lỗi của webhook trả một phần bot token, không cần khoá
+- Ngày: 2026-10-22
+- Khu vực: `src/app/api/telegram/webhook/route.ts` (hàm `GET`)
+- Triệu chứng: Ai mở `GET /api/telegram/webhook` cũng thấy 10 ký tự đầu của bot token (gồm id bot) và tên mọi biến môi trường có chữ TELEGRAM.
+- Nguyên nhân: Hàm gỡ lỗi viết lúc cài bot, không kiểm khoá và không gỡ khi xong.
+- Cách sửa: Gỡ hàm `GET`. Trạng thái bot xem ở Cài đặt (cần đăng nhập quản trị).
+- Quy tắc phòng ngừa: Không để route gỡ lỗi trong mã commit. Route trả thông tin cấu hình phải kiểm quyền như mọi trang quản trị và không bao giờ trả một phần bí mật.
+- Đã áp dụng ở: `src/app/api/telegram/webhook/route.ts`.
+
+## E-078 · PLAN đánh dấu xong các thông báo tự động nhưng mã chưa có; nhắc lịch chống trùng sai
+- Ngày: 2026-10-22
+- Khu vực: Bot Telegram (`PLAN.md` 34.17, 34.19, 34.20; `runTelegramCronTasks` cũ)
+- Triệu chứng: PLAN ghi `[x]` cho báo vắng, báo huỷ buổi, bài mới, điểm mới, nhắc học phí, báo cáo tuần, `/caidat`, cảnh báo vắng 3 buổi, nhắc chấm bài, nhưng mã chỉ có nhắc lịch và nhắc hạn bài. Hai việc này chống trùng theo chat và loại tin trong 20 giờ, nên phụ huynh có hai con hoặc hai buổi trong ngày chỉ nhận một nhắc. `CURRENT_DATE` lấy theo múi giờ của DB, không theo giờ Việt Nam.
+- Nguyên nhân: Task được đánh dấu theo mô tả, không kiểm chứng từng ý. Kiểm chứng ghi "E2E đạt 200 OK" chỉ chứng minh route chạy.
+- Cách sửa: P37: mỗi tin tự động có mã sự kiện, bảng `telegram_notification_log` giữ (chat, loại, mã) duy nhất; thêm đủ các thông báo theo `docs/KICH-BAN-TELEGRAM.md`, ngày giờ tính theo giờ Việt Nam; E2E kiểm từng loại tin và kiểm không gửi trùng.
+- Quy tắc phòng ngừa: Task có nhiều ý thì kiểm chứng từng ý; một E2E "route trả 200" không đủ để đánh dấu tính năng gửi tin. Mọi mốc ngày trong SQL dùng `vnDayBounds`/`todayKeyVN`, không dùng `CURRENT_DATE`.
+- Đã áp dụng ở: `src/lib/telegram/cron.ts`, `src/lib/telegram/core.ts`, `src/lib/telegram/notify.ts`, `PLAN.md` P37.
+
+## E-079 · Gửi lỗi vĩnh viễn bị coi là lỗi mạng nên tin tự động gửi lại mỗi lần chạy
+- Ngày: 2026-10-22
+- Khu vực: `src/lib/telegram/core.ts` (`sendOnce`), `src/lib/telegram/api.ts`
+- Triệu chứng: E2E nhắc hạn bài: chạy cron hai lần thì có hai tin nhắc. Ngoài thực tế, phụ huynh đã chặn bot sẽ bị gửi lại mỗi giờ.
+- Nguyên nhân: Bản đầu của `sendOnce` xoá dòng nhật ký chống trùng khi gửi lỗi để thử lại, mà không phân biệt lỗi tạm thời (mạng, 429, 5xx) với lỗi vĩnh viễn (400 chat không tồn tại, 403 bị chặn).
+- Cách sửa: `call()` trả thêm `retryable`; `sendOnce` chỉ thử lại khi lỗi tạm thời. Người dùng chặn bot hoặc xoá tài khoản thì chat chuyển `active = false`, không gửi nữa.
+- Quy tắc phòng ngừa: Mọi cơ chế thử lại phải phân loại lỗi trước. Lỗi 4xx (trừ 429) không thử lại.
+- Đã áp dụng ở: `src/lib/telegram/api.ts`, `src/lib/telegram/core.ts`.
+
+## E-080 · Nút bấm có emoji kèm ký tự ẩn U+FE0F không được nhận ra
+- Ngày: 2026-10-22
+- Khu vực: `src/lib/telegram/commands.ts` (`parseCommand`)
+- Triệu chứng: Unit test: bấm "⚙️ Cài đặt nhận tin" bị coi là tin nhắn thường gửi giáo viên.
+- Nguyên nhân: Emoji ⚙️ gồm ⚙ và ký tự chọn kiểu U+FE0F. Regex bỏ emoji ở đầu chỉ có `\p{Emoji}\p{Symbol}\s`; U+FE0F thuộc nhóm dấu (Mark) nên còn lại và chữ sau đó không khớp.
+- Cách sửa: Bỏ cả U+FE0F và U+200D (nối emoji) ở đầu và cuối. Unit test cho từng nút mới.
+- Quy tắc phòng ngừa: Nút bàn phím mới phải có unit test `parseCommand(nhãn nút)` với đúng chuỗi nhãn, kể cả emoji.
+- Đã áp dụng ở: `src/lib/telegram/commands.ts`, `tests/unit/telegram-p37.test.ts`.
+
+## E-081 · Chạy E2E gửi tin Telegram thật tới phụ huynh thật
+- Ngày: 2026-10-22
+- Khu vực: E2E Telegram (`e2e/work.spec.ts`), dev server có `TELEGRAM_BOT_TOKEN` thật
+- Triệu chứng: Điện thoại của phụ huynh thử #59 (đã kết nối bot thật) nhận "Thông báo kiểm thử E2E hệ thống" và nhắc lịch học mỗi lần chạy bộ E2E.
+- Nguyên nhân: Bài test gửi thông báo chung phạm vi toàn trung tâm và gọi cron không giới hạn, trong khi dev server dùng bot token thật và DB có chat thật.
+- Cách sửa: Cron nhận `?chat=<id>` để chỉ gửi cho một chat (`withOnlyChat`). Bài test gửi thông báo chung theo một lớp không có phụ huynh kết nối thật. Các E2E chọn học sinh không có phụ huynh kết nối thật và kiểm điều này trước khi chạy.
+- Quy tắc phòng ngừa: E2E chạm tới việc gửi tin ra ngoài phải giới hạn người nhận vào dữ liệu thử (chat id 9xxxxxxxxx), hoặc kiểm trước rằng phạm vi gửi không có người nhận thật.
+- Đã áp dụng ở: `src/lib/telegram/core.ts`, `src/app/api/cron/telegram/route.ts`, `e2e/work.spec.ts`, `e2e/telegram.spec.ts`.
+
+## E-082 · Lớp thử tạo bằng SQL thiếu ngày học làm hỏng màn danh sách lớp; finally không chạy khi test quá giờ
+- Ngày: 2026-10-22
+- Khu vực: E2E (`e2e/telegram.spec.ts`), `src/lib/schedule.ts` (`parseWeekdays`)
+- Triệu chứng: Bài "phân quyền theo cơ sở" quá giờ vì trang báo Runtime Error "Chưa chọn ngày học trong tuần." Trong DB còn sót lớp `TELE-E2E-…` của một lần chạy trước.
+- Nguyên nhân: Bài test tạo lớp bằng SQL, để `weekdays` rỗng (form trong app không cho rỗng), nên mọi màn gọi `describeSchedule` cho lớp đó đều ném lỗi. Lần chạy trước của bài này bị quá giờ, Playwright dừng test nên khối `finally` không dọn hết, lớp sót lại làm hỏng các test sau.
+- Cách sửa: Lớp thử có `weekdays = 'T2,T5'`. Đầu bài test dọn lớp `TELE-E2E-%` còn sót. Đã xoá lớp, tài khoản thử còn sót trong DB dev.
+- Quy tắc phòng ngừa: Dữ liệu thử chèn bằng SQL phải thoả mọi điều kiện mà form của app bắt buộc, không chỉ ràng buộc của DB. Test tạo dữ liệu có tên riêng thì dọn bản sót của lần chạy trước ngay ở đầu test.
+- Đã áp dụng ở: `e2e/telegram.spec.ts`.

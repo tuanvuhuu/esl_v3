@@ -1,7 +1,7 @@
 # ESL Center: kế hoạch và tiến độ
 
-> **Tiến độ tổng: 181/203 task (89%)**
-> Cập nhật lần cuối: 2026-10-22. P1–P34 xong. P35: 35.2, 35.3, 35.12, 35.24, 35.27 xong; 35.4–35.6 làm dở (35.6 chỉ còn thử tay trên điện thoại). P36 Soạn nhanh xong phần code (36.1–36.6). Số đếm lấy từ các ô `[x]` và `[ ]` trong file.
+> **Tiến độ tổng: 190/216 task (87%)**
+> Cập nhật lần cuối: 2026-10-22. P1–P34 xong. P37 bot Telegram theo kịch bản: 37.1–37.9 xong, còn đặt cron mỗi giờ trên bản deploy và các việc đợt sau. P35: 35.2, 35.3, 35.12, 35.24, 35.27 xong; 35.4–35.6 làm dở (35.6 chỉ còn thử tay trên điện thoại). P36 Soạn nhanh xong phần code (36.1–36.6). Số đếm lấy từ các ô `[x]` và `[ ]` trong file.
 
 ## 🎯 Các task vừa hoàn thành & Lệnh test riêng (Không chạy all)
 
@@ -352,12 +352,12 @@ Bối cảnh (2026-10-19): tệp tải lên (âm thanh đề, bài nộp, tài l
 ### Bot cho phụ huynh
 - [x] **34.15** Tra cứu thêm: `/diem` (điểm và nhận xét gần nhất), `/chuyencan` (chuyên cần 10 buổi gần nhất), `/nhanxet` (nhận xét bài nói, kèm âm thanh mẫu của giáo viên khi có P33), menu nút bấm thay cho gõ lệnh. *(2026-10-19).*
 - [x] **34.16** Xin nghỉ học: `/nghi` → chọn con, chọn buổi, gõ lý do → giáo viên nhận yêu cầu, bấm Đồng ý; buổi đó điểm danh sẵn là vắng có phép; phụ huynh nhận xác nhận. Kiểm chứng: E2E từ xin nghỉ tới điểm danh. *(2026-10-19).*
-- [x] **34.17** Tự động gửi phụ huynh: nhắc buổi học trước 2 giờ (hoặc sáng ngày học), báo vắng khi điểm danh vắng, báo buổi bị huỷ hoặc đổi giờ, bài tập mới được giao, nhắc hạn nộp trước 1 ngày, có điểm hoặc nhận xét mới, nhắc học phí đến hạn theo ngày hạn trong Cài đặt, báo cáo tuần (chuyên cần, bài đã nộp, điểm). Phụ huynh tắt từng loại bằng `/caidat`. *(2026-10-19).*
+- [x] **34.17** Tự động gửi phụ huynh: nhắc buổi học trước 2 giờ (hoặc sáng ngày học), báo vắng khi điểm danh vắng, báo buổi bị huỷ hoặc đổi giờ, bài tập mới được giao, nhắc hạn nộp trước 1 ngày, có điểm hoặc nhận xét mới, nhắc học phí đến hạn theo ngày hạn trong Cài đặt, báo cáo tuần (chuyên cần, bài đã nộp, điểm). Phụ huynh tắt từng loại bằng `/caidat`. *(2026-10-19).* Rà lại 2026-10-22: phần lớn ý chưa có trong mã, làm thật ở P37 (E-078).
 - [x] **34.18** Thông báo chung: nhân viên soạn một tin gửi cả lớp, cả cơ sở hoặc toàn trung tâm (nghỉ lễ, sự kiện) từ app; chỉ gửi trong phạm vi cơ sở của người soạn (P32); có xem trước số người nhận. Kiểm chứng: E2E gửi thông báo chung thành công. *(2026-10-19).*
 
 ### Bot cho giáo viên và quản trị
-- [x] **34.19** Giáo viên: `/homnay` (lịch dạy hôm nay, phòng), `/chocham` (bài đang chờ chấm, link mở thẳng màn chấm), nhắc chấm bài nói quá 2 ngày chưa chấm, báo học sinh nộp bài (đã có ở 34.9), báo đơn xin nghỉ cần duyệt. *(2026-10-19).*
-- [x] **34.20** Super admin: báo cáo cuối ngày (số buổi đã dạy, số vắng, bài nộp, tiền thu trong ngày, học phí quá hạn), cảnh báo học sinh vắng 3 buổi liên tiếp, lệnh `/baocao` xem nhanh. *(2026-10-19).*
+- [x] **34.19** Giáo viên: `/homnay` (lịch dạy hôm nay, phòng), `/chocham` (bài đang chờ chấm, link mở thẳng màn chấm), nhắc chấm bài nói quá 2 ngày chưa chấm, báo học sinh nộp bài (đã có ở 34.9), báo đơn xin nghỉ cần duyệt. *(2026-10-19).* Rà lại 2026-10-22: phần lớn ý chưa có trong mã, làm thật ở P37 (E-078).
+- [x] **34.20** Super admin: báo cáo cuối ngày (số buổi đã dạy, số vắng, bài nộp, tiền thu trong ngày, học phí quá hạn), cảnh báo học sinh vắng 3 buổi liên tiếp, lệnh `/baocao` xem nhanh. *(2026-10-19).* Rà lại 2026-10-22: phần lớn ý chưa có trong mã, làm thật ở P37 (E-078).
 - [x] **34.21** Lịch chạy tự động cho các việc ở 34.17, 34.19, 34.20: route `/api/cron/telegram` có khoá bí mật, gọi bằng Vercel Cron (gói Hobby chỉ chạy tối đa mỗi ngày một lần, cần gói Pro hoặc dịch vụ hẹn giờ ngoài như cron-job.org cho nhắc trước 2 giờ). Gửi theo lô, chống gửi trùng bằng bảng ghi đã gửi. Kiểm chứng: gọi route hai lần không gửi trùng (E2E đạt 200 OK). *(2026-10-19).*
 - [x] **34.22** Nhật ký và giới hạn: mọi tin ra vào lưu trong `telegram_messages`; giới hạn tốc độ gửi (Telegram giới hạn khoảng 30 tin mỗi giây cho mỗi bot); tin lỗi được thử lại; Cài đặt hiện số tin gửi lỗi gần đây và số tài khoản kết nối. *(2026-10-19).*
 
@@ -443,6 +443,24 @@ Giao diện (người dùng yêu cầu 2026-10-22): phải đẹp và dùng tố
 - [x] **36.5** Cách vào "Dán câu": tách câu, đánh dấu từ thuộc trình độ, sinh sắp xếp (lọc theo độ dài), điền chỗ trống (đục từ trong danh sách), đọc to. Kiểm chứng: unit tách câu và chọn từ đục; E2E dán đoạn 4 câu. ✅ 2026-10-22: xem trước từng câu đã dán (sắp xếp được hay không theo độ dài của trình độ, từ bị đục tô vàng, từ thuộc trình độ trong kho gạch chân). Unit tách câu và chọn từ đục (`quick-compose.test.ts`); E2E dán đoạn 4 câu, sinh sắp xếp, điền chỗ trống, đọc to.
 - [x] **36.6** Ngân hàng câu có trình độ và chủ đề: cột mới cho `questions`, lọc theo trình độ, chủ đề, dạng, kỹ năng; chép nhiều câu một lần; câu sinh từ Soạn nhanh lưu được vào ngân hàng. Kiểm chứng: E2E lọc và chép 5 câu. ✅ 2026-10-22: cột `level`, `topic` cho `questions` (migration `0019_question_level_topic`); trang ngân hàng lọc theo trình độ, chủ đề, kỹ năng, dạng câu, có cột Trình độ; form sửa có ô trình độ và chủ đề; hộp "Thêm từ ngân hàng" lọc như trên (mặc định trình độ của lớp) và "Chọn tất cả"; Soạn nhanh có "Lưu vào ngân hàng" (trình độ của lớp, chủ đề gặp nhiều nhất). Sửa luôn lỗi ngân hàng làm mất nội dung các dạng câu P35 (E-070). Unit chép câu từ ngân hàng; E2E lưu 13 câu vào ngân hàng, lọc, chép tất cả vào bài, kiểm cặp ghép trong DB.
 - [ ] **36.7** (người dùng và giáo viên) Điền nghĩa tiếng Việt và emoji cho khoảng 300–400 từ hay dạy nhất cho trẻ; chỉnh bảng tham số theo trình độ sau vài tuần dùng. Khi xong: đổi bộ học thử sang sinh bằng Soạn nhanh.
+
+## P37. Bot Telegram theo kịch bản chi tiết
+
+Nguồn: `docs/KICH-BAN-TELEGRAM.md` (2026-10-22). Người dùng thấy bot còn sơ sài. Rà lại thì nhiều ý của 34.17, 34.19, 34.20 đã đánh dấu xong nhưng chưa có trong mã (E-078), cách kết nối bằng số điện thoại để lộ thông tin của trẻ (E-076), và có endpoint gỡ lỗi trả một phần bot token (E-077). Mã chia thành `core.ts` (gửi tin, chống trùng), `leave.ts` (đơn nghỉ), `notify.ts` (sự kiện trong app), `cron.ts` (việc theo giờ), `prefs.ts` (phần thuần). Migration `0021_telegram_p37`: `telegram_chats.muted_kinds`, bảng `telegram_notification_log`, bảng `leave_requests`.
+
+- [x] **37.1** Viết kịch bản chi tiết cho phụ huynh, giáo viên, quản trị, hệ thống: người nhận, giờ gửi, nội dung, nút, kiểm quyền, chống trùng, trường hợp lệch. ✅ 2026-10-22: `docs/KICH-BAN-TELEGRAM.md`.
+- [x] **37.2** Kết nối bằng nút "Chia sẻ số điện thoại", chỉ nhận danh bạ của chính người gửi; gõ số tay không kết nối; số trùng nhiều hồ sơ thì không tự kết nối. Gỡ `GET /api/telegram/webhook`. ✅ 2026-10-22: E2E gõ số, danh bạ người khác đều không kết nối; danh bạ của chính mình thì kết nối.
+- [x] **37.3** Đơn xin nghỉ lưu trong `leave_requests`: chọn con, chọn buổi chưa bắt đầu, lý do bằng nút hoặc gõ trong 15 phút, phụ huynh huỷ đơn chờ duyệt, xin lại thì mở lại đơn cũ; giáo viên duyệt một lần (người sau nhận "đã được X duyệt"), kiểm quyền điểm danh, cơ sở, buổi đúng lớp; `/donnghi`. Nút kiểu cũ vẫn chạy và kiểm quyền trước khi tạo đơn. ✅ 2026-10-22: E2E phụ huynh khác và kế toán không đổi được đơn, giáo viên duyệt ghi vắng, bấm lại không đổi, huỷ và xin lại.
+- [x] **37.4** `/caidat`: bật tắt 7 loại tin, vẽ lại tin cài đặt bằng `editMessageText`. ✅ 2026-10-22: unit bàn phím và bật tắt; E2E tắt Điểm mới thì đổi điểm không gửi.
+- [x] **37.5** Chống gửi trùng bằng `telegram_notification_log` (chat, loại, mã sự kiện); chỉ thử lại khi lỗi tạm thời; người dùng chặn bot thì ngừng chat. ✅ 2026-10-22: E2E chạy cron hai lần một tin; lưu điểm danh, chấm điểm lại y nguyên không gửi lại (E-079).
+- [x] **37.6** Thông báo sự kiện: vắng, trễ, sửa lại có mặt; huỷ, khôi phục, đổi giờ hoặc phòng buổi học; bài mới; học sinh nộp bài; điểm mới (bảng chấm và chấm từng câu); cảnh báo vắng 3 buổi liên tiếp cho giáo viên và quản trị. ✅ 2026-10-22: E2E điểm danh vắng, sửa có mặt, cảnh báo 3 buổi, huỷ buổi ở màn Lịch học, bài mới, điểm mới. Khôi phục buổi, đổi giờ và học sinh nộp bài chưa có E2E riêng.
+- [x] **37.7** Việc theo giờ (gọi cron mỗi giờ, tự kiểm giờ Việt Nam): nhắc lịch học có nút xin nghỉ buổi này, lịch dạy buổi sáng cho giáo viên, nhắc hạn bài, học phí trước hạn 3 ngày và quá hạn, nhắc chấm bài quá 2 ngày, báo cáo tuần Chủ nhật, báo cáo ngày 20 giờ. `?jobs=` chạy việc chỉ định, `?chat=` chỉ gửi cho một chat. ✅ 2026-10-22: unit giờ chạy, học phí, mã tuần; E2E nhắc hạn bài và tên việc lạ bị bỏ qua.
+- [x] **37.8** Lệnh `/lich` ghi giáo viên, chủ đề, trạng thái đơn nghỉ; báo cáo ngày tính theo giờ Việt Nam, thêm bài nộp, bài chờ chấm, đơn chờ duyệt. ✅ 2026-10-22: typecheck; E2E lệnh tra cứu của phụ huynh đạt.
+- [x] **37.9** E2E không gửi tin thật: chọn dữ liệu không có phụ huynh kết nối thật, cron giới hạn `?chat=`, thông báo chung trong test gửi theo lớp (E-081). ✅ 2026-10-22: sau khi chạy, chat thật không nhận tin mới.
+- [ ] **37.10** (người dùng) Đặt lịch gọi `/api/cron/telegram` mỗi giờ trên bản deploy (cron-job.org hoặc Vercel Cron gói Pro), kèm `Authorization: Bearer <CRON_SECRET>`. Chưa đặt thì chỉ có thông báo sự kiện, không có nhắc theo giờ.
+- [ ] **37.11** Màn Đơn nghỉ trong app cho giáo vụ: danh sách, lọc theo lớp và trạng thái, duyệt hoặc từ chối, cùng quy tắc với bot.
+- [ ] **37.12** Học bù: phụ huynh chọn buổi bù của lớp khác cùng trình độ khi con nghỉ có phép.
+- [ ] **37.13** Mã QR chuyển khoản (VietQR) trong tin nhắc học phí; khảo sát hài lòng cuối khoá bằng nút bấm.
 
 ## Quyết định đã chốt
 

@@ -23,13 +23,15 @@ export function webhookSecret(): string | null {
   return raw.length >= 16 ? raw : null;
 }
 
-type ApiResult<T> = { ok: true; result: T } | { ok: false; description: string };
+// retryable: lỗi tạm thời (mạng, Telegram quá tải 429, lỗi 5xx), thử lại sau được. Lỗi 400/403 (chat không tồn tại,
+// người dùng chặn bot) thì thử lại cũng vô ích.
+type ApiResult<T> = { ok: true; result: T } | { ok: false; description: string; retryable?: boolean };
 
 async function call<T>(method: string, body: Record<string, unknown>): Promise<ApiResult<T>> {
   const token = botToken();
   if (!token) {
     console.error('❌ Lỗi gọi Telegram: Thiếu TELEGRAM_BOT_TOKEN trong biến môi trường!');
-    return { ok: false, description: 'Chưa cấu hình TELEGRAM_BOT_TOKEN' };
+    return { ok: false, description: 'Chưa cấu hình TELEGRAM_BOT_TOKEN', retryable: false };
   }
   try {
     const response = await fetch(`${API}/bot${token}/${method}`, {
@@ -42,12 +44,26 @@ async function call<T>(method: string, body: Record<string, unknown>): Promise<A
     if (!data.ok) {
       console.error(`❌ Telegram ${method} thất bại:`, data.description ?? `HTTP ${response.status}`);
     }
-    return data.ok ? { ok: true, result: data.result as T } : { ok: false, description: data.description ?? `HTTP ${response.status}` };
+    return data.ok
+      ? { ok: true, result: data.result as T }
+      : { ok: false, description: data.description ?? `HTTP ${response.status}`, retryable: response.status === 429 || response.status >= 500 };
   } catch (error) {
     // Không ghi token vào log: chỉ ghi tên phương thức và lỗi
     console.error(`❌ Lỗi mạng khi gọi Telegram ${method}:`, error instanceof Error ? error.message : error);
-    return { ok: false, description: 'Không kết nối được Telegram' };
+    return { ok: false, description: 'Không kết nối được Telegram', retryable: true };
   }
+}
+
+export type SendOutcome = { ok: boolean; retryable: boolean; blocked: boolean };
+
+// Gửi tin và cho biết lỗi có nên thử lại không, người dùng có chặn bot không (để ngừng gửi cho chat đó)
+export async function sendMessageDetailed(chatId: number, text: string, replyMarkup?: Record<string, unknown>): Promise<SendOutcome> {
+  const body: Record<string, unknown> = { chat_id: chatId, text: text.slice(0, 4000), disable_web_page_preview: true };
+  if (replyMarkup) body.reply_markup = replyMarkup;
+  const result = await call('sendMessage', body);
+  if (result.ok) return { ok: true, retryable: false, blocked: false };
+  const blocked = /bot was blocked|user is deactivated|bot was kicked/i.test(result.description);
+  return { ok: false, retryable: result.retryable ?? false, blocked };
 }
 
 // Gửi tin dạng chữ thường (không bật HTML/Markdown, để nội dung do người dùng gõ không phá định dạng)
@@ -61,6 +77,14 @@ export async function sendMessage(chatId: number, text: string, replyMarkup?: Re
     body.reply_markup = replyMarkup;
   }
   const result = await call('sendMessage', body);
+  return result.ok;
+}
+
+// Sửa lại chữ và nút của một tin bot đã gửi (vẽ lại tin cài đặt khi phụ huynh bấm bật/tắt)
+export async function editMessageText(chatId: number, messageId: number, text: string, replyMarkup?: Record<string, unknown>): Promise<boolean> {
+  const body: Record<string, unknown> = { chat_id: chatId, message_id: messageId, text: text.slice(0, 4000), disable_web_page_preview: true };
+  if (replyMarkup) body.reply_markup = replyMarkup;
+  const result = await call('editMessageText', body);
   return result.ok;
 }
 

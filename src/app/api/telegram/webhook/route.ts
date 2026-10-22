@@ -8,8 +8,10 @@ import { handleCallbackQuery, handleIncoming } from '@/lib/telegram/service';
 type Update = {
   message?: {
     chat?: { id?: number; type?: string };
-    from?: { first_name?: string; last_name?: string; username?: string; is_bot?: boolean };
+    from?: { id?: number; first_name?: string; last_name?: string; username?: string; is_bot?: boolean };
     text?: string;
+    // Danh bạ gửi bằng nút "Chia sẻ số điện thoại" (kịch bản 1.2)
+    contact?: { phone_number?: string; user_id?: number };
     reply_to_message?: {
       message_id?: number;
       text?: string;
@@ -18,7 +20,7 @@ type Update = {
   callback_query?: {
     id: string;
     from: { id: number; first_name?: string; last_name?: string; username?: string };
-    message?: { chat?: { id?: number } };
+    message?: { message_id?: number; chat?: { id?: number } };
     data?: string;
   };
 };
@@ -56,6 +58,7 @@ export async function POST(request: Request) {
         chatId: cbChatId,
         data: cbData,
         fromName,
+        messageId: cb.message?.message_id,
       });
     } catch (error) {
       console.error('Lỗi xử lý callback query:', error);
@@ -64,16 +67,19 @@ export async function POST(request: Request) {
   }
 
   const message = update.message;
-  // Chỉ xử lý tin chữ trong chat riêng với bot. Nhóm, kênh, ảnh, tệp thì bỏ qua.
-  if (!message?.text || message.chat?.type !== 'private' || typeof message.chat.id !== 'number' || message.from?.is_bot) {
+  // Chỉ xử lý tin chữ và danh bạ trong chat riêng với bot. Nhóm, kênh, ảnh, tệp thì bỏ qua.
+  const contact = message?.contact?.phone_number ? { phone: message.contact.phone_number, userId: message.contact.user_id } : undefined;
+  if ((!message?.text && !contact) || message?.chat?.type !== 'private' || typeof message.chat.id !== 'number' || message.from?.is_bot) {
     return new Response('ok');
   }
   const fromName = [message.from?.first_name, message.from?.last_name].filter(Boolean).join(' ') || message.from?.username || '';
   try {
     await handleIncoming({
       chatId: message.chat.id,
-      text: message.text.slice(0, 4000),
+      text: (message.text ?? '').slice(0, 4000),
       fromName,
+      fromId: message.from?.id,
+      contact,
       replyToText: message.reply_to_message?.text,
     });
   } catch (error) {
@@ -81,18 +87,4 @@ export async function POST(request: Request) {
     console.error('Lỗi xử lý tin Telegram:', error);
   }
   return new Response('ok');
-}
-
-export async function GET() {
-  const { botToken, webhookSecret } = await import('@/lib/telegram/api');
-  const token = botToken();
-  const secret = webhookSecret();
-  const telegramKeys = Object.keys(process.env).filter((k) => k.toUpperCase().includes('TELEGRAM'));
-  return Response.json({
-    hasToken: !!token,
-    tokenPrefix: token ? token.slice(0, 10) + '...' : null,
-    hasSecret: !!secret,
-    telegramKeys,
-    timestamp: new Date().toISOString(),
-  });
 }

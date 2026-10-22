@@ -6,6 +6,8 @@ import { z } from 'zod';
 import { db } from '@/db/client';
 import { assignmentItems, assignmentSubmissions, assignments, classes, lessonCampuses, students } from '@/db/schema';
 import { ForbiddenError, requirePermission, writeAudit } from '@/lib/authz';
+import { safely } from '@/lib/telegram/core';
+import { notifyAssignmentCreated, notifyGraded } from '@/lib/telegram/notify';
 import { requireAssignmentAccess, requireClassAccess } from '@/lib/campus-access';
 import { getAssignmentBase } from '@/lib/queries/assignments';
 import { assignmentFormSchema, gradingRowSchema, SUBMISSION_LABELS } from '@/lib/validation/assignment';
@@ -74,6 +76,7 @@ export async function createAssignmentAction(_prev: ActionResult, formData: Form
       .returning({ id: assignments.id });
     await writeAudit({ action: 'create', entity: 'assignment', entityId: created.id, summary: `Tạo bài tập ${v.title} cho lớp ${cls.name}` });
     revalidateAssignments(v.classId);
+    await safely('bài tập mới', () => notifyAssignmentCreated(created.id));
     return { ok: true, message: `Đã tạo bài tập ${v.title}` };
   } catch (error) {
     return errorResult(error);
@@ -229,6 +232,13 @@ export async function saveSubmissionsAction(
       summary: `Chấm bài ${base.title}: ${count('graded')} ${SUBMISSION_LABELS.graded.toLowerCase()}, ${count('submitted')} ${SUBMISSION_LABELS.submitted.toLowerCase()}, ${count('not_submitted')} ${SUBMISSION_LABELS.not_submitted.toLowerCase()}`,
     });
     revalidateAssignments(base.classId, assignmentId);
+    // Báo phụ huynh điểm và nhận xét mới; điểm và nhận xét không đổi thì không gửi lại (mã sự kiện gồm cả hai)
+    for (const r of parsed.data) {
+      if (r.status === 'graded' && r.score !== null) {
+        const score = r.score;
+        await safely('điểm mới', () => notifyGraded(assignmentId, r.studentId, { score, max: base.maxScore, feedback: r.feedback }));
+      }
+    }
     return { ok: true, message: `Đã lưu ${parsed.data.length} dòng chấm điểm` };
   } catch (error) {
     return errorResult(error);

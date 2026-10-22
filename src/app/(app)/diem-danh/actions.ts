@@ -7,6 +7,8 @@ import { attendance, classSessions, students } from '@/db/schema';
 import { ForbiddenError, requirePermission, writeAudit } from '@/lib/authz';
 import { requireSessionAccess } from '@/lib/campus-access';
 import { vnDateKey } from '@/lib/datetime';
+import { safely } from '@/lib/telegram/core';
+import { notifyAttendance } from '@/lib/telegram/notify';
 import { z } from 'zod';
 import { type ActionResult } from '@/lib/validation/student';
 
@@ -86,6 +88,8 @@ export async function saveAttendanceAction(sessionId: number, entries: { student
     revalidatePath('/hoc-sinh');
     revalidatePath(`/lop-hoc/${session.classId}`);
     revalidatePath('/tong-quan');
+    // Báo phụ huynh con vắng hoặc trễ, cảnh báo vắng liên tiếp (docs/KICH-BAN-TELEGRAM.md mục 1.7, 2)
+    await safely('điểm danh', () => notifyAttendance(session.id, parsed.data));
     return { ok: true, message: `Đã lưu điểm danh buổi ${session.sessionNo}` };
   } catch (error) {
     return errorResult(error);
