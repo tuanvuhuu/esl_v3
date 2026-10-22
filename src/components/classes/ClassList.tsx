@@ -1,6 +1,6 @@
 'use client';
 
-import { Eye, Pencil, Plus, Trash2 } from 'lucide-react';
+import { CalendarClock, Eye, Pencil, Plus, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import type { ClassRow } from '@/lib/queries/classes';
 import { formatVND } from '@/lib/money';
@@ -36,6 +36,7 @@ export function ClassList({
   const menuItems = (row: ClassRow): RowMenuItem[] => [
     { kind: 'link', href: `/lop-hoc/${row.id}`, label: 'Xem chi tiết', icon: Eye },
     { kind: 'action', label: 'Sửa', icon: Pencil, onSelect: () => dlg.openEdit(row.id), disabled: !canManage, disabledHint: 'Không có quyền quản lý lớp' },
+    { kind: 'action', label: 'Xếp lại lịch', icon: CalendarClock, onSelect: () => dlg.openReschedule(row.id), disabled: !canManage, disabledHint: 'Không có quyền quản lý lớp' },
     {
       kind: 'action',
       label: 'Xoá',

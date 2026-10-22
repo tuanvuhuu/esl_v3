@@ -82,6 +82,25 @@ test('tạo lớp: giờ 24 giờ, học phí có dấu chấm, xem trước l�
     const rows = (await db.query<{ session_no: number; topic: string }>('select session_no, topic from class_sessions where class_id = $1 order by starts_at', [a.id])).rows;
     expect(rows.map((r) => r.session_no)).toEqual([1, 2, 3, 4]);
     expect(rows[1].topic).toBe('Buổi học bù');
+
+    // Xếp lại lịch lớp A: khai giảng lùi sang 09/03, thêm T5, tổng 5 buổi. Buổi chưa học cũ (kể cả buổi bù) được thay hết.
+    await page.goto(`/lop-hoc/${a.id}`);
+    await page.getByRole('button', { name: 'Xếp lại lịch' }).click();
+    const r = page.getByRole('dialog', { name: `Xếp lại lịch lớp ${A}` });
+    await expect(r.getByLabel('Giờ bắt đầu Thứ 3', { exact: true })).toHaveValue('10:00');
+    await r.locator('label:has(input[value="T5"])').click();
+    await r.locator('input[name="startDate"]').fill('2027-03-09');
+    await r.locator('input[name="sessionsTotal"]').fill('5');
+    // Ngày T5 vừa bật lấy giờ của lớp (10:00), không phải giờ mặc định
+    await expect(r.getByLabel('Giờ bắt đầu Thứ 5', { exact: true })).toHaveValue('10:00');
+    await expect(r.getByRole('region', { name: 'Xem trước lịch' })).toContainText('5 buổi · từ T3 09/03/2027 10:00 đến T3 23/03/2027 10:00');
+    await r.getByRole('button', { name: 'Xếp lại lịch' }).click();
+    await expectToast(page, `Đã xếp lại lịch lớp ${A}, 5 buổi từ 09/03/2027 đến 23/03/2027`);
+    const after = (await db.query<{ session_no: number; d: string }>(`select session_no, to_char(starts_at at time zone 'Asia/Ho_Chi_Minh', 'YYYY-MM-DD HH24:MI') d from class_sessions where class_id = $1 order by starts_at`, [a.id])).rows;
+    expect(after.map((x) => x.d)).toEqual(['2027-03-09 10:00', '2027-03-11 10:00', '2027-03-16 10:00', '2027-03-18 10:00', '2027-03-23 10:00']);
+    expect(after.map((x) => x.session_no)).toEqual([1, 2, 3, 4, 5]);
+    const [cls] = (await db.query<{ weekdays: string; sessions_total: number }>('select weekdays, sessions_total from classes where id = $1', [a.id])).rows;
+    expect(cls).toEqual({ weekdays: 'T3,T5', sessions_total: 5 });
   } finally {
     await db.query('delete from classes where name = any($1)', [[A, B]]);
     await db.end();

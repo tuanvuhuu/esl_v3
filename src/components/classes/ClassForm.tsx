@@ -1,7 +1,7 @@
 'use client';
 
 import { startTransition, useActionState, useEffect, useRef, useState, type FormEvent } from 'react';
-import { createClassAction, previewScheduleAction, updateClassAction, type ClassCoreValues, type SchedulePreview } from '@/app/(app)/lop-hoc/actions';
+import { createClassAction, previewScheduleAction, rescheduleClassAction, updateClassAction, type ClassCoreValues, type SchedulePreview } from '@/app/(app)/lop-hoc/actions';
 import { dateKeyLabel, vnDateKey, vnTimeLabel, weekdayLabel, weekdayOfKey } from '@/lib/datetime';
 import { WEEKDAY_CODES, WEEKDAY_CODE_LABELS, type WeekdayCode } from '@/lib/validation/class';
 import type { StaffRole } from '@/lib/validation/teacher';
@@ -32,8 +32,8 @@ function nextSlotAfter(prev: { start: string; end: string }): { start: string; e
   return start + length < 24 * 60 ? { start: toTime(start), end: toTime(start + length) } : { ...prev };
 }
 
-// Form tạo lớp (có lịch học) và sửa lớp (ô chung và giờ từng ngày học). Thêm, bớt ngày hoặc sửa một buổi ở màn Lịch học.
-// Tạo lớp thì cơ sở mặc định là cơ sở đang xem (defaultCampusId).
+// Form tạo lớp (có lịch học), sửa lớp (ô chung và giờ từng ngày học) và xếp lại lịch (chỉ phần lịch: ngày học, ca,
+// ngày bắt đầu, tổng số buổi). Sửa một buổi riêng ở màn Lịch học. Tạo lớp thì cơ sở mặc định là cơ sở đang xem (defaultCampusId).
 export function ClassForm({
   mode,
   classId,
@@ -46,7 +46,7 @@ export function ClassForm({
   onDone,
   onCancel,
 }: {
-  mode: 'create' | 'edit';
+  mode: 'create' | 'edit' | 'reschedule';
   classId?: number;
   initial?: ClassCoreValues;
   teachers: TeacherChoice[];
@@ -89,7 +89,12 @@ export function ClassForm({
   }
 
   const [state, formAction, pending] = useActionState<ActionResult, FormData>(async (prev, formData) => {
-    const result = mode === 'edit' && classId ? await updateClassAction(classId, prev, formData) : await createClassAction(prev, formData);
+    const result =
+      mode === 'edit' && classId
+        ? await updateClassAction(classId, prev, formData)
+        : mode === 'reschedule' && classId
+          ? await rescheduleClassAction(classId, prev, formData)
+          : await createClassAction(prev, formData);
     if (result.ok) onDone(result.message ?? 'Đã lưu');
     return result;
   }, INITIAL);
@@ -105,7 +110,8 @@ export function ClassForm({
   const [days, setDays] = useState<WeekdayCode[]>([...initialTimes.keys()]);
   const [times, setTimes] = useState(initialTimes);
   const [touched, setTouched] = useState<Set<WeekdayCode>>(() => new Set(initialTimes.keys()));
-  const [lastTime, setLastTime] = useState<SlotDraft>(DEFAULT_TIME);
+  // Lớp đã có lịch: ngày mới bật lấy giờ ca đầu của lớp thay vì giờ mặc định
+  const [lastTime, setLastTime] = useState<SlotDraft>(() => (values.dayTimes?.[0] ? { start: values.dayTimes[0].start, end: values.dayTimes[0].end } : DEFAULT_TIME));
   const daySlots: DaySlots[] = WEEKDAY_CODES.filter((c) => days.includes(c)).map((code) => ({ code, slots: times.get(code) ?? [lastTime] }));
 
   function toggleDay(code: WeekdayCode, on: boolean) {
@@ -157,20 +163,23 @@ export function ClassForm({
   }
 
   const isCreate = mode === 'create';
+  const isReschedule = mode === 'reschedule';
+  const hasSchedule = isCreate || isReschedule;
+  const kept = values.keptSessions ?? 0;
 
-  // Xem trước lịch khi tạo lớp: chờ ngừng nhập nửa giây rồi hỏi máy chủ (số buổi, ngày cuối, buổi trùng giáo viên hoặc phòng).
+  // Xem trước lịch khi tạo lớp hoặc xếp lại lịch: chờ ngừng nhập nửa giây rồi hỏi máy chủ (số buổi, ngày cuối, buổi trùng giáo viên hoặc phòng).
   // bump tăng khi ô thường đổi; ô chọn (cơ sở, giáo viên) và giờ học nằm trong state nên đã có trong danh sách theo dõi.
   const formRef = useRef<HTMLFormElement>(null);
   const [bump, setBump] = useState(0);
   const [preview, setPreview] = useState<SchedulePreview | null>(null);
   useEffect(() => {
-    if (!isCreate) return;
+    if (!hasSchedule) return;
     const timer = setTimeout(async () => {
       if (!formRef.current) return;
       setPreview(await previewScheduleAction(new FormData(formRef.current)));
     }, 500);
     return () => clearTimeout(timer);
-  }, [isCreate, bump, days, times, campusId, teacherId]);
+  }, [hasSchedule, bump, days, times, campusId, teacherId]);
 
   return (
     <form ref={formRef} onSubmit={submit} onChange={() => setBump((n) => n + 1)} noValidate className="grid grid-cols-1 gap-3.5 min-[768px]:grid-cols-2 min-[768px]:gap-x-4">
@@ -178,6 +187,9 @@ export function ClassForm({
         <Alert className="col-span-full">{state.message}</Alert>
       )}
 
+      {isReschedule && <input type="hidden" name="rescheduleClassId" value={classId} />}
+      {!isReschedule && (
+      <>
       <SectionTitle>Thông tin lớp</SectionTitle>
       <Field label="Cơ sở *" error={errors.campusId} hint="Mỗi lớp thuộc đúng một cơ sở">
         <SelectPanel
@@ -254,10 +266,18 @@ export function ClassForm({
       <Field label="Sĩ số tối đa *" error={errors.capacity}>
         <input name="capacity" type="number" inputMode="numeric" min={1} max={100} step={1} defaultValue={values.capacity} className={inputClass(errors.capacity)} />
       </Field>
+      </>
+      )}
 
-      {isCreate ? (
+      {hasSchedule ? (
         <>
-          <SectionTitle>Lịch học</SectionTitle>
+          {isReschedule ? (
+            <Notice className="col-span-full">
+              {kept > 0 ? `Giữ nguyên ${kept} buổi đã học hoặc đã bắt đầu. ` : ''}Các buổi chưa học được thay bằng lịch mới bên dưới. Đổi ngày khai giảng, số buổi, ngày học hoặc ca ở đây.
+            </Notice>
+          ) : (
+            <SectionTitle>Lịch học</SectionTitle>
+          )}
           <fieldset className="col-span-full flex flex-col gap-2">
             <legend className="mb-1.5 text-sm font-normal text-ink-2">Ngày học trong tuần *</legend>
             <div className="flex flex-wrap gap-2">
@@ -281,11 +301,15 @@ export function ClassForm({
           </fieldset>
 
           <DayTimeRows days={daySlots} errors={errors} canEditSlots onChange={changeTime} onAddSlot={addSlot} onRemoveSlot={removeSlot} />
-          <Field label="Ngày khai giảng *" error={errors.startDate} hint="Buổi đầu tiên diễn ra vào ngày này hoặc ngày học gần nhất">
-            <input name="startDate" type="date" defaultValue={defaultStartDate} className={inputClass(errors.startDate)} />
+          <Field
+            label={isReschedule && kept > 0 ? 'Xếp lại từ ngày *' : 'Ngày khai giảng *'}
+            error={errors.startDate}
+            hint={isReschedule && kept > 0 ? 'Buổi chưa học đầu tiên diễn ra vào ngày này hoặc ngày học gần nhất' : 'Buổi đầu tiên diễn ra vào ngày này hoặc ngày học gần nhất'}
+          >
+            <input name="startDate" type="date" defaultValue={isReschedule ? (values.nextDate ?? defaultStartDate) : defaultStartDate} className={inputClass(errors.startDate)} />
           </Field>
-          <Field label="Số buổi *" error={errors.sessionsTotal}>
-            <input name="sessionsTotal" type="number" inputMode="numeric" min={1} max={200} step={1} defaultValue={24} className={inputClass(errors.sessionsTotal)} />
+          <Field label={isReschedule ? 'Tổng số buổi của khoá *' : 'Số buổi *'} error={errors.sessionsTotal} hint={isReschedule && kept > 0 ? `Tính cả ${kept} buổi đã học` : undefined}>
+            <input name="sessionsTotal" type="number" inputMode="numeric" min={1} max={200} step={1} defaultValue={values.sessionsTotal ?? 24} className={inputClass(errors.sessionsTotal)} />
           </Field>
           <PreviewBox preview={preview} />
         </>
@@ -293,7 +317,7 @@ export function ClassForm({
         <>
           <DayTimeRows days={daySlots} errors={errors} canEditSlots={false} onChange={changeTime} onAddSlot={addSlot} onRemoveSlot={removeSlot} />
           <Notice className={`col-span-full ${daySlots.length === 0 ? 'hidden' : ''}`}>
-            Đổi giờ một ca thì các buổi sắp tới của ca đó dời sang giờ mới. Thêm, bớt ngày học, ca học hoặc sửa, huỷ một buổi riêng làm ở màn Lịch học.
+            Đổi giờ một ca thì các buổi sắp tới của ca đó dời sang giờ mới. Đổi ngày khai giảng, số buổi, ngày học hoặc thêm ca: dùng nút Xếp lại lịch. Sửa, huỷ một buổi riêng ở màn Lịch học.
           </Notice>
         </>
       )}
@@ -301,7 +325,7 @@ export function ClassForm({
       <FormFooter className="col-span-full">
         <button type="button" onClick={onCancel} className={FORM_BTN_CANCEL}>Huỷ</button>
         <button type="submit" disabled={pending} className={FORM_BTN_SUBMIT}>
-          {pending ? 'Đang lưu…' : isCreate ? 'Tạo lớp' : 'Lưu thay đổi'}
+          {pending ? 'Đang lưu…' : isCreate ? 'Tạo lớp' : isReschedule ? 'Xếp lại lịch' : 'Lưu thay đổi'}
         </button>
       </FormFooter>
     </form>
@@ -346,7 +370,8 @@ function PreviewBox({ preview }: { preview: SchedulePreview | null }) {
   return (
     <section aria-label="Xem trước lịch" className="col-span-full flex flex-col gap-2 rounded-[var(--radius-ctl)] bg-primary-soft p-3">
       <p className="text-base text-ink">
-        <b className="font-extrabold">{preview.total} buổi</b> · từ {whenLabel(preview.firstStartsAt)} đến {whenLabel(preview.lastStartsAt)}
+        <b className="font-extrabold">{preview.kept ? `${preview.total} buổi mới` : `${preview.total} buổi`}</b> · từ {whenLabel(preview.firstStartsAt)} đến {whenLabel(preview.lastStartsAt)}
+        {preview.kept ? ` · giữ ${preview.kept} buổi đã học` : ''}
       </p>
       <ul className="flex flex-wrap gap-1.5">
         {preview.sample.map((s) => (
@@ -358,7 +383,7 @@ function PreviewBox({ preview }: { preview: SchedulePreview | null }) {
       </ul>
       {preview.conflictCount > 0 ? (
         <Alert inline>
-          Trùng lịch {preview.conflictCount} buổi: {preview.conflicts.join('; ')}. Đổi giờ, ngày, giáo viên hoặc phòng trước khi tạo.
+          Trùng lịch {preview.conflictCount} buổi: {preview.conflicts.join('; ')}. Đổi giờ, ngày, giáo viên hoặc phòng trước khi lưu.
         </Alert>
       ) : (
         <Alert inline tone="ok">Không trùng lịch giáo viên và phòng.</Alert>

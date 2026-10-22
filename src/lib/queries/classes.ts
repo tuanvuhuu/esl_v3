@@ -153,6 +153,7 @@ export async function getClassForm(id: number) {
       startTime: classes.startTime,
       endTime: classes.endTime,
       dayTimes: classes.dayTimes,
+      sessionsTotal: classes.sessionsTotal,
     })
     .from(classes)
     .where(eq(classes.id, id))

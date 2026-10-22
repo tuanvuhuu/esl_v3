@@ -3,15 +3,15 @@
 import { and, eq, gt, ne, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { db } from '@/db/client';
-import { attendance, campuses, classes, classSessions, students, teachers } from '@/db/schema';
+import { attendance, campuses, classes, classSessions, leaveRequests, students, teachers } from '@/db/schema';
 import { ForbiddenError, requirePermission, writeAudit } from '@/lib/authz';
 import { requireCampusAccess, requireClassAccess } from '@/lib/campus-access';
 import { getClassForm } from '@/lib/queries/classes';
 import { findScheduleConflicts, summarizeConflicts } from '@/lib/queries/schedule-conflicts';
 import { teacherTeachesCampus } from '@/lib/queries/teachers';
-import { vnDateKey, vnTimeLabel } from '@/lib/datetime';
+import { addDaysKey, dateKeyLabel, todayKeyVN, vnDateKey, vnTimeLabel } from '@/lib/datetime';
 import { describeSchedule, encodeDayTimes, generateSessions, joinWeekdays, resolveDayTimes } from '@/lib/schedule';
-import { checkDayTimes, classCoreSchema, classCreateSchema, MAX_SLOTS_PER_DAY, slotField, WEEKDAY_CODES, type DayTimesInput, type WeekdayCode } from '@/lib/validation/class';
+import { checkDayTimes, classCoreSchema, classCreateSchema, classRescheduleSchema, MAX_SLOTS_PER_DAY, slotField, WEEKDAY_CODES, type DayTimesInput, type WeekdayCode } from '@/lib/validation/class';
 import { fieldErrorsFrom, type ActionResult } from '@/lib/validation/student';
 import type { StaffRole } from '@/lib/validation/teacher';
 
@@ -94,6 +94,10 @@ export type ClassCoreValues = {
   capacity: number;
   // Giờ từng ngày học hiện có, chỉ dùng cho form sửa
   dayTimes?: { code: string; start: string; end: string }[];
+  // Cho form xếp lại lịch: tổng số buổi, số buổi giữ nguyên, ngày buổi chưa học gần nhất
+  sessionsTotal?: number;
+  keptSessions?: number;
+  nextDate?: string;
 };
 
 // Tạo lớp và sinh toàn bộ buổi học trong một transaction
@@ -177,8 +181,20 @@ export async function createClassAction(_prev: ActionResult, formData: FormData)
 }
 
 export type SchedulePreview =
-  | { ok: true; total: number; firstStartsAt: Date; lastStartsAt: Date; sample: { startsAt: Date; endsAt: Date }[]; conflicts: string[]; conflictCount: number }
+  | { ok: true; total: number; firstStartsAt: Date; lastStartsAt: Date; sample: { startsAt: Date; endsAt: Date }[]; conflicts: string[]; conflictCount: number; kept?: number }
   | { ok: false; message: string };
+
+// Buổi giữ nguyên khi xếp lại lịch: đã học, đã huỷ, đã bắt đầu. kept đếm buổi giữ lại trừ buổi huỷ (để trừ vào tổng số buổi).
+async function keptSessionsOf(classId: number): Promise<{ kept: number; lastDate: string | null }> {
+  const [row] = await db
+    .select({
+      kept: sql<number>`COUNT(*) FILTER (WHERE ${classSessions.status} <> 'cancelled')::int`,
+      last: sql<string | null>`MAX(${classSessions.startsAt})`,
+    })
+    .from(classSessions)
+    .where(and(eq(classSessions.classId, classId), sql`(${classSessions.status} <> 'planned' OR ${classSessions.startsAt} <= now())`));
+  return { kept: Number(row?.kept ?? 0), lastDate: row?.last ? vnDateKey(new Date(row.last)) : null };
+}
 
 // Xem trước lịch khi đang nhập form tạo lớp: số buổi, ngày đầu, ngày cuối, vài buổi đầu và các buổi trùng giáo viên, phòng.
 // Nhận nguyên FormData của form (cùng tên ô như khi tạo), không ghi gì vào cơ sở dữ liệu.
@@ -195,13 +211,27 @@ export async function previewScheduleAction(formData: FormData): Promise<Schedul
     const sessionsTotal = Number(formData.get('sessionsTotal'));
     if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate)) return { ok: false, message: 'Chọn ngày khai giảng để xem trước lịch.' };
     if (!Number.isInteger(sessionsTotal) || sessionsTotal < 1 || sessionsTotal > 400) return { ok: false, message: 'Nhập số buổi để xem trước lịch.' };
-    const generated = generateSessions({ weekdays: joinWeekdays(days), startTime: list[0].start, endTime: list[0].end, dayTimes: encodeDayTimes(list), sessionsTotal, fromDate: startDate });
+    // Xếp lại lịch lớp đã có: trừ buổi giữ nguyên, kiểm trùng bỏ qua chính lớp này, giáo viên và phòng lấy theo lớp
+    const rescheduleId = Number(formData.get('rescheduleClassId')) || null;
+    let kept: number | undefined;
+    let campusId = Number(formData.get('campusId'));
+    let teacherId = Number(formData.get('teacherId')) || null;
+    let room = String(formData.get('room') ?? '');
+    if (rescheduleId) {
+      await requireClassAccess(rescheduleId);
+      const current = await getClassForm(rescheduleId);
+      if (!current) return { ok: false, message: 'Không tìm thấy lớp.' };
+      campusId = current.campusId;
+      teacherId = current.teacherId;
+      room = current.room;
+      kept = (await keptSessionsOf(rescheduleId)).kept;
+      if (sessionsTotal <= kept) return { ok: false, message: `Lớp đã học ${kept} buổi. Tổng số buổi phải lớn hơn ${kept} để còn buổi cần xếp.` };
+    }
+    const generated = generateSessions({ weekdays: joinWeekdays(days), startTime: list[0].start, endTime: list[0].end, dayTimes: encodeDayTimes(list), sessionsTotal: sessionsTotal - (kept ?? 0), fromDate: startDate });
 
-    const campusId = Number(formData.get('campusId'));
-    const teacherId = Number(formData.get('teacherId')) || null;
-    const room = String(formData.get('room') ?? '');
-    const conflicts = Number.isInteger(campusId) && campusId > 0 ? await findScheduleConflicts({ slots: generated, teacherId, room, campusId }) : [];
+    const conflicts = Number.isInteger(campusId) && campusId > 0 ? await findScheduleConflicts({ slots: generated, teacherId, room, campusId, excludeClassId: rescheduleId }) : [];
     return {
+      kept,
       ok: true,
       total: generated.length,
       firstStartsAt: generated[0].startsAt,
@@ -324,6 +354,90 @@ export async function updateClassAction(id: number, _prev: ActionResult, formDat
   }
 }
 
+// Xếp lại lịch: đổi ngày học, ca, ngày bắt đầu hoặc tổng số buổi của lớp đã tạo.
+// Buổi đã học, đã huỷ, đã bắt đầu giữ nguyên. Các buổi chưa học được thay bằng lịch mới từ ngày bắt đầu xếp lại,
+// đủ tổng số buổi (trừ buổi đã giữ). Số buổi đánh lại theo ngày. Không gửi tin cho phụ huynh.
+export async function rescheduleClassAction(id: number, _prev: ActionResult, formData: FormData): Promise<ActionResult> {
+  try {
+    await requirePermission('classes.manage');
+    await requireClassAccess(id);
+    const parsed = classRescheduleSchema.safeParse(readForm(formData));
+    if (!parsed.success) {
+      return { ok: false, message: 'Vui lòng kiểm tra lại các ô được đánh dấu.', fieldErrors: fieldErrorsFrom(parsed.error) };
+    }
+    const v = parsed.data;
+    const current = await getClassForm(id);
+    if (!current) return { ok: false, message: 'Không tìm thấy lớp này. Có thể đã bị xoá.' };
+    if (v.startDate < todayKeyVN()) return { ok: false, message: 'Ngày bắt đầu xếp lại không được ở quá khứ.', fieldErrors: { startDate: 'Chọn từ hôm nay trở đi' } };
+
+    const { kept, lastDate } = await keptSessionsOf(id);
+    if (lastDate && v.startDate <= lastDate) {
+      return { ok: false, message: `Lớp đã có buổi học ngày ${dateKeyLabel(lastDate)}. Chọn ngày bắt đầu xếp lại sau ngày đó.`, fieldErrors: { startDate: `Chọn sau ${dateKeyLabel(lastDate)}` } };
+    }
+    const remaining = v.sessionsTotal - kept;
+    if (remaining < 0) return { ok: false, message: `Lớp đã học ${kept} buổi, tổng số buổi phải từ ${kept} trở lên.`, fieldErrors: { sessionsTotal: `Ít nhất ${kept} buổi` } };
+
+    const weekdays = sortWeekdays(v.weekdays);
+    const dayTimes = encodeDayTimes(v.dayTimes);
+    let generated: ReturnType<typeof generateSessions> = [];
+    try {
+      if (remaining > 0) generated = generateSessions({ weekdays, startTime: v.startTime, endTime: v.endTime, dayTimes, sessionsTotal: remaining, fromDate: v.startDate });
+    } catch (error) {
+      return { ok: false, message: error instanceof Error ? error.message : 'Lịch học không hợp lệ.' };
+    }
+    if (generated.length > 0 && generated[0].startsAt <= new Date()) {
+      return { ok: false, message: 'Buổi đầu của lịch mới đã qua giờ. Chọn ngày bắt đầu muộn hơn.', fieldErrors: { startDate: 'Buổi đầu đã qua giờ' } };
+    }
+
+    const conflicts = await findScheduleConflicts({ slots: generated, teacherId: current.teacherId, room: current.room, campusId: current.campusId, excludeClassId: id });
+    if (conflicts.length > 0) {
+      return { ok: false, message: `Lịch bị trùng ${conflicts.length} buổi: ${summarizeConflicts(conflicts).join('; ')}. Đổi giờ hoặc ngày rồi xếp lại.` };
+    }
+
+    const result = await db.transaction(async (tx) => {
+      const pending = and(eq(classSessions.classId, id), eq(classSessions.status, 'planned'), gt(classSessions.startsAt, new Date()));
+      const [leaves] = await tx
+        .select({ n: sql<number>`COUNT(*)::int` })
+        .from(leaveRequests)
+        .innerJoin(classSessions, eq(classSessions.id, leaveRequests.sessionId))
+        .where(and(pending, ne(leaveRequests.status, 'draft')));
+      const removed = await tx.delete(classSessions).where(pending).returning({ id: classSessions.id });
+      if (generated.length > 0) {
+        await tx.insert(classSessions).values(
+          generated.map((s) => ({ classId: id, sessionNo: 0, startsAt: s.startsAt, endsAt: s.endsAt, teacherId: current.teacherId, room: current.room })),
+        );
+      }
+      await tx.execute(sql`
+        UPDATE class_sessions cs SET session_no = r.rn
+        FROM (SELECT id, row_number() OVER (ORDER BY starts_at, id) AS rn FROM class_sessions WHERE class_id = ${id}) r
+        WHERE cs.id = r.id AND cs.session_no <> r.rn`);
+      await tx
+        .update(classes)
+        .set({
+          weekdays,
+          dayTimes,
+          startTime: v.startTime,
+          endTime: v.endTime,
+          schedule: describeSchedule(weekdays, v.startTime, v.endTime, dayTimes),
+          sessionsTotal: v.sessionsTotal,
+          updatedAt: new Date(),
+        })
+        .where(eq(classes.id, id));
+      return { removed: removed.length, leaves: Number(leaves?.n ?? 0) };
+    });
+
+    const range = generated.length > 0 ? `, ${generated.length} buổi từ ${dateKeyLabel(generated[0].date)} đến ${dateKeyLabel(generated[generated.length - 1].date)}` : '';
+    await writeAudit({ action: 'update', entity: 'class', entityId: id, summary: `Xếp lại lịch lớp ${current.name}: bỏ ${result.removed} buổi chưa học${range}` });
+    revalidatePath('/lop-hoc');
+    revalidatePath(`/lop-hoc/${id}`);
+    revalidatePath('/lich-hoc');
+    const leaveNote = result.leaves > 0 ? `. ${result.leaves} đơn xin nghỉ của buổi cũ đã bỏ` : '';
+    return { ok: true, message: `Đã xếp lại lịch lớp ${current.name}${range}${leaveNote}` };
+  } catch (error) {
+    return errorResult(error);
+  }
+}
+
 // Giá trị để điền form sửa lớp
 export async function loadClassForm(id: number): Promise<{ ok: true; values: ClassCoreValues } | { ok: false; message: string }> {
   try {
@@ -331,6 +445,15 @@ export async function loadClassForm(id: number): Promise<{ ok: true; values: Cla
     await requireClassAccess(id);
     const row = await getClassForm(id);
     if (!row) return { ok: false, message: 'Không tìm thấy lớp này. Có thể đã bị xoá.' };
+    const { kept, lastDate } = await keptSessionsOf(id);
+    const [next] = await db
+      .select({ startsAt: classSessions.startsAt })
+      .from(classSessions)
+      .where(and(eq(classSessions.classId, id), eq(classSessions.status, 'planned'), gt(classSessions.startsAt, new Date())))
+      .orderBy(classSessions.startsAt)
+      .limit(1);
+    const today = todayKeyVN();
+    const nextDate = next ? vnDateKey(next.startsAt) : lastDate && lastDate >= today ? addDaysKey(lastDate, 1) : today;
     return {
       ok: true,
       values: {
@@ -345,6 +468,9 @@ export async function loadClassForm(id: number): Promise<{ ok: true; values: Cla
         fee: row.fee,
         capacity: row.capacity,
         dayTimes: row.weekdays ? resolveDayTimes(row.weekdays, row.startTime, row.endTime, row.dayTimes) : [],
+        sessionsTotal: row.sessionsTotal,
+        keptSessions: kept,
+        nextDate,
       },
     };
   } catch (error) {

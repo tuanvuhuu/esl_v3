@@ -1,12 +1,12 @@
 'use client';
 
-import { Pencil, Trash2 } from 'lucide-react';
+import { CalendarClock, Pencil, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Btn } from '@/components/ui/Btn';
 import { useClassDialogs } from './useClassDialogs';
 import type { CampusChoice, LevelChoice, TeacherChoice } from './ClassForm';
 
-// Nút Sửa và Xoá ở đầu trang chi tiết lớp. Xoá xong thì về danh sách lớp.
+// Nút Sửa, Xếp lại lịch và Xoá ở đầu trang chi tiết lớp. Xoá xong thì về danh sách lớp.
 export function ClassDetailActions({ classId, name, studentCount, teachers, campuses, levels, defaultCampusId, canManage }: {
   classId: number;
   name: string;
@@ -24,6 +24,10 @@ export function ClassDetailActions({ classId, name, studentCount, teachers, camp
       <Btn onClick={() => dlg.openEdit(classId)} disabled={!canManage}>
         <Pencil className="size-4" aria-hidden />
         Sửa lớp
+      </Btn>
+      <Btn onClick={() => dlg.openReschedule(classId)} disabled={!canManage}>
+        <CalendarClock className="size-4" aria-hidden />
+        Xếp lại lịch
       </Btn>
       <Btn variant="danger" onClick={() => dlg.askDelete({ id: classId, name, studentCount })} disabled={!canManage}>
         <Trash2 className="size-4" aria-hidden />

@@ -139,6 +139,19 @@ export const classCreateSchema = z
     return { ...v, dayTimes: sorted, startTime: sorted[0]?.start ?? '', endTime: sorted[0]?.end ?? '' };
   });
 
+// Xếp lại lịch lớp đã tạo: ngày học, ca, ngày bắt đầu xếp lại và tổng số buổi của khoá. Cùng tên ô với form tạo lớp.
+export const classRescheduleSchema = z
+  .object(classScheduleShape)
+  .superRefine((v, ctx) => {
+    const { errors } = checkDayTimes(v.weekdays, v.dayTimes as DayTimesInput, { start: v.startTime, end: v.endTime });
+    for (const [key, message] of Object.entries(errors)) ctx.addIssue({ code: 'custom', path: [key], message });
+  })
+  .transform((v) => {
+    const { list } = checkDayTimes(v.weekdays, v.dayTimes as DayTimesInput, { start: v.startTime, end: v.endTime });
+    const sorted = [...list].sort((a, b) => (a.code === b.code ? a.start.localeCompare(b.start) : 0));
+    return { ...v, dayTimes: sorted, startTime: sorted[0]?.start ?? '', endTime: sorted[0]?.end ?? '' };
+  });
+
 export type ClassCoreInput = z.infer<typeof classCoreSchema>;
 export type ClassCreateInput = z.infer<typeof classCreateSchema>;
 

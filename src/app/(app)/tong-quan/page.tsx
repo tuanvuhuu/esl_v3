@@ -60,7 +60,8 @@ async function DashboardData() {
     canAssignments ? listOverdueAssignments(scope) : Promise.resolve([]),
   ]);
 
-  const debtTotal = overdueInvoices?.totalDebt ?? 0;
+  // Chỉ cộng nợ đã quá hạn (totalDebt là mọi khoản còn nợ, kể cả chưa tới hạn)
+  const debtTotal = overdueInvoices?.rows.reduce((sum, r) => sum + r.debt, 0) ?? 0;
   const topDebts = overdueInvoices ? [...overdueInvoices.rows].sort((a, b) => b.debt - a.debt).slice(0, 5) : [];
   // Đếm đủ mọi học sinh nợ quá hạn, không chỉ năm người hiện trong danh sách. Khớp với số trên chuông thông báo.
   const attentionCount = (overdueInvoices?.counts.overdue ?? 0) + absentees.length + overdueAssignments.length;

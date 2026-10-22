@@ -29,6 +29,7 @@ export function useClassDialogs({
   const router = useRouter();
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<{ id: number; values: ClassCoreValues } | null>(null);
+  const [rescheduling, setRescheduling] = useState<{ id: number; name: string; values: ClassCoreValues } | null>(null);
   const [toDelete, setToDelete] = useState<ClassTarget | null>(null);
   const [blocked, setBlocked] = useState<ClassTarget | null>(null);
   const { message, notify } = useToast();
@@ -38,6 +39,7 @@ export function useClassDialogs({
     (text: string) => {
       setCreating(false);
       setEditing(null);
+      setRescheduling(null);
       notify(text);
       router.refresh();
     },
@@ -50,6 +52,17 @@ export function useClassDialogs({
         const r = await loadClassForm(id);
         if (!r.ok) return notify(r.message);
         setEditing({ id, values: r.values });
+      });
+    },
+    [notify],
+  );
+
+  const openReschedule = useCallback(
+    (id: number) => {
+      startTransition(async () => {
+        const r = await loadClassForm(id);
+        if (!r.ok) return notify(r.message);
+        setRescheduling({ id, name: r.values.name, values: r.values });
       });
     },
     [notify],
@@ -104,6 +117,28 @@ export function useClassDialogs({
           />
         )}
       </Modal>
+      <Modal
+        open={!!rescheduling}
+        title={rescheduling ? `Xếp lại lịch lớp ${rescheduling.name}` : 'Xếp lại lịch'}
+        subtitle="Đổi ngày khai giảng, số buổi, ngày học hoặc ca. Buổi đã học giữ nguyên."
+        onClose={() => setRescheduling(null)}
+        labelledBy="class-reschedule-title"
+      >
+        {rescheduling && (
+          <ClassForm
+            mode="reschedule"
+            classId={rescheduling.id}
+            initial={rescheduling.values}
+            teachers={teachers}
+            campuses={campuses}
+            levels={levels}
+            defaultCampusId={defaultCampusId}
+            defaultStartDate={todayKeyVN()}
+            onDone={onDone}
+            onCancel={() => setRescheduling(null)}
+          />
+        )}
+      </Modal>
       <ConfirmDialog
         open={!!toDelete}
         title="Xoá lớp này?"
@@ -128,6 +163,7 @@ export function useClassDialogs({
   return {
     openCreate: () => setCreating(true),
     openEdit,
+    openReschedule,
     askDelete,
     dialogs,
   };

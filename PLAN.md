@@ -1,6 +1,6 @@
 # ESL Center: kế hoạch và tiến độ
 
-> **Tiến độ tổng: 197/223 task (88%)**
+> **Tiến độ tổng: 198/224 task (88%)**
 > Cập nhật lần cuối: 2026-10-22. P1–P34 xong. P38 (giờ học từng ngày, học phí theo buổi còn lại, mã HS-00001) xong. P37 bot Telegram theo kịch bản: 37.1–37.9 xong, còn đặt cron mỗi giờ trên bản deploy và các việc đợt sau. P35: 35.2, 35.3, 35.12, 35.24, 35.27 xong; 35.4–35.6 làm dở (35.6 chỉ còn thử tay trên điện thoại). P36 Soạn nhanh xong phần code (36.1–36.6). Số đếm lấy từ các ô `[x]` và `[ ]` trong file.
 
 ## 🎯 Các task vừa hoàn thành & Lệnh test riêng (Không chạy all)
@@ -478,6 +478,7 @@ Người dùng yêu cầu 2026-10-22: giáo vụ, quản trị tự tạo lớp 
 - [x] **39.1** Form tạo lớp: ô giờ kiểu 24 giờ (gõ "1830" thành "18:30", không còn "06:30 CH"), đổi giờ bắt đầu thì giờ kết thúc dời theo giữ độ dài ca, hiện độ dài ca; học phí hiện dấu chấm ngăn cách; chia bốn nhóm có tiêu đề. ✅ 2026-10-22: unit `schedule-input.test.ts`; E2E `xep-lich.spec`.
 - [x] **39.2** Xem trước lịch khi tạo lớp (số buổi, ngày đầu, ngày cuối, vài buổi đầu) và chặn trùng giờ với lớp khác của cùng giáo viên hoặc cùng phòng trong cơ sở (`src/lib/queries/schedule-conflicts.ts`), báo gọn "đang dạy lớp X 09:00–11:00 các ngày …". ✅ 2026-10-22: E2E tạo lớp trùng bị chặn, đổi giờ thì tạo được.
 - [x] **39.3** Màn Lịch học có nút "Thêm buổi" (học bù, học thêm): chọn lớp thì giáo viên, phòng điền sẵn; kiểm trùng ngay khi nhập; số buổi của lớp đánh lại theo ngày. Sửa một buổi cũng chặn trùng giáo viên, phòng. ✅ 2026-10-22: E2E thêm buổi bù, kiểm số buổi trong DB; ảnh 1440px và 390px.
+- [x] **39.4** Xếp lại lịch lớp đã tạo (nút ở trang lớp và menu ⋯): đổi ngày khai giảng, tổng số buổi, ngày học, ca. Buổi đã học, đã huỷ giữ nguyên; buổi chưa học thay bằng lịch mới, có xem trước và chặn trùng (bỏ qua chính lớp). Tổng quan: ô Công nợ quá hạn chỉ cộng nợ đã quá hạn. ✅ 2026-10-22: E2E xep-lich (xếp lại 5 buổi, kiểm DB), gio-hoc-phi xanh; xem form ở 1440px và 390px không tràn.
 
 ## Quyết định đã chốt
 
