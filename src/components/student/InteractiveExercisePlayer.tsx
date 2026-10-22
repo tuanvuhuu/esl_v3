@@ -3,7 +3,8 @@
 import { Check, Mic, RotateCcw, Volume2, X } from 'lucide-react';
 import { useEffect, useRef, useState, useTransition } from 'react';
 import type { StudentAssignmentView, StudentItem } from '@/lib/queries/student-portal';
-import { submitMyAnswersAction, type StudentAnswerInput, type SubmitScore } from '@/app/(student)/cua-toi/actions';
+import { childAgreeVoiceAction, submitMyAnswersAction, type StudentAnswerInput, type SubmitScore } from '@/app/(student)/cua-toi/actions';
+import { useRouter } from 'next/navigation';
 import { clock, pickRecordingFormat, recordedFormat, starsFor } from '@/lib/recording';
 import { uploadAsStudent } from '@/lib/upload-client';
 
@@ -139,6 +140,7 @@ export function InteractiveExercisePlayer({
           onNext={handleNext}
           isLast={currentIndex === total - 1}
           submitting={submitting}
+          voice={view.voice}
         />
       )}
 
@@ -161,6 +163,7 @@ function ExerciseItem({
   onNext,
   isLast,
   submitting,
+  voice,
 }: {
   item: StudentItem;
   answer: AnswerDraft | undefined;
@@ -168,6 +171,7 @@ function ExerciseItem({
   onNext: () => void;
   isLast: boolean;
   submitting: boolean;
+  voice: StudentAssignmentView['voice'];
 }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -255,9 +259,8 @@ function ExerciseItem({
           <GapFillQuestion answer={answer} onChange={onChange} />
         )}
 
-        {(item.itemType === 'speak_repeat' || item.itemType === 'speak_read' || item.itemType === 'speak_picture') && (
-          <SpeakQuestion item={item} answer={answer} onChange={onChange} />
-        )}
+        {(item.itemType === 'speak_repeat' || item.itemType === 'speak_read' || item.itemType === 'speak_picture') &&
+          (voice.allowed ? <SpeakQuestion item={item} answer={answer} onChange={onChange} /> : <VoiceGate needsChild={voice.needsChild} referenceText={item.referenceText ?? ''} />)}
 
         {item.itemType === 'choice' && (
           <ChoiceQuestion item={item} answer={answer} onChange={onChange} />
@@ -595,6 +598,49 @@ function GapFillQuestion({
 // ==========================================
 // 6. DẠNG: GHI ÂM BÀI NÓI (speak_*)
 // ==========================================
+// Câu nói khi chưa được ghi âm (P35.12): chưa có đồng ý của phụ huynh thì nhắn bỏ qua câu;
+// phụ huynh đã đồng ý mà trẻ từ 7 tuổi thì hỏi trẻ một câu đơn giản.
+function VoiceGate({ needsChild, referenceText }: { needsChild: boolean; referenceText: string }) {
+  const router = useRouter();
+  const [pending, start] = useTransition();
+  const [msg, setMsg] = useState<string | null>(null);
+  return (
+    <div className="flex flex-col items-center gap-4 py-2 text-center">
+      {referenceText && <div className="rounded-2xl border border-line bg-stone/40 p-3 text-lg font-extrabold leading-relaxed text-ink">“{referenceText}”</div>}
+      {needsChild ? (
+        <>
+          <span className="text-5xl" aria-hidden>
+            🎤
+          </span>
+          <p className="text-lg font-extrabold leading-snug text-ink">Cô giáo muốn nghe giọng con để chấm bài nói. Con có đồng ý ghi âm không?</p>
+          <p className="text-sm font-semibold text-muted">Bố mẹ con đã đồng ý rồi. Chỉ cô giáo, con và bố mẹ nghe được.</p>
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() =>
+              start(async () => {
+                const r = await childAgreeVoiceAction();
+                setMsg(r.message);
+                if (r.ok) router.refresh();
+              })
+            }
+            className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-[var(--accent)] text-lg font-extrabold text-white shadow-[0_4px_0_#0e7445] disabled:opacity-60"
+          >
+            <Check className="size-5" aria-hidden />
+            Con đồng ý
+          </button>
+          <span className="text-sm font-semibold text-muted">Chưa muốn thì con bấm Tiếp tục để làm câu khác.</span>
+        </>
+      ) : (
+        <p role="note" className="w-full rounded-2xl bg-[var(--butter)] p-4 text-base font-bold leading-relaxed text-[var(--butter-ink)]">
+          Câu này cần ghi âm, mà bố mẹ con chưa đồng ý cho con ghi âm. Con bấm Tiếp tục để làm câu khác nhé. Cô giáo sẽ hỏi bố mẹ.
+        </p>
+      )}
+      {msg && <p className="text-sm font-bold text-ink-2">{msg}</p>}
+    </div>
+  );
+}
+
 // Lời nhắn khi không bật được micro: nói rõ cách cấp quyền thay cho hộp alert
 function micHelp(error: unknown): string {
   const name = error instanceof DOMException ? error.name : '';

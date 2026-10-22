@@ -281,6 +281,10 @@ export function StudentAssignmentForm({ view }: { view: StudentAssignmentView })
                         </ActIcon>
                       )}
                     </div>
+                  ) : item.itemType !== 'file' && !view.voice.allowed ? (
+                    <span className="text-sm text-muted">
+                      {view.voice.needsChild ? 'Mở bài ở dạng từng câu để con bấm đồng ý ghi âm.' : 'Câu này cần ghi âm, phụ huynh chưa đồng ý cho con ghi âm. Bỏ qua câu này.'}
+                    </span>
                   ) : (
                     <FileInput
                       label={item.itemType === 'file' ? `Tải tệp bài làm câu ${item.position}` : `Tải tệp ghi âm câu ${item.position}`}

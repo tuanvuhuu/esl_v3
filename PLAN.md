@@ -1,7 +1,7 @@
 # ESL Center: kế hoạch và tiến độ
 
-> **Tiến độ tổng: 180/203 task (88%)**
-> Cập nhật lần cuối: 2026-10-22. P1–P34 xong. P35 đang làm (35.2, 35.3, 35.24 xong; 35.4–35.6 làm dở). P36 Soạn nhanh: 36.1–36.6 xong (kho từ 2.332 từ, ngân hàng lọc theo trình độ và chủ đề); còn 36.7 là việc của người dùng. Số đếm lấy từ các ô `[x]` và `[ ]` trong file.
+> **Tiến độ tổng: 181/203 task (89%)**
+> Cập nhật lần cuối: 2026-10-22. P1–P34 xong. P35: 35.2, 35.3, 35.12, 35.24, 35.27 xong; 35.4–35.6 làm dở (35.6 chỉ còn thử tay trên điện thoại). P36 Soạn nhanh xong phần code (36.1–36.6). Số đếm lấy từ các ô `[x]` và `[ ]` trong file.
 
 ## 🎯 Các task vừa hoàn thành & Lệnh test riêng (Không chạy all)
 
@@ -401,7 +401,7 @@ Nghiên cứu kỹ thuật cho các mục còn mở (thư viện, định dạng
 - [x] **35.27** Sửa nhỏ từ nghiên cứu: ghi âm chọn định dạng bằng `isTypeSupported` và cắt tham số MIME trước khi tải lên; thống nhất loại ảnh giữa `IMAGE_ACCEPT` và `ALLOWED_TYPES` (WebP, GIF); màn chúc mừng hiện sao theo điểm thật. Kiểm chứng: unit chọn MIME, E2E ghi âm với micro giả. ✅ 2026-10-22: `src/lib/recording.ts` (chọn định dạng bằng `isTypeSupported`, cắt tham số MIME, đồng hồ, sao); thêm WebP, GIF ở máy chủ; màn chúc mừng hiện 1–3 sao theo điểm phần tự chấm (nộp bài trả `score`), số sticker bằng số sao, báo còn câu chờ giáo viên chấm; nộp lỗi thì ở lại và báo để nộp lại. Unit `recording.test.ts` 6 test; E2E `hoc-thu.spec` kiểm 1 sao và điểm phần tự chấm.
 
 ### B. Ghi âm trên trình duyệt
-- [ ] **35.6** Ghi âm cho ba dạng nói: bấm để nói, đếm giây theo `max_seconds`, nghe lại, nói lại, nộp; Android và Chrome ghi webm, iOS ghi m4a; tải thẳng lên Supabase rồi ghi `uploaded_files`; hướng dẫn cấp quyền micro. Chỉ bật khi học sinh đã có đồng ý của phụ huynh (35.12). Kiểm chứng: E2E với micro giả của Chromium; thử tay trên iPhone và Android. ⏳ 2026-10-22: đã có ghi âm theo định dạng của máy, đếm giây và tự dừng, nghe lại, Nói lại hoặc Dùng bản này, báo lỗi micro bằng chữ (cách cấp quyền trên máy tính và iPhone), tải thẳng lên kho tệp (chưa cấu hình thì qua máy chủ); mọi nút tải tệp khác cũng tải thẳng (E-071). E2E `ghi-am.spec` với micro giả: ghi, nói lại, lưu, tệp `audio/webm`. Còn thiếu: chặn khi chưa có đồng ý của phụ huynh (chờ 35.12), thử tay trên iPhone và Android.
+- [ ] **35.6** Ghi âm cho ba dạng nói: bấm để nói, đếm giây theo `max_seconds`, nghe lại, nói lại, nộp; Android và Chrome ghi webm, iOS ghi m4a; tải thẳng lên Supabase rồi ghi `uploaded_files`; hướng dẫn cấp quyền micro. Chỉ bật khi học sinh đã có đồng ý của phụ huynh (35.12). Kiểm chứng: E2E với micro giả của Chromium; thử tay trên iPhone và Android. ⏳ 2026-10-22: đã có ghi âm theo định dạng của máy, đếm giây và tự dừng, nghe lại, Nói lại hoặc Dùng bản này, báo lỗi micro bằng chữ (cách cấp quyền trên máy tính và iPhone), tải thẳng lên kho tệp (chưa cấu hình thì qua máy chủ); mọi nút tải tệp khác cũng tải thẳng (E-071). E2E `ghi-am.spec` với micro giả: ghi, nói lại, lưu, tệp `audio/webm`. Đã chặn khi chưa có đồng ý (35.12). Còn thiếu: thử tay trên iPhone và Android (người dùng).
 - [ ] **35.7** Karaoke đọc theo cho dạng đọc to: chữ sáng dần theo giọng mẫu (mốc thời gian từng từ do giáo viên chỉnh hoặc chia đều), rồi trẻ ghi âm đọc theo. Kiểm chứng: E2E phát mẫu và ghi âm.
 
 ### C. Chấm nói và chỉ lỗi
@@ -411,7 +411,7 @@ Nghiên cứu kỹ thuật cho các mục còn mở (thư viện, định dạng
 - [ ] **35.11** Gửi nhận xét bài nói cho phụ huynh qua Telegram (chữ ký giáo viên, kèm âm thanh mẫu, bản sao cho super admin như P34); lệnh `/nhanxet` của bot đọc từ dữ liệu này. Kiểm chứng: E2E ghi đúng tin ra trong `telegram_messages`.
 
 ### D. Đồng ý của phụ huynh và thời hạn lưu
-- [ ] **35.12** Bảng `parent_consents` (học sinh, loại: ghi âm cho giáo viên chấm / gửi giọng nói ra dịch vụ chấm tự động, người đồng ý, thời điểm, thời điểm rút lại). Lấy đồng ý bằng nút bấm trên bot Telegram, hoặc nhân viên ghi nhận trong hồ sơ học sinh (kèm ghi chú đã có giấy đồng ý). Rút lại thì ngừng ghi âm và xoá bản ghi theo yêu cầu. Kiểm chứng: E2E học sinh chưa có đồng ý thì không thấy nút ghi âm.
+- [x] **35.12** Bảng `parent_consents` (học sinh, loại: ghi âm cho giáo viên chấm / gửi giọng nói ra dịch vụ chấm tự động, người đồng ý, thời điểm, thời điểm rút lại). Lấy đồng ý bằng nút bấm trên bot Telegram, hoặc nhân viên ghi nhận trong hồ sơ học sinh (kèm ghi chú đã có giấy đồng ý). Rút lại thì ngừng ghi âm và xoá bản ghi theo yêu cầu. Kiểm chứng: E2E học sinh chưa có đồng ý thì không thấy nút ghi âm. ✅ 2026-10-22: bảng `parent_consents` (migration `0020`; mỗi lần đồng ý hoặc từ chối một dòng, lưu phụ huynh, kênh, phiên bản nội dung, bằng chứng, thời điểm rút lại, thời điểm trẻ đồng ý). Nội dung xin phép theo mục đích ở `src/lib/consent.ts`. Hồ sơ học sinh có khung "Đồng ý của phụ huynh": gửi yêu cầu qua bot (nút Đồng ý / Không đồng ý, chỉ phụ huynh của chính học sinh ghi được), nhân viên ghi nhận kèm bằng chứng, rút lại qua xác nhận. Khu học sinh: chưa đồng ý thì câu nói hiện lời nhắn, không có micro; trẻ từ 7 tuổi bấm "Con đồng ý"; máy chủ bỏ bản ghi câu nói khi chưa được phép. Tài khoản học thử có sẵn đồng ý. Unit `consent.test.ts` 5 test; E2E `dong-y.spec` 2 test. Phần xoá bản ghi theo yêu cầu làm ở 35.13.
 - [ ] **35.13** Thời hạn lưu bản ghi âm: tự chuyển sang Google Drive sau 12 tháng (dùng 34.25), tự xoá sau 24 tháng hoặc khi học sinh nghỉ quá thời hạn; nút xoá theo yêu cầu phụ huynh; ghi nhật ký. Kiểm chứng: chạy job hai lần không lỗi, tệp quá hạn bị xoá ở cả Supabase và Drive.
 
 ### E. Trò chơi và động lực

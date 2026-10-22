@@ -11,6 +11,7 @@ import { getAssignmentBase } from '@/lib/queries/assignments';
 import { criterionScoresOf, enrolledStudent, existingSubmissionScores } from '@/lib/queries/student-portal';
 import { getCurrentAccount } from '@/lib/session';
 import { completeDirectUpload, prepareDirectUpload, saveUpload, type PrepareDirectUploadResult } from '@/lib/storage';
+import { recordChildAgreement, studentVoiceAccess } from '@/lib/queries/consents';
 import { notifyClassStaff } from '@/lib/telegram/service';
 import { sameClass, studentMayResubmit } from '@/lib/student-access';
 import { studentAnswersSchema } from '@/lib/validation/student-portal';
@@ -73,6 +74,22 @@ export async function studentConfirmUploadAction(params: { storageKey: string; f
   }
 }
 
+// Trẻ từ 7 tuổi tự đồng ý ghi âm sau khi phụ huynh đã đồng ý (P35.12)
+export async function childAgreeVoiceAction(): Promise<{ ok: boolean; message: string }> {
+  try {
+    const me = await currentStudent();
+    if (!me) return { ok: false, message: 'Cần đăng nhập bằng tài khoản học sinh.' };
+    const done = await recordChildAgreement(me.studentId);
+    if (!done) return { ok: false, message: 'Phụ huynh chưa đồng ý cho con ghi âm.' };
+    await writeAudit({ action: 'consent', entity: 'student', entityId: me.studentId, summary: 'Học sinh tự đồng ý ghi âm' });
+    revalidatePath('/cua-toi');
+    return { ok: true, message: 'Cảm ơn con! Giờ con ghi âm được rồi.' };
+  } catch (error) {
+    console.error('Lỗi học sinh đồng ý ghi âm:', error);
+    return { ok: false, message: 'Chưa lưu được. Thử lại nhé.' };
+  }
+}
+
 // Học sinh nộp bài. Trắc nghiệm được chấm ngay theo đáp án đúng ở máy chủ. Câu viết và nộp tệp chờ giáo viên.
 // Nộp lại được cho đến khi bài đã chấm xong. Điểm và nhận xét giáo viên đã cho được giữ lại.
 export async function submitMyAnswersAction(assignmentId: number, input: StudentAnswerInput[]): Promise<SubmitResult> {
@@ -115,8 +132,11 @@ export async function submitMyAnswersAction(assignmentId: number, input: Student
 
     const kept = existing ? await existingSubmissionScores(existing.id) : [];
     const keptCriteria = existing ? await criterionScoresOf(existing.id) : [];
+    // Câu nói chỉ nhận bản ghi khi phụ huynh đã đồng ý ghi âm (P35.12), kể cả khi gọi thẳng action
+    const voice = await studentVoiceAccess(me.studentId);
     const scoringAnswers: ScoringAnswer[] = items.map((item) => {
-      const row = parsed.data.find((r) => r.itemId === item.id);
+      const raw = parsed.data.find((r) => r.itemId === item.id);
+      const row = raw && item.itemType.startsWith('speak_') && !voice.allowed ? { ...raw, fileId: null } : raw;
       const prior = kept.find((k) => k.itemId === item.id);
       return {
         itemId: item.id,

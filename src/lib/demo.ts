@@ -1,6 +1,6 @@
 // Dữ liệu học thử: cơ sở, giáo viên, lớp, học sinh và bộ bài mẫu đủ các dạng câu (P35, dữ liệu ở demo-lessons.ts).
 // Tách riêng ở "Cơ sở học thử" để không lẫn vào lớp thật. Chỉ chạy trên server.
-import { and, asc, eq, inArray } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNull } from 'drizzle-orm';
 import { db } from '@/db/client';
 import {
   accounts,
@@ -11,10 +11,12 @@ import {
   assignmentSubmissions,
   campuses,
   classes,
+  parentConsents,
   students,
   teacherCampuses,
   teachers,
 } from '@/db/schema';
+import { CONSENT_TERMS_VERSION } from './consent';
 import { DEMO_CAMPUS_NAME, DEMO_CLASS_NAME, DEMO_STUDENT_EMAIL } from './demo-account';
 import { DEMO_LESSONS, type DemoLesson } from './demo-lessons';
 
@@ -151,6 +153,16 @@ export async function prepareDemoStudent(): Promise<{ accountId: number; assignm
 
     // Làm mới: bỏ mọi bài làm cũ của học sinh học thử (điểm từng câu xoá theo khoá ngoại)
     await tx.delete(assignmentSubmissions).where(and(eq(assignmentSubmissions.studentId, studentId), inArray(assignmentSubmissions.assignmentId, ids)));
+
+    // Tài khoản học thử không phải trẻ thật: có sẵn đồng ý ghi âm để thử được bài nói (P35.12)
+    const [consent] = await tx
+      .select({ id: parentConsents.id })
+      .from(parentConsents)
+      .where(and(eq(parentConsents.studentId, studentId), eq(parentConsents.purpose, 'voice_teacher_review'), eq(parentConsents.granted, true), isNull(parentConsents.withdrawnAt)))
+      .limit(1);
+    if (!consent) {
+      await tx.insert(parentConsents).values({ studentId, purpose: 'voice_teacher_review', granted: true, channel: 'demo', termsVersion: CONSENT_TERMS_VERSION, note: 'Tài khoản học thử', childAgreedAt: new Date() });
+    }
 
     return { accountId: account.id, assignmentId: ids[0] };
   });

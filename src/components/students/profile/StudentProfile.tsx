@@ -19,6 +19,7 @@ import { SUBMISSION_LABELS } from '@/lib/validation/assignment';
 import type { SkillHistory } from '@/lib/queries/skills';
 import { ProfileParents } from './ProfileParents';
 import { ProfileSkills } from './ProfileSkills';
+import { ConsentPanel } from './ConsentPanel';
 import { StudentAccountPanel } from './StudentAccountPanel';
 import { TuitionRemindButton } from './TuitionRemindButton';
 import { Panel } from '@/components/ui/surfaces';
@@ -104,6 +105,9 @@ export function StudentProfile({
       <div className="grid gap-4 min-[1200px]:grid-cols-2">
         <div className="min-[1200px]:col-span-2">
           <StudentAccountPanel studentId={student.id} code={student.code} hasAccount={student.hasAccount} canManage={perms.assignments} />
+        </div>
+        <div className="min-[1200px]:col-span-2">
+          <ConsentPanel studentId={student.id} />
         </div>
         <Panel title="Khoá học hiện tại">
           <b className="block text-md text-ink">{student.course}</b>

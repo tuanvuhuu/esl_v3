@@ -15,6 +15,7 @@ import {
 import type { ItemType, Skill } from '@/lib/assignment-scoring';
 import { listItemsOfAssignment } from '@/lib/queries/assignment-items';
 import { getAssignmentBase } from '@/lib/queries/assignments';
+import { studentVoiceAccess } from '@/lib/queries/consents';
 import { sameClass } from '@/lib/student-access';
 
 // Học sinh đang học và lớp của họ, hoặc null nếu không còn đang học
@@ -75,6 +76,8 @@ export type StudentAssignmentView = {
   score: number | null;
   items: StudentItem[];
   answers: StudentAnswer[];
+  // Ghi âm (P35.12): allowed khi phụ huynh đã đồng ý (và trẻ từ 7 tuổi đã đồng ý); needsChild khi chỉ còn chờ trẻ bấm đồng ý
+  voice: { allowed: boolean; needsChild: boolean };
 };
 
 // Bài của học sinh, chỉ khi bài thuộc lớp đang học của họ
@@ -115,6 +118,7 @@ export async function studentAssignment(assignmentId: number, studentId: number)
     maxScore: base.maxScore,
     status: sub?.status ?? 'not_submitted',
     score: sub?.score ?? null,
+    voice: await studentVoiceAccess(studentId),
     items: items.map((i) => ({
       id: i.id,
       position: i.position,

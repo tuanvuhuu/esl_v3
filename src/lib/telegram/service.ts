@@ -3,6 +3,8 @@
 import { and, desc, eq, gt, inArray, isNull, sql } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { accounts, parents, studentParents, students, teachers, telegramChats, telegramLinkCodes, telegramMessages } from '@/db/schema';
+import { CONSENT_LABELS, CONSENT_TERMS, type ConsentPurpose } from '@/lib/consent';
+import { isParentOf, recordConsent } from '@/lib/queries/consents';
 import { vnDateTimeLabel } from '@/lib/datetime';
 import { formatVND } from '@/lib/money';
 import { answerCallbackQuery, sendMessage } from './api';
@@ -163,6 +165,62 @@ async function forwardParentMessageToTeachers(parentId: number, parentName: stri
     const notifyText = `[Tin từ PH #${parentId} - ${parentName} (PH em ${row.student_name} - lớp ${row.class_name})]:\n"${text}"\n\n👉 Bấm Reply (Trả lời) tin nhắn này để gửi lại cho phụ huynh.`;
     await sendMessage(row.chat_id, notifyText);
   }
+}
+
+// ---------- Đồng ý của phụ huynh (P35.12) ----------
+
+// Mã ngắn trong callback_data (Telegram giới hạn 64 byte)
+const PURPOSE_CODE: Record<ConsentPurpose, string> = { voice_teacher_review: 'v', voice_auto_scoring: 'a' };
+const CODE_PURPOSE: Record<string, ConsentPurpose> = { v: 'voice_teacher_review', a: 'voice_auto_scoring' };
+
+// Gửi nội dung xin đồng ý kèm hai nút cho mọi phụ huynh đã kết nối của học sinh. Ghi tên giáo viên gửi.
+export async function sendConsentRequest(studentId: number, purpose: ConsentPurpose, sentByAccountId: number, senderName: string): Promise<SendSummary> {
+  const [student] = await db.select({ fullName: students.fullName }).from(students).where(eq(students.id, studentId)).limit(1);
+  if (!student) return { chats: 0, delivered: 0 };
+  const code = PURPOSE_CODE[purpose];
+  const text =
+    `📝 Xin phép phụ huynh em ${student.fullName}
+
+${CONSENT_LABELS[purpose]}.
+
+${CONSENT_TERMS[purpose]}
+
+` +
+    `Phụ huynh bấm một nút bên dưới. Không bấm thì trung tâm coi như chưa đồng ý.
+— ${senderName}`;
+  const markup = {
+    inline_keyboard: [
+      [
+        { text: '✅ Đồng ý', callback_data: `consent:${code}:y:${studentId}` },
+        { text: '✕ Không đồng ý', callback_data: `consent:${code}:n:${studentId}` },
+      ],
+    ],
+  };
+  const chats = await db
+    .select()
+    .from(telegramChats)
+    .innerJoin(studentParents, eq(studentParents.parentId, telegramChats.parentId))
+    .where(and(eq(studentParents.studentId, studentId), eq(telegramChats.active, true)));
+  let delivered = 0;
+  for (const row of chats) if (await sendAndRecord(row.telegram_chats, text, 'consent', sentByAccountId, markup)) delivered++;
+  return { chats: chats.length, delivered };
+}
+
+// Phụ huynh bấm nút đồng ý hoặc không đồng ý. Chỉ phụ huynh của chính học sinh đó mới ghi được.
+async function handleConsentCallback(chat: Chat, data: string): Promise<string> {
+  const [, code, answer, sid] = data.split(':');
+  const purpose = CODE_PURPOSE[code];
+  const studentId = Number(sid);
+  if (!purpose || !Number.isInteger(studentId) || (answer !== 'y' && answer !== 'n')) return 'Nút này không còn dùng được.';
+  if (!chat.parentId || !(await isParentOf(chat.parentId, studentId))) return 'Tài khoản này không phải phụ huynh của học sinh.';
+  const granted = answer === 'y';
+  await recordConsent({ studentId, purpose, granted, parentId: chat.parentId, channel: 'telegram', recordedByAccountId: null });
+  const [student] = await db.select({ fullName: students.fullName }).from(students).where(eq(students.id, studentId)).limit(1);
+  const reply = granted
+    ? `Trung tâm đã ghi nhận phụ huynh ĐỒNG Ý: ${CONSENT_LABELS[purpose].toLowerCase()} cho em ${student?.fullName ?? ''}. Muốn rút lại, phụ huynh nhắn trung tâm bất cứ lúc nào.`
+    : `Trung tâm đã ghi nhận phụ huynh KHÔNG ĐỒNG Ý: ${CONSENT_LABELS[purpose].toLowerCase()} cho em ${student?.fullName ?? ''}. Con vẫn làm các bài không cần ghi âm bình thường.`;
+  await sendAndRecord(chat, reply, 'consent', null);
+  return granted ? 'Đã ghi nhận đồng ý' : 'Đã ghi nhận không đồng ý';
 }
 
 // Gửi cho mọi chat đang hoạt động của các phụ huynh của một học sinh
@@ -841,6 +899,11 @@ export async function handleCallbackQuery(cb: IncomingCallback): Promise<void> {
   }
 
   try {
+    if (cb.data.startsWith('consent:')) {
+      await answerCallbackQuery(cb.id, await handleConsentCallback(chat, cb.data));
+      return;
+    }
+
     if (cb.data.startsWith('leave_kid:')) {
       const studentId = parseInt(cb.data.replace('leave_kid:', ''), 10);
       await promptSelectSession(chat, studentId);

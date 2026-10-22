@@ -749,6 +749,35 @@ export const centerSettings = pgTable('center_settings', {
 export type Student = typeof students.$inferSelect;
 export type ClassRow = typeof classes.$inferSelect;
 export type Campus = typeof campuses.$inferSelect;
+// ---------- Đồng ý của phụ huynh (P35.12) ----------
+
+// Mục đích cần đồng ý riêng: ghi âm để giáo viên chấm; gửi giọng nói ra dịch vụ chấm tự động (giai đoạn G)
+export const consentPurposeEnum = pgEnum('consent_purpose', ['voice_teacher_review', 'voice_auto_scoring']);
+
+// Mỗi lần phụ huynh đồng ý hoặc từ chối là một dòng; không xoá dòng khi rút lại, chỉ ghi thời điểm rút (bằng chứng đồng ý,
+// Luật 91/2025/QH15 Điều 9). Trạng thái hiện tại là dòng mới nhất của mỗi mục đích.
+export const parentConsents = pgTable(
+  'parent_consents',
+  {
+    id: serial('id').primaryKey(),
+    studentId: integer('student_id')
+      .notNull()
+      .references(() => students.id, { onDelete: 'cascade' }),
+    purpose: consentPurposeEnum('purpose').notNull(),
+    granted: boolean('granted').notNull(), // false là phụ huynh bấm không đồng ý
+    parentId: integer('parent_id').references(() => parents.id, { onDelete: 'set null' }),
+    channel: varchar('channel', { length: 20 }).notNull(), // telegram | staff | demo
+    termsVersion: varchar('terms_version', { length: 20 }).notNull(), // phiên bản nội dung đã hiện cho phụ huynh
+    note: text('note').notNull().default(''), // nhân viên ghi nhận: đã có giấy đồng ý, gọi điện...
+    decidedAt: timestamp('decided_at', { withTimezone: true }).notNull().defaultNow(),
+    withdrawnAt: timestamp('withdrawn_at', { withTimezone: true }),
+    childAgreedAt: timestamp('child_agreed_at', { withTimezone: true }), // trẻ từ 7 tuổi tự bấm đồng ý trong khu học sinh
+    recordedByAccountId: integer('recorded_by_account_id').references(() => accounts.id, { onDelete: 'set null' }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('parent_consents_student_idx').on(t.studentId, t.purpose)],
+);
+
 // ---------- Telegram (P34) ----------
 
 export const telegramDirectionEnum = pgEnum('telegram_direction', ['in', 'out']);
