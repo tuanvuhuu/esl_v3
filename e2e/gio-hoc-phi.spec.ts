@@ -109,7 +109,7 @@ test('lớp T3 18:00 và T7 06:30: sinh buổi đúng giờ, sửa giờ T7, h�
     await add.getByRole('button', { name: 'Dùng số này' }).click();
     await expect(add.getByLabel('Học phí của học sinh (VND)')).toHaveValue(String(expectedFee));
     await add.getByLabel('Họ và tên *').fill(name);
-    await add.getByLabel('Ngày sinh *').fill('2015-03-01');
+    await add.locator('input[name="dob"]').fill('2015-03-01');
     await add.locator('input[name="parentName"]').fill(uniq('PH E2E GIO'));
     await add.locator('input[name="parentPhone"]').fill(`09${String(Math.floor(Math.random() * 1e8)).padStart(8, '0')}`);
     await add.getByRole('button', { name: 'Lưu học sinh' }).click();

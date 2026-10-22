@@ -32,7 +32,11 @@ export const studentFormSchema = z.object({
     .min(2, 'Họ và tên cần ít nhất 2 ký tự')
     .max(120, 'Họ và tên tối đa 120 ký tự'),
   gender: z.enum(GENDERS, { error: 'Vui lòng chọn giới tính' }),
-  dob: isoDate.refine((v) => v <= todayIsoVN(), 'Ngày sinh không thể ở tương lai'),
+  // Ngày sinh không bắt buộc (P40): ô trống lưu null
+  dob: z.preprocess(
+    (v) => (v === '' || v === undefined ? null : v),
+    isoDate.refine((v) => v <= todayIsoVN(), 'Ngày sinh không thể ở tương lai').nullable(),
+  ),
   classId: z.coerce.number({ error: 'Vui lòng chọn lớp học' }).int('Lớp học không hợp lệ').positive('Vui lòng chọn lớp học'),
   status: z.enum(STUDENT_STATUSES, { error: 'Trạng thái không hợp lệ' }),
   startDate: isoDate,

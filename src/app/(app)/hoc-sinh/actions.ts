@@ -235,7 +235,7 @@ export async function loadStudentForm(id: number): Promise<{ ok: true; values: S
       values: {
         fullName: row.fullName,
         gender: row.gender,
-        dob: row.dob,
+        dob: row.dob ?? '',
         classId: row.classId,
         status: row.status,
         startDate: row.startDate,

@@ -16,7 +16,7 @@ test.describe('học sinh: thêm, sửa, xoá', () => {
     await page.getByRole('button', { name: 'Thêm học sinh' }).first().click();
     const create = dialogById(page, 'create-title');
     await create.getByLabel('Họ và tên *').fill(name);
-    await create.getByLabel('Ngày sinh *').fill('2015-03-01');
+    await create.locator('input[name="dob"]').fill('2015-03-01');
     await create.locator('input[name="parentName"]').fill(parent);
     await create.locator('input[name="parentPhone"]').fill(randomPhone());
     await create.getByRole('button', { name: 'Lưu học sinh' }).click();

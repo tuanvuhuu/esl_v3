@@ -3,13 +3,14 @@
 // Bản ghi nhận ra theo khoá: cơ sở theo tên; lớp theo cơ sở và mã lớp; giáo viên và phụ huynh theo số điện thoại
 // (giáo viên không có số thì theo họ tên); học sinh theo mã HS, không có mã thì theo họ tên và ngày sinh.
 // Đã có thì cập nhật các ô có giá trị (ô trống giữ nguyên), chưa có thì thêm. Không xoá bản ghi nào.
-import { and, eq } from 'drizzle-orm';
+import { and, eq, min } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { campuses, classes, classSessions, learningEvents, parents, studentParents, students, teacherCampuses, teachers } from '@/db/schema';
 import { describeSchedule, generateSessions } from '@/lib/schedule';
 import { studentCode } from '@/lib/student-code';
 import { normalizeSearch } from '@/lib/text';
 import { todayIsoVN } from '@/lib/validation/student';
+import { vnDateKey } from '@/lib/datetime';
 import { STAFF_ROLE_LABELS, type StaffRole } from '@/lib/validation/teacher';
 import { parseRow, type Gender, type ParsedRow, type RawRow, type Relation, type StaffInput, type StudentStatus } from './rows';
 
@@ -79,8 +80,9 @@ type ClassPlan = {
   existing: { teacherId: number; assistantId: number | null; foreignTeacherId: number | null; room: string } | null;
   changed: boolean;
   firstRow: number;
+  firstDate: string; // ngày buổi đầu của lớp (YYYY-MM-DD), '' nếu chưa có buổi: học sinh mới bắt đầu học từ ngày này nếu lớp chưa khai giảng
 };
-type StudentValues = { fullName: string; gender: Gender; dob: string; status: StudentStatus; startDate: string; note: string };
+type StudentValues = { fullName: string; gender: Gender; dob: string | null; status: StudentStatus; startDate: string; note: string };
 type StudentPlan = {
   id: number | null;
   classKey: string;
@@ -118,7 +120,7 @@ function actionOf(id: number | null, changed: boolean): Action {
 
 // Dữ liệu hiện có, đọc một lần. Trung tâm có vài nghìn bản ghi nên đọc hết vào bộ nhớ là đủ nhanh.
 async function loadSnapshot(q: Q) {
-  const [campusRows, teacherRows, linkRows, classRows, studentRows, parentRows, spRows] = await Promise.all([
+  const [campusRows, teacherRows, linkRows, classRows, studentRows, parentRows, spRows, firstRows] = await Promise.all([
     q.select({ id: campuses.id, name: campuses.name, address: campuses.address }).from(campuses),
     q.select({ id: teachers.id, name: teachers.name, phone: teachers.phone, role: teachers.staffRole }).from(teachers),
     q.select({ teacherId: teacherCampuses.teacherId, campusId: teacherCampuses.campusId }).from(teacherCampuses),
@@ -154,6 +156,7 @@ async function loadSnapshot(q: Q) {
       .from(students),
     q.select({ id: parents.id, fullName: parents.fullName, phone: parents.phone, email: parents.email }).from(parents),
     q.select({ id: studentParents.id, studentId: studentParents.studentId, parentId: studentParents.parentId, relation: studentParents.relation, isPrimary: studentParents.isPrimary }).from(studentParents),
+    q.select({ classId: classSessions.classId, first: min(classSessions.startsAt) }).from(classSessions).groupBy(classSessions.classId),
   ]);
   const teacherCampusIds = new Map<number, Set<number>>();
   for (const l of linkRows) {
@@ -176,7 +179,14 @@ async function loadSnapshot(q: Q) {
     studentsByNameDob,
     parentByPhone: new Map(parentRows.map((p) => [digits(p.phone), p])),
     links: spRows,
+    firstSessionDate: new Map(firstRows.map((r) => [r.classId, r.first ? vnDateKey(new Date(r.first)) : ''])),
   };
+}
+
+// Học sinh mới không ghi ngày bắt đầu: lớp chưa khai giảng thì bắt đầu từ buổi đầu của lớp, lớp đã học thì từ hôm nay
+function startDateFor(c: ClassPlan): string {
+  const today = todayIsoVN();
+  return c.firstDate && c.firstDate > today ? c.firstDate : today;
 }
 
 // Đọc toàn bộ file thành kế hoạch. Không ghi gì vào DB.
@@ -205,7 +215,7 @@ export async function planImport(rawRows: RawRow[], q: Q = db, allowedCampusIds:
       className: parsed.klass.name,
       student: parsed.student?.fullName || (parsed.student?.id ? studentCode(parsed.student.id) : ''),
       actions: [],
-      notes: [],
+      notes: [...parsed.notes],
       errors: [...parsed.errors],
     };
     rows.push(result);
@@ -430,6 +440,9 @@ export async function planImport(rawRows: RawRow[], q: Q = db, allowedCampusIds:
       existing: found ? { teacherId: found.teacherId, assistantId: found.assistantId, foreignTeacherId: found.foreignTeacherId, room: found.room } : null,
       changed: false,
       firstRow: row.rowNumber,
+      firstDate: found
+        ? (snap.firstSessionDate.get(found.id) ?? '')
+        : generateSessions({ weekdays: given.weekdays, startTime: given.startTime, endTime: given.endTime, sessionsTotal: 1, fromDate: given.startDate })[0].date,
     };
     if (found) {
       const staffChanged = (k2: string | null, current: number | null) => k2 !== null && staffPlanOf(k2).id !== current;
@@ -477,6 +490,14 @@ export async function planImport(rawRows: RawRow[], q: Q = db, allowedCampusIds:
         return null;
       }
       found = same[0];
+    } else if (s.fullName && classPlan.id !== null) {
+      // Không có mã và ngày sinh: tìm học sinh cùng tên trong chính lớp này
+      const same = [...snap.studentById.values()].filter((x) => x.classId === classPlan.id && key(x.fullName) === key(s.fullName));
+      if (same.length > 1) {
+        result.errors.push(`Lớp có ${same.length} học sinh tên ${s.fullName}. Ghi Mã HS hoặc ngày sinh để chọn đúng.`);
+        return null;
+      }
+      found = same[0];
     }
 
     const seenKey = found ? `id:${found.id}` : `new:${key(s.fullName)}|${s.dob}`;
@@ -490,12 +511,11 @@ export async function planImport(rawRows: RawRow[], q: Q = db, allowedCampusIds:
       const missing: string[] = [];
       if (s.fullName.length < 2) missing.push('họ tên');
       if (!s.gender) missing.push('giới tính');
-      if (!s.dob) missing.push('ngày sinh');
       if (missing.length > 0) {
         result.errors.push(`Học sinh mới cần ghi ${missing.join(', ')}.`);
         return null;
       }
-      if (s.dob > todayIsoVN()) {
+      if (s.dob && s.dob > todayIsoVN()) {
         result.errors.push('Ngày sinh không thể ở tương lai.');
         return null;
       }
@@ -510,11 +530,11 @@ export async function planImport(rawRows: RawRow[], q: Q = db, allowedCampusIds:
           startDate: s.startDate || found.startDate,
           note: s.note || found.note,
         }
-      : { fullName: s.fullName, gender: s.gender!, dob: s.dob, status: s.status ?? 'active', startDate: s.startDate || todayIsoVN(), note: s.note };
+      : { fullName: s.fullName, gender: s.gender!, dob: s.dob || null, status: s.status ?? 'active', startDate: s.startDate || startDateFor(classPlan), note: s.note };
     const set: Partial<StudentValues> = {};
     if (found) {
       for (const f of Object.keys(values) as (keyof StudentValues)[]) {
-        if (values[f] !== found[f]) (set as Record<string, string>)[f] = values[f];
+        if (values[f] !== found[f]) (set as Record<string, string | null>)[f] = values[f];
       }
     }
     const classChanged = found !== undefined && (classPlan.id === null || classPlan.id !== found.classId);

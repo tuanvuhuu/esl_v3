@@ -280,7 +280,7 @@ export type StudentDetail = {
   fullName: string;
   hasAccount: boolean; // đã có tài khoản học sinh để đăng nhập làm bài (P28)
   gender: 'male' | 'female';
-  dob: string;
+  dob: string | null;
   startDate: string;
   note: string;
   status: StudentRow['status'];
@@ -307,7 +307,7 @@ type ParentRelation = 'father' | 'mother' | 'guardian' | 'other';
 // Hồ sơ đầy đủ một học sinh. Trả về null nếu không tồn tại.
 export async function getStudentDetail(id: number): Promise<StudentDetail | null> {
   const base = await db.execute<{
-    id: number; full_name: string; gender: 'male' | 'female'; dob: string; start_date: string; note: string;
+    id: number; full_name: string; gender: 'male' | 'female'; dob: string | null; start_date: string; note: string;
     status: StudentRow['status']; class_id: number; class_name: string; course: string; schedule: string;
     room: string; teacher_name: string; sessions_done: number; sessions_total: number; fee: number; paid: number;
     att_total: number; att_absent: number; tuition: StudentRow['tuition'];

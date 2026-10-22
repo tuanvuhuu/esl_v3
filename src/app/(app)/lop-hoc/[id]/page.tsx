@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 import { Suspense } from 'react';
+import { AddStudentToClass } from '@/components/classes/AddStudentToClass';
 import { ClassDetailActions } from '@/components/classes/ClassDetailActions';
 import { NoAccess } from '@/components/ui/NoAccess';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -13,6 +14,9 @@ import { getCampusContext } from '@/lib/campus-context';
 import { getClassDetail } from '@/lib/queries/classes';
 import { listAssignmentsOfClass } from '@/lib/queries/assignments';
 import { listLevels } from '@/lib/queries/levels';
+import { listParentChoices } from '@/lib/queries/parents';
+import { listClassOptions } from '@/lib/queries/students';
+import { withCampusNames } from '@/lib/campus';
 import { listTeacherChoices } from '@/lib/queries/teachers';
 import { getCurrentPermissions } from '@/lib/session';
 import { Panel } from '@/components/ui/surfaces';
@@ -54,14 +58,18 @@ async function ClassData({ params }: { params: Promise<{ id: string }> }) {
   if (!(await passes(() => requireClassAccess(Number(raw))))) notFound();
   if (!hasPermission(granted, 'students.view')) return <NoAccess title="Lớp học" />;
 
-  const [cls, teachers, assignments, levels, { campuses, scope }] = await Promise.all([
+  const canAddStudent = hasPermission(granted, 'students.edit');
+  const [cls, teachers, assignments, levels, { campuses, scope }, classOptions, parents] = await Promise.all([
     getClassDetail(id),
     listTeacherChoices(null),
     listAssignmentsOfClass(id),
     listLevels(),
     getCampusContext(),
+    canAddStudent ? listClassOptions(null) : Promise.resolve([]),
+    canAddStudent ? listParentChoices() : Promise.resolve([]),
   ]);
   if (!cls) notFound();
+  const ownCampusId = classOptions.find((c) => c.id === id)?.campusId ?? scope ?? campuses[0]?.id ?? 0;
 
   return (
     <section className="flex flex-col">
@@ -119,9 +127,12 @@ async function ClassData({ params }: { params: Promise<{ id: string }> }) {
             </div>
           </Panel>
 
-          <Panel title={`Học sinh (${cls.students.length})`}>
+          <Panel
+            title={`Học sinh (${cls.students.length})`}
+            action={canAddStudent ? <AddStudentToClass classId={cls.id} campusId={ownCampusId} classes={withCampusNames(classOptions, false)} campuses={campuses} parents={parents} /> : undefined}
+          >
             {cls.students.length === 0 ? (
-              <EmptyState title="Chưa có học sinh" hint="Thêm học sinh vào lớp ở màn Học sinh." />
+              <EmptyState title="Chưa có học sinh" hint={canAddStudent ? 'Bấm Thêm học sinh để xếp học sinh vào lớp.' : 'Lớp chưa có học sinh nào.'} />
             ) : (
               <ul className="-mx-1 flex flex-col divide-y divide-line">
                 {cls.students.map((s) => (

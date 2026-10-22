@@ -134,7 +134,7 @@ export const students = pgTable(
     // Tên đã bỏ dấu, chữ thường, để tìm kiếm không dấu (lib/text.ts normalizeSearch). Cập nhật cùng lúc với full_name.
     searchKey: varchar('search_key', { length: 160 }).notNull().default(''),
     gender: genderEnum('gender').notNull(),
-    dob: date('dob').notNull(),
+    dob: date('dob'), // Có thể trống: trung tâm mầm non thường chưa có ngày sinh (P40)
     classId: integer('class_id')
       .notNull()
       .references(() => classes.id, { onDelete: 'restrict' }),

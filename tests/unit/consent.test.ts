@@ -30,6 +30,9 @@ describe('tuổi và quyền ghi âm', () => {
     expect(voiceAccess([row({})], '2018-01-01', '2026-10-22')).toEqual({ allowed: false, needsChild: true });
     expect(voiceAccess([row({ childAgreedAt: at('2026-10-02T00:00:00Z') })], '2018-01-01', '2026-10-22')).toEqual({ allowed: true, needsChild: false });
   });
+  it('chưa có ngày sinh: không biết tuổi nên cũng cần trẻ đồng ý', () => {
+    expect(voiceAccess([row({})], null, '2026-10-22')).toEqual({ allowed: false, needsChild: true });
+  });
   it('chưa có, không đồng ý hoặc đã rút lại thì không ghi âm, không hỏi trẻ', () => {
     expect(voiceAccess([], '2018-01-01', '2026-10-22')).toEqual({ allowed: false, needsChild: false });
     expect(voiceAccess([row({ granted: false })], '2021-01-01', '2026-10-22').allowed).toBe(false);

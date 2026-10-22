@@ -1,0 +1,1 @@
+ALTER TABLE "students" ALTER COLUMN "dob" DROP NOT NULL;

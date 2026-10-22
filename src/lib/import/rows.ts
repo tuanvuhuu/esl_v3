@@ -44,6 +44,7 @@ export type ParsedRow = {
   } | null;
   parent: { fullName: string; phone: string; email: string; relation: Relation | null } | null;
   errors: string[];
+  notes: string[]; // đã tự sửa, không chặn nhập (hiện ở cột Ghi chú của bảng xem trước)
 };
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -67,6 +68,21 @@ export function parsePhone(value: CellValue | undefined): string | null {
   else if (text.startsWith('84') && text.length === 11) text = `0${text.slice(2)}`;
   if (/^\d{9}$/.test(text)) text = `0${text}`;
   return /^0\d{9}$/.test(text) ? text : null;
+}
+
+// Ô có nhiều số điện thoại ("0336018115 - 0922240886", "0912.., 0987..", "0912... và 0987..."): tách từng số.
+// Trả về null nếu ô chỉ có một cụm (để parsePhone báo lỗi như thường) hoặc có cụm không phải số điện thoại.
+export function splitPhones(value: CellValue | undefined): string[] | null {
+  if (typeof value !== 'string') return null;
+  const parts = value.split(/[,;/|\n]|\s+-\s*|\s*-\s+|\s+(?:và|hoặc|or)\s+/i).map((p) => p.trim()).filter(Boolean);
+  // Hai số dính liền bằng gạch ngang: "0336018115-0922240886"
+  if (parts.length === 1) {
+    const m = parts[0].match(/^(\+?[\d.\s]{9,13})-(\+?[\d.\s]{9,13})$/);
+    if (!m) return null;
+    parts.splice(0, 1, m[1], m[2]);
+  }
+  const phones = parts.map((p) => parsePhone(p));
+  return phones.every((p): p is string => !!p) ? phones : null;
 }
 
 // Ngày: ô ngày của Excel, số ngày kiểu Excel, dd/mm/yyyy hoặc yyyy-mm-dd. Trả về YYYY-MM-DD, '' nếu trống, null nếu sai.
@@ -182,6 +198,7 @@ export function parseRow(row: RawRow): ParsedRow | null {
   const c = row.cells;
   if (Object.values(c).every((v) => cellText(v) === '')) return null;
   const errors: string[] = [];
+  const notes: string[] = [];
 
   const campusName = cellText(c.campusName);
   if (campusName === '') errors.push('Thiếu tên cơ sở.');
@@ -207,7 +224,16 @@ export function parseRow(row: RawRow): ParsedRow | null {
   if (Number.isNaN(capacity) || (capacity !== null && (capacity < 1 || capacity > 100))) errors.push('Sĩ số tối đa là số nguyên từ 1 đến 100.');
 
   const teacher = staff(row, 'teacherName', 'teacherPhone', 'GV chủ nhiệm', errors);
-  const assistant = staff(row, 'assistantName', 'assistantPhone', 'trợ giảng', errors);
+  let assistant = staff(row, 'assistantName', 'assistantPhone', 'trợ giảng', errors);
+  // Trợ giảng ghi trùng giáo viên chủ nhiệm (cùng SĐT, hoặc cùng tên khi không có SĐT): bỏ ô trợ giảng
+  if (teacher && assistant) {
+    const samePhone = teacher.phone !== '' && teacher.phone === assistant.phone;
+    const sameName = (teacher.phone === '' || assistant.phone === '') && plain(teacher.name) !== '' && plain(teacher.name) === plain(assistant.name);
+    if (samePhone || sameName) {
+      assistant = null;
+      notes.push('Trợ giảng trùng giáo viên chủ nhiệm nên bỏ ô trợ giảng.');
+    }
+  }
   const foreign = staff(row, 'foreignName', 'foreignPhone', 'GV nước ngoài', errors);
 
   let student: ParsedRow['student'] = null;
@@ -232,7 +258,15 @@ export function parseRow(row: RawRow): ParsedRow | null {
 
   let parent: ParsedRow['parent'] = null;
   const parentName = cellText(c.parentName);
-  const parentPhoneRaw = parsePhone(c.parentPhone);
+  let parentPhoneRaw = parsePhone(c.parentPhone);
+  // Ô có nhiều số: lấy số đầu, các số còn lại ghi vào ghi chú học sinh
+  const phones = parentPhoneRaw === null ? splitPhones(c.parentPhone) : null;
+  if (phones) {
+    parentPhoneRaw = phones[0];
+    const extra = `SĐT khác của phụ huynh: ${phones.slice(1).join(', ')}`;
+    if (student) student.note = student.note ? `${student.note}. ${extra}` : extra;
+    notes.push(`Ô SĐT phụ huynh có ${phones.length} số: dùng ${phones[0]}, số còn lại ghi vào ghi chú học sinh.`);
+  }
   const parentEmail = cellText(c.parentEmail);
   const relation = parseRelation(c.relation);
   if (parentName !== '' || parentPhoneRaw !== '' || parentEmail !== '') {
@@ -265,5 +299,6 @@ export function parseRow(row: RawRow): ParsedRow | null {
     student,
     parent,
     errors,
+    notes,
   };
 }

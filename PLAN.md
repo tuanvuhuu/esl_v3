@@ -1,6 +1,6 @@
 # ESL Center: kế hoạch và tiến độ
 
-> **Tiến độ tổng: 198/224 task (88%)**
+> **Tiến độ tổng: 202/228 task (89%)**
 > Cập nhật lần cuối: 2026-10-22. P1–P34 xong. P38 (giờ học từng ngày, học phí theo buổi còn lại, mã HS-00001) xong. P37 bot Telegram theo kịch bản: 37.1–37.9 xong, còn đặt cron mỗi giờ trên bản deploy và các việc đợt sau. P35: 35.2, 35.3, 35.12, 35.24, 35.27 xong; 35.4–35.6 làm dở (35.6 chỉ còn thử tay trên điện thoại). P36 Soạn nhanh xong phần code (36.1–36.6). Số đếm lấy từ các ô `[x]` và `[ ]` trong file.
 
 ## 🎯 Các task vừa hoàn thành & Lệnh test riêng (Không chạy all)
@@ -479,6 +479,15 @@ Người dùng yêu cầu 2026-10-22: giáo vụ, quản trị tự tạo lớp 
 - [x] **39.2** Xem trước lịch khi tạo lớp (số buổi, ngày đầu, ngày cuối, vài buổi đầu) và chặn trùng giờ với lớp khác của cùng giáo viên hoặc cùng phòng trong cơ sở (`src/lib/queries/schedule-conflicts.ts`), báo gọn "đang dạy lớp X 09:00–11:00 các ngày …". ✅ 2026-10-22: E2E tạo lớp trùng bị chặn, đổi giờ thì tạo được.
 - [x] **39.3** Màn Lịch học có nút "Thêm buổi" (học bù, học thêm): chọn lớp thì giáo viên, phòng điền sẵn; kiểm trùng ngay khi nhập; số buổi của lớp đánh lại theo ngày. Sửa một buổi cũng chặn trùng giáo viên, phòng. ✅ 2026-10-22: E2E thêm buổi bù, kiểm số buổi trong DB; ảnh 1440px và 390px.
 - [x] **39.4** Xếp lại lịch lớp đã tạo (nút ở trang lớp và menu ⋯): đổi ngày khai giảng, tổng số buổi, ngày học, ca. Buổi đã học, đã huỷ giữ nguyên; buổi chưa học thay bằng lịch mới, có xem trước và chặn trùng (bỏ qua chính lớp). Tổng quan: ô Công nợ quá hạn chỉ cộng nợ đã quá hạn. ✅ 2026-10-22: E2E xep-lich (xếp lại 5 buổi, kiểm DB), gio-hoc-phi xanh; xem form ở 1440px và 390px không tràn.
+
+## P40. Thao tác dễ cho giáo vụ, admin (rà soát 2026-10-22)
+
+Rà soát theo luồng thật khi nhập lớp GS 02 (ESL Mầm Xanh). Mỗi mục làm cả web và điện thoại, kiểm 390px và 1440px.
+
+- [x] **40.1** Ngày sinh không bắt buộc: cột `students.dob` cho phép trống (migration mới). Form thêm, sửa học sinh và file nhập đều để trống được; hồ sơ hiện "Chưa có ngày sinh". Không có ngày sinh thì coi là trẻ em khi xin đồng ý ghi âm. Nhập file: không có Mã HS và ngày sinh thì tìm học sinh cùng tên trong cùng lớp. ✅ 2026-10-22: migration 0024 (dob bỏ NOT NULL) đã áp dụng; unit import và consent (null ngày sinh cần trẻ đồng ý); E2E thêm học sinh không ngày sinh, DB lưu null; chạy thử file GS 02 gốc: 10 học sinh khớp theo tên trong lớp, 0 lỗi.
+- [x] **40.2** Nhập file dễ hơn: ô SĐT phụ huynh có nhiều số thì lấy số đầu, số còn lại ghi vào ghi chú học sinh. Trợ giảng trùng giáo viên chủ nhiệm thì bỏ ô trợ giảng. Cả hai báo ở cột Ghi chú của bảng xem trước, không chặn nhập. ✅ 2026-10-22: unit 4 dạng ô hai số và trợ giảng trùng; chạy thử file gốc 0 lỗi, ghi chú hiện đúng dòng.
+- [x] **40.3** Trang lớp có nút "Thêm học sinh": mở form thêm học sinh, chọn sẵn lớp đó. ✅ 2026-10-22: E2E xep-lich thêm học sinh từ trang lớp, lớp chọn sẵn; xem form ở 1440px.
+- [x] **40.4** Học sinh mới không ghi ngày bắt đầu học thì lấy ngày buổi đầu của lớp nếu lớp chưa khai giảng, không lấy ngày nhập (nhập file và form). Hạn đóng học phí tính đúng theo ngày này. ✅ 2026-10-22: E2E ngày bắt đầu học = buổi đầu lớp chưa khai giảng (09/03/2027); nhập file dùng cùng quy tắc.
 
 ## Quyết định đã chốt
 

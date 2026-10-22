@@ -8,6 +8,8 @@ import { expectToast, login } from './helpers';
 const stamp = String(Date.now()).slice(-5);
 const A = `XL-A${stamp}`;
 const B = `XL-B${stamp}`;
+// SĐT phụ huynh thử, không kết nối Telegram nên không gửi tin
+const phone = `09${String(Math.floor(Math.random() * 1e8)).padStart(8, '0')}`;
 
 async function openCreate(page: Page) {
   await page.goto('/lop-hoc');
@@ -101,7 +103,23 @@ test('tạo lớp: giờ 24 giờ, học phí có dấu chấm, xem trước l�
     expect(after.map((x) => x.session_no)).toEqual([1, 2, 3, 4, 5]);
     const [cls] = (await db.query<{ weekdays: string; sessions_total: number }>('select weekdays, sessions_total from classes where id = $1', [a.id])).rows;
     expect(cls).toEqual({ weekdays: 'T3,T5', sessions_total: 5 });
+
+    // Thêm học sinh ngay ở trang lớp: lớp chọn sẵn, ngày bắt đầu học là buổi đầu của lớp (lớp chưa khai giảng), không cần ngày sinh
+    await page.getByRole('button', { name: 'Thêm học sinh' }).click();
+    const add2 = page.getByRole('dialog', { name: 'Thêm học sinh vào lớp' });
+    await expect(add2.getByRole('button', { name: 'Lớp học *' })).toContainText(A);
+    await expect(add2.locator('input[name="startDate"]')).toHaveValue('2027-03-09');
+    await add2.getByLabel('Họ và tên *').fill(`HS ${A}`);
+    await add2.locator('input[name="parentName"]').fill(`PH ${A}`);
+    await add2.locator('input[name="parentPhone"]').fill(phone);
+    await add2.getByRole('button', { name: 'Lưu học sinh' }).click();
+    await expectToast(page, `Đã thêm HS ${A}`);
+    await expect(page.getByRole('link', { name: `HS ${A}` })).toBeVisible();
+    const [st] = (await db.query<{ dob: string | null; start: string }>(`select dob, start_date::text start from students where full_name = $1 and class_id = $2`, [`HS ${A}`, a.id])).rows;
+    expect(st).toEqual({ dob: null, start: '2027-03-09' });
   } finally {
+    await db.query('delete from students where class_id in (select id from classes where name = any($1))', [[A, B]]);
+    await db.query('delete from parents where phone = $1', [phone]);
     await db.query('delete from classes where name = any($1)', [[A, B]]);
     await db.end();
   }

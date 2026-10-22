@@ -56,6 +56,7 @@ export function StudentForm({
   campuses,
   defaultCampusId,
   parents,
+  defaultClassId,
   onDone,
   onCancel,
 }: {
@@ -66,11 +67,13 @@ export function StudentForm({
   campuses: CampusChoice[];
   defaultCampusId: number;
   parents: ParentChoice[];
+  defaultClassId?: number; // mở từ trang lớp: chọn sẵn lớp đó
   onDone: (message: string) => void;
   onCancel: () => void;
 }) {
   const firstClassInDefault = classes.find((c) => c.campusId === defaultCampusId)?.id ?? classes[0]?.id ?? 0;
-  const values = initial ?? { ...EMPTY, classId: firstClassInDefault, startDate: todayIsoVN() };
+  const presetClass = defaultClassId && classes.some((c) => c.id === defaultClassId) ? defaultClassId : firstClassInDefault;
+  const values = initial ?? { ...EMPTY, classId: presetClass, startDate: todayIsoVN() };
   const [classId, setClassId] = useState(values.classId);
   const [campusId, setCampusId] = useState(classes.find((c) => c.id === values.classId)?.campusId ?? defaultCampusId);
   const [parentId, setParentId] = useState(values.parentId);
@@ -82,6 +85,8 @@ export function StudentForm({
   const [startDate, setStartDate] = useState(values.startDate);
   const [fee, setFee] = useState(values.tuitionFee === null ? '' : String(values.tuitionFee));
   const [feeEdited, setFeeEdited] = useState(mode === 'edit');
+  // Thêm mới: lớp chưa khai giảng thì ngày bắt đầu học tự lấy ngày buổi đầu của lớp, cho đến khi người nhập tự chọn ngày
+  const [startEdited, setStartEdited] = useState(mode === 'edit');
   const [preview, setPreview] = useState<TuitionPreview | null>(null);
   useEffect(() => {
     let stale = false;
@@ -89,6 +94,14 @@ export function StudentForm({
     tuitionPreviewAction(classId, startDate).then((r) => {
       if (stale) return;
       setPreview(r.ok ? r.preview : null);
+      if (r.ok && !startEdited) {
+        const today = todayIsoVN();
+        const target = r.preview.firstKey && r.preview.firstKey > today ? r.preview.firstKey : today;
+        if (target !== startDate) {
+          setStartDate(target);
+          return;
+        }
+      }
       if (r.ok && !feeEdited) setFee(String(r.preview.suggested));
     });
     return () => {
@@ -166,7 +179,12 @@ export function StudentForm({
         error={errors.startDate}
         hint={shownPreview?.firstKey ? `Lớp khai giảng ${dateKeyLabel(shownPreview.firstKey)}. Vào giữa khoá thì chọn ngày học buổi đầu.` : 'Ngày học sinh bắt đầu vào lớp'}
       >
-        <input name="startDate" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={inputClass(errors.startDate)} />
+        <input name="startDate" type="date" value={startDate} onChange={(e) => {
+            setStartDate(e.target.value);
+            setStartEdited(true);
+          }}
+          className={inputClass(errors.startDate)}
+        />
       </Field>
 
       {selectedClass && (
@@ -212,7 +230,7 @@ export function StudentForm({
         <input name="fullName" defaultValue={values.fullName} placeholder="VD: Nguyễn Minh Anh" autoComplete="off" className={inputClass(errors.fullName)} />
       </Field>
 
-      <Field label="Ngày sinh *" error={errors.dob}>
+      <Field label="Ngày sinh" error={errors.dob} hint="Để trống nếu chưa biết">
         <input name="dob" type="date" defaultValue={values.dob} className={inputClass(errors.dob)} />
       </Field>
 

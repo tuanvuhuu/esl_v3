@@ -60,9 +60,10 @@ export const CHILD_CONSENT_AGE = 7;
 
 // Học sinh được ghi âm khi phụ huynh đang đồng ý; trẻ từ 7 tuổi thì cần cả trẻ đồng ý.
 // needsChild = true: phụ huynh đã đồng ý, chỉ còn chờ trẻ bấm đồng ý trong khu học sinh.
-export function voiceAccess(rows: ConsentRow[], dob: string, todayKey: string): { allowed: boolean; needsChild: boolean } {
+// Chưa có ngày sinh thì không biết tuổi: xin cả trẻ đồng ý cho chắc.
+export function voiceAccess(rows: ConsentRow[], dob: string | null, todayKey: string): { allowed: boolean; needsChild: boolean } {
   const { status, row } = consentStatus(rows, 'voice_teacher_review');
   if (status !== 'granted' || !row) return { allowed: false, needsChild: false };
-  if (ageOn(dob, todayKey) >= CHILD_CONSENT_AGE && !row.childAgreedAt) return { allowed: false, needsChild: true };
+  if ((!dob || ageOn(dob, todayKey) >= CHILD_CONSENT_AGE) && !row.childAgreedAt) return { allowed: false, needsChild: true };
   return { allowed: true, needsChild: false };
 }

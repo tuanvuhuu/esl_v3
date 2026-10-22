@@ -73,7 +73,7 @@ export const IMPORT_COLUMNS: ImportColumn[] = [
   { key: 'studentCode', header: 'Mã HS', group: 'student', width: 10, text: true, note: 'VD HS-00012. Có mã thì cập nhật đúng học sinh đó. Để trống thì tìm theo họ tên và ngày sinh.' },
   { key: 'studentName', header: 'Họ tên học sinh', group: 'student', width: 20, note: 'Để trống cả dòng học sinh nếu dòng chỉ khai báo lớp.' },
   { key: 'gender', header: 'Giới tính', group: 'student', width: 9, note: 'Nam hoặc Nữ. Bắt buộc với học sinh mới.', choices: GENDER_CHOICES },
-  { key: 'dob', header: 'Ngày sinh', group: 'student', width: 12, text: true, note: 'Dạng dd/mm/yyyy. Bắt buộc với học sinh mới.' },
+  { key: 'dob', header: 'Ngày sinh', group: 'student', width: 12, text: true, note: 'Dạng dd/mm/yyyy. Để trống nếu chưa biết.' },
   { key: 'status', header: 'Trạng thái', group: 'student', width: 11, note: 'Để trống thì học sinh mới là Đang học.', choices: STATUS_CHOICES },
   { key: 'studentStartDate', header: 'Ngày bắt đầu học', group: 'student', width: 14, text: true, note: 'Dạng dd/mm/yyyy. Để trống thì học sinh mới lấy ngày nhập.' },
   { key: 'studentNote', header: 'Ghi chú học sinh', group: 'student', width: 22, note: 'Không bắt buộc.' },

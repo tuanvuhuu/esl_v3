@@ -56,6 +56,33 @@ describe('đọc một dòng', () => {
     const row = parseRow({ rowNumber: 5, cells: { campusName: 'CS', className: 'L1', studentCode: 'ABC', startTime: '19:00', endTime: '18:00' } });
     expect(row?.errors).toEqual(expect.arrayContaining(['Mã học sinh "ABC" không đúng dạng HS-00001.', 'Giờ kết thúc phải sau giờ bắt đầu.']));
   });
+
+  const base = { campusName: 'CS', className: 'L1', studentName: 'Phạm Trí Quân', gender: 'Nam', parentName: 'Trần Thị Hiền', relation: 'Mẹ' };
+
+  it('ô SĐT phụ huynh có hai số: lấy số đầu, số sau vào ghi chú học sinh, không báo lỗi', () => {
+    for (const phone of ['0336018115 -0922240886', '0336018115-0922240886', '0336018115, 0922240886', '0336 018 115 và 0922 240 886']) {
+      const row = parseRow({ rowNumber: 6, cells: { ...base, parentPhone: phone, studentNote: 'Hay quên vở' } });
+      expect(row?.errors).toEqual([]);
+      expect(row?.parent?.phone).toBe('0336018115');
+      expect(row?.student?.note).toBe('Hay quên vở. SĐT khác của phụ huynh: 0922240886');
+      expect(row?.notes[0]).toMatch(/có 2 số: dùng 0336018115/);
+    }
+    // Một cụm sai vẫn báo lỗi như cũ
+    expect(parseRow({ rowNumber: 7, cells: { ...base, parentPhone: '0336018115 - abc' } })?.errors).toContain('SĐT phụ huynh phải gồm 10 số, bắt đầu bằng 0.');
+  });
+
+  it('trợ giảng trùng giáo viên chủ nhiệm thì bỏ ô trợ giảng', () => {
+    const row = parseRow({ rowNumber: 8, cells: { ...base, parentPhone: '0969335597', teacherName: 'Nguyễn Thị Phượng', teacherPhone: '0397245240', assistantName: 'Nguyễn Thị Phượng', assistantPhone: '0397245240' } });
+    expect(row?.errors).toEqual([]);
+    expect(row?.assistant).toBeNull();
+    expect(row?.notes).toContain('Trợ giảng trùng giáo viên chủ nhiệm nên bỏ ô trợ giảng.');
+  });
+
+  it('không có ngày sinh thì không báo lỗi', () => {
+    const row = parseRow({ rowNumber: 9, cells: { ...base, parentPhone: '0969335597' } });
+    expect(row?.errors).toEqual([]);
+    expect(row?.student?.dob).toBe('');
+  });
 });
 
 describe('file mẫu', () => {
