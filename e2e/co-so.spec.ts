@@ -8,7 +8,7 @@ test('bộ chọn cơ sở: hiện cơ sở mặc định, đổi sang tất c�
   await login(page);
   await page.goto('/tong-quan', { waitUntil: 'load' });
   const picker = page.getByRole('button', { name: /^Cơ sở: / });
-  await expect(picker).toHaveAccessibleName('Cơ sở: Cơ sở chính');
+  await expect(picker).toHaveAccessibleName('Cơ sở: Cơ sở test');
 
   await picker.click();
   await page.getByRole('option', { name: 'Tất cả cơ sở' }).click();
@@ -28,8 +28,8 @@ test('bộ chọn cơ sở trên điện thoại: chỉ hiện icon, bấm mở 
   await page.goto('/tong-quan', { waitUntil: 'load' });
   const picker = page.getByRole('button', { name: /^Cơ sở: / });
   await expect(picker).toBeVisible();
-  await expect(picker.getByText('Cơ sở chính', { exact: true })).toBeHidden();
+  await expect(picker.getByText('Cơ sở test', { exact: true })).toBeHidden();
   await picker.click();
   await expect(page.getByRole('dialog', { name: 'Cơ sở' })).toBeVisible();
-  await expect(page.getByRole('option', { name: 'Cơ sở chính' })).toBeVisible();
+  await expect(page.getByRole('option', { name: 'Cơ sở test' })).toBeVisible();
 });

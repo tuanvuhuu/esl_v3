@@ -2,7 +2,7 @@
 // Chạy:
 //   npm run db:seed        chỉ nạp khi các bảng còn trống (an toàn chạy lại)
 //   npm run db:seed:reset  xoá toàn bộ dữ liệu app rồi nạp lại (chỉ dùng trên máy dev, D8)
-import { count, sql } from 'drizzle-orm';
+import { count, eq, sql } from 'drizzle-orm';
 import { db, pool } from './client';
 import {
   accountCampuses,
@@ -147,15 +147,16 @@ async function main() {
   }
 
   await db.transaction(async (tx) => {
-    // Cơ sở, giáo viên và lớp. Mọi lớp mẫu thuộc cơ sở chính.
-    // Migration 0003 đã tạo sẵn "Cơ sở chính" trên DB mới, nên dùng upsert theo tên thay vì insert thường (E-065).
+    // Cơ sở, giáo viên và lớp. Mọi lớp mẫu thuộc "Cơ sở test", tách khỏi cơ sở thật.
+    // Migration 0003 đã tạo sẵn "Cơ sở chính" trên DB mới: đổi tên nó thành "Cơ sở test", rồi upsert theo tên (E-065).
+    await tx.update(campuses).set({ name: 'Cơ sở test' }).where(eq(campuses.name, 'Cơ sở chính'));
     const [mainCampus] = await tx
       .insert(campuses)
-      .values({ name: 'Cơ sở chính', address: 'Số 1, đường mẫu, quận demo' })
-      .onConflictDoUpdate({ target: campuses.name, set: { address: 'Số 1, đường mẫu, quận demo' } })
+      .values({ name: 'Cơ sở test', address: 'Dữ liệu thử nghiệm, không phải cơ sở thật' })
+      .onConflictDoUpdate({ target: campuses.name, set: { address: 'Dữ liệu thử nghiệm, không phải cơ sở thật' } })
       .returning({ id: campuses.id });
     const insertedTeachers = await tx.insert(teachers).values(TEACHER_SEED.map((t) => ({ ...t }))).returning({ id: teachers.id, name: teachers.name });
-    // Giáo viên mẫu đều dạy ở cơ sở chính
+    // Giáo viên mẫu đều dạy ở Cơ sở test
     await tx.insert(teacherCampuses).values(insertedTeachers.map((t) => ({ teacherId: t.id, campusId: mainCampus.id })));
     const teacherId = new Map(insertedTeachers.map((t) => [t.name, t.id]));
 
@@ -307,7 +308,7 @@ async function main() {
     await tx.insert(centerSettings).values({
       id: 1,
       centerName: 'ESL Center',
-      address: 'Cơ sở chính · Số 1, đường mẫu, quận demo',
+      address: 'Cơ sở test · Dữ liệu thử nghiệm',
       hotline: '0900 000 000',
       email: 'hello@esl-center.vn',
       workingHours: '08:00 – 21:30, từ thứ Hai đến Chủ nhật',

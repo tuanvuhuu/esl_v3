@@ -337,7 +337,7 @@ test.describe('bài tập, điểm danh, học phí', () => {
     await form.getByLabel('Tiêu đề bài giảng').fill(lesson);
     await form.getByLabel('Mục tiêu bài giảng').fill('Học sinh kể lại việc đã làm bằng quá khứ đơn');
     // Cơ sở đang chọn ở thanh trên được điền sẵn; bấm lại mục đó sẽ bỏ chọn
-    await expect(form.getByRole('button', { name: 'Cơ sở dùng bài giảng *' })).toContainText('Cơ sở chính');
+    await expect(form.getByRole('button', { name: 'Cơ sở dùng bài giảng *' })).toContainText('Cơ sở test');
     await form.getByRole('button', { name: 'Lưu bài giảng' }).click();
     await expectToast(page, `Đã tạo bài giảng ${lesson}`);
 

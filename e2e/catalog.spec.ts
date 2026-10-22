@@ -207,8 +207,8 @@ test.describe('giáo viên, lớp học, phụ huynh', () => {
     await edit.getByRole('button', { name: 'Lưu thay đổi' }).click();
     await expectToast(page, `Đã lưu cơ sở ${name} đổi`);
 
-    // Cơ sở chính còn lớp (lớp mẫu): không xoá được
-    await page.getByRole('button', { name: 'Thao tác với cơ sở Cơ sở chính', exact: true }).click();
+    // Cơ sở test còn lớp (lớp mẫu): không xoá được
+    await page.getByRole('button', { name: 'Thao tác với cơ sở Cơ sở test', exact: true }).click();
     await page.getByRole('menuitem', { name: 'Xoá' }).click();
     await expect(page.getByRole('alertdialog')).toContainText('còn');
     await page.getByRole('button', { name: 'Đã hiểu' }).click();

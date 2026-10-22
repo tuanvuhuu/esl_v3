@@ -94,19 +94,19 @@ export const COLUMN_BY_HEADER: ReadonlyMap<string, ImportColumnKey> = new Map(IM
 // Dữ liệu mẫu trong file: hai học sinh cùng lớp, một dòng chỉ khai báo lớp
 export const TEMPLATE_EXAMPLES: Partial<Record<ImportColumnKey, string | number>>[] = [
   {
-    campusName: 'Cơ sở chính', campusAddress: 'Số 1, đường mẫu, quận demo', className: 'IELTS-MAU1', course: 'IELTS Foundation 5.5',
+    campusName: 'Cơ sở test', campusAddress: 'Dữ liệu thử nghiệm, không phải cơ sở thật', className: 'IELTS-MAU1', course: 'IELTS Foundation 5.5',
     weekdays: 'T2,T4,T6', startTime: '18:30', endTime: '20:30', classStartDate: '02/11/2026', sessionsTotal: 36, fee: 12000000, room: 'P.201', capacity: 20,
     teacherName: 'Cô Thu Hà', teacherPhone: '0901000101', assistantName: 'Cô Lan Anh', assistantPhone: '0901000203', foreignName: 'Ms. Emily Carter', foreignPhone: '0901000201',
     studentName: 'Nguyễn Văn Mẫu', gender: 'Nam', dob: '15/03/2010', status: 'Đang học', studentStartDate: '02/11/2026',
     parentName: 'Nguyễn Văn Bố', parentPhone: '0912345678', parentEmail: 'bo.mau@example.com', relation: 'Bố',
   },
   {
-    campusName: 'Cơ sở chính', className: 'IELTS-MAU1',
+    campusName: 'Cơ sở test', className: 'IELTS-MAU1',
     studentName: 'Trần Thị Mẫu', gender: 'Nữ', dob: '20/07/2011', status: 'Học thử',
     parentName: 'Trần Thị Mẹ', parentPhone: '0912345679', relation: 'Mẹ',
   },
   {
-    campusName: 'Cơ sở chính', className: 'KIDS-MAU1', course: 'Starters (Thiếu nhi)',
+    campusName: 'Cơ sở test', className: 'KIDS-MAU1', course: 'Starters (Thiếu nhi)',
     weekdays: 'T3,T5', startTime: '16:00', endTime: '17:30', classStartDate: '03/11/2026', sessionsTotal: 24, fee: 5200000, room: 'P.301', capacity: 14,
     teacherName: 'Cô Ngọc Ánh', teacherPhone: '0901000105',
   },
