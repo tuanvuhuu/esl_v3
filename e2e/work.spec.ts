@@ -587,7 +587,7 @@ test.describe('bài tập, điểm danh, học phí', () => {
       ).rows;
       studentId = student.id;
       const fullName = student.full_name;
-      const code = `HS-${String(studentId).padStart(4, '0')}`;
+      const code = `HS-${String(studentId).padStart(5, '0')}`;
       await db.query('delete from accounts where student_id = $1', [studentId]); // dọn tài khoản còn sót từ lần chạy trước
 
       // Giáo viên soạn bài: trắc nghiệm nghe (2 điểm) và trả lời viết (5 điểm)
@@ -892,9 +892,9 @@ test.describe('bài tập, điểm danh, học phí', () => {
       await create.getByRole('button', { name: 'Giáo viên chủ nhiệm *' }).click();
       await page.getByRole('option').filter({ hasNotText: 'Chọn giáo viên' }).first().click();
       await create.getByLabel('Học phí (VND) *').fill('1000000');
-      await create.getByLabel('Giờ bắt đầu *').fill('18:00');
-      await create.getByLabel('Giờ kết thúc *').fill('19:30');
       await create.locator('label:has(input[value="T2"])').click();
+      await create.getByLabel('Giờ bắt đầu Thứ 2').fill('18:00');
+      await create.getByLabel('Giờ kết thúc Thứ 2').fill('19:30');
       await create.getByLabel('Ngày khai giảng *').fill('2026-10-19');
       await create.getByLabel('Số buổi *').fill('4');
 

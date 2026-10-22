@@ -1,7 +1,7 @@
 // Schema PostgreSQL cho ESL Center. Nguồn chuẩn của cấu trúc dữ liệu.
 // Quy ước:
 // - Tiền lưu bằng số nguyên VND (không dùng số thực).
-// - Mã học sinh hiển thị "HS-0001" được tạo từ id (serial), không lưu thêm.
+// - Mã học sinh hiển thị "HS-00001" được tạo từ id (serial), không lưu thêm.
 // - Mỗi thay đổi cấu trúc: sửa file này, chạy `npm run db:generate -- --name=<mô_tả>`, kiểm tra SQL, rồi commit.
 // - Không sửa migration đã áp dụng (xem CLAUDE.md mục 4).
 import {
@@ -109,6 +109,8 @@ export const classes = pgTable(
     weekdays: varchar('weekdays', { length: 20 }).notNull().default(''),
     startTime: varchar('start_time', { length: 5 }).notNull().default(''),
     endTime: varchar('end_time', { length: 5 }).notNull().default(''),
+    // Giờ riêng của từng ngày học: "T3 18:00-19:30,T7 08:00-09:30" (lib/schedule.ts). Rỗng: mọi ngày dùng start_time, end_time.
+    dayTimes: varchar('day_times', { length: 120 }).notNull().default(''),
     sessionsTotal: integer('sessions_total').notNull(),
     fee: integer('fee').notNull(),
     room: varchar('room', { length: 40 }).notNull().default(''),
@@ -137,7 +139,10 @@ export const students = pgTable(
       .notNull()
       .references(() => classes.id, { onDelete: 'restrict' }),
     status: studentStatusEnum('status').notNull().default('trial'),
+    // Ngày bắt đầu học của học sinh, khác ngày khai giảng của lớp khi vào lớp giữa khoá
     startDate: date('start_date').notNull(),
+    // Học phí riêng (VND) khi vào giữa khoá, tính theo số buổi còn lại. Rỗng: đóng đủ học phí của lớp.
+    tuitionFee: integer('tuition_fee'),
     sessionsDone: integer('sessions_done').notNull().default(0),
     note: text('note').notNull().default(''),
     // Trình độ hiện tại (P27). Để trống là chưa xếp.

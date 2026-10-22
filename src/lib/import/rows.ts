@@ -215,7 +215,7 @@ export function parseRow(row: RawRow): ParsedRow | null {
   const studentName = cellText(c.studentName);
   if (codeText !== '' || studentName !== '') {
     const id = codeText === '' ? null : parseStudentCode(codeText);
-    if (codeText !== '' && id === null) errors.push(`Mã học sinh "${codeText}" không đúng dạng HS-0001.`);
+    if (codeText !== '' && id === null) errors.push(`Mã học sinh "${codeText}" không đúng dạng HS-00001.`);
     if (studentName !== '' && (studentName.length < 2 || studentName.length > 120)) errors.push('Họ tên học sinh từ 2 đến 120 ký tự.');
     const gender = parseGender(c.gender);
     if (gender === null) errors.push('Giới tính ghi Nam hoặc Nữ.');

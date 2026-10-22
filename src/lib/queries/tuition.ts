@@ -5,6 +5,7 @@ import type { CampusScope } from '@/lib/campus';
 import { campusCond } from '@/lib/queries/campuses';
 import { centerSettings, tuitionPayments } from '@/db/schema';
 import { debtOf, dueDateFor, isOverdue, tuitionState, type TuitionState } from '@/lib/tuition';
+import { parseStudentCode, studentCode } from '@/lib/student-code';
 import { normalizeSearch } from '@/lib/text';
 
 export type InvoiceRow = {
@@ -37,7 +38,7 @@ export async function listInvoices(todayKey: string, q: string, filter: InvoiceF
     id: number; full_name: string; search_key: string; status: InvoiceRow['status']; start_date: string; class_name: string;
     fee: number; paid: number; last_paid: string | null;
   }>(sql`
-    SELECT s.id, s.full_name, s.search_key, s.status, s.start_date::text AS start_date, c.name AS class_name, c.fee,
+    SELECT s.id, s.full_name, s.search_key, s.status, s.start_date::text AS start_date, c.name AS class_name, COALESCE(s.tuition_fee, c.fee) AS fee,
       COALESCE(p.paid, 0)::int AS paid,
       to_char(p.last_paid AT TIME ZONE 'Asia/Ho_Chi_Minh', 'YYYY-MM-DD') AS last_paid
     FROM students s
@@ -51,12 +52,13 @@ export async function listInvoices(todayKey: string, q: string, filter: InvoiceF
   `);
 
   const needle = normalizeSearch(q);
+  const codeId = parseStudentCode(q);
   const all: InvoiceRow[] = result.rows.map((r) => {
     const debt = debtOf(r.fee, r.paid);
     const dueDate = dueDateFor(r.start_date, dueDay);
     return {
       id: r.id,
-      code: `HS-${String(r.id).padStart(4, '0')}`,
+      code: studentCode(r.id),
       fullName: r.full_name,
       status: r.status,
       className: r.class_name,
@@ -78,7 +80,7 @@ export async function listInvoices(todayKey: string, q: string, filter: InvoiceF
 
   const rows = all
     .filter((r) => {
-      if (needle && !normalizeSearch(`${r.fullName} ${r.code}`).includes(needle)) return false;
+      if (needle && !normalizeSearch(`${r.fullName} ${r.code}`).includes(needle) && r.id !== codeId) return false;
       if (filter === 'all') return true;
       if (filter === 'overdue') return r.overdue;
       return r.state === filter;

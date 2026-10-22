@@ -50,12 +50,12 @@ test.describe('giáo viên, lớp học, phụ huynh', () => {
     await create.getByRole('button', { name: 'Giáo viên nước ngoài' }).click();
     await create.getByRole('option', { name: 'Ms. Emily Carter · Speaking' }).click();
     await create.getByLabel('Học phí (VND) *').fill('1000000');
-    await create.getByLabel('Giờ bắt đầu *').fill('18:00');
-    await create.getByLabel('Giờ kết thúc *').fill('19:30');
     await create.getByLabel('Số buổi *').fill('4');
     await create.getByRole('button', { name: 'Tạo lớp', exact: true }).click();
     await expect(dialogFieldErrors(page).first()).toContainText('Chọn ít nhất một ngày học');
     await create.locator('label:has(input[value="T2"])').click();
+    await create.getByLabel('Giờ bắt đầu Thứ 2').fill('18:00');
+    await create.getByLabel('Giờ kết thúc Thứ 2').fill('19:30');
     // Khai giảng thứ Hai tuần sau, để buổi 1 luôn nằm trong "Buổi học sắp tới" (ghi cứng ngày thì test hỏng khi ngày đó đã qua)
     const start = new Date();
     start.setDate(start.getDate() + ((8 - start.getDay()) % 7 || 7));
@@ -89,10 +89,10 @@ test.describe('giáo viên, lớp học, phụ huynh', () => {
     await create.getByRole('button', { name: 'Trình độ CEFR' }).click();
     await create.getByRole('option', { name: /B1/ }).click();
     await create.getByLabel('Học phí (VND) *').fill('3000000');
-    await create.getByLabel('Giờ bắt đầu *').fill('19:00');
-    await create.getByLabel('Giờ kết thúc *').fill('20:30');
     await create.getByLabel('Số buổi *').fill('4');
     await create.locator('label:has(input[value="T3"])').click();
+    await create.getByLabel('Giờ bắt đầu Thứ 3').fill('19:00');
+    await create.getByLabel('Giờ kết thúc Thứ 3').fill('20:30');
     await create.getByLabel('Ngày khai giảng *').fill('2026-10-20');
     await create.getByRole('button', { name: 'Tạo lớp', exact: true }).click();
     await expectToast(page, `Đã tạo lớp ${code}`);
@@ -133,9 +133,9 @@ test.describe('giáo viên, lớp học, phụ huynh', () => {
     await create.getByRole('button', { name: 'Giáo viên chủ nhiệm *' }).click();
     await create.getByRole('option', { name: 'Cô Ngọc Ánh · Thiếu nhi' }).click();
     await create.getByLabel('Học phí (VND) *').fill('1000000');
-    await create.getByLabel('Giờ bắt đầu *').fill('18:00');
-    await create.getByLabel('Giờ kết thúc *').fill('19:30');
     await create.locator('label:has(input[value="T2"])').click();
+    await create.getByLabel('Giờ bắt đầu Thứ 2').fill('18:00');
+    await create.getByLabel('Giờ kết thúc Thứ 2').fill('19:30');
     await create.getByLabel('Ngày khai giảng *').fill('2026-10-19');
     await create.getByLabel('Số buổi *').fill('4');
     await create.getByRole('button', { name: 'Tạo lớp', exact: true }).click();

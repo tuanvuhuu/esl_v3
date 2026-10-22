@@ -139,7 +139,7 @@ async function remindTuition(now: Date): Promise<SendResult[]> {
   const { phase, dueKey } = tuitionPhase(today, settings.dueDay);
   if (!phase || (phase === 'before' && !settings.notifySmsBeforeDue)) return [];
   const rows = await db.execute<{ student_id: number; student_name: string; fee: number; paid: number }>(sql`
-    SELECT s.id AS student_id, s.full_name AS student_name, c.fee,
+    SELECT s.id AS student_id, s.full_name AS student_name, COALESCE(s.tuition_fee, c.fee) AS fee,
       COALESCE((SELECT SUM(p.amount) FROM tuition_payments p WHERE p.student_id = s.id), 0)::int AS paid
     FROM students s JOIN classes c ON c.id = s.class_id
     WHERE s.status = 'active'`);

@@ -26,6 +26,7 @@ export type ClassRow = {
   weekdays: string; // "T2,T4,T6"
   startTime: string;
   endTime: string;
+  dayTimes: string; // "T3 18:00-19:30,T7 08:00-09:30", rỗng khi mọi ngày cùng giờ (lớp cũ)
   room: string;
   fee: number;
   capacity: number;
@@ -37,7 +38,7 @@ export type ClassRow = {
 
 type RawClass = {
   id: number; name: string; course: string; campus_id: number; campus_name: string; teacher_id: number; teacher_name: string;
-  weekdays: string; start_time: string; end_time: string; room: string; fee: number; capacity: number; sessions_total: number;
+  weekdays: string; start_time: string; end_time: string; day_times: string; room: string; fee: number; capacity: number; sessions_total: number;
   student_count: number; sessions_done: number; next_at: Date | null;
   assistant_id: number | null; assistant_name: string | null; foreign_teacher_id: number | null; foreign_name: string | null;
   level_id: number | null; level_code: string | null; level_name: string | null;
@@ -52,7 +53,7 @@ async function selectClasses(scope: CampusScope | 'any', id?: number): Promise<C
     SELECT c.id, c.name, c.course, c.campus_id, cp.name AS campus_name, c.teacher_id, t.name AS teacher_name,
       c.assistant_id, a.name AS assistant_name, c.foreign_teacher_id, f.name AS foreign_name,
       c.level_id, cl.code AS level_code, cl.name AS level_name,
-      c.weekdays, c.start_time, c.end_time, c.room, c.fee, c.capacity, c.sessions_total,
+      c.weekdays, c.start_time, c.end_time, c.day_times, c.room, c.fee, c.capacity, c.sessions_total,
       (SELECT COUNT(*)::int FROM students s WHERE s.class_id = c.id) AS student_count,
       (SELECT COUNT(*)::int FROM class_sessions cs WHERE cs.class_id = c.id AND cs.status = 'done') AS sessions_done,
       (SELECT MIN(cs.starts_at) FROM class_sessions cs WHERE cs.class_id = c.id AND cs.status = 'planned' AND cs.starts_at >= NOW()) AS next_at
@@ -80,10 +81,11 @@ async function selectClasses(scope: CampusScope | 'any', id?: number): Promise<C
     levelId: r.level_id,
     levelCode: r.level_code,
     levelName: r.level_name,
-    schedule: describeSchedule(r.weekdays, r.start_time, r.end_time),
+    schedule: describeSchedule(r.weekdays, r.start_time, r.end_time, r.day_times),
     weekdays: r.weekdays,
     startTime: r.start_time,
     endTime: r.end_time,
+    dayTimes: r.day_times,
     room: r.room,
     fee: r.fee,
     capacity: r.capacity,
@@ -117,6 +119,22 @@ export type ClassDetail = ClassRow & {
   upcoming: { id: number; sessionNo: number; startsAt: string; endsAt: string; room: string; topic: string; teacherName: string }[];
 };
 
+// Số buổi của lớp để chia học phí cho học sinh vào giữa khoá: tổng buổi không huỷ,
+// số buổi từ ngày fromKey (YYYY-MM-DD, giờ Việt Nam) trở đi, và ngày khai giảng (buổi đầu tiên).
+export async function sessionCountsFrom(classId: number, fromKey: string): Promise<{ fee: number; total: number; remaining: number; firstKey: string | null } | null> {
+  const from = new Date(`${fromKey}T00:00:00+07:00`);
+  const result = await db.execute<{ fee: number; total: number; remaining: number; first_at: Date | null }>(sql`
+    SELECT c.fee,
+      (SELECT COUNT(*)::int FROM class_sessions cs WHERE cs.class_id = c.id AND cs.status <> 'cancelled') AS total,
+      (SELECT COUNT(*)::int FROM class_sessions cs WHERE cs.class_id = c.id AND cs.status <> 'cancelled' AND cs.starts_at >= ${from}) AS remaining,
+      (SELECT MIN(cs.starts_at) FROM class_sessions cs WHERE cs.class_id = c.id) AS first_at
+    FROM classes c WHERE c.id = ${classId}
+  `);
+  const row = result.rows[0];
+  if (!row) return null;
+  return { fee: row.fee, total: row.total, remaining: row.remaining, firstKey: row.first_at ? vnDateKey(new Date(row.first_at)) : null };
+}
+
 // Giá trị gốc của một lớp, dùng để điền form sửa và kiểm tra thay đổi
 export async function getClassForm(id: number) {
   const [row] = await db
@@ -131,6 +149,10 @@ export async function getClassForm(id: number) {
       room: classes.room,
       fee: classes.fee,
       capacity: classes.capacity,
+      weekdays: classes.weekdays,
+      startTime: classes.startTime,
+      endTime: classes.endTime,
+      dayTimes: classes.dayTimes,
     })
     .from(classes)
     .where(eq(classes.id, id))

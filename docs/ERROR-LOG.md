@@ -693,6 +693,15 @@ Mỗi lỗi gặp phải được ghi ở đây, theo mẫu dưới đây. Trư�
 - Quy tắc phòng ngừa: Bấm lưu nhiều lần liên tiếp trong một test thì không dùng toast để biết đã lưu xong. Chờ dữ liệu thật đổi (DB hoặc nội dung trên màn khác với trước khi bấm). Kiểm "không có gì xảy ra" chỉ sau khi chắc việc đã chạy xong.
 - Đã áp dụng ở: `e2e/telegram.spec.ts`.
 
+## E-083 · Mã học sinh 4 chữ số ghi cứng ở nhiều nơi; nhãn ô giờ đổi làm hỏng E2E tạo lớp
+- Ngày: 2026-10-22
+- Khu vực: quy trình, E2E (`e2e/catalog.spec.ts`, `e2e/work.spec.ts`)
+- Triệu chứng: Đổi mã học sinh sang 5 chữ số phải sửa ba chỗ ngoài `studentCode`: `LPAD(..., 4, '0')` trong SQL của `queries/students.ts`, `padStart(4)` trong `queries/tuition.ts` và trong E2E. Gõ mã cũ HS-0012 vào ô tìm không ra học sinh có mã mới HS-00012 vì tìm bằng `LIKE`. Form tạo lớp đổi hai ô "Giờ bắt đầu *", "Giờ kết thúc *" thành một dòng cho mỗi ngày nên bốn kịch bản E2E tạo lớp tìm nhãn cũ.
+- Nguyên nhân: Định dạng mã được viết lại tại chỗ thay vì gọi hàm dùng chung. Tìm theo mã chỉ so chuỗi, không đọc mã ra id.
+- Cách sửa: Mọi nơi gọi `studentCode`; SQL dùng 5 chữ số; tìm kiếm đọc mã bằng `parseStudentCode` rồi so id. E2E chọn ngày trước, rồi điền "Giờ bắt đầu Thứ 2"/"Giờ kết thúc Thứ 2".
+- Quy tắc phòng ngừa: Định dạng hiển thị (mã, tiền, ngày) chỉ sinh từ một hàm; khi đổi định dạng, `grep` cả `padStart`, `LPAD` và chuỗi mẫu trong `src`, `e2e`, `tests`. Ô tìm theo mã phải nhận cả định dạng cũ. Đổi nhãn ô thì sửa E2E trong cùng thay đổi (E-050).
+- Đã áp dụng ở: `src/lib/student-code.ts`, `src/lib/queries/students.ts`, `src/lib/queries/tuition.ts`, `e2e/catalog.spec.ts`, `e2e/work.spec.ts`.
+
 ## E-076 · Người lạ gõ số điện thoại của phụ huynh là kết nối được bot, xem được thông tin của trẻ
 - Ngày: 2026-10-22
 - Khu vực: Bot Telegram (`src/lib/telegram/service.ts`, `linkByPhone` cũ)

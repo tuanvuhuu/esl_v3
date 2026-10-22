@@ -219,7 +219,7 @@ export async function isAccountLinked(accountId: number): Promise<boolean> {
 
 async function childrenOf(parentId: number) {
   const result = await db.execute<{ id: number; full_name: string; class_id: number; class_name: string; fee: number; paid: number }>(sql`
-    SELECT s.id, s.full_name, c.id AS class_id, c.name AS class_name, c.fee,
+    SELECT s.id, s.full_name, c.id AS class_id, c.name AS class_name, COALESCE(s.tuition_fee, c.fee) AS fee,
       COALESCE((SELECT SUM(p.amount) FROM tuition_payments p WHERE p.student_id = s.id), 0)::int AS paid
     FROM student_parents sp JOIN students s ON s.id = sp.student_id JOIN classes c ON c.id = s.class_id
     WHERE sp.parent_id = ${parentId} AND s.status IN ('active', 'trial', 'paused')
@@ -413,7 +413,7 @@ export async function dailyReportText(accountId: number, now: Date = new Date())
     FROM students s
     JOIN classes c ON c.id = s.class_id
     WHERE s.status = 'active'
-      AND (c.fee - COALESCE((SELECT SUM(amount) FROM tuition_payments WHERE student_id = s.id), 0)) > 0`)).rows;
+      AND (COALESCE(s.tuition_fee, c.fee) - COALESCE((SELECT SUM(amount) FROM tuition_payments WHERE student_id = s.id), 0)) > 0`)).rows;
 
   return [
     `📊 BÁO CÁO NGÀY ${dateKeyLabel(today)} (ESL Center)`,

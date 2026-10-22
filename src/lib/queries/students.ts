@@ -6,6 +6,7 @@ import { getAllowedCampusIds } from '@/lib/campus-access';
 import { accounts } from '@/db/schema';
 import type { CampusScope } from '@/lib/campus';
 import { campusCond } from '@/lib/queries/campuses';
+import { parseStudentCode, studentCode } from '@/lib/student-code';
 import { normalizeSearch } from '@/lib/text';
 
 // Học phí và lớp chọn nhiều: danh sách rỗng nghĩa là không lọc
@@ -38,7 +39,7 @@ export type StudentListFilters = {
 
 export type StudentRow = {
   id: number;
-  code: string; // HS-0001
+  code: string; // HS-00001
   fullName: string;
   gender: 'male' | 'female';
   status: 'active' | 'trial' | 'paused' | 'finished';
@@ -70,8 +71,10 @@ function whereClause(f: StudentListFilters, scope: CampusScope) {
     const like = `%${q}%`;
     const digits = f.q.replace(/\D/g, '');
     const codeLike = `%${f.q.trim().toUpperCase()}%`;
+    // Gõ đủ mã (HS-00012, hoặc mã cũ HS-0012) thì tìm đúng học sinh đó
+    const codeId = parseStudentCode(f.q);
     parts.push(
-      sql`(b.search_key LIKE ${like} OR UPPER(b.code) LIKE ${codeLike} OR (${digits.length >= 3 ? sql`b.parent_phone LIKE ${`%${digits}%`}` : sql`FALSE`}))`,
+      sql`(b.search_key LIKE ${like} OR UPPER(b.code) LIKE ${codeLike} OR ${codeId === null ? sql`FALSE` : sql`b.id = ${codeId}`} OR (${digits.length >= 3 ? sql`b.parent_phone LIKE ${`%${digits}%`}` : sql`FALSE`}))`,
     );
   }
   if (f.status !== 'all') parts.push(sql`b.status = ${f.status}`);
@@ -146,7 +149,7 @@ const BASE_CTE = sql`
   base AS (
     SELECT
       s.id, s.full_name, s.search_key, s.gender, s.status, s.class_id, s.sessions_done,
-      c.name AS class_name, c.campus_id, c.sessions_total, c.fee,
+      c.name AS class_name, c.campus_id, c.sessions_total, COALESCE(s.tuition_fee, c.fee) AS fee,
       t.name AS teacher_name,
       COALESCE(paid.paid, 0) AS paid,
       COALESCE(att.total, 0) AS att_total,
@@ -154,11 +157,11 @@ const BASE_CTE = sql`
       pp.full_name AS parent_name,
       pp.phone AS parent_phone,
       CASE
-        WHEN COALESCE(paid.paid, 0) >= c.fee THEN 'paid'
+        WHEN COALESCE(paid.paid, 0) >= COALESCE(s.tuition_fee, c.fee) THEN 'paid'
         WHEN COALESCE(paid.paid, 0) > 0 THEN 'partial'
         ELSE 'unpaid'
       END AS tuition,
-      CONCAT('HS-', LPAD(s.id::text, 4, '0')) AS code
+      CONCAT('HS-', LPAD(s.id::text, 5, '0')) AS code
     FROM students s
     JOIN classes c ON c.id = s.class_id
     JOIN teachers t ON t.id = c.teacher_id
@@ -338,7 +341,7 @@ export async function getStudentDetail(id: number): Promise<StudentDetail | null
   const [account] = await db.select({ id: accounts.id }).from(accounts).where(eq(accounts.studentId, id)).limit(1);
   return {
     id: row.id,
-    code: `HS-${String(row.id).padStart(4, '0')}`,
+    code: studentCode(row.id),
     fullName: row.full_name,
     hasAccount: !!account,
     gender: row.gender,

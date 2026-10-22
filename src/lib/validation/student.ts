@@ -36,6 +36,16 @@ export const studentFormSchema = z.object({
   classId: z.coerce.number({ error: 'Vui lòng chọn lớp học' }).int('Lớp học không hợp lệ').positive('Vui lòng chọn lớp học'),
   status: z.enum(STUDENT_STATUSES, { error: 'Trạng thái không hợp lệ' }),
   startDate: isoDate,
+  // Học phí riêng của học sinh (VND). Ô trống: đóng theo học phí của lớp.
+  tuitionFee: z.preprocess(
+    (v) => (v === '' || v === undefined || v === null ? null : typeof v === 'string' ? Number(v.replace(/[.\s]/g, '')) : v),
+    z
+      .number({ error: 'Học phí phải là số' })
+      .int('Học phí phải là số nguyên VND')
+      .min(0, 'Học phí không âm')
+      .max(1_000_000_000, 'Học phí quá lớn')
+      .nullable(),
+  ),
   note: z.string().trim().max(1000, 'Ghi chú tối đa 1000 ký tự').default(''),
   // Phụ huynh: chọn người có sẵn (parentId), hoặc nhập người mới (tên và SĐT)
   parentId: z

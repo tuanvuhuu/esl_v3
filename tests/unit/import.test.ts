@@ -54,7 +54,7 @@ describe('đọc một dòng', () => {
 
   it('mã học sinh sai dạng và giờ kết thúc trước giờ bắt đầu bị báo lỗi', () => {
     const row = parseRow({ rowNumber: 5, cells: { campusName: 'CS', className: 'L1', studentCode: 'ABC', startTime: '19:00', endTime: '18:00' } });
-    expect(row?.errors).toEqual(expect.arrayContaining(['Mã học sinh "ABC" không đúng dạng HS-0001.', 'Giờ kết thúc phải sau giờ bắt đầu.']));
+    expect(row?.errors).toEqual(expect.arrayContaining(['Mã học sinh "ABC" không đúng dạng HS-00001.', 'Giờ kết thúc phải sau giờ bắt đầu.']));
   });
 });
 

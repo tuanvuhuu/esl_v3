@@ -51,7 +51,7 @@ export function LoginForm({ quickLogin = false, demo = false }: { quickLogin?: b
             <Alert>{state.message}</Alert>
           )}
           <Field label="Email" error={errors.email}>
-            <input name="email" type="text" autoComplete="username" inputMode="email" placeholder="Email, hoặc mã học sinh HS-0001" className={inputClass(errors.email)} />
+            <input name="email" type="text" autoComplete="username" inputMode="email" placeholder="Email, hoặc mã học sinh HS-00001" className={inputClass(errors.email)} />
           </Field>
           <Field label="Mật khẩu" error={errors.password}>
             <input name="password" type="password" autoComplete="current-password" className={inputClass(errors.password)} />

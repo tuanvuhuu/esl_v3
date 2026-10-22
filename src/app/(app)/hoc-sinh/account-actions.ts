@@ -18,7 +18,7 @@ function errorResult(error: unknown): IssuedPassword {
   return { ok: false, message: 'Không tạo được tài khoản. Thử lại sau ít phút.' };
 }
 
-// Tạo tài khoản đăng nhập cho học sinh. Học sinh dùng mã HS-0001 và mật khẩu tạm để vào khu học sinh.
+// Tạo tài khoản đăng nhập cho học sinh. Học sinh dùng mã HS-00001 và mật khẩu tạm để vào khu học sinh.
 export async function createStudentAccountAction(studentId: number): Promise<IssuedPassword> {
   try {
     await requirePermission('assignments.manage');

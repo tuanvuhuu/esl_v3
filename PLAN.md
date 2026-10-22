@@ -1,7 +1,7 @@
 # ESL Center: kế hoạch và tiến độ
 
-> **Tiến độ tổng: 190/216 task (87%)**
-> Cập nhật lần cuối: 2026-10-22. P1–P34 xong. P37 bot Telegram theo kịch bản: 37.1–37.9 xong, còn đặt cron mỗi giờ trên bản deploy và các việc đợt sau. P35: 35.2, 35.3, 35.12, 35.24, 35.27 xong; 35.4–35.6 làm dở (35.6 chỉ còn thử tay trên điện thoại). P36 Soạn nhanh xong phần code (36.1–36.6). Số đếm lấy từ các ô `[x]` và `[ ]` trong file.
+> **Tiến độ tổng: 194/220 task (88%)**
+> Cập nhật lần cuối: 2026-10-22. P1–P34 xong. P38 (giờ học từng ngày, học phí theo buổi còn lại, mã HS-00001) xong. P37 bot Telegram theo kịch bản: 37.1–37.9 xong, còn đặt cron mỗi giờ trên bản deploy và các việc đợt sau. P35: 35.2, 35.3, 35.12, 35.24, 35.27 xong; 35.4–35.6 làm dở (35.6 chỉ còn thử tay trên điện thoại). P36 Soạn nhanh xong phần code (36.1–36.6). Số đếm lấy từ các ô `[x]` và `[ ]` trong file.
 
 ## 🎯 Các task vừa hoàn thành & Lệnh test riêng (Không chạy all)
 
@@ -462,6 +462,15 @@ Nguồn: `docs/KICH-BAN-TELEGRAM.md` (2026-10-22). Người dùng thấy bot cò
 - [ ] **37.12** Học bù: phụ huynh chọn buổi bù của lớp khác cùng trình độ khi con nghỉ có phép.
 - [ ] **37.13** Mã QR chuyển khoản (VietQR) trong tin nhắc học phí; khảo sát hài lòng cuối khoá bằng nút bấm.
 
+## P38. Lịch nhiều giờ trong tuần, học sinh vào giữa khoá, mã học sinh 5 chữ số
+
+Người dùng hỏi (2026-10-22): lớp học hai buổi mà giờ khác nhau thì nhập thế nào; phân biệt ngày khai giảng của lớp và ngày bắt đầu học của học sinh; vào giữa khoá thì chia học phí theo số buổi còn lại; mã học sinh dạng HS-12345.
+
+- [x] 38.1 Giờ riêng cho từng ngày học (2026-10-22). Cột `classes.day_times` ("T3 18:00-19:30,T7 08:00-09:30", migration 0022). Form tạo lớp: chọn ngày nào thì ngày đó tự có một dòng giờ, không cần tích; dòng chưa sửa đi theo giờ vừa nhập; giờ khác nhau thì form tự nêu ra, giờ kết thúc sai báo ngay dưới dòng. Form sửa lớp sửa được giờ từng ngày, các buổi chưa học và chưa bắt đầu của ngày đó dời sang giờ mới. Mô tả lịch: "T3 18:00–19:30 · T7 08:00–09:30", lớp cùng giờ giữ kiểu cũ. Lớp cũ (cột rỗng) chạy như trước. Kiểm chứng: unit `day-times.test.ts`, E2E `gio-hoc-phi.spec.ts` (đọc giờ từng buổi trong DB), kiểm 360, 375, 1440px không tràn ngang.
+- [x] 38.2 Ngày khai giảng của lớp và ngày bắt đầu học của học sinh (2026-10-22). Form học sinh có "Ngày bắt đầu học *" ngay sau lớp, gợi ý ghi ngày khai giảng của lớp (buổi đầu tiên); khung thông tin lớp ghi học phí lớp, tổng buổi và ngày khai giảng.
+- [x] 38.3 Học phí theo số buổi còn lại (2026-10-22). Cột `students.tuition_fee` (rỗng: theo học phí lớp). Học phí lớp ÷ số buổi không huỷ × số buổi từ ngày bắt đầu học, làm tròn 1.000đ (`proratedFee`). Form thêm học sinh tự điền số gợi ý cho đến khi người nhập tự sửa, có nút "Dùng số này". Công nợ ở Học sinh, Học phí, hồ sơ, nhắc học phí và bot Telegram dùng học phí riêng khi có. Kiểm chứng: unit, E2E (DB lưu đúng số, màn Học phí hiện đúng số).
+- [x] 38.4 Mã học sinh 5 chữ số HS-00001 (2026-10-22). Mọi nơi hiển thị dùng `studentCode`; tìm kiếm ở Học sinh và Học phí nhận cả mã cũ HS-0012; đăng nhập học sinh theo mã (P28) đọc id nên nhận cả hai dạng. Kiểm chứng: unit, E2E tìm bằng mã cũ ra mã mới.
+
 ## Quyết định đã chốt
 
 | Mã | Quyết định | Lý do |
@@ -484,6 +493,7 @@ Nguồn: `docs/KICH-BAN-TELEGRAM.md` (2026-10-22). Người dùng thấy bot cò
 | D16 | Hạn đóng học phí là ngày `dueDay` (cài đặt, 1–28) của tháng sau tháng khai giảng. Phí trễ hạn chỉ lưu, chưa tự cộng. | Quy tắc đơn giản, người dùng chỉnh được. |
 | D17 | Nhắc đóng và thông báo chỉ ghi nhận (nhật ký, cài đặt), chưa gửi SMS hay email. | Chưa có nhà cung cấp kênh gửi. |
 | D18 | Chuẩn kích thước lấy từ trang Học sinh: nút, ô nhập, ô chọn và chip cao 32px trên web, 44px trên điện thoại (chip điện thoại 36px). Nút icon và nút ⋯ cao 36px trên web, 44px trên điện thoại. Bo góc ô và nút 12px, thẻ và bảng 24px. | Người dùng chọn trang Học sinh làm chuẩn cho mọi trang. |
+| D20 | Mỗi ngày học của lớp có giờ riêng, nhập bằng một dòng giờ cho mỗi ngày đã chọn (không có ô tích "giờ khác nhau"). Học sinh vào giữa khoá đóng học phí lớp ÷ số buổi × số buổi còn lại, làm tròn 1.000đ, người nhập sửa được. | Người dùng chốt ngày 2026-10-22 (P38). |
 | D19 | Bảng hiện từ 768px khi có tối đa 6 cột, từ 1200px khi nhiều cột hơn. Dưới mốc đó hiện thẻ. | Phụ huynh và Giáo viên cần hiển thị nhiều dữ liệu hơn trên màn vừa. |
 
 ## Việc cần người dùng làm

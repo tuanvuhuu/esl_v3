@@ -7,8 +7,10 @@ import { classes, learningEvents, parents, studentParents, students } from '@/db
 
 import { ForbiddenError, requirePermission, writeAudit } from '@/lib/authz';
 import { requireClassAccess, requireStudentAccess } from '@/lib/campus-access';
+import { sessionCountsFrom } from '@/lib/queries/classes';
 import { normalizeSearch } from '@/lib/text';
-import { fieldErrorsFrom, PARENT_RELATIONS, studentFormSchema, type ActionResult } from '@/lib/validation/student';
+import { proratedFee } from '@/lib/tuition';
+import { fieldErrorsFrom, isRealIsoDate, PARENT_RELATIONS, studentFormSchema, type ActionResult } from '@/lib/validation/student';
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -36,6 +38,31 @@ async function attachParent(tx: Tx, studentId: number, parentId: number, relatio
   }
 }
 
+// Học phí riêng chỉ lưu khi khác học phí lớp; bằng học phí lớp thì để trống để đi theo lớp khi lớp đổi học phí
+async function ownFee(classId: number, tuitionFee: number | null): Promise<number | null> {
+  if (tuitionFee === null) return null;
+  const [cls] = await db.select({ fee: classes.fee }).from(classes).where(eq(classes.id, classId)).limit(1);
+  return cls && cls.fee === tuitionFee ? null : tuitionFee;
+}
+
+export type TuitionPreview = { fee: number; total: number; remaining: number; suggested: number; firstKey: string | null };
+
+// Gợi ý học phí khi học sinh vào lớp từ ngày startDate: số buổi còn lại (không tính buổi huỷ) và học phí tương ứng
+export async function tuitionPreviewAction(classId: number, startDate: string): Promise<{ ok: true; preview: TuitionPreview } | { ok: false; message: string }> {
+  try {
+    await requirePermission('students.edit');
+    if (!Number.isInteger(classId) || classId < 1 || !isRealIsoDate(startDate)) return { ok: false, message: 'Chưa đủ lớp và ngày bắt đầu học.' };
+    await requireClassAccess(classId);
+    const counts = await sessionCountsFrom(classId, startDate);
+    if (!counts) return { ok: false, message: 'Lớp học không tồn tại.' };
+    return { ok: true, preview: { ...counts, suggested: proratedFee(counts.fee, counts.total, counts.remaining) } };
+  } catch (error) {
+    if (error instanceof ForbiddenError) return { ok: false, message: error.message };
+    console.error('Lỗi tính học phí theo buổi:', error);
+    return { ok: false, message: 'Không tính được học phí. Thử lại sau ít phút.' };
+  }
+}
+
 function forbiddenOr(error: unknown): ActionResult {
   if (error instanceof ForbiddenError) return { ok: false, message: error.message };
   console.error('Lỗi server action học sinh:', error);
@@ -51,6 +78,7 @@ export async function createStudentAction(_prev: ActionResult, formData: FormDat
     }
     const v = parsed.data;
     await requireClassAccess(v.classId);
+    const tuitionFee = await ownFee(v.classId, v.tuitionFee);
     const id = await db.transaction(async (tx) => {
       const [student] = await tx
         .insert(students)
@@ -62,6 +90,7 @@ export async function createStudentAction(_prev: ActionResult, formData: FormDat
           classId: v.classId,
           status: v.status,
           startDate: v.startDate,
+          tuitionFee,
           note: v.note,
         })
         .returning({ id: students.id });
@@ -101,6 +130,7 @@ export async function updateStudentAction(id: number, _prev: ActionResult, formD
     if (!newClass) return { ok: false, message: 'Lớp học không tồn tại.', fieldErrors: { classId: 'Lớp học không tồn tại' } };
 
     const classChanged = before.classId !== v.classId;
+    const tuitionFee = await ownFee(v.classId, v.tuitionFee);
     await db.transaction(async (tx) => {
       await tx
         .update(students)
@@ -112,6 +142,7 @@ export async function updateStudentAction(id: number, _prev: ActionResult, formD
           classId: v.classId,
           status: v.status,
           startDate: v.startDate,
+          tuitionFee,
           note: v.note,
           updatedAt: new Date(),
         })
@@ -163,6 +194,7 @@ export type StudentFormValues = {
   classId: number;
   status: 'active' | 'trial' | 'paused' | 'finished';
   startDate: string;
+  tuitionFee: number | null; // học phí riêng, null: theo học phí lớp
   note: string;
   parentId: string; // id phụ huynh liên hệ chính, rỗng nếu chưa có
   parentName: string;
@@ -183,6 +215,8 @@ export async function loadStudentForm(id: number): Promise<{ ok: true; values: S
         classId: students.classId,
         status: students.status,
         startDate: students.startDate,
+        tuitionFee: students.tuitionFee,
+        classFee: classes.fee,
         note: students.note,
         parentId: parents.id,
         parentName: parents.fullName,
@@ -190,6 +224,7 @@ export async function loadStudentForm(id: number): Promise<{ ok: true; values: S
         parentRelation: studentParents.relation,
       })
       .from(students)
+      .innerJoin(classes, eq(classes.id, students.classId))
       .leftJoin(studentParents, and(eq(studentParents.studentId, students.id), eq(studentParents.isPrimary, true)))
       .leftJoin(parents, eq(parents.id, studentParents.parentId))
       .where(eq(students.id, id))
@@ -204,6 +239,7 @@ export async function loadStudentForm(id: number): Promise<{ ok: true; values: S
         classId: row.classId,
         status: row.status,
         startDate: row.startDate,
+        tuitionFee: row.tuitionFee ?? row.classFee,
         note: row.note,
         parentId: row.parentId ? String(row.parentId) : '',
         parentName: row.parentName ?? '',

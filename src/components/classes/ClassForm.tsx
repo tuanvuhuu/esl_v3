@@ -2,12 +2,14 @@
 
 import { startTransition, useActionState, useState, type FormEvent } from 'react';
 import { createClassAction, updateClassAction, type ClassCoreValues } from '@/app/(app)/lop-hoc/actions';
-import { WEEKDAY_CODES, WEEKDAY_CODE_LABELS } from '@/lib/validation/class';
+import { WEEKDAY_CODES, WEEKDAY_CODE_LABELS, type WeekdayCode } from '@/lib/validation/class';
 import type { StaffRole } from '@/lib/validation/teacher';
 import type { ActionResult } from '@/lib/validation/student';
 import { Field, FORM_BTN_CANCEL, FORM_BTN_SUBMIT, inputClass, FormFooter } from '@/components/ui/Field';
 import { SelectPanel } from '@/components/ui/SelectPanel';
 import { Alert } from '@/components/ui/primitives';
+import { Notice } from '@/components/ui/surfaces';
+import { DayTimeRows, type DayTimeDraft } from '@/components/classes/DayTimeRows';
 
 // staffRole: vị trí người này có thể giữ (chủ nhiệm, giáo viên nước ngoài, trợ giảng). campusIds: các cơ sở người này dạy.
 // Form lớp chỉ cho chọn đúng vai trò và người dạy ở cơ sở của lớp.
@@ -16,8 +18,9 @@ export type CampusChoice = { id: number; name: string };
 export type LevelChoice = { id: number; code: string; name: string };
 
 const INITIAL: ActionResult = { ok: false };
+const DEFAULT_TIME = { start: '18:30', end: '20:00' };
 
-// Form tạo lớp (có lịch học) và sửa lớp (chỉ ô chung). Lịch học đổi theo từng buổi ở màn Lịch học.
+// Form tạo lớp (có lịch học) và sửa lớp (ô chung và giờ từng ngày học). Thêm, bớt ngày hoặc sửa một buổi ở màn Lịch học.
 // Tạo lớp thì cơ sở mặc định là cơ sở đang xem (defaultCampusId).
 export function ClassForm({
   mode,
@@ -79,6 +82,31 @@ export function ClassForm({
     return result;
   }, INITIAL);
   const errors = state.fieldErrors ?? {};
+
+  // Giờ học theo ngày. Chọn ngày nào thì ngày đó có một dòng giờ, lấy giờ vừa nhập gần nhất.
+  // Sửa giờ một dòng thì các dòng chưa sửa đi theo, nên lớp cùng giờ chỉ cần nhập một lần.
+  const initialTimes = new Map((values.dayTimes ?? []).map((d) => [d.code as WeekdayCode, { start: d.start, end: d.end }]));
+  const [days, setDays] = useState<WeekdayCode[]>([...initialTimes.keys()]);
+  const [times, setTimes] = useState(initialTimes);
+  const [touched, setTouched] = useState<Set<WeekdayCode>>(() => new Set(initialTimes.keys()));
+  const [lastTime, setLastTime] = useState(DEFAULT_TIME);
+  const rows: DayTimeDraft[] = WEEKDAY_CODES.filter((c) => days.includes(c)).map((code) => ({ code, ...(times.get(code) ?? lastTime) }));
+
+  function toggleDay(code: WeekdayCode, on: boolean) {
+    setDays((prev) => (on ? [...prev, code] : prev.filter((c) => c !== code)));
+    if (on && !times.has(code)) setTimes((prev) => new Map(prev).set(code, lastTime));
+  }
+
+  function changeTime(code: WeekdayCode, field: 'start' | 'end', value: string) {
+    const edited = { ...(times.get(code) ?? lastTime), [field]: value };
+    setTimes((prev) => {
+      const next = new Map(prev).set(code, edited);
+      for (const other of days) if (other !== code && !touched.has(other)) next.set(other, edited);
+      return next;
+    });
+    setTouched((prev) => new Set(prev).add(code));
+    setLastTime(edited);
+  }
 
   // Gọi action thủ công để ô nhập không bị reset khi có lỗi (E-028)
   function submit(e: FormEvent<HTMLFormElement>) {
@@ -176,7 +204,14 @@ export function ClassForm({
             <div className="flex flex-wrap gap-2">
               {WEEKDAY_CODES.map((code) => (
                 <label key={code} className="cursor-pointer" title={WEEKDAY_CODE_LABELS[code]}>
-                  <input type="checkbox" name="weekdays" value={code} className="peer sr-only" />
+                  <input
+                    type="checkbox"
+                    name="weekdays"
+                    value={code}
+                    checked={days.includes(code)}
+                    onChange={(e) => toggleDay(code, e.target.checked)}
+                    className="peer sr-only"
+                  />
                   <span className="inline-flex h-[var(--ctl-h)] min-w-[var(--ctl-h)] items-center justify-center rounded-full border border-line bg-surface px-3 text-sm font-semibold text-ink-2 max-[767px]:h-[var(--ctl-h-touch)] peer-checked:border-primary-deep peer-checked:bg-primary peer-checked:text-on-primary peer-focus-visible:outline-2 peer-focus-visible:outline-primary-deep">
                     {code}
                   </span>
@@ -186,12 +221,7 @@ export function ClassForm({
             {errors.weekdays && <span className="text-sm font-semibold text-blush-ink">{errors.weekdays}</span>}
           </fieldset>
 
-          <Field label="Giờ bắt đầu *" error={errors.startTime}>
-            <input name="startTime" type="time" defaultValue="18:30" className={inputClass(errors.startTime)} />
-          </Field>
-          <Field label="Giờ kết thúc *" error={errors.endTime}>
-            <input name="endTime" type="time" defaultValue="20:00" className={inputClass(errors.endTime)} />
-          </Field>
+          <DayTimeRows rows={rows} errors={errors} onChange={changeTime} />
           <Field label="Ngày khai giảng *" error={errors.startDate} hint="Buổi đầu tiên diễn ra vào ngày này hoặc ngày học gần nhất">
             <input name="startDate" type="date" defaultValue={defaultStartDate} className={inputClass(errors.startDate)} />
           </Field>
@@ -200,9 +230,12 @@ export function ClassForm({
           </Field>
         </>
       ) : (
-        <p className="col-span-full rounded-[var(--radius-ctl)] bg-lav px-3 py-2.5 text-sm leading-relaxed text-lav-ink">
-          Lịch tuần và số buổi không đổi ở đây. Muốn đổi giờ, ngày hoặc huỷ một buổi, làm ở màn Lịch học.
-        </p>
+        <>
+          <DayTimeRows rows={rows} errors={errors} onChange={changeTime} />
+          <Notice className={`col-span-full ${rows.length === 0 ? 'hidden' : ''}`}>
+            Đổi giờ của một ngày thì các buổi sắp tới của ngày đó dời sang giờ mới. Thêm, bớt ngày học hoặc sửa, huỷ một buổi riêng làm ở màn Lịch học.
+          </Notice>
+        </>
       )}
 
       <FormFooter className="col-span-full">

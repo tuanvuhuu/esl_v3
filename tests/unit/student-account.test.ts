@@ -5,7 +5,7 @@ import { parseStudentCode, studentCode } from '@/lib/student-code';
 
 describe('tài khoản học sinh', () => {
   it('email nội bộ đi theo mã học sinh và không trùng giữa hai học sinh', () => {
-    expect(studentLoginEmail(7)).toBe('hs-0007@hoc-sinh.local');
+    expect(studentLoginEmail(7)).toBe('hs-00007@hoc-sinh.local');
     expect(studentLoginEmail(7)).not.toBe(studentLoginEmail(8));
   });
 

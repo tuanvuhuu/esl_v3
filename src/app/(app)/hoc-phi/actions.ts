@@ -28,17 +28,18 @@ function errorResult(error: unknown): ActionResult {
   return { ok: false, message: 'Không ghi nhận được. Thử lại sau ít phút.' };
 }
 
-// Số tiền còn nợ của một học sinh: học phí lớp trừ tổng đã thu
+// Số tiền còn nợ của một học sinh: học phí (riêng của học sinh, hoặc của lớp) trừ tổng đã thu
 async function studentBalance(studentId: number): Promise<{ name: string; fee: number; paid: number; debt: number } | null> {
   const [row] = await db
-    .select({ name: students.fullName, fee: classes.fee })
+    .select({ name: students.fullName, fee: classes.fee, ownFee: students.tuitionFee })
     .from(students)
     .innerJoin(classes, eq(classes.id, students.classId))
     .where(eq(students.id, studentId))
     .limit(1);
   if (!row) return null;
   const paid = await paidOf(studentId);
-  return { name: row.name, fee: row.fee, paid, debt: debtOf(row.fee, paid) };
+  const fee = row.ownFee ?? row.fee;
+  return { name: row.name, fee, paid, debt: debtOf(fee, paid) };
 }
 
 // Ghi một khoản thu vào sổ. Không thu quá số còn nợ.

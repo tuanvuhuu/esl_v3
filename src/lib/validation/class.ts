@@ -57,13 +57,43 @@ export const classCoreSchema = z.object({
     .max(100, 'Sĩ số tối đa 100'),
 });
 
-// Ô lịch: chỉ nhập khi tạo lớp, để sinh các buổi học
+// Giờ học của từng ngày trong form: { T3: { start: '18:00', end: '19:30' }, T7: {...} }
+export type DayTimesInput = Partial<Record<WeekdayCode, { start: string; end: string }>>;
+export type WeekdayCode = (typeof WEEKDAY_CODES)[number];
+export type DayTimeValue = { code: WeekdayCode; start: string; end: string };
+
+// Kiểm giờ của từng ngày học. Ngày không có giờ riêng dùng giờ chung (fallback), nếu có.
+// Lỗi trả theo tên ô: start_T3, end_T3. Hàm thuần, dùng cho form tạo và sửa lớp.
+export function checkDayTimes(
+  codes: readonly WeekdayCode[],
+  raw: DayTimesInput,
+  fallback?: { start?: string; end?: string },
+): { list: DayTimeValue[]; errors: Record<string, string> } {
+  const list: DayTimeValue[] = [];
+  const errors: Record<string, string> = {};
+  for (const code of WEEKDAY_CODES.filter((c) => codes.includes(c))) {
+    const own = raw[code];
+    const start = own?.start ?? fallback?.start ?? '';
+    const end = own?.end ?? fallback?.end ?? '';
+    const startKey = own ? `start_${code}` : 'startTime';
+    const endKey = own ? `end_${code}` : 'endTime';
+    if (!TIME.test(start)) errors[startKey] ??= start ? 'Giờ theo dạng HH:MM' : 'Vui lòng chọn giờ bắt đầu';
+    if (!TIME.test(end)) errors[endKey] ??= end ? 'Giờ theo dạng HH:MM' : 'Vui lòng chọn giờ kết thúc';
+    else if (TIME.test(start) && end <= start) errors[endKey] ??= 'Giờ kết thúc phải sau giờ bắt đầu';
+    list.push({ code, start, end });
+  }
+  return { list, errors };
+}
+
+// Ô lịch: chỉ nhập khi tạo lớp, để sinh các buổi học.
+// Mỗi ngày học có giờ riêng (dayTimes). startTime, endTime là giờ chung cho ngày không có giờ riêng (dữ liệu cũ, nhập từ Excel).
 const classScheduleShape = {
   weekdays: z
     .array(z.enum(WEEKDAY_CODES, { error: 'Ngày học không hợp lệ' }), { error: 'Chọn ít nhất một ngày học' })
     .min(1, 'Chọn ít nhất một ngày học'),
-  startTime: z.string({ error: 'Vui lòng chọn giờ bắt đầu' }).regex(TIME, 'Giờ theo dạng HH:MM'),
-  endTime: z.string({ error: 'Vui lòng chọn giờ kết thúc' }).regex(TIME, 'Giờ theo dạng HH:MM'),
+  startTime: z.string().optional(),
+  endTime: z.string().optional(),
+  dayTimes: z.record(z.string(), z.object({ start: z.string(), end: z.string() })).default({}),
   startDate: z
     .string({ error: 'Vui lòng chọn ngày khai giảng' })
     .min(1, 'Vui lòng chọn ngày khai giảng')
@@ -75,13 +105,18 @@ const classScheduleShape = {
     .max(200, 'Tối đa 200 buổi'),
 };
 
-const endAfterStart = (v: { startTime: string; endTime: string }) => v.endTime > v.startTime;
-const endAfterStartMessage = { message: 'Giờ kết thúc phải sau giờ bắt đầu', path: ['endTime'] };
-
-// Form tạo lớp: ô chung cộng ô lịch
+// Form tạo lớp: ô chung cộng ô lịch. Kết quả có dayTimes đã chuẩn hoá theo thứ tự tuần,
+// startTime, endTime là giờ của ngày học đầu tuần (giữ cho dữ liệu cũ đọc hai cột này).
 export const classCreateSchema = z
   .object({ ...classCoreSchema.shape, ...classScheduleShape })
-  .refine(endAfterStart, endAfterStartMessage);
+  .superRefine((v, ctx) => {
+    const { errors } = checkDayTimes(v.weekdays, v.dayTimes as DayTimesInput, { start: v.startTime, end: v.endTime });
+    for (const [key, message] of Object.entries(errors)) ctx.addIssue({ code: 'custom', path: [key], message });
+  })
+  .transform((v) => {
+    const { list } = checkDayTimes(v.weekdays, v.dayTimes as DayTimesInput, { start: v.startTime, end: v.endTime });
+    return { ...v, dayTimes: list, startTime: list[0]?.start ?? '', endTime: list[0]?.end ?? '' };
+  });
 
 export type ClassCoreInput = z.infer<typeof classCoreSchema>;
 export type ClassCreateInput = z.infer<typeof classCreateSchema>;

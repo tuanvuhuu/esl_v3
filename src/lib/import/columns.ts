@@ -70,7 +70,7 @@ export const IMPORT_COLUMNS: ImportColumn[] = [
   { key: 'foreignName', header: 'GV nước ngoài', group: 'staff', width: 18, note: 'Không bắt buộc.' },
   { key: 'foreignPhone', header: 'SĐT GV nước ngoài', group: 'staff', width: 14, text: true, note: '10 số, bắt đầu bằng 0.' },
 
-  { key: 'studentCode', header: 'Mã HS', group: 'student', width: 10, text: true, note: 'VD HS-0012. Có mã thì cập nhật đúng học sinh đó. Để trống thì tìm theo họ tên và ngày sinh.' },
+  { key: 'studentCode', header: 'Mã HS', group: 'student', width: 10, text: true, note: 'VD HS-00012. Có mã thì cập nhật đúng học sinh đó. Để trống thì tìm theo họ tên và ngày sinh.' },
   { key: 'studentName', header: 'Họ tên học sinh', group: 'student', width: 20, note: 'Để trống cả dòng học sinh nếu dòng chỉ khai báo lớp.' },
   { key: 'gender', header: 'Giới tính', group: 'student', width: 9, note: 'Nam hoặc Nữ. Bắt buộc với học sinh mới.', choices: GENDER_CHOICES },
   { key: 'dob', header: 'Ngày sinh', group: 'student', width: 12, text: true, note: 'Dạng dd/mm/yyyy. Bắt buộc với học sinh mới.' },

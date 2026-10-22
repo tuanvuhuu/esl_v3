@@ -39,9 +39,9 @@ describe('học phí', () => {
 });
 
 describe('mã học sinh', () => {
-  it('tạo mã HS-0001 từ id', () => {
-    expect(studentCode(1)).toBe('HS-0001');
-    expect(studentCode(24)).toBe('HS-0024');
+  it('tạo mã HS-00001 từ id', () => {
+    expect(studentCode(1)).toBe('HS-00001');
+    expect(studentCode(24)).toBe('HS-00024');
     expect(studentCode(12345)).toBe('HS-12345');
   });
 

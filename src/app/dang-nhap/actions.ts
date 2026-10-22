@@ -20,7 +20,7 @@ const loginSchema = z.object({
 // Thông báo lỗi không cho biết email có tồn tại hay không.
 async function authenticate(email: string, password: string): Promise<{ ok: true; accountId: number } | { ok: false; message: string }> {
   try {
-    // Học sinh đăng nhập bằng mã học sinh (HS-0001), giáo viên và nhân viên bằng email
+    // Học sinh đăng nhập bằng mã học sinh (HS-00001, mã cũ HS-0001 vẫn nhận), giáo viên và nhân viên bằng email
     const studentId = parseStudentCode(email);
     const [row] = await db
       .select()

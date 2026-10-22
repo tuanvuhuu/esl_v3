@@ -26,6 +26,14 @@ export function dueDateFor(startDate: string, dueDay: number): string {
   return `${ny}-${String(nm).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
 
+// Học phí cho học sinh vào lớp giữa khoá: học phí lớp chia theo buổi, nhân số buổi còn lại,
+// làm tròn đến 1.000đ. Học từ buổi đầu (còn đủ buổi) thì đóng đủ học phí lớp. Số nguyên VND.
+export function proratedFee(fee: number, totalSessions: number, remainingSessions: number): number {
+  if (totalSessions <= 0 || remainingSessions >= totalSessions) return fee;
+  if (remainingSessions <= 0) return 0;
+  return Math.round((fee * remainingSessions) / totalSessions / 1000) * 1000;
+}
+
 export function isOverdue(fee: number, paid: number, dueDate: string, todayKey: string): boolean {
   return debtOf(fee, paid) > 0 && dueDate < todayKey;
 }

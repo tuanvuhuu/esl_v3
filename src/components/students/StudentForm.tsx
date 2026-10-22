@@ -1,12 +1,14 @@
 'use client';
 
-import { startTransition, useActionState, useState, type FormEvent } from 'react';
-import { createStudentAction, updateStudentAction, type StudentFormValues } from '@/app/(app)/hoc-sinh/actions';
+import { startTransition, useActionState, useEffect, useState, type FormEvent } from 'react';
+import { createStudentAction, tuitionPreviewAction, updateStudentAction, type StudentFormValues, type TuitionPreview } from '@/app/(app)/hoc-sinh/actions';
+import { dateKeyLabel } from '@/lib/datetime';
 import { formatVND } from '@/lib/money';
 import { todayIsoVN, type ActionResult } from '@/lib/validation/student';
 import { Field, FORM_BTN_CANCEL, FORM_BTN_SUBMIT, inputClass, textareaClass, FormFooter } from '@/components/ui/Field';
 import { SelectPanel } from '@/components/ui/SelectPanel';
 import { Alert } from '@/components/ui/primitives';
+import { Btn } from '@/components/ui/Btn';
 
 // campusId: lớp thuộc cơ sở nào. Form học sinh chọn cơ sở trước, rồi chỉ hiện lớp của cơ sở đó.
 export type ClassOption = { id: number; name: string; course: string; teacherName: string; fee: number; campusId: number };
@@ -34,6 +36,7 @@ const EMPTY: StudentFormValues = {
   classId: 0,
   status: 'trial',
   startDate: '',
+  tuitionFee: null,
   note: '',
   parentId: '',
   parentName: '',
@@ -73,6 +76,28 @@ export function StudentForm({
   const [parentId, setParentId] = useState(values.parentId);
   const selectedClass = classes.find((c) => c.id === classId);
   const campusClasses = classes.filter((c) => c.campusId === campusId);
+
+  // Ngày bắt đầu học của học sinh (khác ngày khai giảng của lớp) và học phí theo số buổi còn lại.
+  // Thêm mới: ô học phí tự lấy số gợi ý cho đến khi người nhập tự sửa. Sửa: giữ số đã lưu, chỉ hiện gợi ý.
+  const [startDate, setStartDate] = useState(values.startDate);
+  const [fee, setFee] = useState(values.tuitionFee === null ? '' : String(values.tuitionFee));
+  const [feeEdited, setFeeEdited] = useState(mode === 'edit');
+  const [preview, setPreview] = useState<TuitionPreview | null>(null);
+  useEffect(() => {
+    let stale = false;
+    if (!classId || !startDate) return;
+    tuitionPreviewAction(classId, startDate).then((r) => {
+      if (stale) return;
+      setPreview(r.ok ? r.preview : null);
+      if (r.ok && !feeEdited) setFee(String(r.preview.suggested));
+    });
+    return () => {
+      stale = true;
+    };
+    // feeEdited đổi không cần tính lại; chỉ tính khi đổi lớp hoặc ngày bắt đầu học
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [classId, startDate]);
+  const shownPreview = preview && classId && startDate ? preview : null;
 
   // Đổi cơ sở thì bỏ lớp không thuộc cơ sở mới, để không lưu nhầm lớp của cơ sở khác
   function chooseCampus(next: string) {
@@ -136,11 +161,50 @@ export function StudentForm({
         />
       </Field>
 
+      <Field
+        label="Ngày bắt đầu học *"
+        error={errors.startDate}
+        hint={shownPreview?.firstKey ? `Lớp khai giảng ${dateKeyLabel(shownPreview.firstKey)}. Vào giữa khoá thì chọn ngày học buổi đầu.` : 'Ngày học sinh bắt đầu vào lớp'}
+      >
+        <input name="startDate" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={inputClass(errors.startDate)} />
+      </Field>
+
       {selectedClass && (
-        <div className="col-span-full rounded-[var(--radius-ctl)] bg-lav px-3 py-2.5 text-sm leading-relaxed text-lav-ink">
+        <div className="col-span-full rounded-[var(--radius-ctl)] bg-lav px-3 py-2.5 text-sm leading-relaxed text-lav-ink" data-testid="class-info">
           <b className="text-ink">{selectedClass.course}</b>
           <br />
-          {selectedClass.teacherName} · Học phí <b className="text-ink">{formatVND(selectedClass.fee)}</b>
+          {selectedClass.teacherName} · Học phí lớp <b className="text-ink">{formatVND(selectedClass.fee)}</b>
+          {shownPreview && <> · {shownPreview.total} buổi{shownPreview.firstKey ? ` · Khai giảng ${dateKeyLabel(shownPreview.firstKey)}` : ''}</>}
+        </div>
+      )}
+
+      <Field label="Học phí của học sinh (VND)" error={errors.tuitionFee} hint="Số nguyên. Để trống là đóng đủ học phí lớp.">
+        <input
+          name="tuitionFee"
+          type="number"
+          inputMode="numeric"
+          min={0}
+          step={1000}
+          value={fee}
+          onChange={(e) => {
+            setFee(e.target.value);
+            setFeeEdited(true);
+          }}
+          className={inputClass(errors.tuitionFee)}
+        />
+      </Field>
+
+      {shownPreview && shownPreview.remaining < shownPreview.total && (
+        <div className="flex min-w-0 flex-col gap-2 self-end rounded-[var(--radius-ctl)] bg-butter px-3 py-2.5 text-sm leading-relaxed text-butter-ink min-[768px]:col-span-2 min-[768px]:flex-row min-[768px]:items-center" data-testid="fee-suggestion">
+          <span className="min-w-0 flex-1">
+            Từ {dateKeyLabel(startDate)} còn <b>{shownPreview.remaining}/{shownPreview.total} buổi</b>: {formatVND(shownPreview.fee)} ÷ {shownPreview.total} × {shownPreview.remaining} ≈{' '}
+            <b>{formatVND(shownPreview.suggested)}</b>
+          </span>
+          {fee !== String(shownPreview.suggested) && (
+            <Btn variant="ghost" type="button" onClick={() => { setFee(String(shownPreview.suggested)); setFeeEdited(true); }}>
+              Dùng số này
+            </Btn>
+          )}
         </div>
       )}
 
@@ -203,10 +267,6 @@ export function StudentForm({
         <input name="parentPrimary" type="checkbox" defaultChecked className="size-4 accent-[var(--primary-deep)]" />
         Liên hệ chính
       </label>
-
-      <Field label="Ngày bắt đầu" error={errors.startDate}>
-        <input name="startDate" type="date" defaultValue={values.startDate} className={inputClass(errors.startDate)} />
-      </Field>
 
       <Field label="Ghi chú" error={errors.note} wide>
         <textarea name="note" defaultValue={values.note} rows={3} placeholder="Mục tiêu, nhu cầu đặc biệt, lịch rảnh…" className={textareaClass(errors.note)} />
