@@ -94,7 +94,8 @@ async function ScheduleData({ searchParams }: { searchParams: Promise<SearchPara
       rangeFrom={from}
       rangeTo={to}
       sessions={sessions}
-      classes={classes.map((c) => ({ id: c.id, name: c.name }))}
+      classes={classes.map((c) => ({ id: c.id, name: c.name, teacherId: c.teacherId, room: c.room }))}
+      today={today}
       teachers={teachers.filter((t) => t.staffRole !== 'assistant').map((t) => ({ id: t.id, name: t.name, subject: t.subject }))}
       filters={{ cls, teacher }}
       canManage={hasPermission(granted, 'classes.manage')}

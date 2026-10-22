@@ -1,7 +1,8 @@
 'use client';
 
-import { startTransition, useActionState, useState, type FormEvent } from 'react';
-import { createClassAction, updateClassAction, type ClassCoreValues } from '@/app/(app)/lop-hoc/actions';
+import { startTransition, useActionState, useEffect, useRef, useState, type FormEvent } from 'react';
+import { createClassAction, previewScheduleAction, updateClassAction, type ClassCoreValues, type SchedulePreview } from '@/app/(app)/lop-hoc/actions';
+import { dateKeyLabel, vnDateKey, vnTimeLabel, weekdayLabel, weekdayOfKey } from '@/lib/datetime';
 import { WEEKDAY_CODES, WEEKDAY_CODE_LABELS, type WeekdayCode } from '@/lib/validation/class';
 import type { StaffRole } from '@/lib/validation/teacher';
 import type { ActionResult } from '@/lib/validation/student';
@@ -114,7 +115,14 @@ export function ClassForm({
 
   function changeTime(code: WeekdayCode, index: number, field: 'start' | 'end', value: string) {
     const slots = times.get(code) ?? [lastTime];
-    const edited = { ...slots[index], [field]: value };
+    const old = slots[index];
+    const edited = { ...old, [field]: value };
+    // Đổi giờ bắt đầu thì giờ kết thúc dời theo, giữ nguyên độ dài ca (đổi 18:00–19:30 sang 08:00 thành 08:00–09:30)
+    const ok = (t: string) => /^([01]\d|2[0-3]):[0-5]\d$/.test(t);
+    if (field === 'start' && ok(value) && ok(old.start) && ok(old.end) && old.end > old.start) {
+      const end = toMinutes(value) + toMinutes(old.end) - toMinutes(old.start);
+      if (end < 24 * 60) edited.end = toTime(end);
+    }
     setTimes((prev) => {
       const next = new Map(prev).set(code, slots.map((s, i) => (i === index ? edited : s)));
       if (index === 0) {
@@ -150,12 +158,27 @@ export function ClassForm({
 
   const isCreate = mode === 'create';
 
+  // Xem trước lịch khi tạo lớp: chờ ngừng nhập nửa giây rồi hỏi máy chủ (số buổi, ngày cuối, buổi trùng giáo viên hoặc phòng).
+  // bump tăng khi ô thường đổi; ô chọn (cơ sở, giáo viên) và giờ học nằm trong state nên đã có trong danh sách theo dõi.
+  const formRef = useRef<HTMLFormElement>(null);
+  const [bump, setBump] = useState(0);
+  const [preview, setPreview] = useState<SchedulePreview | null>(null);
+  useEffect(() => {
+    if (!isCreate) return;
+    const timer = setTimeout(async () => {
+      if (!formRef.current) return;
+      setPreview(await previewScheduleAction(new FormData(formRef.current)));
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [isCreate, bump, days, times, campusId, teacherId]);
+
   return (
-    <form onSubmit={submit} noValidate className="grid grid-cols-1 gap-3.5 min-[768px]:grid-cols-2 min-[768px]:gap-x-4">
+    <form ref={formRef} onSubmit={submit} onChange={() => setBump((n) => n + 1)} noValidate className="grid grid-cols-1 gap-3.5 min-[768px]:grid-cols-2 min-[768px]:gap-x-4">
       {state.message && !state.ok && (
         <Alert className="col-span-full">{state.message}</Alert>
       )}
 
+      <SectionTitle>Thông tin lớp</SectionTitle>
       <Field label="Cơ sở *" error={errors.campusId} hint="Mỗi lớp thuộc đúng một cơ sở">
         <SelectPanel
           name="campusId"
@@ -187,6 +210,7 @@ export function ClassForm({
           block
         />
       </Field>
+      <SectionTitle>Giáo viên và phòng</SectionTitle>
       <Field label="Giáo viên chủ nhiệm *" error={errors.teacherId} hint={teacherOptions.length === 0 ? 'Cơ sở này chưa có giáo viên. Thêm ở màn Giáo viên.' : undefined}>
         <SelectPanel
           name="teacherId"
@@ -223,8 +247,9 @@ export function ClassForm({
       <Field label="Phòng" error={errors.room}>
         <input name="room" defaultValue={values.room} placeholder="VD: P.201" autoComplete="off" className={inputClass(errors.room)} />
       </Field>
-      <Field label="Học phí (VND) *" error={errors.fee} hint="Số nguyên, không có dấu chấm">
-        <input name="fee" type="number" inputMode="numeric" min={0} step={1} defaultValue={values.fee} className={inputClass(errors.fee)} />
+      <SectionTitle>Học phí và sĩ số</SectionTitle>
+      <Field label="Học phí (VND) *" error={errors.fee} hint="Học phí cả khoá, gõ số, app tự thêm dấu chấm">
+        <MoneyInput name="fee" defaultValue={values.fee} className={inputClass(errors.fee)} />
       </Field>
       <Field label="Sĩ số tối đa *" error={errors.capacity}>
         <input name="capacity" type="number" inputMode="numeric" min={1} max={100} step={1} defaultValue={values.capacity} className={inputClass(errors.capacity)} />
@@ -232,6 +257,7 @@ export function ClassForm({
 
       {isCreate ? (
         <>
+          <SectionTitle>Lịch học</SectionTitle>
           <fieldset className="col-span-full flex flex-col gap-2">
             <legend className="mb-1.5 text-sm font-normal text-ink-2">Ngày học trong tuần *</legend>
             <div className="flex flex-wrap gap-2">
@@ -261,6 +287,7 @@ export function ClassForm({
           <Field label="Số buổi *" error={errors.sessionsTotal}>
             <input name="sessionsTotal" type="number" inputMode="numeric" min={1} max={200} step={1} defaultValue={24} className={inputClass(errors.sessionsTotal)} />
           </Field>
+          <PreviewBox preview={preview} />
         </>
       ) : (
         <>
@@ -278,5 +305,64 @@ export function ClassForm({
         </button>
       </FormFooter>
     </form>
+  );
+}
+
+// Tiêu đề nhóm trong form lớp: chia form dài thành bốn phần dễ dò
+function SectionTitle({ children }: { children: string }) {
+  return <h3 className="col-span-full mt-2 border-b border-line pb-1.5 text-md font-extrabold text-ink first:mt-0">{children}</h3>;
+}
+
+// Ô tiền: hiện "6.000.000", gửi số nguyên 6000000 qua ô ẩn cùng tên
+function MoneyInput({ name, defaultValue, className }: { name: string; defaultValue: number; className: string }) {
+  const [digits, setDigits] = useState(defaultValue ? String(defaultValue) : '');
+  const shown = digits ? Number(digits).toLocaleString('vi-VN') : '';
+  return (
+    <>
+      <input
+        type="text"
+        inputMode="numeric"
+        autoComplete="off"
+        value={shown}
+        placeholder="VD: 6.000.000"
+        onChange={(e) => setDigits(e.target.value.replace(/\D/g, '').replace(/^0+(?=\d)/, '').slice(0, 12))}
+        className={`${className} tabular-nums`}
+      />
+      <input type="hidden" name={name} value={digits || '0'} />
+    </>
+  );
+}
+
+// "T5 22/10/2026 08:00"
+function whenLabel(d: Date): string {
+  const key = vnDateKey(d);
+  return `${weekdayLabel(weekdayOfKey(key))} ${dateKeyLabel(key)} ${vnTimeLabel(d)}`;
+}
+
+// Khung xem trước lịch: số buổi, ngày đầu, ngày cuối, vài buổi đầu; buổi trùng hiện đỏ để sửa trước khi tạo
+function PreviewBox({ preview }: { preview: SchedulePreview | null }) {
+  if (!preview) return null;
+  if (!preview.ok) return <Notice className="col-span-full">{preview.message}</Notice>;
+  return (
+    <section aria-label="Xem trước lịch" className="col-span-full flex flex-col gap-2 rounded-[var(--radius-ctl)] bg-primary-soft p-3">
+      <p className="text-base text-ink">
+        <b className="font-extrabold">{preview.total} buổi</b> · từ {whenLabel(preview.firstStartsAt)} đến {whenLabel(preview.lastStartsAt)}
+      </p>
+      <ul className="flex flex-wrap gap-1.5">
+        {preview.sample.map((s) => (
+          <li key={s.startsAt.toISOString()} className="rounded-full bg-surface px-2.5 py-1 text-sm text-ink-2">
+            {whenLabel(s.startsAt)}–{vnTimeLabel(s.endsAt)}
+          </li>
+        ))}
+        {preview.total > preview.sample.length && <li className="px-1 py-1 text-sm text-muted">và {preview.total - preview.sample.length} buổi nữa</li>}
+      </ul>
+      {preview.conflictCount > 0 ? (
+        <Alert inline>
+          Trùng lịch {preview.conflictCount} buổi: {preview.conflicts.join('; ')}. Đổi giờ, ngày, giáo viên hoặc phòng trước khi tạo.
+        </Alert>
+      ) : (
+        <Alert inline tone="ok">Không trùng lịch giáo viên và phòng.</Alert>
+      )}
+    </section>
   );
 }

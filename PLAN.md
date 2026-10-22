@@ -1,6 +1,6 @@
 # ESL Center: kế hoạch và tiến độ
 
-> **Tiến độ tổng: 194/220 task (88%)**
+> **Tiến độ tổng: 197/223 task (88%)**
 > Cập nhật lần cuối: 2026-10-22. P1–P34 xong. P38 (giờ học từng ngày, học phí theo buổi còn lại, mã HS-00001) xong. P37 bot Telegram theo kịch bản: 37.1–37.9 xong, còn đặt cron mỗi giờ trên bản deploy và các việc đợt sau. P35: 35.2, 35.3, 35.12, 35.24, 35.27 xong; 35.4–35.6 làm dở (35.6 chỉ còn thử tay trên điện thoại). P36 Soạn nhanh xong phần code (36.1–36.6). Số đếm lấy từ các ô `[x]` và `[ ]` trong file.
 
 ## 🎯 Các task vừa hoàn thành & Lệnh test riêng (Không chạy all)
@@ -470,6 +470,14 @@ Người dùng hỏi (2026-10-22): lớp học hai buổi mà giờ khác nhau t
 - [x] 38.2 Ngày khai giảng của lớp và ngày bắt đầu học của học sinh (2026-10-22). Form học sinh có "Ngày bắt đầu học *" ngay sau lớp, gợi ý ghi ngày khai giảng của lớp (buổi đầu tiên); khung thông tin lớp ghi học phí lớp, tổng buổi và ngày khai giảng.
 - [x] 38.3 Học phí theo số buổi còn lại (2026-10-22). Cột `students.tuition_fee` (rỗng: theo học phí lớp). Học phí lớp ÷ số buổi không huỷ × số buổi từ ngày bắt đầu học, làm tròn 1.000đ (`proratedFee`). Form thêm học sinh tự điền số gợi ý cho đến khi người nhập tự sửa, có nút "Dùng số này". Công nợ ở Học sinh, Học phí, hồ sơ, nhắc học phí và bot Telegram dùng học phí riêng khi có. Kiểm chứng: unit, E2E (DB lưu đúng số, màn Học phí hiện đúng số).
 - [x] 38.4 Mã học sinh 5 chữ số HS-00001 (2026-10-22). Mọi nơi hiển thị dùng `studentCode`; tìm kiếm ở Học sinh và Học phí nhận cả mã cũ HS-0012; đăng nhập học sinh theo mã (P28) đọc id nên nhận cả hai dạng. Kiểm chứng: unit, E2E tìm bằng mã cũ ra mã mới.
+
+## P39. Xếp lịch dễ cho giáo vụ
+
+Người dùng yêu cầu 2026-10-22: giáo vụ, quản trị tự tạo lớp và sắp lịch học phải dễ.
+
+- [x] **39.1** Form tạo lớp: ô giờ kiểu 24 giờ (gõ "1830" thành "18:30", không còn "06:30 CH"), đổi giờ bắt đầu thì giờ kết thúc dời theo giữ độ dài ca, hiện độ dài ca; học phí hiện dấu chấm ngăn cách; chia bốn nhóm có tiêu đề. ✅ 2026-10-22: unit `schedule-input.test.ts`; E2E `xep-lich.spec`.
+- [x] **39.2** Xem trước lịch khi tạo lớp (số buổi, ngày đầu, ngày cuối, vài buổi đầu) và chặn trùng giờ với lớp khác của cùng giáo viên hoặc cùng phòng trong cơ sở (`src/lib/queries/schedule-conflicts.ts`), báo gọn "đang dạy lớp X 09:00–11:00 các ngày …". ✅ 2026-10-22: E2E tạo lớp trùng bị chặn, đổi giờ thì tạo được.
+- [x] **39.3** Màn Lịch học có nút "Thêm buổi" (học bù, học thêm): chọn lớp thì giáo viên, phòng điền sẵn; kiểm trùng ngay khi nhập; số buổi của lớp đánh lại theo ngày. Sửa một buổi cũng chặn trùng giáo viên, phòng. ✅ 2026-10-22: E2E thêm buổi bù, kiểm số buổi trong DB; ảnh 1440px và 390px.
 
 ## Quyết định đã chốt
 

@@ -10,7 +10,7 @@ function vnKey(offsetDays = 0): string {
   return new Date(Date.now() + 7 * 3_600_000 + offsetDays * 86_400_000).toISOString().slice(0, 10);
 }
 
-test('lớp T3 18:00 và T7 08:00: sinh buổi đúng giờ, sửa giờ T7, học sinh vào giữa khoá, tìm theo mã cũ', async ({ page }) => {
+test('lớp T3 18:00 và T7 06:30: sinh buổi đúng giờ, sửa giờ T7, học sinh vào giữa khoá, tìm theo mã cũ', async ({ page }) => {
   test.setTimeout(180_000);
   loadEnvLocal();
   const db = new Client({ connectionString: process.env.DATABASE_URL });
@@ -39,11 +39,12 @@ test('lớp T3 18:00 và T7 08:00: sinh buổi đúng giờ, sửa giờ T7, h�
     await create.getByLabel('Giờ bắt đầu Thứ 3').fill('18:00');
     await create.getByLabel('Giờ kết thúc Thứ 3').fill('19:30');
     await expect(create.getByLabel('Giờ bắt đầu Thứ 7')).toHaveValue('18:00');
-    await create.getByLabel('Giờ bắt đầu Thứ 7').fill('08:00');
-    await create.getByLabel('Giờ kết thúc Thứ 7').fill('07:30');
+    // T7 sáng sớm 06:30 để không trùng lịch có sẵn của giáo viên (form chặn lịch trùng)
+    await create.getByLabel('Giờ bắt đầu Thứ 7').fill('06:30');
+    await create.getByLabel('Giờ kết thúc Thứ 7').fill('06:00');
     await expect(create.getByText('Giờ kết thúc phải sau giờ bắt đầu')).toBeVisible();
-    await create.getByLabel('Giờ kết thúc Thứ 7').fill('09:30');
-    await expect(create.getByText(/Các ngày học khác giờ nhau: T3 18:00–19:30, T7 08:00–09:30/)).toBeVisible();
+    await create.getByLabel('Giờ kết thúc Thứ 7').fill('08:00');
+    await expect(create.getByText(/Lịch có giờ khác nhau: T3 18:00–19:30 · T7 06:30–08:00/)).toBeVisible();
     // Khai giảng hai tuần trước, để có buổi đã qua và buổi còn lại
     await create.getByLabel('Ngày khai giảng *').fill(vnKey(-14));
     await create.getByLabel('Số buổi *').fill('8');
@@ -51,7 +52,7 @@ test('lớp T3 18:00 và T7 08:00: sinh buổi đúng giờ, sửa giờ T7, h�
     await expectToast(page, `Đã tạo lớp ${code} với 8 buổi học`);
 
     const card = page.locator('article', { hasText: code });
-    await expect(card.getByText('T3 18:00–19:30 · T7 08:00–09:30')).toBeVisible();
+    await expect(card.getByText('T3 18:00–19:30 · T7 06:30–08:00')).toBeVisible();
     classId = (await db.query<{ id: number }>('SELECT id FROM classes WHERE name = $1', [code])).rows[0].id;
     const times = async () =>
       (
@@ -65,7 +66,7 @@ test('lớp T3 18:00 và T7 08:00: sinh buổi đúng giờ, sửa giờ T7, h�
       ).rows;
     const created = await times();
     expect(created).toHaveLength(8);
-    for (const s of created) expect(s.t).toBe(s.dow === 2 ? '18:00-19:30' : '08:00-09:30');
+    for (const s of created) expect(s.t).toBe(s.dow === 2 ? '18:00-19:30' : '06:30-08:00');
 
     // Sửa lớp: đổi giờ T7 sang 09:00–10:30. Buổi T7 sắp tới dời giờ, buổi đã qua giữ nguyên.
     await card.getByRole('link', { name: code }).click();
@@ -78,7 +79,7 @@ test('lớp T3 18:00 và T7 08:00: sinh buổi đúng giờ, sửa giờ T7, h�
     await expectToast(page, new RegExp(`Đã lưu lớp ${code}`));
     await expect.poll(async () => (await times()).filter((s) => s.dow === 6 && s.future).every((s) => s.t === '09:00-10:30')).toBe(true);
     const edited = await times();
-    for (const s of edited.filter((x) => x.dow === 6 && !x.future)) expect(s.t).toBe('08:00-09:30');
+    for (const s of edited.filter((x) => x.dow === 6 && !x.future)) expect(s.t).toBe('06:30-08:00');
     for (const s of edited.filter((x) => x.dow === 2)) expect(s.t).toBe('18:00-19:30');
     await expect(page.getByText('T3 18:00–19:30 · T7 09:00–10:30')).toBeVisible();
 

@@ -7,6 +7,7 @@ import { attendance, campuses, classes, classSessions, students, teachers } from
 import { ForbiddenError, requirePermission, writeAudit } from '@/lib/authz';
 import { requireCampusAccess, requireClassAccess } from '@/lib/campus-access';
 import { getClassForm } from '@/lib/queries/classes';
+import { findScheduleConflicts, summarizeConflicts } from '@/lib/queries/schedule-conflicts';
 import { teacherTeachesCampus } from '@/lib/queries/teachers';
 import { vnDateKey, vnTimeLabel } from '@/lib/datetime';
 import { describeSchedule, encodeDayTimes, generateSessions, joinWeekdays, resolveDayTimes } from '@/lib/schedule';
@@ -121,6 +122,16 @@ export async function createClassAction(_prev: ActionResult, formData: FormData)
       return { ok: false, message: error instanceof Error ? error.message : 'Lịch học không hợp lệ.' };
     }
 
+    // Không xếp trùng giờ với lớp khác của cùng giáo viên, hoặc cùng phòng trong cơ sở
+    const conflicts = await findScheduleConflicts({ slots: generated, teacherId: v.teacherId, room: v.room, campusId: v.campusId });
+    if (conflicts.length > 0) {
+      return {
+        ok: false,
+        message: `Lịch bị trùng ${conflicts.length} buổi: ${summarizeConflicts(conflicts).join('; ')}. Đổi giờ, ngày, giáo viên hoặc phòng rồi tạo lại.`,
+        fieldErrors: conflicts.some((c) => c.kind === 'teacher') ? { teacherId: 'Giáo viên bận ở một số buổi' } : { room: 'Phòng đã có lớp ở một số buổi' },
+      };
+    }
+
     const classId = await db.transaction(async (tx) => {
       const [created] = await tx
         .insert(classes)
@@ -162,6 +173,46 @@ export async function createClassAction(_prev: ActionResult, formData: FormData)
     return { ok: true, message: `Đã tạo lớp ${v.name} với ${v.sessionsTotal} buổi học` };
   } catch (error) {
     return errorResult(error);
+  }
+}
+
+export type SchedulePreview =
+  | { ok: true; total: number; firstStartsAt: Date; lastStartsAt: Date; sample: { startsAt: Date; endsAt: Date }[]; conflicts: string[]; conflictCount: number }
+  | { ok: false; message: string };
+
+// Xem trước lịch khi đang nhập form tạo lớp: số buổi, ngày đầu, ngày cuối, vài buổi đầu và các buổi trùng giáo viên, phòng.
+// Nhận nguyên FormData của form (cùng tên ô như khi tạo), không ghi gì vào cơ sở dữ liệu.
+export async function previewScheduleAction(formData: FormData): Promise<SchedulePreview> {
+  try {
+    await requirePermission('classes.manage');
+    const days = WEEKDAY_CODES.filter((c) => formData.getAll('weekdays').includes(c));
+    if (days.length === 0) return { ok: false, message: 'Chọn ngày học trong tuần để xem trước lịch.' };
+    const perDay = readDayTimes(formData);
+    const list = days.flatMap((code) => (perDay[code] ?? []).map((s) => ({ code, start: s.start, end: s.end })));
+    const time = /^([01]\d|2[0-3]):[0-5]\d$/;
+    if (list.length === 0 || list.some((t) => !time.test(t.start) || !time.test(t.end) || t.end <= t.start)) return { ok: false, message: 'Nhập đủ giờ học hợp lệ để xem trước lịch.' };
+    const startDate = String(formData.get('startDate') ?? '');
+    const sessionsTotal = Number(formData.get('sessionsTotal'));
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate)) return { ok: false, message: 'Chọn ngày khai giảng để xem trước lịch.' };
+    if (!Number.isInteger(sessionsTotal) || sessionsTotal < 1 || sessionsTotal > 400) return { ok: false, message: 'Nhập số buổi để xem trước lịch.' };
+    const generated = generateSessions({ weekdays: joinWeekdays(days), startTime: list[0].start, endTime: list[0].end, dayTimes: encodeDayTimes(list), sessionsTotal, fromDate: startDate });
+
+    const campusId = Number(formData.get('campusId'));
+    const teacherId = Number(formData.get('teacherId')) || null;
+    const room = String(formData.get('room') ?? '');
+    const conflicts = Number.isInteger(campusId) && campusId > 0 ? await findScheduleConflicts({ slots: generated, teacherId, room, campusId }) : [];
+    return {
+      ok: true,
+      total: generated.length,
+      firstStartsAt: generated[0].startsAt,
+      lastStartsAt: generated[generated.length - 1].startsAt,
+      sample: generated.slice(0, 4).map((g) => ({ startsAt: g.startsAt, endsAt: g.endsAt })),
+      conflicts: summarizeConflicts(conflicts),
+      conflictCount: conflicts.length,
+    };
+  } catch (error) {
+    if (error instanceof ForbiddenError) return { ok: false, message: error.message };
+    return { ok: false, message: error instanceof Error ? error.message : 'Chưa xem trước được lịch.' };
   }
 }
 

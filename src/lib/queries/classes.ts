@@ -102,9 +102,9 @@ export function listClasses(scope: CampusScope): Promise<ClassRow[]> {
 }
 
 // Danh sách lớp cho bộ lọc và chọn lớp, trong cơ sở đang xem. Kèm tên cơ sở để phân biệt khi xem tất cả.
-export async function listClassChoices(scope: CampusScope): Promise<{ id: number; name: string; teacherName: string; campusName: string; campusId: number }[]> {
+export async function listClassChoices(scope: CampusScope): Promise<{ id: number; name: string; teacherName: string; campusName: string; campusId: number; teacherId: number; room: string }[]> {
   return db
-    .select({ id: classes.id, name: classes.name, teacherName: teachers.name, campusName: campuses.name, campusId: classes.campusId })
+    .select({ id: classes.id, name: classes.name, teacherName: teachers.name, campusName: campuses.name, campusId: classes.campusId, teacherId: classes.teacherId, room: classes.room })
     .from(classes)
     .innerJoin(teachers, eq(teachers.id, classes.teacherId))
     .innerJoin(campuses, eq(campuses.id, classes.campusId))

@@ -8,6 +8,36 @@ import { Alert } from '@/components/ui/primitives';
 import { Notice } from '@/components/ui/surfaces';
 
 export type SlotDraft = { start: string; end: string };
+
+// Ô giờ là ô chữ kiểu 24 giờ ("18:30"), không dùng ô time của trình duyệt vì máy cài tiếng Việt hiện "06:30 CH", dễ nhầm sáng chiều.
+// Gõ "1830" thành "18:30"; rời ô thì "8:30" thành "08:30".
+export function typingTime(value: string): string {
+  // Người gõ dấu hai chấm: giữ phần giờ như đã gõ ("18:3" vẫn là "18:3", không thành "1:83")
+  const colon = value.indexOf(':');
+  if (colon >= 0) {
+    const h = value.slice(0, colon).replace(/\D/g, '').slice(-2);
+    const m = value.slice(colon + 1).replace(/\D/g, '').slice(0, 2);
+    if (h) return `${h}:${m}`;
+  }
+  const digits = value.replace(/\D/g, '').slice(0, 4);
+  if (digits.length >= 3) return `${digits.slice(0, -2)}:${digits.slice(-2)}`;
+  // Vừa gõ "8:" hoặc "18:" thì giữ dấu hai chấm để gõ tiếp phút
+  return value.trim().endsWith(':') && digits.length > 0 ? `${digits}:` : digits;
+}
+export function finishTime(value: string): string {
+  const m = /^(\d{1,2}):?(\d{2})?$/.exec(value.trim());
+  if (!m) return value;
+  return `${m[1].padStart(2, '0')}:${m[2] ?? '00'}`;
+}
+const TIME_OK = /^([01]\d|2[0-3]):[0-5]\d$/;
+// "1 giờ 30 phút", "45 phút"
+export function durationLabel(start: string, end: string): string {
+  if (!TIME_OK.test(start) || !TIME_OK.test(end) || end <= start) return '';
+  const mins = Number(end.slice(0, 2)) * 60 + Number(end.slice(3)) - (Number(start.slice(0, 2)) * 60 + Number(start.slice(3)));
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return [h ? `${h} giờ` : '', m ? `${m} phút` : ''].filter(Boolean).join(' ');
+}
 export type DaySlots = { code: WeekdayCode; slots: SlotDraft[] };
 
 // Các ca học của từng ngày: mỗi ca một dòng Bắt đầu – Kết thúc, gửi lên bằng ô start_T7, end_T7 (ca đầu), start_T7_2… (ca sau).
@@ -53,22 +83,33 @@ export function DayTimeRows({
                       <span className="w-8 shrink-0 text-sm font-semibold text-ink" title={label}>{i === 0 ? d.code : ''}</span>
                       <input
                         name={slotField('start', d.code, i)}
-                        type="time"
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={5}
+                        placeholder="18:30"
+                        autoComplete="off"
                         aria-label={`Giờ bắt đầu ${caption}`}
                         value={s.start}
-                        onChange={(e) => onChange(d.code, i, 'start', e.target.value)}
-                        className={`${inputClass(startError)} min-w-0 flex-1`}
+                        onChange={(e) => onChange(d.code, i, 'start', typingTime(e.target.value))}
+                        onBlur={(e) => onChange(d.code, i, 'start', finishTime(e.target.value))}
+                        className={`${inputClass(startError)} min-w-0 flex-1 tabular-nums`}
                       />
                       <span className="shrink-0 text-muted" aria-hidden>–</span>
                       <input
                         name={slotField('end', d.code, i)}
-                        type="time"
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={5}
+                        placeholder="20:00"
+                        autoComplete="off"
                         aria-label={`Giờ kết thúc ${caption}`}
                         value={s.end}
-                        onChange={(e) => onChange(d.code, i, 'end', e.target.value)}
-                        className={`${inputClass(endError)} min-w-0 flex-1`}
+                        onChange={(e) => onChange(d.code, i, 'end', typingTime(e.target.value))}
+                        onBlur={(e) => onChange(d.code, i, 'end', finishTime(e.target.value))}
+                        className={`${inputClass(endError)} min-w-0 flex-1 tabular-nums`}
                       />
                     </div>
+                    {durationLabel(s.start, s.end) && !(startError || endError) && <span className="pl-10 text-sm text-muted">{durationLabel(s.start, s.end)}</span>}
                     {(startError || endError) && <Alert inline className="pl-10">{startError ?? endError}</Alert>}
                   </div>
                 );

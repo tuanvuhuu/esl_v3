@@ -1,6 +1,6 @@
 'use client';
 
-import { Filter, Users } from 'lucide-react';
+import { Filter, Plus, Users } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { startTransition, useOptimistic, useState, type CSSProperties } from 'react';
 import type { SessionRow } from '@/lib/queries/sessions';
@@ -10,6 +10,9 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { SelectPanel } from '@/components/ui/SelectPanel';
 import { Pill, type Tone } from '@/components/ui/primitives';
 import { EmptyPanel } from '@/components/ui/surfaces';
+import { Btn } from '@/components/ui/Btn';
+import { useToast } from '@/components/ui/Toast';
+import { AddSessionDialog, type ClassPick } from './AddSessionDialog';
 import { RangeNav } from './RangeNav';
 import { SessionDialog } from './SessionDialog';
 
@@ -77,19 +80,24 @@ export function ScheduleView({
   canManage,
   prevHref,
   nextHref,
+  today,
 }: {
   rangeFrom: string;
   rangeTo: string;
   sessions: SessionRow[];
-  classes: { id: number; name: string }[];
+  classes: ClassPick[];
   teachers: { id: number; name: string; subject: string }[];
   filters: ScheduleFilters;
+  today: string;
   canManage: boolean;
   prevHref: string;
   nextHref: string;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState<SessionRow | null>(null);
+  const [adding, setAdding] = useState(false);
+  // Thông báo dùng chung kho của Toast (SessionDialog đã vẽ khung thông báo), nên chỉ cần notify
+  const { notify } = useToast();
 
   // Các ngày trong khoảng đang xem, từ ngày bắt đầu đến ngày kết thúc
   const days = Array.from({ length: daysBetweenKeys(rangeFrom, rangeTo) + 1 }, (_, i) => addDaysKey(rangeFrom, i));
@@ -139,7 +147,34 @@ export function ScheduleView({
 
   return (
     <section className="flex flex-col">
-      <PageHeader crumbs={['Đào tạo', 'Lịch học']} title="Lịch học" subtitle={subtitle} />
+      <PageHeader
+        crumbs={['Đào tạo', 'Lịch học']}
+        title="Lịch học"
+        subtitle={subtitle}
+        actions={
+          canManage && classes.length > 0 ? (
+            <Btn variant="primary" onClick={() => setAdding(true)}>
+              <Plus className="size-4" aria-hidden />
+              Thêm buổi
+            </Btn>
+          ) : null
+        }
+      />
+      {adding && (
+        <AddSessionDialog
+          open
+          classes={classes}
+          teachers={teachers}
+          defaultDate={today >= rangeFrom && today <= rangeTo ? today : rangeFrom}
+          defaultClassId={listParam(clsView).length === 1 ? Number(listParam(clsView)[0]) : null}
+          onClose={() => setAdding(false)}
+          onDone={(text) => {
+            setAdding(false);
+            notify(text);
+            router.refresh();
+          }}
+        />
+      )}
 
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <RangeNav from={rangeFrom} to={rangeTo} prevHref={prevHref} nextHref={nextHref} onPick={pickRange} />
