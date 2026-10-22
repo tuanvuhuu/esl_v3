@@ -10,13 +10,18 @@ import { listItemsOfAssignment, toScoringItems } from '@/lib/queries/assignment-
 import { getAssignmentBase } from '@/lib/queries/assignments';
 import { criterionScoresOf, enrolledStudent, existingSubmissionScores } from '@/lib/queries/student-portal';
 import { getCurrentAccount } from '@/lib/session';
-import { saveUpload } from '@/lib/storage';
+import { completeDirectUpload, prepareDirectUpload, saveUpload, type PrepareDirectUploadResult } from '@/lib/storage';
 import { notifyClassStaff } from '@/lib/telegram/service';
 import { sameClass, studentMayResubmit } from '@/lib/student-access';
 import { studentAnswersSchema } from '@/lib/validation/student-portal';
 import type { ActionResult } from '@/lib/validation/student';
 
 export type StudentAnswerInput = { itemId: number; selectedOptionId: number | null; answerText: string; fileId: number | null };
+
+// Điểm phần tự chấm sau khi nộp, để màn chúc mừng hiện sao theo điểm thật (P35.27).
+// autoMax = 0 khi bài chỉ có câu nói, viết, nộp tệp; pendingReview khi còn câu chờ giáo viên chấm.
+export type SubmitScore = { autoPoints: number; autoMax: number; pendingReview: boolean };
+export type SubmitResult = ActionResult & { score?: SubmitScore };
 
 // Chỉ tài khoản học sinh mới dùng được các hàm dưới đây. Học sinh không có quyền quản lý.
 async function currentStudent() {
@@ -41,9 +46,36 @@ export async function studentUploadAction(formData: FormData): Promise<{ ok: tru
   }
 }
 
+// Tải thẳng tệp lên kho tệp (Supabase) bằng link có chữ ký, không qua server action giới hạn 1 MB (P35.6).
+// mode "server" khi chưa cấu hình kho tệp: giao diện tải qua studentUploadAction như cũ.
+export async function studentRequestUploadAction(fileInfo: { name: string; type: string; size: number }): Promise<PrepareDirectUploadResult> {
+  try {
+    const me = await currentStudent();
+    if (!me) return { ok: false, message: 'Cần đăng nhập bằng tài khoản học sinh.' };
+    return await prepareDirectUpload(fileInfo);
+  } catch (error) {
+    console.error('Lỗi học sinh xin link tải tệp:', error);
+    return { ok: false, message: 'Không tải được tệp. Thử lại sau ít phút.' };
+  }
+}
+
+// Xác nhận tệp đã tải xong; tệp gắn với tài khoản học sinh này
+export async function studentConfirmUploadAction(params: { storageKey: string; fileName: string; mimeType: string; sizeBytes: number }): Promise<{ ok: true; fileId: number; name: string } | { ok: false; message: string }> {
+  try {
+    const me = await currentStudent();
+    if (!me) return { ok: false, message: 'Cần đăng nhập bằng tài khoản học sinh.' };
+    const saved = await completeDirectUpload({ ...params, accountId: me.accountId });
+    if (!saved.ok) return saved;
+    return { ok: true, fileId: saved.id, name: saved.name };
+  } catch (error) {
+    console.error('Lỗi học sinh xác nhận tải tệp:', error);
+    return { ok: false, message: 'Không lưu được tệp. Thử lại sau ít phút.' };
+  }
+}
+
 // Học sinh nộp bài. Trắc nghiệm được chấm ngay theo đáp án đúng ở máy chủ. Câu viết và nộp tệp chờ giáo viên.
 // Nộp lại được cho đến khi bài đã chấm xong. Điểm và nhận xét giáo viên đã cho được giữ lại.
-export async function submitMyAnswersAction(assignmentId: number, input: StudentAnswerInput[]): Promise<ActionResult> {
+export async function submitMyAnswersAction(assignmentId: number, input: StudentAnswerInput[]): Promise<SubmitResult> {
   try {
     const me = await currentStudent();
     if (!me) return { ok: false, message: 'Cần đăng nhập bằng tài khoản học sinh.' };
@@ -137,8 +169,14 @@ export async function submitMyAnswersAction(assignmentId: number, input: Student
     revalidatePath(`/bai-tap/${assignmentId}`);
     // Báo giáo viên của lớp qua Telegram (nếu đã kết nối). Không chờ được thì vẫn trả kết quả nộp bài.
     await notifyClassStaff(base.classId, `${student.fullName} (lớp ${base.className}) vừa nộp bài "${base.title}".${summary.status === 'graded' ? ` Điểm tự chấm: ${summary.total}/${summary.maxTotal}.` : ' Có câu cần giáo viên chấm.'}`, 'submission');
-    if (summary.status === 'graded') return { ok: true, message: `Đã nộp bài: ${summary.total}/${summary.maxTotal} điểm` };
-    return { ok: true, message: 'Đã nộp bài. Giáo viên sẽ chấm câu viết và nộp tệp.' };
+    const autoItems = items.filter((i) => isAutoScoredItem(i.itemType));
+    const progress: SubmitScore = {
+      autoPoints: autoItems.reduce((sum, i) => sum + (summary.points[i.id] ?? 0), 0),
+      autoMax: autoItems.reduce((sum, i) => sum + i.points, 0),
+      pendingReview: summary.status !== 'graded',
+    };
+    if (summary.status === 'graded') return { ok: true, message: `Đã nộp bài: ${summary.total}/${summary.maxTotal} điểm`, score: progress };
+    return { ok: true, message: 'Đã nộp bài. Giáo viên sẽ chấm câu viết, câu nói và tệp nộp.', score: progress };
   } catch (error) {
     console.error('Lỗi học sinh nộp bài:', error);
     return { ok: false, message: 'Không nộp được bài. Thử lại sau ít phút.' };

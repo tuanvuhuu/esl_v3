@@ -24,7 +24,9 @@ test.describe('học thử không cần đăng nhập', () => {
     // Bỏ qua các câu còn lại tới câu cuối (bài mẫu có hơn mười câu)
     while (!(await page.getByRole('button', { name: /Xong bài/ }).isVisible())) await page.getByRole('button', { name: /Tiếp tục/ }).click();
     await page.getByRole('button', { name: /Xong bài/ }).click();
-    await expect(page.getByText('Xong bài rồi!')).toBeVisible();
+    // Chỉ đúng một câu tự chấm nên được 1 sao, có điểm phần tự chấm
+    await expect(page.getByRole('img', { name: '1 trên 3 sao' })).toBeVisible();
+    await expect(page.getByText(/^Đúng 1\/\d+ điểm phần tự chấm$/)).toBeVisible();
 
     await page.goto('/cua-toi');
     await expect(page.getByText('Đã nộp')).toHaveCount(1);

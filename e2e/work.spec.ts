@@ -647,7 +647,7 @@ test.describe('bài tập, điểm danh, học phí', () => {
       await page.getByLabel('Tải tệp bài làm câu 3').setInputFiles({ name: 'bai-noi.mp3', mimeType: 'audio/mpeg', buffer: Buffer.from('fake-audio-content') });
       await expect(page.getByText('bai-noi.mp3')).toBeVisible();
       await page.getByRole('button', { name: 'Nộp bài', exact: true }).click();
-      await expectToast(page, 'Đã nộp bài. Giáo viên sẽ chấm câu viết và nộp tệp.');
+      await expectToast(page, 'Đã nộp bài. Giáo viên sẽ chấm câu viết, câu nói và tệp nộp.');
 
       // Giáo viên thấy bài nộp và bài làm của học sinh
       await page.context().clearCookies();

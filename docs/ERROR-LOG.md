@@ -647,3 +647,12 @@ Mỗi lỗi gặp phải được ghi ở đây, theo mẫu dưới đây. Trư�
 - Cách sửa: Hàm `writeQuestion` ghi đủ mọi trường, đáp án cho chọn tranh và trắc nghiệm, cặp ghép cho ghép đôi, kiểm mọi tệp được trỏ tới; truy vấn đọc đủ trường và cặp ghép. Unit chép câu ghép đôi và sắp xếp từ ngân hàng; E2E lưu từ Soạn nhanh vào ngân hàng rồi chép vào bài, kiểm cặp ghép trong DB.
 - Quy tắc phòng ngừa: Thêm cột cho câu hỏi thì sửa cùng lúc mọi nơi ghi và đọc câu: bài tập, ngân hàng, chép qua lại. Có test đi hết vòng lưu → đọc → chép cho từng dạng câu mới.
 - Đã áp dụng ở: `src/app/(app)/ngan-hang-cau-hoi/actions.ts`, `src/lib/queries/question-bank.ts`, `tests/unit/item-draft.test.ts`, `e2e/soan-nhanh.spec.ts`.
+
+## E-071 · Tải tệp qua server action quá 1 MB thì lỗi; bước xác nhận tải thẳng không kiểm loại tệp
+- Ngày: 2026-10-22
+- Khu vực: Tải tệp (`src/lib/storage.ts`, các màn soạn câu, tài liệu bài giảng, chấm bài, khu học sinh)
+- Triệu chứng: Mọi nút tải tệp gửi tệp qua server action, mà server action của Next.js mặc định chỉ nhận 1 MB, nên ảnh, âm thanh hoặc bài nộp lớn hơn bị lỗi dù máy chủ cho tới 10–25 MB. Bước xác nhận tải thẳng (`completeDirectUpload`, P34) ghi loại tệp do trình duyệt khai mà không kiểm, không kiểm cỡ tệp thật. Màn soạn cho chọn ảnh WebP, GIF nhưng máy chủ từ chối.
+- Nguyên nhân: Đường tải thẳng lên kho tệp có từ P34 nhưng chưa màn nào dùng; khi viết bước xác nhận chỉ kiểm khoá tệp.
+- Cách sửa: Hàm `uploadFile` ở `src/lib/upload-client.ts` (xin link có chữ ký, PUT thẳng, xác nhận; chưa cấu hình kho tệp thì qua máy chủ) dùng cho mọi nút tải tệp (`uploadAsStaff`, `uploadAsStudent`). `completeDirectUpload` kiểm loại tệp theo `ALLOWED_TYPES` và cỡ tệp thật, quá cỡ thì xoá. Thêm `image/webp`, `image/gif`. Ghi âm cắt tham số MIME (`audio/webm;codecs=opus` thành `audio/webm`) trước khi tải.
+- Quy tắc phòng ngừa: Tệp người dùng tải lên không đi qua server action. Giá trị trình duyệt gửi lên (loại tệp, cỡ) phải kiểm lại ở máy chủ trên dữ liệu thật. Danh sách loại tệp ở giao diện (`upload-types.ts`) và máy chủ (`ALLOWED_TYPES`) phải khớp nhau.
+- Đã áp dụng ở: `src/lib/storage.ts`, `src/lib/upload-client.ts`, `src/app/(student)/cua-toi/actions.ts`, `ItemDraftCard.tsx`, `MaterialsPanel.tsx`, `AnswerDialog.tsx`, `StudentAssignmentForm.tsx`, `InteractiveExercisePlayer.tsx`.

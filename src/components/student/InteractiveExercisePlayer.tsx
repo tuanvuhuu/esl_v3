@@ -1,9 +1,11 @@
 'use client';
 
-import { Check, RotateCcw, Volume2, X } from 'lucide-react';
+import { Check, Mic, RotateCcw, Volume2, X } from 'lucide-react';
 import { useEffect, useRef, useState, useTransition } from 'react';
 import type { StudentAssignmentView, StudentItem } from '@/lib/queries/student-portal';
-import { studentUploadAction, submitMyAnswersAction, type StudentAnswerInput } from '@/app/(student)/cua-toi/actions';
+import { submitMyAnswersAction, type StudentAnswerInput, type SubmitScore } from '@/app/(student)/cua-toi/actions';
+import { clock, pickRecordingFormat, recordedFormat, starsFor } from '@/lib/recording';
+import { uploadAsStudent } from '@/lib/upload-client';
 
 type AnswerDraft = {
   selectedOptionId: number | null;
@@ -41,6 +43,7 @@ export function InteractiveExercisePlayer({
   const [isFinished, setIsFinished] = useState(false);
   const [submitting, startSubmit] = useTransition();
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [score, setScore] = useState<SubmitScore | null>(null);
 
   const currentItem: StudentItem | undefined = items[currentIndex];
 
@@ -74,8 +77,12 @@ export function InteractiveExercisePlayer({
     startSubmit(async () => {
       const res = await submitMyAnswersAction(view.id, payload);
       if (!res.ok) {
+        // Nộp không được thì ở lại câu cuối, báo lỗi để con bấm nộp lại
         setSubmitError(res.message ?? 'Lỗi khi nộp bài');
+        return;
       }
+      setSubmitError(null);
+      setScore(res.score ?? null);
       setIsFinished(true);
     });
   }
@@ -94,7 +101,7 @@ export function InteractiveExercisePlayer({
   }
 
   if (isFinished) {
-    return <CelebrationScreen view={view} onExit={onExit} error={submitError} />;
+    return <CelebrationScreen view={view} onExit={onExit} score={score} />;
   }
 
   return (
@@ -133,6 +140,12 @@ export function InteractiveExercisePlayer({
           isLast={currentIndex === total - 1}
           submitting={submitting}
         />
+      )}
+
+      {submitError && (
+        <p role="alert" className="mx-5 mb-5 rounded-2xl bg-[var(--blush)] p-3 text-sm font-semibold text-[var(--blush-ink)]">
+          {submitError} Bấm nộp lại nhé.
+        </p>
       )}
     </div>
   );
@@ -582,6 +595,20 @@ function GapFillQuestion({
 // ==========================================
 // 6. DẠNG: GHI ÂM BÀI NÓI (speak_*)
 // ==========================================
+// Lời nhắn khi không bật được micro: nói rõ cách cấp quyền thay cho hộp alert
+function micHelp(error: unknown): string {
+  const name = error instanceof DOMException ? error.name : '';
+  if (name === 'NotAllowedError' || name === 'SecurityError') {
+    return 'Chưa được phép dùng micro. Bấm biểu tượng ổ khoá cạnh địa chỉ trang, cho phép Micro rồi bấm lại. Trên iPhone: Cài đặt → Safari → Micro → Cho phép.';
+  }
+  if (name === 'NotFoundError') return 'Không tìm thấy micro trên máy này. Cắm tai nghe có micro hoặc dùng điện thoại.';
+  return 'Không bật được micro. Đóng các ứng dụng khác đang dùng micro rồi thử lại.';
+}
+
+type RecPhase = 'idle' | 'recording' | 'review' | 'uploading';
+
+// Ghi âm (P35.6): bấm để nói → đếm giây theo max_seconds, tự dừng khi hết giờ → nghe lại → Nói lại hoặc Dùng bản này.
+// Định dạng theo máy (WebM Opus, Safari cũ là MP4). Tải thẳng lên kho tệp, chưa cấu hình thì qua máy chủ.
 function SpeakQuestion({
   item,
   answer,
@@ -591,108 +618,174 @@ function SpeakQuestion({
   answer: AnswerDraft | undefined;
   onChange: (patch: Partial<AnswerDraft>) => void;
 }) {
-  const [recording, setRecording] = useState(false);
-  const [seconds, setSeconds] = useState(0);
   const maxSec = item.maxSeconds || 15;
+  const [phase, setPhase] = useState<RecPhase>('idle');
+  const [seconds, setSeconds] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+  const [preview, setPreview] = useState<{ url: string; file: File } | null>(null);
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const streamRef = useRef<MediaStream | null>(null);
 
-  const [uploading, startUpload] = useTransition();
+  // Rời câu thì tắt micro; bản nghe thử được giải phóng khi đổi hoặc rời câu
+  useEffect(() => {
+    return () => {
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+    };
+  }, []);
+  useEffect(() => {
+    return () => {
+      if (preview) URL.revokeObjectURL(preview.url);
+    };
+  }, [preview]);
 
-  // Mô phỏng / ghi âm HTML5 Web Audio / MediaRecorder
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
-
-  async function toggleRecord() {
-    if (recording) {
-      // Dừng ghi âm
-      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-        mediaRecorderRef.current.stop();
-      }
-      setRecording(false);
-    } else {
-      // Bắt đầu ghi âm
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        const mr = new MediaRecorder(stream);
-        mediaRecorderRef.current = mr;
-        audioChunksRef.current = [];
-
-        mr.ondataavailable = (e) => {
-          if (e.data.size > 0) audioChunksRef.current.push(e.data);
-        };
-
-        mr.onstop = () => {
-          stream.getTracks().forEach((t) => t.stop());
-          const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-          const audioFile = new File([audioBlob], `recording-${Date.now()}.webm`, { type: 'audio/webm' });
-
-          const fd = new FormData();
-          fd.append('file', audioFile);
-
-          startUpload(async () => {
-            const res = await studentUploadAction(fd);
-            if (res.ok) {
-              onChange({ fileId: res.fileId, fileName: res.name });
-            }
-          });
-        };
-
-        mr.start();
-        setRecording(true);
-        setSeconds(0);
-      } catch {
-        alert('Vui lòng cấp quyền truy cập micro để làm bài nói!');
-      }
+  async function start() {
+    setError(null);
+    if (typeof MediaRecorder === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
+      setError('Trình duyệt này chưa ghi âm được. Hãy dùng Chrome, Edge hoặc Safari bản mới.');
+      return;
     }
+    const format = pickRecordingFormat((t) => MediaRecorder.isTypeSupported(t));
+    if (!format) {
+      setError('Trình duyệt này chưa ghi âm được. Hãy dùng Chrome, Edge hoặc Safari bản mới.');
+      return;
+    }
+    let stream: MediaStream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch (e) {
+      setError(micHelp(e));
+      return;
+    }
+    streamRef.current = stream;
+    const recorder = new MediaRecorder(stream, { mimeType: format.mimeType });
+    recorderRef.current = recorder;
+    chunksRef.current = [];
+    recorder.ondataavailable = (e) => {
+      if (e.data.size > 0) chunksRef.current.push(e.data);
+    };
+    recorder.onstop = () => {
+      stream.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+      const real = recordedFormat(recorder.mimeType, format);
+      const blob = new Blob(chunksRef.current, { type: real.baseType });
+      if (blob.size === 0) {
+        setError('Chưa ghi được tiếng. Bấm micro rồi nói to hơn một chút.');
+        setPhase('idle');
+        return;
+      }
+      const file = new File([blob], `bai-noi-cau-${item.id}.${real.ext}`, { type: real.baseType });
+      setPreview({ url: URL.createObjectURL(blob), file });
+      setPhase('review');
+    };
+    recorder.start();
+    setSeconds(0);
+    setPhase('recording');
+  }
+
+  function stop() {
+    if (recorderRef.current?.state === 'recording') recorderRef.current.stop();
   }
 
   useEffect(() => {
-    let iv: NodeJS.Timeout;
-    if (recording) {
-      iv = setInterval(() => setSeconds((prev) => Math.min(prev + 1, maxSec)), 1000);
-    }
+    if (phase !== 'recording') return;
+    const iv = setInterval(() => setSeconds((prev) => Math.min(prev + 1, maxSec)), 1000);
     return () => clearInterval(iv);
-  }, [recording, maxSec]);
+  }, [phase, maxSec]);
 
-  // Hết thời gian thì tự dừng ghi âm (dừng ở đây, không gọi trong hàm cập nhật state)
+  // Hết thời gian thì tự dừng (dừng ở đây, không gọi trong hàm cập nhật state)
   useEffect(() => {
-    if (recording && seconds >= maxSec && mediaRecorderRef.current?.state === 'recording') {
-      mediaRecorderRef.current.stop();
-      setRecording(false);
-    }
-  }, [recording, seconds, maxSec]);
+    if (phase === 'recording' && seconds >= maxSec && recorderRef.current?.state === 'recording') recorderRef.current.stop();
+  }, [phase, seconds, maxSec]);
 
+  function redo() {
+    setPreview(null);
+    setError(null);
+    setPhase('idle');
+  }
+
+  async function keepRecording() {
+    if (!preview) return;
+    setPhase('uploading');
+    setError(null);
+    const r = await uploadAsStudent(preview.file);
+    if (!r.ok) {
+      setError(r.message);
+      setPhase('review');
+      return;
+    }
+    onChange({ fileId: r.fileId, fileName: r.name });
+    setPreview(null);
+    setPhase('idle');
+  }
+
+  const recording = phase === 'recording';
   return (
     <div className="flex flex-col items-center gap-4 py-2">
       {item.referenceText && (
-        <div className="rounded-2xl border border-line bg-stone/40 p-3 text-center text-base font-extrabold text-ink leading-relaxed">
-          “{item.referenceText}”
+        <div className="rounded-2xl border border-line bg-stone/40 p-3 text-center text-lg font-extrabold leading-relaxed text-ink">“{item.referenceText}”</div>
+      )}
+
+      {(phase === 'idle' || recording) && (
+        <div className="flex flex-col items-center gap-2">
+          <button
+            type="button"
+            onClick={recording ? stop : start}
+            aria-label={recording ? 'Dừng ghi âm' : 'Bấm để nói'}
+            className={`relative flex size-28 items-center justify-center rounded-full bg-[var(--blush-ink)] text-white transition-all active:scale-95 ${
+              recording ? 'ring-8 ring-[var(--blush)]' : 'shadow-[0_6px_0_#8c2c0f]'
+            }`}
+          >
+            {recording ? <span className="size-8 rounded-lg bg-white" aria-hidden /> : <Mic className="size-11" aria-hidden />}
+          </button>
+          {recording ? (
+            <>
+              <span className="text-2xl font-extrabold tabular-nums text-ink" aria-live="polite">
+                {clock(seconds)} / {clock(maxSec)}
+              </span>
+              <span className="flex h-8 items-center gap-1" aria-hidden>
+                {[0, 1, 2, 3, 4, 5, 6].map((i) => (
+                  <i key={i} className="w-1.5 animate-pulse rounded-full bg-[var(--blush-ink)]" style={{ height: `${10 + ((i * 7) % 20)}px`, animationDelay: `${i * 120}ms` }} />
+                ))}
+              </span>
+              <span className="text-sm font-bold text-muted">Bấm ô vuông để dừng</span>
+            </>
+          ) : (
+            <span className="text-base font-extrabold text-ink">{answer?.fileId ? 'Bấm để nói lại' : 'Bấm để nói'}</span>
+          )}
         </div>
       )}
 
-      {/* Vòng tròn ghi âm to */}
-      <div className="flex flex-col items-center gap-2">
-        <button
-          type="button"
-          onClick={toggleRecord}
-          disabled={uploading}
-          className={`relative flex size-24 items-center justify-center rounded-full text-white shadow-lg active:scale-95 transition-all ${
-            recording
-              ? 'bg-red-600 ring-8 ring-red-200 animate-pulse'
-              : 'bg-[var(--blush-ink)] hover:opacity-90 shadow-[0_4px_0_#8c2c0f]'
-          }`}
-        >
-          <span className="text-3xl">🎤</span>
-        </button>
-
-        <span className="text-sm font-extrabold text-ink">
-          {recording ? `Đang ghi âm… 0:${String(seconds).padStart(2, '0')} / 0:${maxSec}` : 'Chạm để nói'}
-        </span>
-      </div>
-
-      {answer?.fileId && (
-        <div className="flex items-center gap-2 rounded-xl bg-[var(--mint)] px-3 py-1.5 text-xs font-bold text-[var(--mint-ink)]">
-          <Check className="size-4" /> Đã lưu bản ghi âm
+      {(phase === 'review' || phase === 'uploading') && preview && (
+        <div className="flex w-full flex-col items-center gap-3">
+          <span className="text-base font-extrabold text-ink">Nghe lại bài nói của con</span>
+          <audio controls src={preview.url} className="w-full" aria-label="Nghe lại bản vừa ghi" />
+          <div className="grid w-full grid-cols-2 gap-2">
+            <button type="button" onClick={redo} disabled={phase === 'uploading'} className="flex h-14 items-center justify-center gap-2 rounded-2xl border-2 border-line bg-surface text-base font-extrabold text-ink disabled:opacity-50">
+              <RotateCcw className="size-5" aria-hidden />
+              Nói lại
+            </button>
+            <button type="button" onClick={keepRecording} disabled={phase === 'uploading'} className="flex h-14 items-center justify-center gap-2 rounded-2xl bg-[var(--accent)] text-base font-extrabold text-white shadow-[0_4px_0_#0e7445] disabled:opacity-60">
+              <Check className="size-5" aria-hidden />
+              {phase === 'uploading' ? 'Đang lưu…' : 'Dùng bản này'}
+            </button>
+          </div>
         </div>
+      )}
+
+      {phase === 'idle' && answer?.fileId && (
+        <div className="flex w-full flex-col items-center gap-2 rounded-2xl bg-[var(--mint)] p-3">
+          <span className="flex items-center gap-1.5 text-sm font-bold text-[var(--mint-ink)]">
+            <Check className="size-4" aria-hidden /> Đã lưu bản ghi âm
+          </span>
+          <audio controls preload="none" src={`/api/files/${answer.fileId}`} className="w-full" aria-label="Nghe bản đã lưu" />
+        </div>
+      )}
+
+      {error && (
+        <p role="alert" className="w-full rounded-2xl bg-[var(--blush)] p-3 text-sm font-semibold leading-relaxed text-[var(--blush-ink)]">
+          {error}
+        </p>
       )}
     </div>
   );
@@ -762,16 +855,20 @@ function TextOrFileQuestion({
 // ==========================================
 // 9. MÀN HÌNH TỔNG KẾT (Celebration / Results)
 // ==========================================
+// Màn chúc mừng (P35.27): sao theo điểm phần tự chấm (1–3 sao, không phạt), mở số sticker bằng số sao.
+// Bài còn câu nói, viết thì báo cô giáo sẽ chấm tiếp.
 function CelebrationScreen({
   view,
   onExit,
-  error,
+  score,
 }: {
   view: StudentAssignmentView;
   onExit?: () => void;
-  error?: string | null;
+  score: SubmitScore | null;
 }) {
   const stickers = ['🦁', '🚀', '🌈', '🐙', '🎈', '🦄', '🍩', '🏰'];
+  const stars = score ? starsFor(score.autoPoints, score.autoMax) : 3;
+  const cheer = stars === 3 ? 'Tuyệt vời!' : stars === 2 ? 'Giỏi lắm!' : 'Cố lên nhé!';
 
   return (
     <div className="relative mx-auto flex w-full max-w-[420px] flex-col items-center justify-between overflow-hidden rounded-[36px] border border-line bg-surface p-6 text-center shadow-2xl min-h-[640px]">
@@ -793,25 +890,29 @@ function CelebrationScreen({
 
       <div className="flex flex-col items-center gap-3 pt-6">
         <span className="text-7xl animate-pulse">🦉</span>
-        <h1 className="text-3xl font-black text-ink">Xong bài rồi!</h1>
-        <div className="flex gap-1.5 text-4xl">
-          <span>⭐</span>
-          <span>⭐</span>
-          <span>⭐</span>
+        <h1 className="text-3xl font-black text-ink">{cheer}</h1>
+        <div className="flex gap-1.5 text-4xl" role="img" aria-label={`${stars} trên 3 sao`}>
+          {[1, 2, 3].map((n) => (
+            <span key={n} className={n <= stars ? '' : 'opacity-30 grayscale'} aria-hidden>
+              ⭐
+            </span>
+          ))}
         </div>
-        <p className="text-sm font-semibold text-muted">
-          Con đã hoàn thành toàn bộ bài tập &quot;{view.title}&quot;!
-        </p>
-
-        {error && <div className="rounded-xl bg-red-100 p-2 text-xs font-bold text-red-600">{error}</div>}
+        <p className="text-sm font-semibold text-muted">Con đã làm xong bài &quot;{view.title}&quot;.</p>
+        {score && score.autoMax > 0 && (
+          <p className="text-base font-extrabold text-ink">
+            Đúng {Math.round(score.autoPoints * 10) / 10}/{score.autoMax} điểm phần tự chấm
+          </p>
+        )}
+        {score?.pendingReview && <p className="text-sm font-semibold text-muted">Cô giáo sẽ chấm phần nói và viết rồi gửi nhận xét cho con.</p>}
       </div>
 
       {/* Sticker mở khóa */}
       <div className="w-full rounded-2xl border border-line bg-stone/40 p-4 text-left">
         <div className="mb-2 flex items-center justify-between">
           <span className="text-xs font-bold uppercase tracking-wider text-muted">Sticker của con</span>
-          <span className="rounded-full bg-[var(--primary)] px-2 py-0.5 text-[11px] font-extrabold text-[var(--on-primary)]">
-            Mới mở khóa!
+          <span className="rounded-full bg-[var(--primary)] px-2 py-0.5 text-xs font-extrabold text-[var(--on-primary)]">
+            +{stars} sticker
           </span>
         </div>
         <div className="grid grid-cols-4 gap-2">
@@ -819,7 +920,7 @@ function CelebrationScreen({
             <div
               key={i}
               className={`flex aspect-square items-center justify-center rounded-xl text-2xl ${
-                i === 3 ? 'bg-[var(--butter)] ring-2 ring-[var(--primary-deep)] scale-105' : 'bg-surface'
+                i < stars ? 'bg-[var(--butter)] ring-2 ring-[var(--primary-deep)]' : 'bg-surface opacity-30 grayscale'
               }`}
             >
               {stk}

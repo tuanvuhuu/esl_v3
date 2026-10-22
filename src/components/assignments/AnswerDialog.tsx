@@ -2,7 +2,8 @@
 
 import { Paperclip, X } from 'lucide-react';
 import { useState, useTransition } from 'react';
-import { saveSecondMarkAction, saveStudentAnswersAction, uploadFileAction, type AnswerInput } from '@/app/(app)/bai-tap/question-actions';
+import { saveSecondMarkAction, saveStudentAnswersAction, type AnswerInput } from '@/app/(app)/bai-tap/question-actions';
+import { uploadAsStaff } from '@/lib/upload-client';
 import type { AssignmentItem, ItemAnswer, ItemSecondMark } from '@/lib/queries/assignment-items';
 import { ITEM_TYPE_LABELS, markGap, summarizeSubmission, SKILL_LABELS, type ScoringAnswer, type ScoringItem } from '@/lib/assignment-scoring';
 import { SUBMISSION_LABELS } from '@/lib/validation/assignment';
@@ -119,10 +120,8 @@ export function AnswerDialog({
 
   function uploadFile(itemId: number, file: File | undefined) {
     if (!file) return;
-    const fd = new FormData();
-    fd.append('file', file);
     startTransition(async () => {
-      const r = await uploadFileAction(fd);
+      const r = await uploadAsStaff(file);
       if (!r.ok) return setError(r.message);
       setDraft(itemId, { fileId: r.fileId, fileName: r.name });
       setError(null);

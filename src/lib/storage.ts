@@ -26,9 +26,13 @@ export const ALLOWED_TYPES: Record<string, number> = {
   'application/pdf': DOC_MAX,
   'image/png': DOC_MAX,
   'image/jpeg': DOC_MAX,
+  'image/webp': DOC_MAX,
+  'image/gif': DOC_MAX,
   'text/plain': DOC_MAX,
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document': DOC_MAX,
 };
+
+const TYPE_MESSAGE = 'Loại tệp này chưa được hỗ trợ. Dùng âm thanh (mp3, m4a, wav, webm), PDF, ảnh PNG, JPG, WebP hoặc GIF, văn bản (txt, docx).';
 
 // Tên gốc để hiện và tải xuống: bỏ đường dẫn và ký tự điều khiển, giới hạn độ dài
 export function safeFileName(name: string): string {
@@ -43,7 +47,7 @@ export type UploadResult = { ok: true; id: number; name: string } | { ok: false;
 export async function saveUpload(file: File, accountId: number | null): Promise<UploadResult> {
   const limit = ALLOWED_TYPES[file.type];
   if (!limit) {
-    return { ok: false, message: 'Loại tệp này chưa được hỗ trợ. Dùng âm thanh (mp3, m4a, wav), PDF, ảnh PNG hoặc JPG, văn bản (txt, docx).' };
+    return { ok: false, message: TYPE_MESSAGE };
   }
   if (file.size === 0) return { ok: false, message: 'Tệp này trống.' };
   if (file.size > limit) return { ok: false, message: `Tệp quá lớn. Tối đa ${Math.round(limit / MB)} MB.` };
@@ -169,7 +173,7 @@ export async function prepareDirectUpload(fileInfo: {
 }): Promise<PrepareDirectUploadResult> {
   const limit = ALLOWED_TYPES[fileInfo.type];
   if (!limit) {
-    return { ok: false, message: 'Loại tệp này chưa được hỗ trợ. Dùng âm thanh (mp3, m4a, wav), PDF, ảnh PNG hoặc JPG, văn bản (txt, docx).' };
+    return { ok: false, message: TYPE_MESSAGE };
   }
   if (fileInfo.size <= 0) return { ok: false, message: 'Tệp này trống.' };
   if (fileInfo.size > limit) return { ok: false, message: `Tệp quá lớn. Tối đa ${Math.round(limit / MB)} MB.` };
@@ -194,9 +198,17 @@ export async function completeDirectUpload(params: {
   if (!/^[a-z0-9]+$/.test(params.storageKey)) {
     return { ok: false, message: 'Khoá tệp không hợp lệ.' };
   }
+  // Loại và cỡ do trình duyệt khai báo: kiểm lại như khi tải qua máy chủ, không tin giá trị gửi lên
+  const limit = ALLOWED_TYPES[params.mimeType];
+  if (!limit) return { ok: false, message: TYPE_MESSAGE };
   const blob = await getBlob(params.storageKey);
   if (!blob) {
     return { ok: false, message: 'Tệp chưa được tải lên hoặc tải lên không thành công.' };
+  }
+  if (blob.length === 0) return { ok: false, message: 'Tệp này trống.' };
+  if (blob.length > limit) {
+    await deleteBlob(params.storageKey);
+    return { ok: false, message: `Tệp quá lớn. Tối đa ${Math.round(limit / MB)} MB.` };
   }
   const name = safeFileName(params.fileName);
   const [row] = await db

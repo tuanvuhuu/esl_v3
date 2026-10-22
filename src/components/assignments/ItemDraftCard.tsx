@@ -2,7 +2,7 @@
 
 import { ArrowDown, ArrowUp, Eye, EyeOff, Image as ImageIcon, Paperclip, Plus, Trash2, X } from 'lucide-react';
 import { useState, useTransition } from 'react';
-import { uploadFileAction } from '@/app/(app)/bai-tap/question-actions';
+import { uploadAsStaff } from '@/lib/upload-client';
 import {
   CRITERIA_PER_ITEM,
   CRITERION_MAX_DEFAULT,
@@ -135,10 +135,8 @@ export function ItemDraftCard({
 
   function uploadAudio(file: File | undefined) {
     if (!file) return;
-    const fd = new FormData();
-    fd.append('file', file);
     startUpload(async () => {
-      const r = await uploadFileAction(fd);
+      const r = await uploadAsStaff(file);
       if (!r.ok) return onError(r.message);
       patch({ audioFileId: r.fileId, audioName: r.name });
       onError(null);
@@ -147,10 +145,8 @@ export function ItemDraftCard({
 
   function uploadOptionImage(optKey: string, file: File | undefined) {
     if (!file) return;
-    const fd = new FormData();
-    fd.append('file', file);
     startUpload(async () => {
-      const r = await uploadFileAction(fd);
+      const r = await uploadAsStaff(file);
       if (!r.ok) return onError(r.message);
       patchOption(optKey, { imageFileId: r.fileId });
       onError(null);
@@ -159,10 +155,8 @@ export function ItemDraftCard({
 
   function uploadItemImage(file: File | undefined) {
     if (!file) return;
-    const fd = new FormData();
-    fd.append('file', file);
     startUpload(async () => {
-      const r = await uploadFileAction(fd);
+      const r = await uploadAsStaff(file);
       if (!r.ok) return onError(r.message);
       patch({ imageFileId: r.fileId });
       onError(null);

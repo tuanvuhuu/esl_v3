@@ -4,7 +4,8 @@ import { Paperclip, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useState, useTransition } from 'react';
-import { studentUploadAction, submitMyAnswersAction, type StudentAnswerInput } from '@/app/(student)/cua-toi/actions';
+import { submitMyAnswersAction, type StudentAnswerInput } from '@/app/(student)/cua-toi/actions';
+import { uploadAsStudent } from '@/lib/upload-client';
 import { ITEM_TYPE_LABELS, SKILL_LABELS } from '@/lib/assignment-scoring';
 import type { StudentAssignmentView } from '@/lib/queries/student-portal';
 import { vnDateTimeLabel } from '@/lib/datetime';
@@ -50,10 +51,8 @@ export function StudentAssignmentForm({ view }: { view: StudentAssignmentView })
 
   function uploadFile(itemId: number, file: File | undefined) {
     if (!file) return;
-    const fd = new FormData();
-    fd.append('file', file);
     startTransition(async () => {
-      const r = await studentUploadAction(fd);
+      const r = await uploadAsStudent(file);
       if (!r.ok) return setError(r.message);
       patch(itemId, { fileId: r.fileId, fileName: r.name });
       setError(null);

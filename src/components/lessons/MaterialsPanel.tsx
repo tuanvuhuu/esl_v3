@@ -3,7 +3,7 @@
 import { Link2, Paperclip, Trash2 } from 'lucide-react';
 import { useState, useTransition } from 'react';
 import { deleteMaterialAction, saveMaterialAction, attachDriveMaterialAction } from '@/app/(app)/bai-giang/actions';
-import { uploadFileAction } from '@/app/(app)/bai-tap/question-actions';
+import { uploadAsStaff } from '@/lib/upload-client';
 import type { LessonRow } from '@/lib/queries/lessons';
 import { MATERIAL_KIND_LABELS } from '@/lib/validation/lesson';
 
@@ -45,10 +45,8 @@ export function MaterialsPanel({ lesson, canManage, onChanged }: { lesson: Lesso
 
   function uploadFile(file: File | undefined) {
     if (!file) return;
-    const fd = new FormData();
-    fd.append('file', file);
     startTransition(async () => {
-      const r = await uploadFileAction(fd);
+      const r = await uploadAsStaff(file);
       if (!r.ok) return setError(r.message);
       setFileId(r.fileId);
       setFileName(r.name);
