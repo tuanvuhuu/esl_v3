@@ -991,4 +991,104 @@ test.describe('bài tập, điểm danh, học phí', () => {
       await db.end();
     }
   });
+
+  test('telegram: duyệt hoặc từ chối đơn nghỉ chỉ khi có quyền điểm danh, đúng cơ sở và đúng lớp', async ({ page }) => {
+    loadEnvLocal();
+    const secret = process.env.TELEGRAM_WEBHOOK_SECRET ?? '';
+    expect(secret.length).toBeGreaterThanOrEqual(16);
+    const db = new Client({ connectionString: process.env.DATABASE_URL });
+    await db.connect();
+    const stamp = String(Date.now()).slice(-6);
+    const otherCampus = `CS E2E nghỉ ${stamp}`;
+    const accountIds: number[] = [];
+    const chatIds: number[] = [];
+    let otherCampusId = 0;
+    let target: { student_id: number; class_id: number; campus_id: number; session_id: number; session_date: string } | undefined;
+    const callback = (chatId: number, data: string) =>
+      page.request.post('/api/telegram/webhook', {
+        headers: { 'x-telegram-bot-api-secret-token': secret },
+        data: { update_id: Date.now(), callback_query: { id: `cb${Date.now()}`, from: { id: chatId, first_name: 'Nhân viên' }, message: { chat: { id: chatId } }, data } },
+      });
+    // Tài khoản kèm chat Telegram đã kết nối
+    const staff = async (role: string, campusIds: number[]) => {
+      const n = accountIds.length;
+      const id = (
+        await db.query<{ id: number }>(`insert into accounts (full_name, email, role, status) values ($1, $2, $3, 'active') returning id`, [
+          `E2E duyệt nghỉ ${n}`,
+          `e2e.nghi.${stamp}.${n}@esl-center.vn`,
+          role,
+        ])
+      ).rows[0].id;
+      accountIds.push(id);
+      for (const campusId of campusIds) await db.query(`insert into account_campuses (account_id, campus_id) values ($1, $2)`, [id, campusId]);
+      const chatId = 9_100_000_000 + Number(stamp) * 10 + n;
+      chatIds.push(chatId);
+      await db.query(`insert into telegram_chats (chat_id, account_id, display_name, active) values ($1, $2, 'E2E', true)`, [chatId, id]);
+      return chatId;
+    };
+    const attendance = async () =>
+      (await db.query<{ mark: string }>(`select mark from attendance where student_id = $1 and session_date = $2::date`, [target!.student_id, target!.session_date])).rows;
+    const sentBy = async () => (await db.query<{ n: number }>(`select count(*)::int as n from telegram_messages where sent_by_account_id = any($1::int[])`, [accountIds])).rows[0].n;
+    try {
+      // Học sinh có một buổi học chưa điểm danh ngày đó
+      [target] = (
+        await db.query<NonNullable<typeof target>>(`
+          select s.id as student_id, c.id as class_id, c.campus_id, cs.id as session_id, to_char(cs.starts_at at time zone 'UTC', 'YYYY-MM-DD') as session_date
+          from students s join classes c on c.id = s.class_id join class_sessions cs on cs.class_id = c.id
+          where s.status = 'active'
+            and not exists (select 1 from attendance a where a.student_id = s.id and a.session_date = to_char(cs.starts_at at time zone 'UTC', 'YYYY-MM-DD')::date)
+          order by cs.starts_at desc limit 1`)
+      ).rows;
+      expect(target).toBeTruthy();
+      const [foreignSession] = (await db.query<{ id: number }>(`select id from class_sessions where class_id <> $1 order by id limit 1`, [target!.class_id])).rows;
+      expect(foreignSession).toBeTruthy();
+      const grants = (await db.query<{ role: string }>(`select role::text from role_permissions where permission = 'attendance.record' and granted`)).rows.map((r) => r.role);
+      expect(grants).toContain('teacher');
+      expect(grants).not.toContain('accountant');
+      otherCampusId = (await db.query<{ id: number }>(`insert into campuses (name) values ($1) returning id`, [otherCampus])).rows[0].id;
+      // Điểm danh của học sinh vào ngày buổi học lớp khác, để chắc callback sửa tay không ghi gì
+      const foreignAttendance = async () =>
+        (
+          await db.query<{ mark: string; updated_at: Date }>(
+            `select a.mark, a.updated_at from attendance a join class_sessions cs on cs.id = $2
+             where a.student_id = $1 and a.session_date = to_char(cs.starts_at at time zone 'UTC', 'YYYY-MM-DD')::date`,
+            [target!.student_id, foreignSession.id],
+          )
+        ).rows;
+      const foreignBefore = await foreignAttendance();
+
+      const accountant = await staff('accountant', [target!.campus_id]); // đúng cơ sở, thiếu quyền điểm danh
+      const otherTeacher = await staff('teacher', [otherCampusId]); // có quyền, khác cơ sở
+      const teacher = await staff('teacher', [target!.campus_id]); // có quyền, đúng cơ sở
+      const appr = `leave_appr:${target!.student_id}:${target!.session_id}`;
+      const deny = `leave_deny:${target!.student_id}:${target!.session_id}`;
+
+      for (const [chatId, data] of [
+        [accountant, appr],
+        [accountant, deny],
+        [otherTeacher, appr],
+        [otherTeacher, deny],
+        // Sửa callback_data: buổi học của lớp khác
+        [teacher, `leave_appr:${target!.student_id}:${foreignSession.id}`],
+        [teacher, `leave_deny:${target!.student_id}:${foreignSession.id}`],
+        [teacher, `leave_appr:${target!.student_id}:abc`],
+      ] as const) {
+        expect((await callback(chatId, data)).status()).toBe(200);
+      }
+      expect(await attendance()).toEqual([]);
+      expect(await sentBy()).toBe(0);
+      expect(await foreignAttendance()).toEqual(foreignBefore);
+
+      // Đủ điều kiện thì duyệt được: ghi vắng vào sổ điểm danh
+      expect((await callback(teacher, appr)).status()).toBe(200);
+      expect(await attendance()).toEqual([{ mark: 'absent' }]);
+    } finally {
+      if (target) await db.query(`delete from attendance where student_id = $1 and session_date = $2::date and updated_at > now() - interval '10 minutes'`, [target.student_id, target.session_date]);
+      if (accountIds.length) await db.query(`delete from telegram_messages where sent_by_account_id = any($1::int[])`, [accountIds]);
+      if (chatIds.length) await db.query(`delete from telegram_chats where chat_id = any($1::bigint[])`, [chatIds]);
+      if (accountIds.length) await db.query(`delete from accounts where id = any($1::int[])`, [accountIds]);
+      if (otherCampusId) await db.query(`delete from campuses where id = $1`, [otherCampusId]);
+      await db.end();
+    }
+  });
 });

@@ -808,8 +808,30 @@ async function submitLeaveRequest(chat: Chat, studentId: number, sessionId: numb
   await sendCopyToSuperAdmins(`[Bản sao] Phụ huynh ${info.parent_name} gửi đơn xin nghỉ cho em ${info.student_name} (lớp ${info.class_name}) buổi ${sessionTime}.`);
 }
 
-async function approveLeaveRequest(chat: Chat, studentId: number, sessionId: number): Promise<void> {
-  if (!chat.accountId) return;
+// Callback_data có thể bị sửa nên mỗi lần duyệt hoặc từ chối đều kiểm lại từ đầu: tài khoản còn hoạt động,
+// có quyền điểm danh (quản trị có mọi quyền), làm việc ở cơ sở của lớp (quản trị không cần dòng account_campuses),
+// và buổi học thuộc đúng lớp của học sinh. Quy tắc giống src/lib/campus-access.ts.
+const LEAVE_FORBIDDEN = 'Bạn không có quyền duyệt đơn này';
+
+async function canDecideLeave(accountId: number, studentId: number, sessionId: number): Promise<boolean> {
+  if (!Number.isInteger(studentId) || !Number.isInteger(sessionId)) return false;
+  const [row] = (await db.execute<{ ok: boolean }>(sql`
+    SELECT true AS ok
+    FROM accounts a
+    JOIN students s ON s.id = ${studentId}
+    JOIN class_sessions cs ON cs.id = ${sessionId} AND cs.class_id = s.class_id
+    JOIN classes c ON c.id = s.class_id
+    WHERE a.id = ${accountId} AND a.status = 'active'
+      AND (a.role = 'admin' OR (
+        EXISTS (SELECT 1 FROM role_permissions rp WHERE rp.role = a.role AND rp.permission = 'attendance.record' AND rp.granted = true)
+        AND EXISTS (SELECT 1 FROM account_campuses ac WHERE ac.account_id = a.id AND ac.campus_id = c.campus_id)))
+    LIMIT 1`)).rows;
+  return Boolean(row?.ok);
+}
+
+// Trả về false khi không đủ quyền; khi đó không đổi dữ liệu
+async function approveLeaveRequest(chat: Chat, studentId: number, sessionId: number): Promise<boolean> {
+  if (!chat.accountId || !(await canDecideLeave(chat.accountId, studentId, sessionId))) return false;
   const [row] = (await db.execute<{
     class_id: number;
     starts_at: Date;
@@ -825,7 +847,7 @@ async function approveLeaveRequest(chat: Chat, studentId: number, sessionId: num
     WHERE cs.id = ${sessionId}
     LIMIT 1`)).rows;
 
-  if (!row) return;
+  if (!row) return false;
 
   const sessionDateStr = new Date(row.starts_at).toISOString().slice(0, 10);
   const timeLabel = vnDateTimeLabel(new Date(row.starts_at));
@@ -852,10 +874,11 @@ async function approveLeaveRequest(chat: Chat, studentId: number, sessionId: num
   // Báo Super Admin
   const [t] = await db.select({ name: accounts.fullName }).from(accounts).where(eq(accounts.id, chat.accountId)).limit(1);
   await sendCopyToSuperAdmins(`[Bản sao] Thầy/Cô ${t?.name ?? 'Giáo viên'} đã DUYỆT đơn xin nghỉ buổi ${timeLabel} cho em ${row.student_name}.`);
+  return true;
 }
 
-async function denyLeaveRequest(chat: Chat, studentId: number, sessionId: number): Promise<void> {
-  if (!chat.accountId) return;
+async function denyLeaveRequest(chat: Chat, studentId: number, sessionId: number): Promise<boolean> {
+  if (!chat.accountId || !(await canDecideLeave(chat.accountId, studentId, sessionId))) return false;
   const [row] = (await db.execute<{
     starts_at: Date;
     student_name: string;
@@ -868,7 +891,7 @@ async function denyLeaveRequest(chat: Chat, studentId: number, sessionId: number
     WHERE cs.id = ${sessionId}
     LIMIT 1`)).rows;
 
-  if (!row) return;
+  if (!row) return false;
   const timeLabel = vnDateTimeLabel(new Date(row.starts_at));
   await sendMessage(chat.chatId, `Đã từ chối đơn xin nghỉ buổi ${timeLabel} của em ${row.student_name}.`);
 
@@ -882,6 +905,7 @@ async function denyLeaveRequest(chat: Chat, studentId: number, sessionId: number
 
   const [t] = await db.select({ name: accounts.fullName }).from(accounts).where(eq(accounts.id, chat.accountId)).limit(1);
   await sendCopyToSuperAdmins(`[Bản sao] Thầy/Cô ${t?.name ?? 'Giáo viên'} đã TỪ CHỐI đơn xin nghỉ buổi ${timeLabel} của em ${row.student_name}.`);
+  return true;
 }
 
 export type IncomingCallback = {
@@ -924,8 +948,8 @@ export async function handleCallbackQuery(cb: IncomingCallback): Promise<void> {
       const parts = cb.data.split(':');
       const studentId = parseInt(parts[1], 10);
       const sessionId = parseInt(parts[2], 10);
-      await approveLeaveRequest(chat, studentId, sessionId);
-      await answerCallbackQuery(cb.id, 'Đã phê duyệt đơn');
+      const done = await approveLeaveRequest(chat, studentId, sessionId);
+      await answerCallbackQuery(cb.id, done ? 'Đã phê duyệt đơn' : LEAVE_FORBIDDEN);
       return;
     }
 
@@ -933,8 +957,8 @@ export async function handleCallbackQuery(cb: IncomingCallback): Promise<void> {
       const parts = cb.data.split(':');
       const studentId = parseInt(parts[1], 10);
       const sessionId = parseInt(parts[2], 10);
-      await denyLeaveRequest(chat, studentId, sessionId);
-      await answerCallbackQuery(cb.id, 'Đã từ chối đơn');
+      const done = await denyLeaveRequest(chat, studentId, sessionId);
+      await answerCallbackQuery(cb.id, done ? 'Đã từ chối đơn' : LEAVE_FORBIDDEN);
       return;
     }
 
