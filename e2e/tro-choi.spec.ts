@@ -4,7 +4,7 @@ import { loadEnvLocal } from './env';
 import { login } from './helpers';
 import { hashPassword } from '../src/lib/auth/password';
 
-// Trò chơi từ vựng (35.15): học sinh lớp thử ở Cơ sở test chơi đủ bốn trò từ danh sách của lớp mình, được 3 sao;
+// Trò chơi từ vựng (35.15, 35.16): học sinh lớp thử ở Cơ sở test chơi đủ tám trò từ danh sách của lớp mình, được 3 sao;
 // danh sách của lớp khác không mở được; điện thoại 360/390px không tràn; giáo viên chơi thử từ màn Danh sách từ.
 const run = String(Date.now()).slice(-6);
 const CLS = `TC-${run}`;
@@ -37,7 +37,8 @@ async function arrange(page: Page, rounds: number, counter: string, joiner: stri
   }
 }
 
-test('trò chơi từ vựng: học sinh chơi đủ bốn trò, không mở được danh sách lớp khác; giáo viên chơi thử', async ({ page, browser }) => {
+test('trò chơi từ vựng: học sinh chơi đủ tám trò, không mở được danh sách lớp khác; giáo viên chơi thử', async ({ page, browser }) => {
+  test.setTimeout(180_000);
   loadEnvLocal();
   const db = new Client({ connectionString: process.env.DATABASE_URL });
   await db.connect();
@@ -116,6 +117,43 @@ test('trò chơi từ vựng: học sinh chơi đủ bốn trò, không mở đ�
     await kidPage.getByRole('button', { name: /Xây câu/ }).click();
     await arrange(kidPage, 3, 'Câu', ' ');
     await finishWith(kidPage, 'Đúng 3/3');
+
+    // Bingo nghe: 4 từ thành bảng 2×2, hai ô bất kỳ đã thành một hàng
+    await kidPage.getByRole('button', { name: /Bingo nghe/ }).click();
+    for (let k = 0; k < 2; k++) {
+      await expect(kidPage.getByText(`Đã đánh dấu ${k} ô`)).toBeVisible();
+      const target = await kidPage.locator('[data-target]').getAttribute('data-target');
+      await kidPage.locator(`[data-word="${target}"]`).click();
+    }
+    await finishWith(kidPage, 'Đúng 2/2');
+
+    // Simon nói: ba chuỗi dài dần, chạm lại đúng thứ tự (nút mở khi phát xong chuỗi)
+    await kidPage.getByRole('button', { name: /Simon nói/ }).click();
+    for (let r = 0; r < 3; r++) {
+      await expect(kidPage.getByText(new RegExp(`^Lượt ${r + 1}/3`))).toBeVisible();
+      const seq = (await kidPage.locator('[data-target]').getAttribute('data-target'))!.split('|');
+      for (const word of seq) await kidPage.locator(`[data-word="${word}"]`).click({ timeout: 10_000 });
+    }
+    await finishWith(kidPage, 'Đúng 3/3');
+
+    // Đoán chữ: ba từ, đoán đúng từng chữ cái
+    await kidPage.getByRole('button', { name: /Đoán chữ/ }).click();
+    for (let i = 0; i < 3; i++) {
+      await expect(kidPage.getByText(new RegExp(`^Từ ${i + 1}/3`))).toBeVisible();
+      const target = (await kidPage.locator('[data-target]').getAttribute('data-target'))!;
+      for (const ch of new Set(target)) await kidPage.locator(`[data-key="${ch}"]`).click();
+    }
+    await finishWith(kidPage, 'Đúng 3/3');
+
+    // Đua xe: tám câu, chọn đúng từ của tranh
+    await kidPage.getByRole('button', { name: /Đua xe/ }).click();
+    for (let i = 0; i < 8; i++) {
+      await expect(kidPage.getByText(new RegExp(`^Câu ${i + 1}/8`))).toBeVisible();
+      const target = await kidPage.locator('[data-target]').getAttribute('data-target');
+      await kidPage.locator(`[data-word="${target}"]`).click();
+    }
+    expect(await kidPage.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBe(0);
+    await finishWith(kidPage, 'Đúng 8/8');
 
     // Danh sách của lớp khác: không mở được
     await kidPage.goto(`/cua-toi/tro-choi/${otherList}`);

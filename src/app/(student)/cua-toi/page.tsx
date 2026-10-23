@@ -63,7 +63,7 @@ async function StudentHomeData() {
                   <Link href={`/cua-toi/tro-choi/${g.id}`} className="text-base font-normal text-link underline underline-offset-2 [overflow-wrap:anywhere]">
                     {g.name}
                   </Link>
-                  <small className="text-sm text-muted">{g.wordCount} từ · lật thẻ, nghe chọn tranh, ghép chữ, xây câu</small>
+                  <small className="text-sm text-muted">{g.wordCount} từ · 8 trò chơi: lật thẻ, bingo, đoán chữ, đua xe…</small>
                 </Card>
               </li>
             ))}

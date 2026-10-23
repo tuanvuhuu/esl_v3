@@ -1,6 +1,6 @@
 'use client';
 
-// Trò chơi từ vựng (35.15): chọn một trong bốn trò từ một danh sách từ, chơi, xem sao cuối lượt.
+// Trò chơi từ vựng (35.15, 35.16): chọn một trong tám trò từ một danh sách từ, chơi, xem sao cuối lượt.
 // Thiết kế cho điện thoại trước (khung hẹp giữa màn, nút lớn). Âm thanh: tệp của từ nếu có, không thì giọng đọc có sẵn của máy.
 import { ArrowLeft, Check, RotateCcw, Volume2, X } from 'lucide-react';
 import Link from 'next/link';
@@ -22,34 +22,8 @@ import {
   type GameWord,
   type MemoryCard,
 } from '@/lib/games';
-
-const BIG_BASE = 'flex min-h-14 items-center justify-center gap-2 rounded-2xl border-2 px-4 text-lg font-extrabold transition-transform active:scale-95 disabled:opacity-50';
-const BIG = `${BIG_BASE} border-line bg-surface text-ink`;
-
-// Đọc từ: tệp âm thanh của từ, không có thì giọng đọc tiếng Anh có sẵn trên máy (không gửi đi đâu)
-function say(w: GameWord) {
-  if (w.audioFileId) {
-    void new Audio(`/api/files/${w.audioFileId}`).play().catch(() => undefined);
-    return;
-  }
-  if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
-  const u = new SpeechSynthesisUtterance(w.word);
-  u.lang = 'en-US';
-  u.rate = 0.85;
-  window.speechSynthesis.cancel();
-  window.speechSynthesis.speak(u);
-}
-
-// Tranh của từ: ảnh tải lên, không có thì emoji, không có nữa thì nghĩa tiếng Việt
-function Picture({ w, size = 'md' }: { w: GameWord; size?: 'md' | 'lg' }) {
-  const box = size === 'lg' ? 'size-24' : 'size-16';
-  if (w.imageFileId) {
-    // eslint-disable-next-line @next/next/no-img-element -- ảnh do giáo viên tải lên, phục vụ qua /api/files
-    return <img src={`/api/files/${w.imageFileId}`} alt={w.meaningVi || w.word} className={`${box} rounded-xl object-cover`} />;
-  }
-  if (w.emoji) return <span className={size === 'lg' ? 'text-6xl' : 'text-4xl'} aria-label={w.meaningVi || 'tranh'}>{w.emoji}</span>;
-  return <span className="text-center text-base font-bold text-ink-2">{w.meaningVi || '?'}</span>;
-}
+import { BingoGame, HangmanGame, RaceGame, SimonGame } from './MoreGames';
+import { BIG, BIG_BASE, Picture, say, type GameProps } from './shared';
 
 export function GameHub({ title, words, backHref, backLabel }: { title: string; words: GameWord[]; backHref: string; backLabel: string }) {
   const games = playableGames(words);
@@ -82,10 +56,10 @@ export function GameHub({ title, words, backHref, backLabel }: { title: string; 
         <>
           <h1 className="text-2xl font-extrabold text-ink">Chọn trò chơi</h1>
           {games.length === 0 && <p className="text-base text-ink-2">Danh sách cần ít nhất 2 từ để chơi.</p>}
-          <ul className="grid grid-cols-1 gap-3 min-[400px]:grid-cols-2">
+          <ul className="grid grid-cols-2 gap-3">
             {games.map((g) => (
               <li key={g}>
-                <button type="button" onClick={() => { setGame(g); setResult(null); }} className="flex w-full flex-col items-start gap-1 rounded-2xl border-2 border-line bg-surface p-4 text-left transition-transform active:scale-95">
+                <button type="button" onClick={() => { setGame(g); setResult(null); }} className="flex h-full w-full flex-col items-start gap-1 rounded-2xl border-2 border-line bg-surface p-3 text-left transition-transform active:scale-95">
                   <span className="text-3xl" aria-hidden>{GAME_LABELS[g].emoji}</span>
                   <b className="text-lg font-extrabold text-ink">{GAME_LABELS[g].name}</b>
                   <small className="text-sm text-ink-2">{GAME_LABELS[g].hint}</small>
@@ -119,13 +93,15 @@ export function GameHub({ title, words, backHref, backLabel }: { title: string; 
           {game === 'whack' && <WhackGame words={words} seed={seed} onFinish={finish} />}
           {game === 'spell' && <SpellGame words={words} seed={seed} onFinish={finish} />}
           {game === 'sentence' && <SentenceGame words={words} seed={seed} onFinish={finish} />}
+          {game === 'bingo' && <BingoGame words={words} seed={seed} onFinish={finish} />}
+          {game === 'simon' && <SimonGame words={words} seed={seed} onFinish={finish} />}
+          {game === 'hangman' && <HangmanGame words={words} seed={seed} onFinish={finish} />}
+          {game === 'race' && <RaceGame words={words} seed={seed} onFinish={finish} />}
         </div>
       )}
     </section>
   );
 }
-
-type GameProps = { words: GameWord[]; seed: number; onFinish: (correct: number, total: number) => void };
 
 // ---------- Lật thẻ nhớ ----------
 function MemoryGame({ words, seed, onFinish }: GameProps) {
