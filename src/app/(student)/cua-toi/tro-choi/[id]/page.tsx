@@ -24,5 +24,5 @@ async function StudentGameData({ params }: { params: Promise<{ id: string }> }) 
   const [student, list] = await Promise.all([enrolledStudent(account.studentId), getWordListHeader(Number(raw))]);
   if (!student || !list || (list.classId !== null && list.classId !== student.classId)) notFound();
   const words = await getWordListItems(list.id);
-  return <GameHub title={list.name} words={words} backHref="/cua-toi" backLabel="Bài của tôi" />;
+  return <GameHub title={list.name} words={words} backHref="/cua-toi" backLabel="Bài của tôi" recordListId={list.id} />;
 }

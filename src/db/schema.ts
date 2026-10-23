@@ -1033,3 +1033,26 @@ export const wordListItems = pgTable(
   },
   (t) => [index('word_list_items_list_idx').on(t.listId, t.position)],
 );
+
+// ---------- Lượt chơi trò chơi từ vựng (35.17) ----------
+
+// Mỗi lượt học sinh chơi xong một trò: số đúng, tổng, sao (1–3, tính trên máy chủ). Sao trò chơi tính lượt tốt nhất
+// của mỗi trò trong mỗi danh sách, nên chơi lại nhiều lần không dồn sao. Giáo viên chơi thử thì không ghi.
+export const gamePlays = pgTable(
+  'game_plays',
+  {
+    id: serial('id').primaryKey(),
+    studentId: integer('student_id')
+      .notNull()
+      .references(() => students.id, { onDelete: 'cascade' }),
+    wordListId: integer('word_list_id')
+      .notNull()
+      .references(() => wordLists.id, { onDelete: 'cascade' }),
+    game: varchar('game', { length: 20 }).notNull(),
+    correct: integer('correct').notNull(),
+    total: integer('total').notNull(),
+    stars: integer('stars').notNull(),
+    playedAt: timestamp('played_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('game_plays_student_idx').on(t.studentId, t.playedAt)],
+);

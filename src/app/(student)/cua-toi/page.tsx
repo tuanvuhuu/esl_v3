@@ -2,15 +2,18 @@ import { connection } from 'next/server';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
+import { LearningPath } from '@/components/student/LearningPath';
+import { MotivationSummary } from '@/components/student/MotivationSummary';
+import { RewardsShelf } from '@/components/student/RewardsShelf';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Card, EmptyPanel } from '@/components/ui/surfaces';
-import { SubmissionPill } from '@/components/assignments/SubmissionPill';
-import { vnDateTimeLabel } from '@/lib/datetime';
-import { enrolledStudent, studentAssignmentList } from '@/lib/queries/student-portal';
+import { studentMotivation } from '@/lib/queries/motivation';
+import { enrolledStudent } from '@/lib/queries/student-portal';
 import { studentWordLists } from '@/lib/queries/word-lists';
 import { getCurrentAccount } from '@/lib/session';
 
-// Bài tập của lớp học sinh và trò chơi từ vựng (35.15). Dữ liệu đọc trong Suspense (cacheComponents đang bật).
+// Trang học sinh: sao và chuỗi tuần, đường học theo bài, trò chơi từ vựng (35.15), bộ sưu tập sticker và truyện (35.17).
+// Dữ liệu đọc trong Suspense (cacheComponents đang bật).
 export default function StudentHomePage() {
   return (
     <Suspense fallback={<section aria-busy="true" className="h-[240px] animate-pulse rounded-[var(--radius-panel)] bg-stone" />}>
@@ -23,35 +26,20 @@ async function StudentHomeData() {
   await connection();
   const account = await getCurrentAccount();
   if (!account || account.studentId === null) redirect('/dang-nhap');
-  const [rows, student] = await Promise.all([studentAssignmentList(account.studentId), enrolledStudent(account.studentId)]);
+  const [m, student] = await Promise.all([studentMotivation(account.studentId), enrolledStudent(account.studentId)]);
   const games = student ? await studentWordLists(student.classId) : [];
+  const path = m?.path ?? [];
 
   return (
     <section className="flex flex-col gap-4">
-      <PageHeader crumbs={['Khu học sinh']} title="Bài của tôi" subtitle="Bài tập của lớp bạn. Bấm vào bài để làm và nộp." titleOnTopbar={false} />
+      <PageHeader crumbs={['Khu học sinh']} title="Bài của tôi" subtitle="Làm bài và chơi trò chơi để nhận sao. Sai không bị trừ sao." titleOnTopbar={false} />
 
-      {rows.length === 0 ? (
-        <EmptyPanel title="Lớp chưa có bài tập" hint="Khi giáo viên giao bài, bài sẽ hiện ở đây." />
-      ) : (
-        <ul className="flex flex-col gap-3">
-          {rows.map((r) => (
-            <li key={r.id}>
-              <Card>
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <Link href={`/cua-toi/${r.id}`} className="min-w-0 text-base font-normal text-ink [overflow-wrap:anywhere] hover:underline">
-                    {r.title}
-                  </Link>
-                  <SubmissionPill status={r.status} />
-                </div>
-                <small className="text-sm text-muted">
-                  Hạn {vnDateTimeLabel(r.dueAt)} · tối đa {r.maxScore} điểm
-                  {r.status === 'graded' && r.score !== null ? ` · Điểm ${r.score}/${r.maxScore}` : ''}
-                </small>
-              </Card>
-            </li>
-          ))}
-        </ul>
-      )}
+      {m && <MotivationSummary m={m} />}
+
+      <section className="flex flex-col gap-3" aria-labelledby="path-title">
+        <h2 id="path-title" className="text-lg font-extrabold text-ink">Đường học</h2>
+        {path.length === 0 ? <EmptyPanel title="Lớp chưa có bài tập" hint="Khi giáo viên giao bài, bài sẽ hiện ở đây." /> : <LearningPath steps={path} />}
+      </section>
 
       {games.length > 0 && (
         <section className="flex flex-col gap-3" aria-labelledby="word-games-title">
@@ -70,6 +58,8 @@ async function StudentHomeData() {
           </ul>
         </section>
       )}
+
+      {m && <RewardsShelf totalStars={m.totalStars} />}
     </section>
   );
 }

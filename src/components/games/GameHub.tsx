@@ -23,15 +23,22 @@ import {
   type MemoryCard,
 } from '@/lib/games';
 import { BingoGame, HangmanGame, RaceGame, SimonGame } from './MoreGames';
+import { recordGamePlayAction } from '@/app/(student)/cua-toi/game-actions';
 import { BIG, BIG_BASE, Picture, say, type GameProps } from './shared';
 
-export function GameHub({ title, words, backHref, backLabel }: { title: string; words: GameWord[]; backHref: string; backLabel: string }) {
+// recordListId: học sinh chơi thì ghi lượt chơi để cộng sao (35.17); giáo viên chơi thử thì bỏ trống, không ghi.
+export function GameHub({ title, words, backHref, backLabel, recordListId }: { title: string; words: GameWord[]; backHref: string; backLabel: string; recordListId?: number }) {
   const games = playableGames(words);
   const [game, setGame] = useState<GameKind | null>(null);
   const [seed, setSeed] = useState(() => Date.now() % 100000);
   const [result, setResult] = useState<{ correct: number; total: number } | null>(null);
 
-  const finish = (correct: number, total: number) => setResult({ correct, total });
+  const [saved, setSaved] = useState(false);
+  const finish = (correct: number, total: number) => {
+    setResult({ correct, total });
+    setSaved(false);
+    if (recordListId && game) void recordGamePlayAction({ listId: recordListId, game, correct, total }).then((r) => setSaved(r.ok));
+  };
   const replay = () => {
     setResult(null);
     setSeed((s) => s + 1);
@@ -75,6 +82,7 @@ export function GameHub({ title, words, backHref, backLabel }: { title: string; 
           <span className="text-5xl" aria-label={`${gameStars(result.correct, result.total)} sao`}>{'⭐'.repeat(gameStars(result.correct, result.total))}</span>
           <b className="text-2xl font-extrabold text-ink">{gameStars(result.correct, result.total) === 3 ? 'Giỏi quá!' : 'Cố lên nhé!'}</b>
           <p className="text-base text-ink-2">Đúng {result.correct}/{result.total}</p>
+          {saved && <p className="text-sm font-bold text-ink">Đã cất sao vào bộ sưu tập của con</p>}
           <div className="grid w-full grid-cols-2 gap-2">
             <button type="button" onClick={replay} className={BIG}>
               <RotateCcw className="size-5" aria-hidden /> Chơi lại
