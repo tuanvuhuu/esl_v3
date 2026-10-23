@@ -1,5 +1,6 @@
 'use server';
 
+import { makeupStudentsOfSession } from '@/lib/makeup';
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { db } from '@/db/client';
@@ -54,7 +55,8 @@ export async function saveAttendanceAction(sessionId: number, entries: { student
       .select({ id: students.id })
       .from(students)
       .where(and(eq(students.classId, session.classId), inArray(students.status, ['active', 'trial'])));
-    const enrolledIds = new Set(enrolled.map((s) => s.id));
+    // Học sinh lớp khác học bù buổi này cũng được điểm danh (37.12)
+    const enrolledIds = new Set([...enrolled.map((s) => s.id), ...(await makeupStudentsOfSession(session.id)).map((s) => s.id)]);
     const outside = parsed.data.filter((e) => !enrolledIds.has(e.studentId));
     if (outside.length > 0) return { ok: false, message: 'Có học sinh không thuộc lớp này hoặc đã nghỉ học.' };
 

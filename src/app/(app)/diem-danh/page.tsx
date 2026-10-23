@@ -59,7 +59,7 @@ async function AttendanceData({ searchParams }: { searchParams: Promise<SearchPa
   const sessions = await listSessionsOfClass(classId);
   const sRaw = first(sp.s);
   const session = sessions.find((s) => String(s.id) === sRaw) ?? defaultSession(sessions);
-  const roster = session ? await listRoster(classId, session.dateKey) : [];
+  const roster = session ? await listRoster(classId, session.dateKey, session.id) : [];
 
   // key theo lớp và buổi: đổi buổi thì trạng thái đánh dấu được khởi tạo lại từ dữ liệu
   return (

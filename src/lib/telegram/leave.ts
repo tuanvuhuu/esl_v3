@@ -4,7 +4,8 @@
 import { and, desc, eq, gt, sql } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { leaveRequests, students } from '@/db/schema';
-import { vnDateKey, vnDateTimeLabel } from '@/lib/datetime';
+import { vnDateKey, vnDateTimeLabel, vnTimeLabel } from '@/lib/datetime';
+import { bookMakeup, makeupCandidates } from '@/lib/makeup';
 import { sendMessage } from './api';
 import { parentChatsOfStudent, sendAndRecord, sendCopyToSuperAdmins, staffChatsOfClass, type Chat } from './core';
 import {
@@ -337,7 +338,9 @@ export async function applyLeaveDecision(
   const parentText = approve
     ? `✓ Đơn xin nghỉ buổi ${when} của em ${leave.student_name} đã được Thầy/Cô ${deciderName} duyệt. Chúc em mau khoẻ, hẹn em buổi sau!`
     : `Đơn xin nghỉ buổi ${when} của em ${leave.student_name} chưa được duyệt. Thầy/Cô ${deciderName} sẽ liên hệ trực tiếp với Quý phụ huynh.`;
-  for (const pc of await parentChatsOfStudent(leave.student_id)) await sendAndRecord(pc, parentText, 'leave', accountId);
+  // Duyệt và có buổi bù phù hợp: kèm nút để phụ huynh tự chọn buổi học bù (37.12)
+  const makeupButton = approve && (await makeupCandidates(leave.id, 1)).length > 0 ? { inline_keyboard: [[{ text: '📅 Chọn buổi học bù', callback_data: `mk:${leave.id}` }]] } : undefined;
+  for (const pc of await parentChatsOfStudent(leave.student_id)) await sendAndRecord(pc, parentText, 'leave', accountId, makeupButton);
   await sendCopyToSuperAdmins(`[Bản sao] Thầy/Cô ${deciderName} đã ${approve ? 'DUYỆT' : 'TỪ CHỐI'} đơn nghỉ #${leave.id} của em ${leave.student_name} (lớp ${leave.class_name}) buổi ${when}.`, accountId);
   return { ok: true, leave, when };
 }
@@ -412,4 +415,34 @@ export async function leaveStatusMap(studentIds: number[]): Promise<Map<string, 
     WHERE student_id = ANY(${`{${studentIds.join(',')}}`}::int[]) AND status IN ('pending', 'approved')`);
   for (const r of rows.rows) map.set(`${r.student_id}:${r.session_id}`, r.status);
   return map;
+}
+
+// ---------- Học bù trên bot (37.12) ----------
+
+// Phụ huynh bấm "Chọn buổi học bù": liệt kê buổi phù hợp, mỗi buổi một nút (mks:<đơn>:<buổi>)
+export async function promptMakeup(chat: Chat, leaveId: number): Promise<string> {
+  const leave = await loadLeave(leaveId);
+  if (!chat.parentId || !leave || !(await isParentOfStudent(chat.parentId, leave.student_id))) return 'Nút này không còn dùng được.';
+  const list = await makeupCandidates(leaveId, 6);
+  if (list.length === 0) {
+    await sendAndRecord(chat, `Hiện chưa có buổi học bù phù hợp cho em ${leave.student_name} trong 21 ngày tới. Quý phụ huynh nhắn trung tâm để được xếp riêng.`, 'leave', null);
+    return 'Chưa có buổi phù hợp';
+  }
+  await sendAndRecord(chat, `📅 Chọn buổi học bù cho em ${leave.student_name} (nghỉ buổi ${vnDateTimeLabel(new Date(leave.starts_at))}):`, 'leave', null, {
+    inline_keyboard: list.map((c) => [{ text: `${vnDateTimeLabel(c.startsAt)}–${vnTimeLabel(c.endsAt)} · lớp ${c.className}`, callback_data: `mks:${leaveId}:${c.sessionId}` }]),
+  });
+  return 'Chọn một buổi';
+}
+
+// Phụ huynh chọn buổi: đặt học bù, xác nhận với phụ huynh và báo giáo viên lớp học bù
+export async function chooseMakeup(chat: Chat, leaveId: number, sessionId: number): Promise<string> {
+  const leave = await loadLeave(leaveId);
+  if (!chat.parentId || !leave || !(await isParentOfStudent(chat.parentId, leave.student_id))) return 'Nút này không còn dùng được.';
+  const r = await bookMakeup({ leaveId, sessionId, parentId: chat.parentId });
+  if (!r.ok) return r.message.slice(0, 190);
+  const c = r.candidate;
+  const when = `${vnDateTimeLabel(c.startsAt)}–${vnTimeLabel(c.endsAt)}`;
+  await sendAndRecord(chat, `✓ Đã xếp học bù cho em ${r.studentName}: buổi ${when} cùng lớp ${c.className}${c.room ? `, phòng ${c.room}` : ''}, Thầy/Cô ${c.teacherName}. Muốn đổi buổi khác thì bấm lại nút Chọn buổi học bù.`, 'leave', null);
+  for (const s of await staffChatsOfClass(c.classId)) await sendAndRecord(s, `📅 Học bù: em ${r.studentName} học cùng lớp ${c.className} buổi ${when}. Em có trong danh sách điểm danh của buổi này.`, 'leave', null);
+  return 'Đã xếp học bù';
 }

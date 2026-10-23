@@ -11,7 +11,7 @@ import { answerCallbackQuery, editMessageText, sendMessage } from './api';
 import { chatOf, record, sendAndRecord, sendCopyToSuperAdmins, sendPhotoAndRecord, type Chat } from './core';
 import { tuitionQr } from '@/lib/tuition-qr';
 import { answerSurveyContinue, answerSurveyScore } from './survey';
-import { cancelLeave, chooseReason, chooseSession, decideLeave, leaveStatusMap, listPendingLeaves, promptSessions, resolveLeaveRef, startLeave, takeTypedReason } from './leave';
+import { cancelLeave, chooseMakeup, chooseReason, chooseSession, decideLeave, promptMakeup, leaveStatusMap, listPendingLeaves, promptSessions, resolveLeaveRef, startLeave, takeTypedReason } from './leave';
 import { isNotifyKind, NOTIFY_LABELS, settingsKeyboard, settingsText, toggleMuted } from './prefs';
 import {
   CONNECT_HINT,
@@ -708,6 +708,15 @@ export async function handleCallbackQuery(cb: IncomingCallback): Promise<void> {
     }
     if (prefix === 'lv_r' && chat.parentId) {
       await answerCallbackQuery(cb.id, await chooseReason(chat, Number(args[0]), args[1] ?? ''));
+      return;
+    }
+    // Học bù (37.12): mk:<đơn> hiện các buổi, mks:<đơn>:<buổi> chọn buổi
+    if (prefix === 'mk' && chat.parentId) {
+      await answerCallbackQuery(cb.id, await promptMakeup(chat, Number(args[0])));
+      return;
+    }
+    if (prefix === 'mks' && chat.parentId) {
+      await answerCallbackQuery(cb.id, await chooseMakeup(chat, Number(args[0]), Number(args[1])));
       return;
     }
     if (prefix === 'lv_x' && chat.parentId) {

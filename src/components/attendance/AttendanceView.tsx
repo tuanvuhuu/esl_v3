@@ -202,7 +202,7 @@ export function AttendanceView({
                         <b className="block break-words text-base text-ink">{r.fullName}</b>
                         <div className="mt-1 flex flex-wrap items-center gap-2">
                           <Pill tone={shown ? shown.tone : 'stone'}>{shown ? shown.label : 'Chưa điểm danh'}</Pill>
-                          <small className="text-xs text-muted">{r.sessionsDone} buổi đã học</small>
+                          {r.makeupFrom ? <Pill tone="lav">Học bù · từ lớp {r.makeupFrom}</Pill> : <small className="text-xs text-muted">{r.sessionsDone} buổi đã học</small>}
                         </div>
                       </div>
                       {/* Nền khung xám, nút chưa chọn nền trắng có viền: nhìn rõ là ba nút bấm */}

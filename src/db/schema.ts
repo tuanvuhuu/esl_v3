@@ -915,3 +915,27 @@ export const courseSurveys = pgTable(
   },
   (t) => [uniqueIndex('course_surveys_class_student_parent_key').on(t.classId, t.studentId, t.parentId), index('course_surveys_class_idx').on(t.classId)],
 );
+
+// ---------- Học bù (37.12) ----------
+
+// Học sinh nghỉ có phép (đơn đã duyệt) học bù một buổi của lớp khác cùng trình độ, cùng cơ sở.
+// Mỗi đơn nghỉ tối đa một buổi bù. Học sinh hiện trong danh sách điểm danh của buổi bù, có nhãn "Học bù".
+export const makeupBookings = pgTable(
+  'makeup_bookings',
+  {
+    id: serial('id').primaryKey(),
+    leaveRequestId: integer('leave_request_id')
+      .notNull()
+      .references(() => leaveRequests.id, { onDelete: 'cascade' }),
+    studentId: integer('student_id')
+      .notNull()
+      .references(() => students.id, { onDelete: 'cascade' }),
+    sessionId: integer('session_id')
+      .notNull()
+      .references(() => classSessions.id, { onDelete: 'cascade' }),
+    bookedByAccountId: integer('booked_by_account_id').references(() => accounts.id, { onDelete: 'set null' }),
+    bookedByParentId: integer('booked_by_parent_id').references(() => parents.id, { onDelete: 'set null' }),
+    ...timestamps,
+  },
+  (t) => [uniqueIndex('makeup_bookings_leave_key').on(t.leaveRequestId), uniqueIndex('makeup_bookings_student_session_key').on(t.studentId, t.sessionId), index('makeup_bookings_session_idx').on(t.sessionId)],
+);

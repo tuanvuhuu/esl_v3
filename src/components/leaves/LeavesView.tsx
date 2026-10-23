@@ -1,10 +1,11 @@
 'use client';
 
-import { Check, Plus, X } from 'lucide-react';
+import { CalendarPlus, Check, Plus, X } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useTransition } from 'react';
-import { createLeaveAction, decideLeaveAction, leaveOptionsAction, type LeaveOptions } from '@/app/(app)/don-nghi/actions';
+import { bookMakeupAction, cancelMakeupAction, createLeaveAction, decideLeaveAction, leaveOptionsAction, makeupOptionsAction, type LeaveOptions } from '@/app/(app)/don-nghi/actions';
+import type { MakeupCandidate } from '@/lib/makeup';
 import { dateKeyLabel, vnDateKey, vnTimeLabel, weekdayLabel, weekdayOfKey } from '@/lib/datetime';
 import type { LeaveFilter, LeaveListRow, LeaveStatus } from '@/lib/queries/leaves';
 import { Btn } from '@/components/ui/Btn';
@@ -56,18 +57,31 @@ export function LeavesView({
   filter,
   classId,
   classes,
+  makeups,
 }: {
   rows: LeaveListRow[];
   counts: Record<LeaveFilter, number>;
   filter: LeaveFilter;
   classId: number | null;
   classes: { id: number; name: string }[];
+  makeups: Record<number, { className: string; startsAt: Date; endsAt: Date }>;
 }) {
   const router = useRouter();
   const { message, notify } = useToast();
   const [pending, startTransition] = useTransition();
   const [toDeny, setToDeny] = useState<LeaveListRow | null>(null);
   const [adding, setAdding] = useState(false);
+  const [makeupFor, setMakeupFor] = useState<LeaveListRow | null>(null);
+  const [toUnbook, setToUnbook] = useState<LeaveListRow | null>(null);
+
+  function unbook(row: LeaveListRow) {
+    startTransition(async () => {
+      const r = await cancelMakeupAction(row.id);
+      notify(r.message ?? (r.ok ? 'Đã bỏ' : 'Không bỏ được'));
+      setToUnbook(null);
+      router.refresh();
+    });
+  }
 
   function go(next: { f?: LeaveFilter; cls?: number | null }) {
     const params = new URLSearchParams();
@@ -89,13 +103,35 @@ export function LeavesView({
   }
 
   const canDecide = (r: LeaveListRow) => r.status === 'pending' && !r.past;
+  // Học bù chỉ cho đơn đã duyệt (37.12)
+  const canMakeup = (r: LeaveListRow) => r.status === 'approved';
 
-  const statusCell = (r: LeaveListRow) => (
+  // Dòng học bù dưới trạng thái: buổi đã xếp, hoặc nút xếp học bù
+  const makeupLine = (r: LeaveListRow) => {
+    if (!canMakeup(r)) return null;
+    const m = makeups[r.id];
+    return m ? (
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+        <span className="text-ink-2">Học bù: lớp {m.className} · {sessionLabel(new Date(m.startsAt), new Date(m.endsAt))}</span>
+        <button type="button" onClick={() => setMakeupFor(r)} className="text-link underline underline-offset-2">Đổi</button>
+        <button type="button" onClick={() => setToUnbook(r)} className="text-blush-ink underline underline-offset-2">Bỏ</button>
+      </div>
+    ) : (
+      <button type="button" onClick={() => setMakeupFor(r)} className="inline-flex items-center gap-1.5 self-start text-sm text-link underline underline-offset-2">
+        <CalendarPlus className="size-4" aria-hidden />
+        Xếp học bù
+      </button>
+    );
+  };
+
+  // withMakeup: bảng hiện dòng học bù ngay dưới trạng thái; thẻ điện thoại để dòng này thành hàng riêng
+  const statusCell = (r: LeaveListRow, withMakeup = true) => (
     <div className="flex flex-col items-start gap-0.5">
       <Pill tone={r.status === 'pending' && r.past ? 'stone' : STATUS_META[r.status].tone}>
         {r.status === 'pending' && r.past ? 'Quá hạn duyệt' : STATUS_META[r.status].label}
       </Pill>
       {r.decidedBy && <small className="text-xs text-muted">{r.decidedBy}</small>}
+      {withMakeup && makeupLine(r)}
     </div>
   );
 
@@ -150,9 +186,10 @@ export function LeavesView({
           <Link href={`/hoc-sinh/${r.studentId}`} className="text-base font-normal text-link underline underline-offset-2">{r.studentName}</Link>
           <small className="block text-xs text-muted">{r.className} · {sessionLabel(r.startsAt, r.endsAt)}</small>
         </div>
-        {statusCell(r)}
+        {statusCell(r, false)}
       </div>
       {r.reason && <p className="text-base text-ink-2">Lý do: {r.reason}</p>}
+      {makeupLine(r)}
       <small className="text-sm text-muted">
         {r.parentName ? (
           <>
@@ -222,6 +259,27 @@ export function LeavesView({
         pending={pending}
         onConfirm={() => toDeny && decide(toDeny, false)}
         onCancel={() => setToDeny(null)}
+      />
+
+      {makeupFor && (
+        <MakeupDialog
+          row={makeupFor}
+          onClose={() => setMakeupFor(null)}
+          onDone={(m) => {
+            setMakeupFor(null);
+            notify(m);
+            router.refresh();
+          }}
+        />
+      )}
+      <ConfirmDialog
+        open={!!toUnbook}
+        title="Bỏ buổi học bù?"
+        text={toUnbook ? `${toUnbook.studentName} sẽ không còn trong danh sách điểm danh của buổi học bù.` : ''}
+        confirmLabel="Bỏ học bù"
+        pending={pending}
+        onConfirm={() => toUnbook && unbook(toUnbook)}
+        onCancel={() => setToUnbook(null)}
       />
 
       {adding && (
@@ -332,6 +390,59 @@ function AddLeaveDialog({ classes, defaultClassId, onClose, onDone }: {
           <button type="submit" disabled={saving || !studentId || !sessionId} className={FORM_BTN_SUBMIT}>{saving ? 'Đang ghi…' : 'Ghi đơn nghỉ'}</button>
         </FormFooter>
       </form>
+    </Modal>
+  );
+}
+
+// Chọn buổi học bù: buổi sắp tới của lớp khác cùng trình độ, cùng cơ sở, còn chỗ, không trùng giờ lớp của học sinh
+function MakeupDialog({ row, onClose, onDone }: { row: LeaveListRow; onClose: () => void; onDone: (message: string) => void }) {
+  const [list, setList] = useState<MakeupCandidate[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [saving, startSaving] = useTransition();
+
+  useEffect(() => {
+    let alive = true;
+    makeupOptionsAction(row.id).then((r) => {
+      if (!alive) return;
+      if (r.ok) setList(r.candidates);
+      else setError(r.message);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [row.id]);
+
+  function choose(c: MakeupCandidate) {
+    startSaving(async () => {
+      const r = await bookMakeupAction(row.id, c.sessionId);
+      if (r.ok) onDone(r.message ?? 'Đã xếp học bù');
+      else setError(r.message ?? 'Không xếp được');
+    });
+  }
+
+  return (
+    <Modal open title={`Xếp học bù · ${row.studentName}`} subtitle={`Nghỉ buổi ${sessionLabel(row.startsAt, row.endsAt)} lớp ${row.className}. Chọn một buổi của lớp cùng trình độ.`} onClose={onClose} labelledBy="makeup-title">
+      <div className="flex flex-col gap-3 pb-2">
+        {error && <Alert>{error}</Alert>}
+        {!list && !error && <p className="text-sm text-muted">Đang tìm buổi phù hợp…</p>}
+        {list && list.length === 0 && <p className="text-sm text-ink-2">Không có buổi phù hợp trong 21 ngày tới (lớp cùng trình độ, cùng cơ sở, còn chỗ, không trùng giờ lớp của em).</p>}
+        {list && list.length > 0 && (
+          <ul className="flex flex-col divide-y divide-line">
+            {list.map((c) => (
+              <li key={c.sessionId} className="flex items-center justify-between gap-3 py-2.5">
+                <div className="min-w-0">
+                  <b className="block text-base text-ink">{sessionLabel(new Date(c.startsAt), new Date(c.endsAt))} · lớp {c.className}</b>
+                  <small className="block text-sm text-muted">{c.teacherName}{c.room ? ` · ${c.room}` : ''} · còn {c.seatsLeft} chỗ</small>
+                </div>
+                <Btn variant="primary" onClick={() => choose(c)} disabled={saving}>Chọn</Btn>
+              </li>
+            ))}
+          </ul>
+        )}
+        <FormFooter>
+          <button type="button" onClick={onClose} className={FORM_BTN_CANCEL}>Đóng</button>
+        </FormFooter>
+      </div>
     </Modal>
   );
 }

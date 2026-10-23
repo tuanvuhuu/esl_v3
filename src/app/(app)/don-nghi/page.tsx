@@ -8,6 +8,7 @@ import { hasPermission } from '@/lib/permissions';
 import { listClassChoices } from '@/lib/queries/classes';
 import { LEAVE_FILTERS, listLeaves, type LeaveFilter } from '@/lib/queries/leaves';
 import { getCurrentAccount, getCurrentPermissions } from '@/lib/session';
+import { makeupsOfLeaves } from '@/lib/makeup';
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -53,5 +54,7 @@ async function LeavesData({ searchParams }: { searchParams: Promise<SearchParams
     scope,
     teacherId: account?.role === 'teacher' ? account.teacherId : null,
   });
-  return <LeavesView rows={rows} counts={counts} filter={filter} classId={classId} classes={classes.map((c) => ({ id: c.id, name: c.name }))} />;
+  const makeupMap = await makeupsOfLeaves(rows.filter((r) => r.status === 'approved').map((r) => r.id));
+  const makeups = Object.fromEntries([...makeupMap].map(([id, m]) => [id, { className: m.className, startsAt: m.startsAt, endsAt: m.endsAt }]));
+  return <LeavesView rows={rows} counts={counts} filter={filter} classId={classId} classes={classes.map((c) => ({ id: c.id, name: c.name }))} makeups={makeups} />;
 }

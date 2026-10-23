@@ -3,10 +3,13 @@
 import { and, asc, eq, gt, inArray, ne, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { db } from '@/db/client';
-import { classSessions, students } from '@/db/schema';
+import { classSessions, leaveRequests, students } from '@/db/schema';
 import { ForbiddenError, requirePermission, writeAudit } from '@/lib/authz';
 import { requireClassAccess } from '@/lib/campus-access';
 import { getCurrentAccount } from '@/lib/session';
+import { vnDateTimeLabel, vnTimeLabel } from '@/lib/datetime';
+import { bookMakeup, cancelMakeup, makeupCandidates, type MakeupCandidate } from '@/lib/makeup';
+import { parentChatsOfStudent, safely, sendAndRecord, staffChatsOfClass } from '@/lib/telegram/core';
 import { applyLeaveDecision, canDecideLeave } from '@/lib/telegram/leave';
 import { LEAVE_REASON_MAX } from '@/lib/telegram/prefs';
 import type { ActionResult } from '@/lib/validation/student';
@@ -108,6 +111,64 @@ export async function createLeaveAction(input: { studentId: number; sessionId: n
     await writeAudit({ action: 'create', entity: 'leave', entityId: row.id, summary: `Ghi đơn nghỉ cho ${r.leave.student_name} buổi ${r.when}` });
     refresh();
     return { ok: true, message: `Đã ghi đơn nghỉ cho ${r.leave.student_name} buổi ${r.when}` };
+  } catch (error) {
+    return errorResult(error);
+  }
+}
+
+// ---------- Học bù (37.12) ----------
+
+// Đơn nghỉ mà tài khoản này được xếp học bù: cùng quy tắc với duyệt đơn
+async function leaveForMakeup(leaveId: number): Promise<{ accountId: number; studentId: number; sessionId: number }> {
+  const accountId = await currentAccountId();
+  const [leave] = await db.select({ studentId: leaveRequests.studentId, sessionId: leaveRequests.sessionId }).from(leaveRequests).where(eq(leaveRequests.id, leaveId)).limit(1);
+  if (!leave || !(await canDecideLeave(accountId, leave.studentId, leave.sessionId))) throw new ForbiddenError('Bạn không xếp học bù được cho đơn này.');
+  return { accountId, ...leave };
+}
+
+export async function makeupOptionsAction(leaveId: number): Promise<{ ok: true; candidates: MakeupCandidate[] } | { ok: false; message: string }> {
+  try {
+    await leaveForMakeup(leaveId);
+    return { ok: true, candidates: await makeupCandidates(leaveId) };
+  } catch (error) {
+    if (error instanceof ForbiddenError) return { ok: false, message: error.message };
+    console.error('Lỗi tìm buổi học bù:', error);
+    return { ok: false, message: 'Không tìm được buổi học bù. Thử lại sau ít phút.' };
+  }
+}
+
+// Xếp học bù: báo phụ huynh (nếu đã kết nối Telegram) và giáo viên lớp học bù
+export async function bookMakeupAction(leaveId: number, sessionId: number): Promise<ActionResult> {
+  try {
+    const { accountId } = await leaveForMakeup(leaveId);
+    const r = await bookMakeup({ leaveId, sessionId, accountId });
+    if (!r.ok) return { ok: false, message: r.message };
+    const c = r.candidate;
+    const when = `${vnDateTimeLabel(c.startsAt)}–${vnTimeLabel(c.endsAt)}`;
+    await safely('học bù', async () => {
+      for (const chat of await parentChatsOfStudent(r.studentId)) {
+        await sendAndRecord(chat, `📅 HỌC BÙ\nEm ${r.studentName} được xếp học bù buổi ${when} cùng lớp ${c.className}${c.room ? `, phòng ${c.room}` : ''}, Thầy/Cô ${c.teacherName}.\n\n— ESL Center`, 'leave', accountId);
+      }
+      for (const chat of await staffChatsOfClass(c.classId)) {
+        await sendAndRecord(chat, `📅 Học bù: em ${r.studentName} học cùng lớp ${c.className} buổi ${when}. Em có trong danh sách điểm danh của buổi này.`, 'leave', null);
+      }
+    });
+    await writeAudit({ action: 'create', entity: 'makeup', entityId: leaveId, summary: `Xếp học bù cho ${r.studentName}: lớp ${c.className} ${when}` });
+    refresh();
+    return { ok: true, message: `Đã xếp học bù cho ${r.studentName}: lớp ${c.className} ${when}` };
+  } catch (error) {
+    return errorResult(error);
+  }
+}
+
+export async function cancelMakeupAction(leaveId: number): Promise<ActionResult> {
+  try {
+    await leaveForMakeup(leaveId);
+    const removed = await cancelMakeup(leaveId);
+    if (!removed) return { ok: false, message: 'Đơn này chưa xếp học bù.' };
+    await writeAudit({ action: 'delete', entity: 'makeup', entityId: leaveId, summary: 'Bỏ buổi học bù' });
+    refresh();
+    return { ok: true, message: 'Đã bỏ buổi học bù' };
   } catch (error) {
     return errorResult(error);
   }
