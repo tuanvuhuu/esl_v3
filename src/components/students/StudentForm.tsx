@@ -196,19 +196,19 @@ export function StudentForm({
         </div>
       )}
 
-      <Field label="Học phí của học sinh (VND)" error={errors.tuitionFee} hint="Số nguyên. Để trống là đóng đủ học phí lớp.">
+      <Field label="Học phí của học sinh (VND)" error={errors.tuitionFee} hint="Gõ số, app tự thêm dấu chấm. Để trống là đóng đủ học phí lớp.">
+        {/* Hiện "2.250.000"; máy chủ bỏ dấu chấm khi lưu */}
         <input
           name="tuitionFee"
-          type="number"
+          type="text"
           inputMode="numeric"
-          min={0}
-          step={1000}
-          value={fee}
+          autoComplete="off"
+          value={fee === '' ? '' : Number(fee).toLocaleString('vi-VN')}
           onChange={(e) => {
-            setFee(e.target.value);
+            setFee(e.target.value.replace(/\D/g, '').replace(/^0+(?=\d)/, '').slice(0, 12));
             setFeeEdited(true);
           }}
-          className={inputClass(errors.tuitionFee)}
+          className={`${inputClass(errors.tuitionFee)} tabular-nums`}
         />
       </Field>
 

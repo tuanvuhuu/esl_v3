@@ -25,7 +25,7 @@ import { passes, requireStudentAccess } from '@/lib/campus-access';
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
-const PAGE_SIZE = 8;
+const PAGE_SIZE = 20;
 const STATUSES = ['active', 'trial', 'paused', 'finished'] as const;
 const TUITIONS = ['paid', 'partial', 'unpaid'] as const;
 const SORT_FIELDS: readonly StudentSortField[] = [

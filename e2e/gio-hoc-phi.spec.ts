@@ -102,12 +102,12 @@ test('lớp T3 18:00 và T7 06:30: sinh buổi đúng giờ, sửa giờ T7, h�
     await add.getByRole('option', { name: `${code} — Kiểm thử giờ` }).click();
     await add.getByLabel('Ngày bắt đầu học *').fill(today);
     await expect(add.getByTestId('fee-suggestion')).toContainText(`còn ${remaining}/8 buổi`);
-    await expect(add.getByLabel('Học phí của học sinh (VND)')).toHaveValue(String(expectedFee));
+    await expect(add.getByLabel('Học phí của học sinh (VND)')).toHaveValue(expectedFee.toLocaleString('vi-VN'));
     await expect(add.getByTestId('class-info')).toContainText('8 buổi · Khai giảng');
     // Người nhập sửa số rồi bấm "Dùng số này" để lấy lại số gợi ý
     await add.getByLabel('Học phí của học sinh (VND)').fill('999000');
     await add.getByRole('button', { name: 'Dùng số này' }).click();
-    await expect(add.getByLabel('Học phí của học sinh (VND)')).toHaveValue(String(expectedFee));
+    await expect(add.getByLabel('Học phí của học sinh (VND)')).toHaveValue(expectedFee.toLocaleString('vi-VN'));
     await add.getByLabel('Họ và tên *').fill(name);
     await add.locator('input[name="dob"]').fill('2015-03-01');
     await add.locator('input[name="parentName"]').fill(uniq('PH E2E GIO'));

@@ -1,6 +1,6 @@
 # ESL Center: kế hoạch và tiến độ
 
-> **Tiến độ tổng: 204/229 task (89%)**
+> **Tiến độ tổng: 205/230 task (89%)**
 > Cập nhật lần cuối: 2026-10-22. P1–P34 xong. P38 (giờ học từng ngày, học phí theo buổi còn lại, mã HS-00001) xong. P37 bot Telegram theo kịch bản: 37.1–37.9 xong, còn đặt cron mỗi giờ trên bản deploy và các việc đợt sau. P35: 35.2, 35.3, 35.12, 35.24, 35.27 xong; 35.4–35.6 làm dở (35.6 chỉ còn thử tay trên điện thoại). P36 Soạn nhanh xong phần code (36.1–36.6). Số đếm lấy từ các ô `[x]` và `[ ]` trong file.
 
 ## 🎯 Các task vừa hoàn thành & Lệnh test riêng (Không chạy all)
@@ -489,6 +489,7 @@ Rà soát theo luồng thật khi nhập lớp GS 02 (ESL Mầm Xanh). Mỗi m�
 - [x] **40.2** Nhập file dễ hơn: ô SĐT phụ huynh có nhiều số thì lấy số đầu, số còn lại ghi vào ghi chú học sinh. Trợ giảng trùng giáo viên chủ nhiệm thì bỏ ô trợ giảng. Cả hai báo ở cột Ghi chú của bảng xem trước, không chặn nhập. ✅ 2026-10-22: unit 4 dạng ô hai số và trợ giảng trùng; chạy thử file gốc 0 lỗi, ghi chú hiện đúng dòng.
 - [x] **40.3** Trang lớp có nút "Thêm học sinh": mở form thêm học sinh, chọn sẵn lớp đó. ✅ 2026-10-22: E2E xep-lich thêm học sinh từ trang lớp, lớp chọn sẵn; xem form ở 1440px.
 - [x] **40.4** Học sinh mới không ghi ngày bắt đầu học thì lấy ngày buổi đầu của lớp nếu lớp chưa khai giảng, không lấy ngày nhập (nhập file và form). Hạn đóng học phí tính đúng theo ngày này. ✅ 2026-10-22: E2E ngày bắt đầu học = buổi đầu lớp chưa khai giảng (09/03/2027); nhập file dùng cùng quy tắc.
+- [x] **40.5** Rà UI/UX năm màn Học sinh, Giáo viên, Phụ huynh, Lớp học, Lịch học (1440px, 390px). Sửa: Phụ huynh lọc theo cơ sở đang xem (trước hiện lẫn phụ huynh của cơ sở khác); Lịch tuần cuộn trong khung, hàng ngày dính trên, tự cuộn tới buổi sắp học hôm nay hoặc giờ đông lớp, tô cột hôm nay; bảng chọn khoảng ngày không đóng khi lưới tự cuộn; Giáo viên có cột Vai trò, tên lớp và SĐT là liên kết, SĐT nhóm 4-3-3; Học sinh 20 em mỗi trang, ô học phí riêng có dấu chấm. ✅ 2026-10-23: E2E nhóm read 50/50 (sau khi sửa lich.spec), students và catalog 12/12; không tràn ngang ở 390 và 1440px.
 
 ## Quyết định đã chốt
 

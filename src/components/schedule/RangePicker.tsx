@@ -27,7 +27,8 @@ export function RangePicker({ from, to, onPick }: { from: string; to: string; on
   const label = rangeLabel(from, to);
   const span = daysBetweenKeys(from, to) + 1;
 
-  // Bấm ra ngoài, nhấn Esc, cuộn hoặc đổi cỡ màn hình thì đóng và bỏ ngày bắt đầu đang chờ
+  // Bấm ra ngoài, nhấn Esc, cuộn trang hoặc đổi cỡ màn hình thì đóng và bỏ ngày bắt đầu đang chờ.
+  // Chỉ đóng khi phần cuộn chứa nút chọn (bảng sẽ lệch khỏi nút); lưới lịch tự cuộn bên cạnh thì giữ bảng mở.
   useEffect(() => {
     if (!open) return;
     const close = () => {
@@ -40,14 +41,18 @@ export function RangePicker({ from, to, onPick }: { from: string; to: string; on
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') close();
     };
+    const onScroll = (e: Event) => {
+      const target = e.target;
+      if (target === document || (target instanceof Node && rootRef.current && target.contains(rootRef.current))) close();
+    };
     document.addEventListener('mousedown', onDown);
     document.addEventListener('keydown', onKey);
-    window.addEventListener('scroll', close, true);
+    window.addEventListener('scroll', onScroll, true);
     window.addEventListener('resize', close);
     return () => {
       document.removeEventListener('mousedown', onDown);
       document.removeEventListener('keydown', onKey);
-      window.removeEventListener('scroll', close, true);
+      window.removeEventListener('scroll', onScroll, true);
       window.removeEventListener('resize', close);
     };
   }, [open]);

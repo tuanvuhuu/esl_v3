@@ -6,7 +6,8 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useState, useTransition } from 'react';
 import { deleteTeacherAction, loadTeacherForm, type TeacherFormValues } from '@/app/(app)/giao-vien/actions';
 import type { TeacherRow } from '@/lib/queries/teachers';
-import { TEACHER_STATUS_LABELS } from '@/lib/validation/teacher';
+import { STAFF_ROLE_LABELS, TEACHER_STATUS_LABELS, type StaffRole } from '@/lib/validation/teacher';
+import { formatPhone } from '@/lib/text';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Btn } from '@/components/ui/Btn';
 import { Modal } from '@/components/ui/Modal';
@@ -19,10 +20,14 @@ import { TeacherForm, type CampusChoice } from './TeacherForm';
 import { Panel, Card } from '@/components/ui/surfaces';
 
 const STATUS_TONE: Record<TeacherRow['status'], Tone> = { active: 'mint', leave: 'butter' };
+// Vai trò quyết định người này được xếp vào vị trí nào của lớp (chủ nhiệm, trợ giảng, giáo viên nước ngoài)
+const ROLE_TONE: Record<StaffRole, Tone> = { teacher: 'stone', assistant: 'butter', foreign: 'lav' };
+const LINK = 'text-link underline underline-offset-2';
 
 const COLUMNS: GridColumn<TeacherRow>[] = [
   { key: 'name', label: 'Giáo viên', width: 'minmax(200px,1.5fr)' },
-  { key: 'subject', label: 'Chuyên môn', width: 'minmax(140px,1.1fr)' },
+  { key: 'role', label: 'Vai trò', width: 'minmax(150px,1fr)', sortValue: (r) => r.staffRole },
+  { key: 'subject', label: 'Chuyên môn', width: 'minmax(130px,1fr)' },
   { key: 'years', label: 'Kinh nghiệm', width: 'minmax(110px,0.9fr)', sortValue: (r) => r.years },
   { key: 'status', label: 'Trạng thái', width: 'minmax(110px,0.9fr)', sortValue: (r) => r.status },
   { key: 'classes', label: 'Lớp đang dạy', width: 'minmax(180px,1.8fr)', sortValue: (r) => r.classes.length },
@@ -98,27 +103,29 @@ export function TeacherList({
             <Avatar name={row.name} seed={row.id} />
             <div className="min-w-0">
               <b className="block truncate text-base text-ink">{row.name}</b>
-              <a href={`tel:${row.phone.replace(/\s/g, '')}`} className="inline-flex items-center gap-1 text-xs text-muted hover:text-ink">
+              <a href={`tel:${row.phone.replace(/\s/g, '')}`} className={`inline-flex items-center gap-1 text-sm ${LINK}`}>
                 <Phone className="size-3" aria-hidden />
-                {row.phone}
+                {formatPhone(row.phone)}
               </a>
             </div>
           </div>
         );
+      case 'role':
+        return <Pill tone={ROLE_TONE[row.staffRole]}>{STAFF_ROLE_LABELS[row.staffRole]}</Pill>;
       case 'subject':
-        return <span className="text-sm font-semibold text-ink">{row.subject}</span>;
+        return <span className="text-sm text-ink">{row.subject}</span>;
       case 'years':
         return <span className="text-sm text-ink-2">{row.years} năm</span>;
       case 'status':
         return <Pill tone={STATUS_TONE[row.status]}>{TEACHER_STATUS_LABELS[row.status]}</Pill>;
       case 'classes':
         return (
-          <div className="flex min-w-0 flex-wrap gap-1.5">
+          <div className="flex min-w-0 flex-wrap gap-x-3 gap-y-1">
             {row.classes.length === 0 ? (
               <small className="text-xs text-muted">Chưa dạy lớp nào</small>
             ) : (
               row.classes.map((c) => (
-                <Link key={c.id} href={`/lop-hoc/${c.id}`} className="rounded-full bg-bg px-2.5 py-0.5 text-xs font-bold text-ink hover:underline">
+                <Link key={c.id} href={`/lop-hoc/${c.id}`} className={`text-sm ${LINK}`}>
                   {c.name}
                 </Link>
               ))
@@ -149,21 +156,22 @@ export function TeacherList({
           </div>
           <small className="block truncate text-sm text-muted">{row.subject} · {row.years} năm kinh nghiệm</small>
           <div className="mt-1.5 flex flex-wrap items-center gap-2">
+            <Pill tone={ROLE_TONE[row.staffRole]}>{STAFF_ROLE_LABELS[row.staffRole]}</Pill>
             <Pill tone={STATUS_TONE[row.status]}>{TEACHER_STATUS_LABELS[row.status]}</Pill>
-            <a href={`tel:${row.phone.replace(/\s/g, '')}`} className="inline-flex items-center gap-1.5 text-sm font-semibold text-ink-2">
+            <a href={`tel:${row.phone.replace(/\s/g, '')}`} className={`inline-flex items-center gap-1.5 text-sm ${LINK}`}>
               <Phone className="size-3.5" aria-hidden />
-              {row.phone}
+              {formatPhone(row.phone)}
             </a>
           </div>
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-1.5 rounded-xl bg-bg px-3 py-2.5">
+      <div className="flex flex-wrap gap-x-4 gap-y-1.5 rounded-xl bg-bg px-3 py-2.5">
         {row.classes.length === 0 ? (
           <small className="text-sm text-muted">Chưa dạy lớp nào</small>
         ) : (
           row.classes.map((c) => (
-            <Link key={c.id} href={`/lop-hoc/${c.id}`} className="rounded-full bg-surface px-2.5 py-1 text-sm font-bold text-ink hover:underline">
+            <Link key={c.id} href={`/lop-hoc/${c.id}`} className={`text-base ${LINK}`}>
               {c.name}
             </Link>
           ))

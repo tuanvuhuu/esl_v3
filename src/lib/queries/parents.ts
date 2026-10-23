@@ -3,6 +3,7 @@ import { asc, eq, sql } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { campuses, classes, parents, studentParents, students, telegramChats } from '@/db/schema';
 import { getAllowedCampusIds } from '@/lib/campus-access';
+import type { CampusScope } from '@/lib/campus';
 
 export type ParentRow = {
   id: number;
@@ -36,7 +37,8 @@ export async function visibleParentIds(): Promise<Set<number> | null> {
 }
 
 // Phụ huynh kèm các con (chỉ các con trong phạm vi). Tìm kiếm không dấu làm ở lớp giao diện (dữ liệu nhỏ).
-export async function listParents(): Promise<ParentRow[]> {
+// scope: cơ sở đang xem ở thanh trên. Có cơ sở thì chỉ hiện phụ huynh có con học ở cơ sở đó, cùng phụ huynh chưa gắn con.
+export async function listParents(scope: CampusScope = null): Promise<ParentRow[]> {
   const allowed = await getAllowedCampusIds();
   const visible = await visibleParentIds();
   const [parentRows, linkRows] = await Promise.all([
@@ -57,17 +59,22 @@ export async function listParents(): Promise<ParentRow[]> {
   ]);
   const linkedRows = await db.select({ parentId: telegramChats.parentId }).from(telegramChats).where(eq(telegramChats.active, true));
   const linked = new Set(linkedRows.map((r) => r.parentId));
-  return parentRows.filter((p) => visible === null || visible.has(p.id)).map((p) => ({
-    telegramLinked: linked.has(p.id),
-    id: p.id,
-    fullName: p.fullName,
-    phone: p.phone,
-    email: p.email,
-    note: p.note,
-    children: linkRows
-      .filter((l) => l.parentId === p.id && (allowed === null || allowed.includes(l.campusId)))
-      .map((l) => ({ studentId: l.studentId, studentName: l.studentName, relation: l.relation, isPrimary: l.isPrimary })),
-  }));
+  const inView = (campusId: number) => (allowed === null || allowed.includes(campusId)) && (scope === null || campusId === scope);
+  const hasAnyChild = new Set(linkRows.map((l) => l.parentId));
+  return parentRows
+    .filter((p) => visible === null || visible.has(p.id))
+    .map((p) => ({
+      telegramLinked: linked.has(p.id),
+      id: p.id,
+      fullName: p.fullName,
+      phone: p.phone,
+      email: p.email,
+      note: p.note,
+      children: linkRows
+        .filter((l) => l.parentId === p.id && inView(l.campusId))
+        .map((l) => ({ studentId: l.studentId, studentName: l.studentName, relation: l.relation, isPrimary: l.isPrimary })),
+    }))
+    .filter((p) => scope === null || p.children.length > 0 || !hasAnyChild.has(p.id));
 }
 
 // Danh sách chọn phụ huynh cho form học sinh

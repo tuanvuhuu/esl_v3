@@ -2,7 +2,7 @@
 
 import { Filter, Plus, Users } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { startTransition, useOptimistic, useState, type CSSProperties } from 'react';
+import { startTransition, useEffect, useOptimistic, useRef, useState, type CSSProperties } from 'react';
 import type { SessionRow } from '@/lib/queries/sessions';
 import { addDaysKey, dateKeyLabel, daysBetweenKeys, weekdayLabel, weekdayOfKey, weekStartKey } from '@/lib/datetime';
 import { listParam } from '@/lib/list-param';
@@ -116,6 +116,20 @@ export function ScheduleView({
   const gridHeight = `calc(${hours.length} * var(--cal-hour-h))`;
   const hourTop = (h: number) => `calc(${h - hourStart} * var(--cal-hour-h))`;
 
+  // Mở lịch tuần thì cuộn tới chỗ cần xem: buổi chưa học sớm nhất của hôm nay, không có thì khung giờ nhiều buổi nhất
+  // (lớp buổi tối không bị khuất dưới 08:00). Lưới cuộn trong khung riêng, hàng tên ngày dính trên cùng.
+  const gridScroll = useRef<HTMLDivElement>(null);
+  const todayUpcoming = sessions.filter((s) => s.dateKey === today && !s.isPast && s.status !== 'cancelled').map((s) => minutesOfDay(s.startsAt));
+  const startCount = new Map<number, number>();
+  for (const m of starts) startCount.set(Math.floor(m / 60), (startCount.get(Math.floor(m / 60)) ?? 0) + 1);
+  const busiestHour = [...startCount.entries()].sort((a, b) => b[1] - a[1] || a[0] - b[0])[0]?.[0] ?? hourStart;
+  const focusHour = Math.max(hourStart, (todayUpcoming.length ? Math.floor(Math.min(...todayUpcoming) / 60) : busiestHour) - 1);
+  useEffect(() => {
+    const box = gridScroll.current;
+    const line = box?.querySelector<HTMLElement>(`[data-hour="${focusHour}"]`);
+    if (box && line) box.scrollTop = line.offsetTop;
+  }, [focusHour, rangeFrom]);
+
   // Lớp và giáo viên hiện ngay khi chọn, không chờ trang tải lại (chọn liên tiếp không mất mục)
   const [clsView, setClsView] = useOptimistic(filters.cls);
   const [teacherView, setTeacherView] = useOptimistic(filters.teacher);
@@ -209,14 +223,17 @@ export function ScheduleView({
           {/* Máy tính bảng và máy tính: lưới giờ, mỗi ngày một cột. Chỉ dùng khi khoảng có tối đa 7 ngày. */}
           {!longRange && (
             <div className="hidden overflow-hidden rounded-[var(--radius-panel)] bg-surface shadow-card min-[768px]:block">
-              <div className="overflow-x-auto">
+              <div ref={gridScroll} data-testid="week-grid" className="relative max-h-[calc(100dvh-13rem)] min-h-[24rem] overflow-auto">
                 <div style={{ minWidth: `${TIME_COL_PX + days.length * DAY_COL_MIN_PX}px` }}>
-                  {/* Tiêu đề ngày */}
-                  <div className="grid border-b border-line" style={{ gridTemplateColumns: `${TIME_COL} repeat(${days.length}, minmax(0, 1fr))` }}>
+                  {/* Tiêu đề ngày: dính trên cùng khi cuộn; hôm nay tô màu */}
+                  <div className="sticky top-0 z-10 grid border-b border-line bg-surface" style={{ gridTemplateColumns: `${TIME_COL} repeat(${days.length}, minmax(0, 1fr))` }}>
                     <div />
                     {days.map((day) => (
-                      <div key={day} className="px-2 py-2.5 text-center">
-                        <b className="block text-sm font-bold text-ink">{weekdayLabel(weekdayOfKey(day))}</b>
+                      <div key={day} aria-current={day === today ? 'date' : undefined} className={`px-2 py-2.5 text-center ${day === today ? 'bg-primary-soft' : ''}`}>
+                        <b className="block text-sm font-bold text-ink">
+                          {weekdayLabel(weekdayOfKey(day))}
+                          {day === today && <span className="ml-1 font-normal text-ink-2">· Hôm nay</span>}
+                        </b>
                         <small className="text-xs text-muted">{dateKeyLabel(day).slice(0, 5)} · {(byDay.get(day) ?? []).length} buổi</small>
                       </div>
                     ))}
@@ -226,13 +243,13 @@ export function ScheduleView({
                   <div className="grid" style={{ gridTemplateColumns: `${TIME_COL} repeat(${days.length}, minmax(0, 1fr))` }}>
                     <div className="relative" style={{ height: gridHeight }}>
                       {hours.map((h) => (
-                        <span key={h} className="absolute right-2 -translate-y-1/2 text-xs tabular-nums text-muted" style={{ top: hourTop(h) }}>
+                        <span key={h} data-hour={h} className="absolute right-2 -translate-y-1/2 text-xs tabular-nums text-muted" style={{ top: hourTop(h) }}>
                           {String(h).padStart(2, '0')}:00
                         </span>
                       ))}
                     </div>
                     {days.map((day) => (
-                      <div key={day} className="relative border-l border-line" style={{ height: gridHeight }}>
+                      <div key={day} className={`relative border-l border-line ${day === today ? 'bg-primary-soft/40' : ''}`} style={{ height: gridHeight }}>
                         {hours.map((h) => (
                           <div key={h} className="absolute inset-x-0 border-t border-line" style={{ top: hourTop(h) }} />
                         ))}

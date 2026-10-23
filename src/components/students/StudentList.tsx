@@ -21,7 +21,7 @@ import { StudentFilters, type FilterState } from './StudentFilters';
 import { StudentForm, type CampusChoice, type ClassOption, type ParentChoice } from './StudentForm';
 import { Toast } from '@/components/ui/Toast';
 
-const PAGE_SIZE = 8;
+const PAGE_SIZE = 20;
 
 const STATUS_META: Record<StudentRow['status'], { label: string; tone: Tone }> = {
   active: { label: 'Đang học', tone: 'mint' },

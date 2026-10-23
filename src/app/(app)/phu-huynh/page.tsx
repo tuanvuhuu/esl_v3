@@ -4,6 +4,7 @@ import { NoAccess } from '@/components/ui/NoAccess';
 import { hasPermission } from '@/lib/permissions';
 import { listParents, listStudentChoicesForParents } from '@/lib/queries/parents';
 import { getCurrentPermissions } from '@/lib/session';
+import { getCampusContext } from '@/lib/campus-context';
 
 // Danh sách phụ huynh. Dữ liệu đọc trong Suspense (cacheComponents đang bật).
 export default function ParentsPage() {
@@ -27,7 +28,8 @@ function ParentsSkeleton() {
 async function ParentsData() {
   const granted = new Set(await getCurrentPermissions());
   if (!hasPermission(granted, 'students.view')) return <NoAccess title="Phụ huynh" />;
-  // Học sinh để gán cho phụ huynh lấy từ mọi cơ sở (phụ huynh dùng chung, không lọc theo cơ sở)
-  const [parents, students] = await Promise.all([listParents(), listStudentChoicesForParents()]);
+  // Danh sách theo cơ sở đang xem ở thanh trên (để dữ liệu thật và dữ liệu thử không lẫn). Học sinh để gán lấy từ mọi cơ sở được làm việc.
+  const { scope } = await getCampusContext();
+  const [parents, students] = await Promise.all([listParents(scope), listStudentChoicesForParents()]);
   return <ParentList parents={parents} students={students} canManage={hasPermission(granted, 'parents.manage')} />;
 }
