@@ -773,3 +773,12 @@ Mỗi lỗi gặp phải được ghi ở đây, theo mẫu dưới đây. Trư�
 - Cách sửa: Mọi truy vấn chọn học sinh, buổi học có sẵn trong E2E thêm `c.campus_id = (select id from campuses where name = 'Cơ sở test')` và loại học sinh có phụ huynh nối Telegram thật.
 - Quy tắc phòng ngừa: E2E chỉ đọc, ghi dữ liệu có sẵn trong "Cơ sở test" hoặc dữ liệu do chính test tạo. Không chọn bản ghi "bất kỳ" theo id hay thời gian mà không lọc cơ sở.
 - Đã áp dụng ở: `e2e/dong-y.spec.ts`, `e2e/work.spec.ts`, `e2e/telegram.spec.ts`, `e2e/don-nghi.spec.ts`.
+
+## E-084 · E2E dùng chung tài khoản học thử chạy song song nên lúc qua lúc hỏng
+- Ngày: 2026-10-23
+- Khu vực: E2E (`e2e/hoc-thu.spec.ts`, `e2e/ghi-am.spec.ts`, `e2e/dong-y.spec.ts`), `playwright.config.ts`
+- Triệu chứng: Chạy cả nhóm `read` thì `dong-y.spec.ts` hỏng (không thấy lời nhắn "bố mẹ con chưa đồng ý", hoặc chưa thấy dòng đồng ý trong DB), chạy riêng file thì qua.
+- Nguyên nhân: Ba file cùng dùng tài khoản học thử; mỗi lần vào `/hoc-thu` app làm mới dữ liệu của tài khoản này, nên file chạy song song xoá mất dữ liệu file kia vừa tạo. Thêm vào đó, test kiểm DB ngay sau khi webhook trả 200, lúc máy bận việc ghi có thể chậm hơn.
+- Cách sửa: Tách ba file khỏi nhóm `read`, xếp nối tiếp bằng `dependencies` (`demo-a` → `demo-b` → `demo-c`). Kiểm DB sau webhook bằng `expect.poll`.
+- Quy tắc phòng ngừa: Spec cùng chạm một bản ghi dùng chung (tài khoản học thử, cài đặt trung tâm) phải chạy nối tiếp, không để trong nhóm song song. Kiểm kết quả của webhook hoặc việc chạy nền bằng `expect.poll`, không đọc DB một lần ngay sau khi gọi.
+- Đã áp dụng ở: `playwright.config.ts`, `e2e/dong-y.spec.ts`.

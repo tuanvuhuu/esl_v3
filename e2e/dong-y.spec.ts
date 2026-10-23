@@ -75,8 +75,10 @@ test('nhân viên ghi nhận đồng ý, rút lại; phụ huynh bấm Đồng �
       data: { update_id: Date.now(), callback_query: { id: `cb${stamp}`, from: { id: chatId, first_name: 'PH' }, message: { chat: { id: chatId } }, data: `consent:v:y:${student.id}` } },
     });
     expect(res.status()).toBe(200);
-    const rows = (await c.query<{ granted: boolean; channel: string; parent_id: number }>(`select granted, channel, parent_id from parent_consents where student_id = $1 order by id desc limit 1`, [student.id])).rows;
-    expect(rows).toEqual([{ granted: true, channel: 'telegram', parent_id: parentId }]);
+    // Chờ webhook ghi xong (khi chạy song song máy bận, ghi DB có thể chậm hơn lúc trả 200)
+    await expect
+      .poll(async () => (await c.query<{ granted: boolean; channel: string; parent_id: number }>(`select granted, channel, parent_id from parent_consents where student_id = $1 order by id desc limit 1`, [student.id])).rows)
+      .toEqual([{ granted: true, channel: 'telegram', parent_id: parentId }]);
 
     // Phụ huynh của học sinh khác bấm nút cho học sinh này thì không ghi
     const before = (await c.query('select count(*)::int n from parent_consents where student_id = $1', [student.id])).rows[0].n;

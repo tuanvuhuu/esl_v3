@@ -33,7 +33,11 @@ export default defineConfig({
   // Các spec ghi dữ liệu nối tiếp qua dependencies để không tranh nhau bản ghi dùng chung.
   projects: [
     // Mọi spec không thuộc chuỗi ghi dữ liệu (students, catalog, work) là spec chỉ đọc, chạy song song
-    { name: 'read', testMatch: /^(?!.*[\\/](students|catalog|work|telegram)\.spec\.ts$).*\.spec\.ts$/, use: { ...devices['Desktop Chrome'] } },
+    { name: 'read', testMatch: /^(?!.*[\\/](students|catalog|work|telegram|hoc-thu|ghi-am|dong-y)\.spec\.ts$).*\.spec\.ts$/, use: { ...devices['Desktop Chrome'] } },
+    // Ba spec dùng chung tài khoản học thử (vào /hoc-thu là dữ liệu của tài khoản được làm mới) chạy nối tiếp nhau
+    { name: 'demo-a', testMatch: /hoc-thu\.spec\.ts/, use: { ...devices['Desktop Chrome'] } },
+    { name: 'demo-b', testMatch: /ghi-am\.spec\.ts/, dependencies: ['demo-a'], use: { ...devices['Desktop Chrome'] } },
+    { name: 'demo-c', testMatch: /dong-y\.spec\.ts/, dependencies: ['demo-b'], use: { ...devices['Desktop Chrome'] } },
     { name: 'students', testMatch: /students\.spec\.ts/, use: { ...devices['Desktop Chrome'] } },
     { name: 'catalog', testMatch: /catalog\.spec\.ts/, dependencies: ['students'], use: { ...devices['Desktop Chrome'] } },
     { name: 'work', testMatch: /(work|telegram)\.spec\.ts/, dependencies: ['catalog'], use: { ...devices['Desktop Chrome'] } },
