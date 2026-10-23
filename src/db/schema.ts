@@ -939,3 +939,28 @@ export const makeupBookings = pgTable(
   },
   (t) => [uniqueIndex('makeup_bookings_leave_key').on(t.leaveRequestId), uniqueIndex('makeup_bookings_student_session_key').on(t.studentId, t.sessionId), index('makeup_bookings_session_idx').on(t.sessionId)],
 );
+
+// ---------- Chấm bài nói theo mốc thời gian (35.8) ----------
+
+// Giáo viên nghe bản ghi âm, bấm vào giây có lỗi để ghi: loại lỗi (lỗi thường gặp của người Việt), chữ đúng, ghi chú,
+// và đánh dấu "nói lại câu này". Học sinh xem danh sách lỗi theo mốc giây (35.10).
+export const speakingFeedback = pgTable(
+  'speaking_feedback',
+  {
+    id: serial('id').primaryKey(),
+    submissionId: integer('submission_id')
+      .notNull()
+      .references(() => assignmentSubmissions.id, { onDelete: 'cascade' }),
+    itemId: integer('item_id')
+      .notNull()
+      .references(() => assignmentItems.id, { onDelete: 'cascade' }),
+    atMs: integer('at_ms').notNull(), // mốc trong bản ghi, mili giây
+    errorType: varchar('error_type', { length: 30 }).notNull(),
+    correctText: varchar('correct_text', { length: 200 }).notNull().default(''),
+    note: varchar('note', { length: 300 }).notNull().default(''),
+    redo: boolean('redo').notNull().default(false),
+    createdByAccountId: integer('created_by_account_id').references(() => accounts.id, { onDelete: 'set null' }),
+    ...timestamps,
+  },
+  (t) => [index('speaking_feedback_submission_item_idx').on(t.submissionId, t.itemId, t.atMs)],
+);

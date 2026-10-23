@@ -782,3 +782,12 @@ Mỗi lỗi gặp phải được ghi ở đây, theo mẫu dưới đây. Trư�
 - Cách sửa: Tách ba file khỏi nhóm `read`, xếp nối tiếp bằng `dependencies` (`demo-a` → `demo-b` → `demo-c`). Kiểm DB sau webhook bằng `expect.poll`.
 - Quy tắc phòng ngừa: Spec cùng chạm một bản ghi dùng chung (tài khoản học thử, cài đặt trung tâm) phải chạy nối tiếp, không để trong nhóm song song. Kiểm kết quả của webhook hoặc việc chạy nền bằng `expect.poll`, không đọc DB một lần ngay sau khi gọi.
 - Đã áp dụng ở: `playwright.config.ts`, `e2e/dong-y.spec.ts`.
+
+## E-085 · Giáo viên lưu chấm điểm làm mất bản ghi âm và đáp án các dạng câu mới của học sinh
+- Ngày: 2026-10-23
+- Khu vực: `src/components/assignments/AnswerDialog.tsx`, `saveStudentAnswersAction` (`src/app/(app)/bai-tap/question-actions.ts`)
+- Triệu chứng: Phát hiện khi đọc code để làm chấm bài nói. Hộp chấm không có trình phát bài nói; bấm Lưu bài làm thì `file_id` của câu nói và đáp án của câu chọn tranh, ghép đôi, sắp xếp, điền chỗ trống bị xoá.
+- Nguyên nhân: Máy chủ xoá rồi ghi lại toàn bộ dòng `submission_item_scores` của bài làm theo dữ liệu hộp chấm gửi lên. Hộp chấm chỉ gửi đáp án cho ba dạng cũ (`choice`, `text`, `file`), các dạng P35 gửi trống.
+- Cách sửa: Hộp chấm gửi nguyên đáp án đã nạp của mọi dạng câu. Câu nói có trình phát bản ghi âm. E2E `cham-noi.spec.ts` kiểm bản ghi và đáp án chọn tranh còn sau khi lưu.
+- Quy tắc phòng ngừa: Thêm dạng câu mới phải rà mọi chỗ ghi lại bài làm (hộp chấm, nộp bài, nhập điểm nhanh). Hàm lưu kiểu "xoá rồi ghi lại" phải nhận đủ mọi trường, hoặc chỉ cập nhật trường được sửa.
+- Đã áp dụng ở: `src/components/assignments/AnswerDialog.tsx`, `e2e/cham-noi.spec.ts`.

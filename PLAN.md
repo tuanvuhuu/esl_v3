@@ -1,6 +1,6 @@
 # ESL Center: kế hoạch và tiến độ
 
-> **Tiến độ tổng: 209/232 task (90%)**
+> **Tiến độ tổng: 210/232 task (91%)**
 > Cập nhật lần cuối: 2026-10-22. P1–P34 xong. P38 (giờ học từng ngày, học phí theo buổi còn lại, mã HS-00001) xong. P37 bot Telegram theo kịch bản: 37.1–37.9 xong, còn đặt cron mỗi giờ trên bản deploy và các việc đợt sau. P35: 35.2, 35.3, 35.12, 35.24, 35.27 xong; 35.4–35.6 làm dở (35.6 chỉ còn thử tay trên điện thoại). P36 Soạn nhanh xong phần code (36.1–36.6). Số đếm lấy từ các ô `[x]` và `[ ]` trong file.
 
 ## 🎯 Các task vừa hoàn thành & Lệnh test riêng (Không chạy all)
@@ -405,7 +405,7 @@ Nghiên cứu kỹ thuật cho các mục còn mở (thư viện, định dạng
 - [ ] **35.7** Karaoke đọc theo cho dạng đọc to: chữ sáng dần theo giọng mẫu (mốc thời gian từng từ do giáo viên chỉnh hoặc chia đều), rồi trẻ ghi âm đọc theo. Kiểm chứng: E2E phát mẫu và ghi âm.
 
 ### C. Chấm nói và chỉ lỗi
-- [ ] **35.8** Màn chấm nói: thanh phát có vạch thời gian; bấm vào giây có lỗi để thêm ghi chú gồm loại lỗi (danh sách lỗi thường gặp của người Việt: mất âm cuối, /θ/ /ð/, /ʃ/ /s/, /z/, s/es, -ed, trọng âm, ngữ điệu, thiếu thừa từ, sai thì), chữ đúng, ghi âm mẫu của giáo viên, đánh dấu "nói lại câu này". Bảng `speaking_feedback`. Kiểm chứng: E2E thêm, sửa, xoá ghi chú lỗi.
+- [x] **35.8** Màn chấm nói: thanh phát có vạch thời gian; bấm vào giây có lỗi để thêm ghi chú gồm loại lỗi (danh sách lỗi thường gặp của người Việt: mất âm cuối, /θ/ /ð/, /ʃ/ /s/, /z/, s/es, -ed, trọng âm, ngữ điệu, thiếu thừa từ, sai thì), chữ đúng, ghi âm mẫu của giáo viên, đánh dấu "nói lại câu này". Bảng `speaking_feedback`. Kiểm chứng: E2E thêm, sửa, xoá ghi chú lỗi. ✅ 2026-10-23: bảng `speaking_feedback` (migration 0028); hộp chấm có trình phát bài nói, nút "Đánh dấu lỗi tại m:ss" lấy giây đang phát, 11 loại lỗi thường gặp, chữ đúng, ghi chú, "Cần nói lại câu này"; bấm mốc giây để nghe lại; sửa, xoá có xác nhận. Chưa có: ghi âm mẫu của giáo viên (làm cùng 35.10). Kèm sửa E-085 (lưu chấm làm mất bài nói và đáp án dạng câu mới). Unit `speaking.test.ts`, E2E `cham-noi.spec.ts`; ảnh 1440px và 390px.
 - [ ] **35.9** Tiêu chí bài nói: 3–8 tuổi chấm sao (phát âm, trôi chảy, hoàn thành yêu cầu), 9–11 tuổi chấm điểm 0–5 thêm từ vựng và ngữ pháp; ô "Điều con làm tốt" bắt buộc; gợi ý chỉ nêu 1–2 lỗi quan trọng nhất với trẻ nhỏ. Dùng lại chấm theo tiêu chí đã có. Kiểm chứng: unit quy đổi sao và điểm.
 - [ ] **35.10** Học sinh xem nhận xét: danh sách lỗi theo mốc giây, nghe đoạn mình nói và mẫu của giáo viên, chỉ ghi âm lại những câu bị đánh dấu; giáo viên thấy bản cũ và bản mới cạnh nhau. Kiểm chứng: E2E vòng chấm, nói lại, chấm lại.
 - [ ] **35.11** Gửi nhận xét bài nói cho phụ huynh qua Telegram (chữ ký giáo viên, kèm âm thanh mẫu, bản sao cho super admin như P34); lệnh `/nhanxet` của bot đọc từ dữ liệu này. Kiểm chứng: E2E ghi đúng tin ra trong `telegram_messages`.

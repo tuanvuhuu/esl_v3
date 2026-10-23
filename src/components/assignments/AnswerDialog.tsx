@@ -1,7 +1,11 @@
 'use client';
 
 import { Paperclip, X } from 'lucide-react';
-import { useState, useTransition } from 'react';
+import { useEffect, useState, useTransition } from 'react';
+import { listSpeakingMarksAction } from '@/app/(app)/bai-tap/speaking-actions';
+import type { SpeakingMark } from '@/lib/speaking';
+import { useToast } from '@/components/ui/Toast';
+import { SpeakingMarks } from './SpeakingMarks';
 import { saveSecondMarkAction, saveStudentAnswersAction, type AnswerInput } from '@/app/(app)/bai-tap/question-actions';
 import { uploadAsStaff } from '@/lib/upload-client';
 import type { AssignmentItem, ItemAnswer, ItemSecondMark } from '@/lib/queries/assignment-items';
@@ -24,6 +28,9 @@ type Answer = {
   comment: string;
   criterionPoints: Record<number, string>; // ô điểm từng tiêu chí, theo id tiêu chí
 };
+
+// Câu nói: học sinh ghi âm, giáo viên nghe bản ghi để chấm
+const SPEAK_TYPES = new Set<string>(['speak_repeat', 'speak_read', 'speak_picture']);
 
 // Ô điểm trống nghĩa là chưa chấm; có số thì đổi thành điểm
 const toPoints = (s: string): number | null => (s.trim() === '' ? null : Number(s));
@@ -84,6 +91,20 @@ export function AnswerDialog({
   );
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  // Lỗi đã đánh dấu trong bài nói (35.8): lưu ngay khi thêm, sửa, xoá, không chờ nút Lưu bài làm
+  const [marks, setMarks] = useState<SpeakingMark[]>([]);
+  const { notify } = useToast();
+  const hasSpeak = items.some((i) => SPEAK_TYPES.has(i.itemType));
+  useEffect(() => {
+    if (!hasSpeak) return;
+    let alive = true;
+    listSpeakingMarksAction(assignmentId, student.id).then((r) => {
+      if (alive && r.ok) setMarks(r.marks);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [assignmentId, student.id, hasSpeak]);
 
   function setDraft(itemId: number, next: Partial<Answer>) {
     setDrafts((prev) => ({ ...prev, [itemId]: { ...prev[itemId], ...next } }));
@@ -133,9 +154,11 @@ export function AnswerDialog({
       const d = drafts[i.id];
       return {
         itemId: i.id,
-        selectedOptionId: i.itemType === 'choice' ? d.selectedOptionId : null,
-        answerText: i.itemType === 'text' ? d.answerText : '',
-        fileId: i.itemType === 'file' ? d.fileId : null,
+        // Giữ nguyên câu trả lời học sinh đã nộp ở mọi dạng câu (ghi âm, chọn tranh, ghép đôi, sắp xếp, điền chỗ trống).
+        // Máy chủ thay toàn bộ dòng của bài làm khi lưu, nên gửi thiếu là mất bài của học sinh (E-085).
+        selectedOptionId: d.selectedOptionId,
+        answerText: d.answerText,
+        fileId: d.fileId,
         points: i.itemType === 'choice' || hasCriteria(i) ? null : toPoints(d.points),
         comment: d.comment,
         criterionPoints: i.criteria.map((c) => ({ criterionId: c.id, points: toPoints(d.criterionPoints[c.id] ?? '') })),
@@ -185,6 +208,29 @@ export function AnswerDialog({
             {item.passage && <Notice className="whitespace-pre-line">{item.passage}</Notice>}
             {item.audioFileId !== null && (
               <audio controls preload="none" src={`/api/files/${item.audioFileId}`} aria-label={`Âm thanh câu ${item.position}`} className="w-full" />
+            )}
+
+            {SPEAK_TYPES.has(item.itemType) && (
+              d.fileId !== null ? (
+                <SpeakingMarks
+                  assignmentId={assignmentId}
+                  studentId={student.id}
+                  itemId={item.id}
+                  position={item.position}
+                  fileId={d.fileId}
+                  marks={marks.filter((m) => m.itemId === item.id)}
+                  canManage={canManage}
+                  onChange={(next, message) => {
+                    setMarks((all) => [...all.filter((m) => m.itemId !== item.id), ...next]);
+                    notify(message);
+                  }}
+                />
+              ) : (
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-sm font-normal text-ink-2">Bài nói của học sinh</span>
+                  <small className="text-sm text-muted">Học sinh chưa ghi âm câu này.</small>
+                </div>
+              )
             )}
 
             {item.itemType === 'choice' && (
