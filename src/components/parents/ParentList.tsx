@@ -362,7 +362,7 @@ export function ParentList(props: { parents: ParentRow[]; students?: StudentChoi
       <Toast message={message} />
 
       <Modal open={creating} title="Thêm phụ huynh" subtitle="Các trường có dấu * là bắt buộc." onClose={() => setCreating(false)} labelledBy="parent-create-title">
-        <ParentForm mode="create" onDone={onDone} onCancel={() => setCreating(false)} />
+        <ParentForm mode="create" students={students} onDone={onDone} onCancel={() => setCreating(false)} />
       </Modal>
       <Modal open={!!editing} title="Sửa phụ huynh" subtitle="Các trường có dấu * là bắt buộc." onClose={() => setEditing(null)} labelledBy="parent-edit-title">
         {editing && <ParentForm mode="edit" parentId={editing.id} initial={editing.values} onDone={onDone} onCancel={() => setEditing(null)} />}
@@ -456,12 +456,14 @@ function ParentCard({
           ))}
         </ul>
       )}
+      {/* "+ Gán học sinh" là liên kết ngay dưới danh sách con, giống ô "+ Thêm" trên bảng; hàng nút chỉ còn Sửa, Xoá, Telegram (DESIGN.md mục 74) */}
+      {canManage && (
+        <button type="button" onClick={onAssign} className="inline-flex min-h-[var(--ctl-h-touch)] items-center gap-1.5 self-start text-base text-link underline underline-offset-2">
+          <UserPlus className="size-4" aria-hidden />
+          Gán học sinh
+        </button>
+      )}
       {row.note && <p className="break-words text-sm text-ink-2">{row.note}</p>}
-      {/* "Gán học sinh" đầy chiều rộng, các nút còn lại cạnh nhau (DESIGN.md mục 74) */}
-      <Btn block onClick={onAssign} disabled={!canManage}>
-        <UserPlus className="size-4" aria-hidden />
-        Gán học sinh
-      </Btn>
       <div className="grid grid-cols-3 gap-2">
         <Btn block onClick={onEdit} disabled={!canManage}>
           <Pencil className="size-4" aria-hidden />

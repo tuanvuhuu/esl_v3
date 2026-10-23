@@ -34,7 +34,7 @@ const EMPTY: StudentFormValues = {
   gender: 'female',
   dob: '',
   classId: 0,
-  status: 'trial',
+  status: 'active',
   startDate: '',
   tuitionFee: null,
   note: '',
@@ -144,7 +144,34 @@ export function StudentForm({
         </Alert>
       )}
 
-      {/* Cơ sở và lớp đứng đầu form: chọn nơi học trước, rồi mới nhập thông tin học sinh */}
+      {/* Thông tin học sinh trước, rồi nơi học và học phí, cuối cùng là phụ huynh */}
+      <FormSection>Học sinh</FormSection>
+      <Field label="Họ và tên *" error={errors.fullName} wide>
+        <input name="fullName" defaultValue={values.fullName} placeholder="VD: Nguyễn Minh Anh" autoComplete="off" className={inputClass(errors.fullName)} />
+      </Field>
+
+      <Field label="Ngày sinh" error={errors.dob} hint="Để trống nếu chưa biết">
+        <input name="dob" type="date" defaultValue={values.dob} className={inputClass(errors.dob)} />
+      </Field>
+
+      <Field label="Giới tính">
+        <SelectPanel
+          name="gender"
+          label="Giới tính"
+          defaultValue={values.gender}
+          options={[
+            { value: 'female', label: 'Nữ' },
+            { value: 'male', label: 'Nam' },
+          ]}
+          block
+        />
+      </Field>
+
+      <Field label="Trạng thái">
+        <SelectPanel name="status" label="Trạng thái" defaultValue={values.status} options={STATUS_OPTIONS} block />
+      </Field>
+
+      <FormSection>Lớp và học phí</FormSection>
       <Field label="Cơ sở *">
         <SelectPanel
           label="Cơ sở *"
@@ -226,31 +253,7 @@ export function StudentForm({
         </div>
       )}
 
-      <Field label="Họ và tên *" error={errors.fullName} wide>
-        <input name="fullName" defaultValue={values.fullName} placeholder="VD: Nguyễn Minh Anh" autoComplete="off" className={inputClass(errors.fullName)} />
-      </Field>
-
-      <Field label="Ngày sinh" error={errors.dob} hint="Để trống nếu chưa biết">
-        <input name="dob" type="date" defaultValue={values.dob} className={inputClass(errors.dob)} />
-      </Field>
-
-      <Field label="Giới tính">
-        <SelectPanel
-          name="gender"
-          label="Giới tính"
-          defaultValue={values.gender}
-          options={[
-            { value: 'female', label: 'Nữ' },
-            { value: 'male', label: 'Nam' },
-          ]}
-          block
-        />
-      </Field>
-
-      <Field label="Trạng thái">
-        <SelectPanel name="status" label="Trạng thái" defaultValue={values.status} options={STATUS_OPTIONS} block />
-      </Field>
-
+      <FormSection>Phụ huynh</FormSection>
       <Field label="Phụ huynh *" error={errors.parentId} wide hint="Chọn người đã có trong danh sách, hoặc để 'Thêm phụ huynh mới' và nhập bên dưới.">
         <SelectPanel
           name="parentId"
@@ -300,4 +303,9 @@ export function StudentForm({
       </FormFooter>
     </form>
   );
+}
+
+// Tiêu đề nhóm trong form học sinh: chia form dài thành ba phần dễ dò
+function FormSection({ children }: { children: string }) {
+  return <h3 className="col-span-full mt-2 border-b border-line pb-1.5 text-md font-extrabold text-ink first:mt-0">{children}</h3>;
 }

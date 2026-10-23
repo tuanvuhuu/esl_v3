@@ -5,21 +5,27 @@ import { createParentAction, updateParentAction, type ParentFormValues } from '@
 import type { ActionResult } from '@/lib/validation/student';
 import { Field, FORM_BTN_CANCEL, FORM_BTN_SUBMIT, inputClass, textareaClass, FormFooter } from '@/components/ui/Field';
 import { Alert } from '@/components/ui/primitives';
+import { SelectPanel } from '@/components/ui/SelectPanel';
+import { PARENT_RELATION_LABELS } from '@/lib/parent-labels';
+import type { StudentChoice } from '@/lib/queries/parents';
 
 const EMPTY: ParentFormValues = { fullName: '', phone: '', email: '', note: '' };
 const INITIAL: ActionResult = { ok: false };
+const RELATION_OPTIONS = (['mother', 'father', 'guardian', 'other'] as const).map((r) => ({ value: r, label: PARENT_RELATION_LABELS[r] }));
 
-// Form thêm và sửa phụ huynh. Dùng trong hộp thoại Modal.
+// Form thêm và sửa phụ huynh. Dùng trong hộp thoại Modal. Thêm mới thì chọn được con ngay (students), không bắt buộc.
 export function ParentForm({
   mode,
   parentId,
   initial,
+  students = [],
   onDone,
   onCancel,
 }: {
   mode: 'create' | 'edit';
   parentId?: number;
   initial?: ParentFormValues;
+  students?: StudentChoice[];
   onDone: (message: string) => void;
   onCancel: () => void;
 }) {
@@ -52,6 +58,24 @@ export function ParentForm({
       <Field label="Email" error={errors.email}>
         <input name="email" type="email" defaultValue={values.email} autoComplete="off" className={inputClass(errors.email)} />
       </Field>
+      {mode === 'create' && students.length > 0 && (
+        <>
+          <Field label="Con học ở trung tâm" error={errors.studentIds} hint="Không bắt buộc. Gõ để tìm, chọn được nhiều con.">
+            <SelectPanel
+              name="studentIds"
+              label="Con học ở trung tâm"
+              multiple
+              defaultValues={[]}
+              placeholder="Chưa chọn"
+              options={students.map((s) => ({ value: String(s.id), label: `${s.fullName} · ${s.className}` }))}
+              block
+            />
+          </Field>
+          <Field label="Quan hệ với con" error={errors.relation}>
+            <SelectPanel name="relation" label="Quan hệ với con" defaultValue="mother" options={RELATION_OPTIONS} block />
+          </Field>
+        </>
+      )}
       <Field label="Ghi chú" error={errors.note} wide>
         <textarea name="note" defaultValue={values.note} rows={3} placeholder="Giờ liên hệ thuận tiện, lưu ý…" className={textareaClass(errors.note)} />
       </Field>

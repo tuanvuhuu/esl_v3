@@ -51,13 +51,23 @@ export async function createParentAction(_prev: ActionResult, formData: FormData
     if (await phoneTakenBy(v.phone, null)) {
       return { ok: false, message: 'Số điện thoại này đã có phụ huynh.', fieldErrors: { phone: 'Số điện thoại này đã có phụ huynh' } };
     }
-    const [created] = await db
-      .insert(parents)
-      .values({ fullName: v.fullName, phone: v.phone, email: v.email, note: v.note })
-      .returning({ id: parents.id });
-    await writeAudit({ action: 'create', entity: 'parent', entityId: created.id, summary: `Thêm phụ huynh ${v.fullName}` });
+    // Con chọn ngay trong form (không bắt buộc): kiểm quyền từng học sinh trước khi ghi
+    const studentIds = [...new Set(formData.getAll('studentIds').map(Number).filter((n) => Number.isInteger(n) && n > 0))];
+    const relation = parentAssignSchema.shape.relation.safeParse(formData.get('relation') ?? 'mother');
+    if (studentIds.length > 0 && !relation.success) return { ok: false, message: 'Chọn quan hệ với học sinh.', fieldErrors: { relation: 'Chọn quan hệ với học sinh' } };
+    for (const id of studentIds) await requireStudentAccess(id);
+    const kids = studentIds.length ? await db.select({ id: students.id }).from(students).where(inArray(students.id, studentIds)) : [];
+
+    const created = await db.transaction(async (tx) => {
+      const [row] = await tx.insert(parents).values({ fullName: v.fullName, phone: v.phone, email: v.email, note: v.note }).returning({ id: parents.id });
+      for (const k of kids) await tx.insert(studentParents).values({ studentId: k.id, parentId: row.id, relation: relation.success ? relation.data : 'mother', isPrimary: false });
+      return row;
+    });
+    // Học sinh chưa có liên hệ chính thì phụ huynh này thành liên hệ chính
+    for (const k of kids) await ensurePrimary(k.id);
+    await writeAudit({ action: 'create', entity: 'parent', entityId: created.id, summary: `Thêm phụ huynh ${v.fullName}${kids.length ? `, gán ${kids.length} học sinh` : ''}` });
     revalidateParentPages();
-    return { ok: true, message: `Đã thêm ${v.fullName}` };
+    return { ok: true, message: kids.length ? `Đã thêm ${v.fullName} và gán ${kids.length} học sinh` : `Đã thêm ${v.fullName}` };
   } catch (error) {
     return errorResult(error);
   }
