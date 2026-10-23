@@ -1,6 +1,6 @@
 # ESL Center: kế hoạch và tiến độ
 
-> **Tiến độ tổng: 212/232 task (91%)**
+> **Tiến độ tổng: 213/232 task (92%)**
 > Cập nhật lần cuối: 2026-10-22. P1–P34 xong. P38 (giờ học từng ngày, học phí theo buổi còn lại, mã HS-00001) xong. P37 bot Telegram theo kịch bản: 37.1–37.9 xong, còn đặt cron mỗi giờ trên bản deploy và các việc đợt sau. P35: 35.2, 35.3, 35.12, 35.24, 35.27 xong; 35.4–35.6 làm dở (35.6 chỉ còn thử tay trên điện thoại). P36 Soạn nhanh xong phần code (36.1–36.6). Số đếm lấy từ các ô `[x]` và `[ ]` trong file.
 
 ## 🎯 Các task vừa hoàn thành & Lệnh test riêng (Không chạy all)
@@ -415,7 +415,7 @@ Nghiên cứu kỹ thuật cho các mục còn mở (thư viện, định dạng
 - [ ] **35.13** Thời hạn lưu bản ghi âm: tự chuyển sang Google Drive sau 12 tháng (dùng 34.25), tự xoá sau 24 tháng hoặc khi học sinh nghỉ quá thời hạn; nút xoá theo yêu cầu phụ huynh; ghi nhật ký. Kiểm chứng: chạy job hai lần không lỗi, tệp quá hạn bị xoá ở cả Supabase và Drive.
 
 ### E. Trò chơi và động lực
-- [ ] **35.14** Danh sách từ: từ, tranh, âm thanh, nghĩa tiếng Việt; gắn với bài giảng hoặc lớp; dùng lại cho mọi trò chơi. Kiểm chứng: E2E thêm, sửa, xoá danh sách từ.
+- [x] **35.14** Danh sách từ: từ, tranh, âm thanh, nghĩa tiếng Việt; gắn với bài giảng hoặc lớp; dùng lại cho mọi trò chơi. Kiểm chứng: E2E thêm, sửa, xoá danh sách từ. ✅ 2026-10-24: bảng `word_lists`, `word_list_items` (migration 0032; từ là bản chép riêng, ghi lại từ kho nào). Màn "Danh sách từ" (menu Đào tạo): bảng có ⋯ trên web, thẻ có nút chữ trên điện thoại; form: tên, lớp, bài giảng (không bắt buộc), từng từ có nghĩa, emoji, nút Tranh và Âm thanh, "Lấy từ kho từ vựng" theo trình độ và chủ đề; xoá có xác nhận. Danh sách theo cơ sở đang xem (không gắn lớp thì dùng chung). E2E `tu-vung.spec.ts`; toàn bộ E2E 91/91; ảnh 1440px và 390px không tràn.
 - [ ] **35.15** Bốn trò chơi đầu tiên từ danh sách từ: lật thẻ nhớ, đập chuột từ vựng (nghe rồi chạm tranh), ghép chữ, xây câu. Làm bằng React (không cần Phaser). Kiểm chứng: E2E chơi hết một lượt mỗi trò; không tràn ngang ở 360px.
 - [ ] **35.16** Bốn trò chơi tiếp theo: bingo nghe, Simon says / tìm trong tranh (chạm đúng chỗ trong tranh lớn), đoán chữ, đua xe trả lời nhanh. Kiểm chứng: như 35.15.
 - [ ] **35.17** Động lực: sao theo bài, bộ sưu tập sticker và truyện mở khoá bằng sao, đường học theo bài, chuỗi học theo tuần (không theo ngày), mục tiêu chung của lớp thay cho xếp hạng cá nhân; không trừ sao khi sai. Kiểm chứng: unit tính sao và chuỗi tuần.

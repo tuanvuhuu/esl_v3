@@ -11,6 +11,7 @@ import {
   Contact,
   History,
   House,
+  Languages,
   IdCard,
   Library,
   MessageCircle,
@@ -40,5 +41,6 @@ export const NAV_ICONS: Record<IconKey, LucideIcon> = {
   shield: ShieldCheck,
   upload: Upload,
   leave: CalendarX,
+  words: Languages,
   message: MessageCircle,
 };

@@ -996,3 +996,39 @@ export const speakingAssessments = pgTable(
   },
   (t) => [uniqueIndex('speaking_assessments_pair_key').on(t.submissionId, t.itemId)],
 );
+
+// ---------- Danh sách từ cho trò chơi (35.14) ----------
+
+// Danh sách từ dùng lại cho mọi trò chơi. Gắn với một lớp hoặc một bài giảng (có thể để trống: dùng chung).
+export const wordLists = pgTable(
+  'word_lists',
+  {
+    id: serial('id').primaryKey(),
+    name: varchar('name', { length: 120 }).notNull(),
+    classId: integer('class_id').references(() => classes.id, { onDelete: 'set null' }),
+    lessonId: integer('lesson_id').references(() => lessons.id, { onDelete: 'set null' }),
+    createdByAccountId: integer('created_by_account_id').references(() => accounts.id, { onDelete: 'set null' }),
+    ...timestamps,
+  },
+  (t) => [index('word_lists_class_idx').on(t.classId), index('word_lists_lesson_idx').on(t.lessonId)],
+);
+
+// Từ trong danh sách: bản chép riêng (từ, nghĩa, emoji, tranh, âm thanh), để sửa kho từ không đổi trò chơi đang dùng.
+// vocabItemId ghi lại từ lấy từ kho nào (nếu có).
+export const wordListItems = pgTable(
+  'word_list_items',
+  {
+    id: serial('id').primaryKey(),
+    listId: integer('list_id')
+      .notNull()
+      .references(() => wordLists.id, { onDelete: 'cascade' }),
+    position: integer('position').notNull(),
+    word: varchar('word', { length: 60 }).notNull(),
+    meaningVi: varchar('meaning_vi', { length: 120 }).notNull().default(''),
+    emoji: varchar('emoji', { length: 16 }).notNull().default(''),
+    imageFileId: integer('image_file_id').references(() => uploadedFiles.id, { onDelete: 'set null' }),
+    audioFileId: integer('audio_file_id').references(() => uploadedFiles.id, { onDelete: 'set null' }),
+    vocabItemId: integer('vocab_item_id').references(() => vocabItems.id, { onDelete: 'set null' }),
+  },
+  (t) => [index('word_list_items_list_idx').on(t.listId, t.position)],
+);

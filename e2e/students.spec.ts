@@ -15,6 +15,9 @@ test.describe('học sinh: thêm, sửa, xoá', () => {
     await page.goto('/hoc-sinh');
     await page.getByRole('button', { name: 'Thêm học sinh' }).first().click();
     const create = dialogById(page, 'create-title');
+    // Chọn hẳn lớp mẫu: lớp mặc định là lớp đầu tiên theo tên, có thể là lớp tạm của test khác đang chạy song song
+    await create.getByRole('button', { name: 'Lớp học *' }).click();
+    await page.getByRole('option', { name: /^IELTS-K12 — / }).click();
     await create.getByLabel('Họ và tên *').fill(name);
     await create.locator('input[name="dob"]').fill('2015-03-01');
     await create.locator('input[name="parentName"]').fill(parent);

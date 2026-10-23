@@ -21,7 +21,8 @@ export type IconKey =
   | 'shield'
   | 'upload'
   | 'message'
-  | 'leave';
+  | 'leave'
+  | 'words';
 
 export type NavItem = {
   href: string;
@@ -51,6 +52,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: '/don-nghi', label: 'Đơn nghỉ', icon: 'leave', permission: 'attendance.record' },
       { href: '/bai-tap', label: 'Bài tập', icon: 'clipboard', permission: 'students.view' },
       { href: '/bai-giang', label: 'Bài giảng', icon: 'library', permission: 'students.view' },
+      { href: '/tu-vung', label: 'Danh sách từ', icon: 'words', permission: 'students.view' },
       { href: '/lich-su-hoc-tap', label: 'Lịch sử học tập', icon: 'history', permission: 'students.view' },
     ],
   },
