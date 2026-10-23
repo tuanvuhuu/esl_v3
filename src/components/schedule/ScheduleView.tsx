@@ -127,7 +127,8 @@ export function ScheduleView({
   useEffect(() => {
     const box = gridScroll.current;
     const line = box?.querySelector<HTMLElement>(`[data-hour="${focusHour}"]`);
-    if (box && line) box.scrollTop = line.offsetTop;
+    // Người dùng đã tự cuộn khung (kể cả trước khi trang tải xong) thì không cuộn đè lên, tránh bấm hụt buổi đang nhắm
+    if (box && line && box.scrollTop === 0) box.scrollTop = line.offsetTop;
   }, [focusHour, rangeFrom]);
 
   // Lớp và giáo viên hiện ngay khi chọn, không chờ trang tải lại (chọn liên tiếp không mất mục)

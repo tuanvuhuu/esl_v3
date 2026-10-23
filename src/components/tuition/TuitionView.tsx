@@ -32,7 +32,8 @@ const COLUMNS: GridColumn<InvoiceRow>[] = [
   { key: 'debt', label: 'Còn nợ', width: 'minmax(110px,1fr)' },
   { key: 'due', label: 'Hạn đóng', width: 'minmax(120px,1fr)', sortValue: (r) => r.dueDate },
   { key: 'status', label: 'Trạng thái', width: 'minmax(110px,1fr)', sortValue: (r) => r.state },
-  { key: 'actions', label: 'Thao tác', width: '44px', align: 'end', srOnly: true },
+  // Đủ chỗ cho hai nút có chữ "Ghi thu", "Nhắc" trên một dòng
+  { key: 'actions', label: 'Thao tác', width: '150px', align: 'end', srOnly: true },
 ];
 
 const FILTERS: { key: InvoiceFilter; label: string }[] = [
@@ -87,7 +88,7 @@ export function TuitionView({
       case 'fullName':
         return (
           <div className="min-w-0">
-            <Link href={`/hoc-sinh/${r.id}`} className="block truncate text-base font-bold text-ink hover:underline">{r.fullName}</Link>
+            <Link href={`/hoc-sinh/${r.id}`} className="text-base font-normal text-link underline underline-offset-2">{r.fullName}</Link>
             <small className="block truncate text-xs text-muted">{r.code} · {r.className}</small>
           </div>
         );
@@ -111,8 +112,8 @@ export function TuitionView({
           <div className="flex justify-end gap-1.5">
             {canManage && r.debt > 0 && (
               <>
-                <button type="button" onClick={() => setPaying(r)} className="h-9 rounded-lg border border-line bg-surface px-2.5 text-sm font-bold text-ink">Ghi thu</button>
-                <button type="button" onClick={() => remind(r)} disabled={pending} className="h-9 rounded-lg border border-line bg-surface px-2.5 text-sm font-bold text-ink disabled:opacity-40">Nhắc</button>
+                <Btn onClick={() => setPaying(r)}>Ghi thu</Btn>
+                <Btn onClick={() => remind(r)} disabled={pending}>Nhắc</Btn>
               </>
             )}
           </div>
@@ -126,7 +127,7 @@ export function TuitionView({
     <Card>
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <Link href={`/hoc-sinh/${r.id}`} className="block truncate text-base font-bold text-ink">{r.fullName}</Link>
+          <Link href={`/hoc-sinh/${r.id}`} className="text-base font-normal text-link underline underline-offset-2">{r.fullName}</Link>
           <small className="block truncate text-xs text-muted">{r.code} · {r.className}</small>
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1">

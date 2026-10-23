@@ -46,7 +46,7 @@ export function LessonsView({
 
   // Mở tài liệu theo mã bài để luôn thấy danh sách mới sau khi làm mới trang
   const materialsLesson = lessons.find((l) => l.id === materialsId) ?? null;
-  const campusText = (l: LessonRow) => l.campusNames.join(', ') || '—';
+  const campusText = (l: LessonRow) => l.campusNames.join(', ');
 
   function confirmDelete() {
     if (!toDelete) return;

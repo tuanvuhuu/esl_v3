@@ -11,7 +11,7 @@ import { Btn } from '@/components/ui/Btn';
 import { Chip } from '@/components/ui/controls';
 import { SelectPanel } from '@/components/ui/SelectPanel';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { Avatar, Pill, type Tone } from '@/components/ui/primitives';
+import { Pill, type Tone } from '@/components/ui/primitives';
 import { Card, EmptyPanel, Panel } from '@/components/ui/surfaces';
 import { Toast, useToast } from '@/components/ui/Toast';
 
@@ -197,15 +197,16 @@ export function AttendanceView({
                 return (
                   <li key={r.id}>
                     <Card>
-                      <div className="flex items-center gap-3">
-                        <Avatar name={r.fullName} seed={r.id} quiet />
-                        <div className="min-w-0 flex-1">
-                          <b className="block truncate text-base text-ink">{r.fullName}</b>
+                      {/* Không avatar, tên đủ và xuống dòng khi dài; trạng thái nằm dưới tên để không chiếm chỗ của tên */}
+                      <div className="min-w-0">
+                        <b className="block break-words text-base text-ink">{r.fullName}</b>
+                        <div className="mt-1 flex flex-wrap items-center gap-2">
+                          <Pill tone={shown ? shown.tone : 'stone'}>{shown ? shown.label : 'Chưa điểm danh'}</Pill>
                           <small className="text-xs text-muted">{r.sessionsDone} buổi đã học</small>
                         </div>
-                        <Pill tone={shown ? shown.tone : 'stone'}>{shown ? shown.label : 'Chưa điểm danh'}</Pill>
                       </div>
-                      <div role="group" aria-label={`Điểm danh ${r.fullName}`} className="grid grid-cols-3 gap-1 rounded-[var(--radius-ctl)] bg-bg p-1">
+                      {/* Nền khung xám, nút chưa chọn nền trắng có viền: nhìn rõ là ba nút bấm */}
+                      <div role="group" aria-label={`Điểm danh ${r.fullName}`} className="grid grid-cols-3 gap-1 rounded-[var(--radius-ctl)] bg-stone p-1">
                         {MARKS.map((m) => {
                           const on = mark === m;
                           return (
@@ -215,7 +216,7 @@ export function AttendanceView({
                               aria-pressed={on}
                               disabled={!canMark}
                               onClick={() => setMark(r.id, m)}
-                              className={`h-[var(--ctl-h)] rounded-[calc(var(--radius-ctl)-4px)] text-sm font-semibold transition-colors max-[767px]:h-[var(--ctl-h-touch)] disabled:opacity-40 ${on ? MARK_META[m].on : 'text-ink-2 hover:bg-surface'}`}
+                              className={`h-[var(--ctl-h)] rounded-[calc(var(--radius-ctl)-4px)] text-sm font-semibold transition-colors max-[767px]:h-[var(--ctl-h-touch)] disabled:opacity-40 ${on ? MARK_META[m].on : 'border border-line bg-surface text-ink-2 hover:text-ink'}`}
                             >
                               {MARK_META[m].label}
                             </button>

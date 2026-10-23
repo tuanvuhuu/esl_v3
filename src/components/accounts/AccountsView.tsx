@@ -15,7 +15,7 @@ import { LOCKED_ADMIN_PERMISSIONS, PERMISSIONS, ROLE_CODES, ROLE_LABELS, type Pe
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Modal } from '@/components/ui/Modal';
 import { RowMenu, type RowMenuItem } from '@/components/ui/RowMenu';
-import { PageCrumbs } from '@/components/shell/PageCrumbs';
+import { PageHeader } from '@/components/ui/PageHeader';
 import { ActIcon } from '@/components/ui/ActIcon';
 import { Avatar, EmptyState, Pill, type Tone, Alert } from '@/components/ui/primitives';
 import { DataGrid, type GridColumn } from '@/components/ui/datagrid';
@@ -70,13 +70,8 @@ const TABS: { key: TabKey; label: string; icon: typeof Users }[] = [
 export function AccountsView({ tab, accounts, total, filters, teachers, campuses, matrix, audit, canManage, isAdmin }: Props) {
   return (
     <section className="flex flex-col gap-5">
-      <header className="flex flex-wrap items-end justify-between gap-4">
-        <div className="min-w-0">
-          <PageCrumbs crumbs={['Hệ thống', 'Tài khoản & quyền']} />
-          <h1 className="text-h1 font-extrabold leading-tight tracking-tight text-ink">Tài khoản & quyền</h1>
-          <p className="mt-2 text-base text-muted max-[767px]:mt-1.5 max-[767px]:text-sm">Ai được truy cập những gì trong hệ thống.</p>
-        </div>
-      </header>
+      {/* Dùng chung PageHeader như mọi màn: từ 768px tên trang nằm ở thanh trên cùng */}
+      <PageHeader crumbs={['Hệ thống', 'Tài khoản & quyền']} title="Tài khoản & quyền" subtitle="Ai được truy cập những gì trong hệ thống." />
 
       <ChipGroup tabs label="Mục" className="overflow-x-auto">
         {TABS.map((t) => {
@@ -189,7 +184,7 @@ function UsersTab({ accounts, total, filters, teachers, campuses, canManage }: {
       case 'campus':
         return <div className="min-w-0 truncate text-sm text-ink-2" title={campusText(row)}>{campusText(row)}</div>;
       case 'link':
-        return <div className="min-w-0 truncate text-sm text-ink-2">{row.teacherName ?? '—'}</div>;
+        return <div className="min-w-0 truncate text-sm text-ink-2">{row.teacherName ?? ''}</div>;
       case 'last':
         return <div className="whitespace-nowrap text-sm tabular-nums text-ink-2">{row.lastLoginAt ? formatTime(row.lastLoginAt) : 'Chưa đăng nhập'}</div>;
       case 'status':
