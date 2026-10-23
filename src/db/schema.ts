@@ -887,3 +887,31 @@ export type Account = typeof accounts.$inferSelect;
 export type Parent = typeof parents.$inferSelect;
 export type ClassSession = typeof classSessions.$inferSelect;
 export type Assignment = typeof assignments.$inferSelect;
+
+// ---------- Khảo sát hài lòng cuối khoá (37.14) ----------
+
+// Mỗi phụ huynh của mỗi học sinh trong lớp một dòng. Bot hỏi mức hài lòng (1–5 sao) rồi có học tiếp khoá sau không.
+// Dòng được tạo khi gửi; answeredAt có khi phụ huynh bấm sao.
+export const surveyContinueEnum = pgEnum('survey_continue', ['yes', 'maybe', 'no']);
+
+export const courseSurveys = pgTable(
+  'course_surveys',
+  {
+    id: serial('id').primaryKey(),
+    classId: integer('class_id')
+      .notNull()
+      .references(() => classes.id, { onDelete: 'cascade' }),
+    studentId: integer('student_id')
+      .notNull()
+      .references(() => students.id, { onDelete: 'cascade' }),
+    parentId: integer('parent_id')
+      .notNull()
+      .references(() => parents.id, { onDelete: 'cascade' }),
+    score: integer('score'), // 1–5
+    continueChoice: surveyContinueEnum('continue_choice'),
+    sentByAccountId: integer('sent_by_account_id').references(() => accounts.id, { onDelete: 'set null' }),
+    answeredAt: timestamp('answered_at', { withTimezone: true }),
+    ...timestamps,
+  },
+  (t) => [uniqueIndex('course_surveys_class_student_parent_key').on(t.classId, t.studentId, t.parentId), index('course_surveys_class_idx').on(t.classId)],
+);

@@ -9,6 +9,8 @@ import { requireCampusAccess, requireClassAccess } from '@/lib/campus-access';
 import { getClassForm } from '@/lib/queries/classes';
 import { findScheduleConflicts, summarizeConflicts } from '@/lib/queries/schedule-conflicts';
 import { teacherTeachesCampus } from '@/lib/queries/teachers';
+import { getCurrentAccount } from '@/lib/session';
+import { sendCourseSurvey } from '@/lib/telegram/survey';
 import { addDaysKey, dateKeyLabel, todayKeyVN, vnDateKey, vnTimeLabel } from '@/lib/datetime';
 import { describeSchedule, encodeDayTimes, generateSessions, joinWeekdays, resolveDayTimes } from '@/lib/schedule';
 import { checkDayTimes, classCoreSchema, classCreateSchema, classRescheduleSchema, MAX_SLOTS_PER_DAY, slotField, WEEKDAY_CODES, type DayTimesInput, type WeekdayCode } from '@/lib/validation/class';
@@ -502,6 +504,26 @@ export async function deleteClassAction(id: number): Promise<ActionResult> {
     revalidatePath('/lop-hoc');
     revalidatePath('/lich-hoc');
     return { ok: true, message: `Đã xoá lớp ${current.name}` };
+  } catch (error) {
+    return errorResult(error);
+  }
+}
+
+// Gửi khảo sát hài lòng cuối khoá cho phụ huynh đã kết nối Telegram của lớp (37.14). Phụ huynh đã được hỏi thì bỏ qua.
+export async function sendCourseSurveyAction(id: number): Promise<ActionResult> {
+  try {
+    await requirePermission('classes.manage');
+    await requireClassAccess(id);
+    const current = await getClassForm(id);
+    if (!current) return { ok: false, message: 'Không tìm thấy lớp này. Có thể đã bị xoá.' };
+    const account = await getCurrentAccount();
+    const r = await sendCourseSurvey(id, account?.id ?? null);
+    if (r.chats === 0 && r.alreadySent === 0) return { ok: false, message: `Lớp ${current.name} chưa có phụ huynh nào kết nối Telegram nên chưa gửi được khảo sát.` };
+    await writeAudit({ action: 'survey', entity: 'class', entityId: id, summary: `Gửi khảo sát cuối khoá lớp ${current.name}: ${r.chats} phụ huynh` });
+    revalidatePath(`/lop-hoc/${id}`);
+    if (r.chats === 0) return { ok: true, message: `Mọi phụ huynh đã kết nối của lớp ${current.name} đều đã được gửi khảo sát trước đó.` };
+    const skipped = r.alreadySent > 0 ? `, bỏ qua ${r.alreadySent} phụ huynh đã được hỏi` : '';
+    return { ok: true, message: `Đã gửi khảo sát cho ${r.delivered}/${r.chats} phụ huynh lớp ${current.name}${skipped}` };
   } catch (error) {
     return errorResult(error);
   }

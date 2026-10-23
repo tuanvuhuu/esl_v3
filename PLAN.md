@@ -1,6 +1,6 @@
 # ESL Center: kế hoạch và tiến độ
 
-> **Tiến độ tổng: 206/231 task (89%)**
+> **Tiến độ tổng: 207/231 task (90%)**
 > Cập nhật lần cuối: 2026-10-22. P1–P34 xong. P38 (giờ học từng ngày, học phí theo buổi còn lại, mã HS-00001) xong. P37 bot Telegram theo kịch bản: 37.1–37.9 xong, còn đặt cron mỗi giờ trên bản deploy và các việc đợt sau. P35: 35.2, 35.3, 35.12, 35.24, 35.27 xong; 35.4–35.6 làm dở (35.6 chỉ còn thử tay trên điện thoại). P36 Soạn nhanh xong phần code (36.1–36.6). Số đếm lấy từ các ô `[x]` và `[ ]` trong file.
 
 ## 🎯 Các task vừa hoàn thành & Lệnh test riêng (Không chạy all)
@@ -461,7 +461,7 @@ Nguồn: `docs/KICH-BAN-TELEGRAM.md` (2026-10-22). Người dùng thấy bot cò
 - [x] **37.11** Màn Đơn nghỉ trong app cho giáo vụ: danh sách, lọc theo lớp và trạng thái, duyệt hoặc từ chối, cùng quy tắc với bot. ✅ 2026-10-22: màn `/don-nghi` (menu Đào tạo, huy hiệu số đơn chờ), lọc trạng thái và lớp, duyệt hoặc từ chối (có xác nhận) dùng chung `applyLeaveDecision` với bot, thêm "Ghi đơn nghỉ" cho giáo vụ khi phụ huynh gọi điện (duyệt ngay, ghi vắng có phép). E2E `don-nghi.spec.ts` và luồng xin nghỉ trên bot xanh; ảnh 1440px và 390px không tràn.
 - [ ] **37.12** Học bù: phụ huynh chọn buổi bù của lớp khác cùng trình độ khi con nghỉ có phép.
 - [x] **37.13** Mã QR chuyển khoản (VietQR) trong tin nhắc học phí. ✅ 2026-10-23: Cài đặt có "Tài khoản nhận học phí" (ngân hàng, số tài khoản, tên chủ, xem thử mã QR; migration 0025). Mã VietQR (EMVCo, CRC16) tạo ngay trên máy chủ bằng thư viện `qrcode`, không gọi dịch vụ ngoài; nội dung "HP HS-xxxxx Tên" để đối chiếu sao kê. Nút Nhắc ở Học phí và lệnh /hocphi gửi ảnh QR kèm số tiền còn thiếu; hộp Ghi thu hiện mã QR để phụ huynh quét tại quầy. Unit `vietqr.test.ts`, E2E `vietqr.spec.ts` (Telegram nhận ảnh multipart, chat giả bị từ chối như dự kiến).
-- [ ] **37.14** Khảo sát hài lòng cuối khoá bằng nút bấm trên bot.
+- [x] **37.14** Khảo sát hài lòng cuối khoá bằng nút bấm trên bot. ✅ 2026-10-23: bảng `course_surveys` (migration 0026); bot hỏi 1–5 sao rồi có học tiếp khoá sau không, mỗi phụ huynh mỗi khoá một lần; từ 3 sao trở xuống gửi bản sao cho quản trị; việc tự động `survey` (từ 10 giờ) gửi khi lớp vừa học xong buổi cuối trong 3 ngày; trang lớp có khung kết quả (điểm trung bình, số đã chấm, tỉ lệ học tiếp, danh sách cần liên hệ) và nút Gửi khảo sát có xác nhận. Nhắc học phí tự động cũng kèm ảnh mã QR. E2E `khao-sat.spec.ts` (người lạ bấm nút không ghi được), `vietqr.spec.ts` cron; ảnh 1440px và 390px không tràn.
 
 ## P38. Lịch nhiều giờ trong tuần, học sinh vào giữa khoá, mã học sinh 5 chữ số
 

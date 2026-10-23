@@ -10,6 +10,7 @@ import { formatVND } from '@/lib/money';
 import { answerCallbackQuery, editMessageText, sendMessage } from './api';
 import { chatOf, record, sendAndRecord, sendCopyToSuperAdmins, sendPhotoAndRecord, type Chat } from './core';
 import { tuitionQr } from '@/lib/tuition-qr';
+import { answerSurveyContinue, answerSurveyScore } from './survey';
 import { cancelLeave, chooseReason, chooseSession, decideLeave, leaveStatusMap, listPendingLeaves, promptSessions, resolveLeaveRef, startLeave, takeTypedReason } from './leave';
 import { isNotifyKind, NOTIFY_LABELS, settingsKeyboard, settingsText, toggleMuted } from './prefs';
 import {
@@ -716,6 +717,15 @@ export async function handleCallbackQuery(cb: IncomingCallback): Promise<void> {
     if (prefix === 'leave_appr' || prefix === 'leave_deny') {
       const requestId = await resolveLeaveRef(chat.accountId, args);
       await answerCallbackQuery(cb.id, await decideLeave(chat, requestId, prefix === 'leave_appr'));
+      return;
+    }
+    // Khảo sát cuối khoá (37.14): mã dòng khảo sát được kiểm lại theo phụ huynh trong survey.ts
+    if (prefix === 'sv' && chat.parentId) {
+      await answerCallbackQuery(cb.id, await answerSurveyScore(chat, Number(args[0]), Number(args[1])));
+      return;
+    }
+    if (prefix === 'svc' && chat.parentId) {
+      await answerCallbackQuery(cb.id, await answerSurveyContinue(chat, Number(args[0]), args[1] ?? ''));
       return;
     }
     if (prefix === 'pref' && chat.parentId) {

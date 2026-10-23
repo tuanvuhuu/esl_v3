@@ -4,6 +4,8 @@ import { connection } from 'next/server';
 import { Suspense } from 'react';
 import { AddStudentToClass } from '@/components/classes/AddStudentToClass';
 import { ClassDetailActions } from '@/components/classes/ClassDetailActions';
+import { SurveyPanel } from '@/components/classes/SurveyPanel';
+import { getSurveySummary } from '@/lib/queries/surveys';
 import { NoAccess } from '@/components/ui/NoAccess';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Avatar, EmptyState, Pill, ProgressBar, type Tone } from '@/components/ui/primitives';
@@ -59,7 +61,7 @@ async function ClassData({ params }: { params: Promise<{ id: string }> }) {
   if (!hasPermission(granted, 'students.view')) return <NoAccess title="Lớp học" />;
 
   const canAddStudent = hasPermission(granted, 'students.edit');
-  const [cls, teachers, assignments, levels, { campuses, scope }, classOptions, parents] = await Promise.all([
+  const [cls, teachers, assignments, levels, { campuses, scope }, classOptions, parents, survey] = await Promise.all([
     getClassDetail(id),
     listTeacherChoices(null),
     listAssignmentsOfClass(id),
@@ -67,6 +69,7 @@ async function ClassData({ params }: { params: Promise<{ id: string }> }) {
     getCampusContext(),
     canAddStudent ? listClassOptions(null) : Promise.resolve([]),
     canAddStudent ? listParentChoices() : Promise.resolve([]),
+    getSurveySummary(id),
   ]);
   if (!cls) notFound();
   const ownCampusId = classOptions.find((c) => c.id === id)?.campusId ?? scope ?? campuses[0]?.id ?? 0;
@@ -189,6 +192,8 @@ async function ClassData({ params }: { params: Promise<{ id: string }> }) {
               </ul>
             )}
           </Panel>
+
+          <SurveyPanel classId={cls.id} className={cls.name} summary={survey} canManage={hasPermission(granted, 'classes.manage')} />
         </div>
       </div>
     </section>

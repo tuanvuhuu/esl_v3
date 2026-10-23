@@ -183,6 +183,13 @@
       "when": 1792718788397,
       "tag": "0025_center_bank_account",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1792745321797,
+      "tag": "0026_course_surveys",
+      "breakpoints": true
     }
   ]
 }

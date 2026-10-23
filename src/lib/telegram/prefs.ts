@@ -97,6 +97,7 @@ export const CRON_JOBS = [
   'grading', // nhắc giáo viên bài chờ chấm quá 2 ngày
   'weekly', // báo cáo tuần cho phụ huynh
   'daily_report', // báo cáo cuối ngày cho quản trị
+  'survey', // khảo sát hài lòng khi lớp học xong buổi cuối
 ] as const;
 export type CronJob = (typeof CRON_JOBS)[number];
 
@@ -116,6 +117,7 @@ export function dueJobs(now: Date): CronJob[] {
   const jobs: CronJob[] = ['homework_due'];
   if (hour >= 6) jobs.push('schedule', 'teacher_day');
   if (hour >= 8) jobs.push('tuition', 'grading');
+  if (hour >= 10) jobs.push('survey');
   if (weekday === 0 && hour >= 18) jobs.push('weekly');
   if (hour >= 20) jobs.push('daily_report');
   return CRON_JOBS.filter((j) => jobs.includes(j));

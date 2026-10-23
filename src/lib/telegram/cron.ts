@@ -6,6 +6,7 @@ import { addDaysKey, dateKeyLabel, todayKeyVN, vnDayBounds, vnDateTimeLabel, vnT
 import { formatVND } from '@/lib/money';
 import { getCenterSettings } from '@/lib/queries/settings';
 import { tuitionQr } from '@/lib/tuition-qr';
+import { autoCourseSurveys } from './survey';
 import { adminChats, chatOf, parentChatsOfStudent, sendOnce, staffChatsOfClass, type SendResult } from './core';
 import { CRON_JOBS, dueJobs, isoWeekKey, tuitionPhase, type CronJob } from './prefs';
 import { dailyReportText } from './service';
@@ -27,6 +28,7 @@ export async function runTelegramCronTasks(options?: { jobs?: CronJob[]; now?: D
     grading: remindGrading,
     weekly: weeklyReport,
     daily_report: dailyReport,
+    survey: async (now) => Array.from({ length: await autoCourseSurveys(now) }, () => 'sent' as SendResult),
   };
   for (const job of jobs) {
     try {

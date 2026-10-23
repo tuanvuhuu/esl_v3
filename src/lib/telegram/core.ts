@@ -88,6 +88,12 @@ export function withOnlyChat<T>(chatId: number | null, task: () => Promise<T>): 
   return chatId === null ? task() : onlyChat.run(chatId, task);
 }
 
+// Chat này có được gửi trong lần chạy hiện tại không (khi đang giới hạn bằng withOnlyChat)
+export function chatAllowed(chatId: number): boolean {
+  const only = onlyChat.getStore();
+  return only === undefined || only === chatId;
+}
+
 // Gửi tin tự động đúng một lần cho mỗi (chat, loại, mã sự kiện). Phụ huynh đã tắt loại tin (pref) thì bỏ qua.
 // Ghi nhật ký trước rồi mới gửi, nên hai lần chạy song song cũng chỉ một lần gửi. Lỗi tạm thời (mạng, 429, 5xx) thì xoá
 // dòng nhật ký để lần chạy sau thử lại; lỗi vĩnh viễn (chat không tồn tại, bị chặn, chưa cấu hình bot) thì giữ, không gửi lại.
