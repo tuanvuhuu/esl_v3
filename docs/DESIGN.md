@@ -30,6 +30,7 @@ File này là nguồn chuẩn cho giao diện. Khi sửa giao diện, đọc fil
 | `--fs-h1` | 26 | 30 | 26 | 22 |
 | `--fs-display` | 56 | 60 | 44 | 40 |
 | `--fs-input` | 15 | 16 | 15 | 16 |
+| `--fs-placeholder` | theo ô | theo ô | theo ô | 13 |
 
 - Quy tắc: không viết `font-size: 13px`, luôn dùng biến (token `text-base`, `text-2xs`...).
 - Ô nhập trên điện thoại giữ 16px để iOS không tự phóng to khi bấm vào. Đây là ngoại lệ có chủ đích.
@@ -128,7 +129,7 @@ Chuẩn lấy từ trang `/hoc-sinh` (quyết định D16). Mọi trang dùng đ
 - Nhãn không đậm: nhãn trạng thái, tiêu đề cột, nhãn form, số trong bảng dùng 400. Tiêu đề trang và giá trị KPI vẫn đậm.
 - Không viết lại khung, thông báo, chân form, ô chọn tệp, nhãn trạng thái, nút lọc hay thẻ trong một màn. Dùng thành phần chung ở trên. Muốn khác thì đổi thành phần chung, không đổi riêng một màn.
 - Nút chữ đậm (`font-bold`), chip và ô chọn 600, ô nhập và nội dung 400.
-- Ô nhập trên điện thoại giữ 16px (`--fs-input`).
+- Ô nhập trên điện thoại giữ 16px (`--fs-input`). Chữ gợi ý (placeholder) nhỏ hơn, 13px (`--fs-placeholder`, áp cho mọi `input` và `textarea` trong `globals.css`), để ô gọn mà iOS không phóng to.
 - Kiểm tra tự động: `e2e/chuan.spec.ts` đo mọi nút, ô, chip cao đúng chuẩn, khung có bóng bo 24px, tiêu đề cột và nhãn không đậm, ở 1440px và 390px trên 16 trang. Không đo thẻ dữ liệu (`data-card`) và liên kết trong ô (`data-link`): tên học sinh có thể xuống dòng nên cao theo chữ.
 
 ## 9. Màn Tài khoản & quyền

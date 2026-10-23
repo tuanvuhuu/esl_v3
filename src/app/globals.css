@@ -259,6 +259,7 @@
     --fs-h1: 22px;
     --fs-display: 40px;
     --fs-input: 16px; /* dưới 16px, iOS sẽ tự phóng to khi bấm vào ô nhập */
+    --fs-placeholder: 13px; /* chữ gợi ý nhỏ hơn chữ gõ: iOS chỉ xét cỡ chữ của ô, không xét chữ gợi ý */
   }
 }
 
@@ -331,6 +332,13 @@
   }
   button {
     cursor: pointer;
+  }
+  /* Chữ gợi ý (placeholder) trên điện thoại nhỏ hơn chữ gõ (chữ gõ vẫn 16px). Máy tính giữ cỡ chữ của ô. */
+  @media (max-width: 767px) {
+    input::placeholder,
+    textarea::placeholder {
+      font-size: var(--fs-placeholder);
+    }
   }
   :focus-visible {
     outline: 2px solid var(--primary-deep);
