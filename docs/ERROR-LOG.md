@@ -791,3 +791,12 @@ Mỗi lỗi gặp phải được ghi ở đây, theo mẫu dưới đây. Trư�
 - Cách sửa: Hộp chấm gửi nguyên đáp án đã nạp của mọi dạng câu. Câu nói có trình phát bản ghi âm. E2E `cham-noi.spec.ts` kiểm bản ghi và đáp án chọn tranh còn sau khi lưu.
 - Quy tắc phòng ngừa: Thêm dạng câu mới phải rà mọi chỗ ghi lại bài làm (hộp chấm, nộp bài, nhập điểm nhanh). Hàm lưu kiểu "xoá rồi ghi lại" phải nhận đủ mọi trường, hoặc chỉ cập nhật trường được sửa.
 - Đã áp dụng ở: `src/components/assignments/AnswerDialog.tsx`, `e2e/cham-noi.spec.ts`.
+
+## E-086 · Trang tải chậm sau khi người dùng dừng tay vài giây
+- Ngày: 2026-10-23
+- Khu vực: `src/db/client.ts`, `src/app/(app)/layout.tsx`, `src/lib/campus-context.ts`, `src/lib/queries/tuition.ts`
+- Triệu chứng: Người dùng thấy tải dữ liệu rất lâu. Đo từ máy này tới Neon (Singapore): một truy vấn ~47ms, mở kết nối mới 330–450ms, mở kết nối khi Neon vừa ngủ dậy (sau 6 phút không dùng) ~1.000ms.
+- Nguyên nhân: `pg` Pool mặc định đóng kết nối rảnh sau 10 giây, nên dừng tay hơn 10 giây là lần bấm sau phải mở lại kết nối (đo: 358ms thay vì 56ms). Khung trang chạy 4 bước truy vấn nối tiếp và chờ cả số việc chờ của bảng Tính năng (mặc định đóng) rồi mới cho trang tải.
+- Cách sửa: Pool giữ kết nối rảnh 5 phút, bật keepAlive. Quyền và cơ sở lấy song song; số việc chờ không chặn trang (truyền promise, bảng Tính năng dùng `use`). Ngày đến hạn học phí đọc song song với danh sách.
+- Quy tắc phòng ngừa: DB ở xa thì mỗi lượt đi về đáng kể: các truy vấn không phụ thuộc nhau chạy bằng `Promise.all`; phần khung chung không chờ dữ liệu phụ. Dùng hằng ngày bằng bản build (`npm run build` + `npm start`), không bằng `npm run dev` (dev biên dịch từng trang lần đầu mở).
+- Đã áp dụng ở: các tệp trên.

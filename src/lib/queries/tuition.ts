@@ -33,8 +33,8 @@ export async function getDueDay(): Promise<number> {
 // Hoá đơn học phí của mọi học sinh: học phí lớp, số đã thu, còn nợ, hạn đóng, quá hạn.
 // Học phí của học sinh trong cơ sở đang xem (scope null: mọi cơ sở). Số đếm và tổng nợ tính trên cơ sở đó.
 export async function listInvoices(todayKey: string, q: string, filter: InvoiceFilter, scope: CampusScope): Promise<{ rows: InvoiceRow[]; counts: Record<InvoiceFilter, number>; totalDebt: number }> {
-  const dueDay = await getDueDay();
-  const result = await db.execute<{
+  // Ngày đến hạn và danh sách đọc cùng lúc
+  const [dueDay, result] = await Promise.all([getDueDay(), db.execute<{
     id: number; full_name: string; search_key: string; status: InvoiceRow['status']; start_date: string; class_name: string;
     fee: number; paid: number; last_paid: string | null;
   }>(sql`
@@ -49,7 +49,7 @@ export async function listInvoices(todayKey: string, q: string, filter: InvoiceF
     ) p ON p.student_id = s.id
     WHERE ${campusCond(scope, sql`c.campus_id`)}
     ORDER BY s.full_name
-  `);
+  `)]);
 
   const needle = normalizeSearch(q);
   const codeId = parseStudentCode(q);

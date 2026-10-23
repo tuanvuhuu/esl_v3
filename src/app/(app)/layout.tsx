@@ -24,10 +24,12 @@ async function AppShell({ children }: { children: React.ReactNode }) {
   if (!account) redirect('/dang-nhap');
   // Học sinh chỉ dùng khu học sinh (P28), không vào màn quản lý
   if (account.role === 'student') redirect('/cua-toi');
-  const granted = new Set(await getCurrentPermissions());
+  // Quyền và cơ sở không phụ thuộc nhau: lấy cùng lúc (DB ở xa, mỗi lượt đi về ~50ms)
+  const [permissions, { campuses, scope, allowAll }] = await Promise.all([getCurrentPermissions(), getCampusContext()]);
+  const granted = new Set(permissions);
   const tabs = MOBILE_TABS.filter((t) => t.permission === null || granted.has(t.permission));
-  const { campuses, scope, allowAll } = await getCampusContext();
-  const badges = await getNavBadges(granted, scope);
+  // Số việc chờ chỉ dùng trong bảng Tính năng (mặc định đóng): không chờ, để trang bắt đầu tải ngay; số hiện khi xong
+  const badges = getNavBadges(granted, scope);
 
   return (
     <ShellFrame

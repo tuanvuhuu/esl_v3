@@ -9,8 +9,7 @@ import { listCampuses } from './queries/campuses';
 
 // Cache theo từng yêu cầu nên gọi nhiều lần (layout, trang, hành động) chỉ đọc DB một lần, giống getCurrentAccount.
 export const getCampusContext = cache(async (): Promise<{ campuses: CampusOption[]; scope: CampusScope; allowAll: boolean }> => {
-  const allowed = await getAllowedCampusIds();
-  const all = await listCampuses();
+  const [allowed, all] = await Promise.all([getAllowedCampusIds(), listCampuses()]);
   const campuses = allowed === null ? all : all.filter((c) => allowed.includes(c.id));
   const jar = await cookies();
   const raw = jar.get(CAMPUS_COOKIE)?.value;

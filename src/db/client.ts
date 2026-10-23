@@ -12,7 +12,9 @@ function createPool(): Pool {
   if (!connectionString) {
     throw new Error('Thiếu DATABASE_URL. Sao chép .env.example thành .env.local rồi điền chuỗi kết nối PostgreSQL.');
   }
-  return new Pool({ connectionString, max: 10 });
+  // Giữ kết nối rảnh 5 phút (mặc định của pg là 10 giây). DB ở Singapore: mở kết nối mới (TLS, đăng nhập) mất 330–450ms,
+  // còn một truy vấn trên kết nối sẵn có chỉ ~50ms. Đóng sau 10 giây thì người dùng dừng tay một chút là trang sau chậm hẳn.
+  return new Pool({ connectionString, max: 10, idleTimeoutMillis: 300_000, keepAlive: true });
 }
 
 // Giữ một pool duy nhất. Khi Next.js nạp lại module trong lúc phát triển, pool cũ vẫn được dùng tiếp.

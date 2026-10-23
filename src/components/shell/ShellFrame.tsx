@@ -1,11 +1,11 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { useEffect, useState, type ReactNode } from 'react';
+import { Suspense, useEffect, useState, type ReactNode } from 'react';
 import type { CampusOption, CampusScope } from '@/lib/campus';
 import type { NavGroup, NavItem } from '@/lib/nav';
 import { AppBar } from './AppBar';
-import { FeatureSheet } from './FeatureSheet';
+import { FeatureSheet, FeatureSheetAsync } from './FeatureSheet';
 import { MobileTabBar } from './MobileTabBar';
 import { Sidebar } from './Sidebar';
 
@@ -13,7 +13,7 @@ type Props = {
   children: ReactNode;
   groups: NavGroup[]; // đã lọc theo quyền
   tabs: NavItem[]; // tab bar điện thoại, đã lọc theo quyền
-  badges: Record<string, number>; // số việc chờ của từng màn, cho bảng Tính năng
+  badges: Promise<Record<string, number>>; // số việc chờ của từng màn, cho bảng Tính năng (tải sau, không chặn trang)
   campuses: CampusOption[]; // các cơ sở, cho bộ chọn trên thanh trên cùng
   campusScope: CampusScope; // cơ sở đang xem (null: tất cả)
   campusAllowAll: boolean; // tài khoản làm việc ở mọi cơ sở thì có lựa chọn Tất cả cơ sở
@@ -68,7 +68,9 @@ export function ShellFrame({ children, groups, tabs, badges, campuses, campusSco
       </div>
 
       <MobileTabBar tabs={tabs} onFeatures={() => setFeatOpen(true)} />
-      <FeatureSheet open={featOpen} groups={groups} badges={badges} onClose={() => setFeatOpen(false)} />
+      <Suspense fallback={<FeatureSheet open={featOpen} groups={groups} badges={{}} onClose={() => setFeatOpen(false)} />}>
+        <FeatureSheetAsync open={featOpen} groups={groups} badges={badges} onClose={() => setFeatOpen(false)} />
+      </Suspense>
     </div>
   );
 }

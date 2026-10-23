@@ -2,8 +2,14 @@
 
 import Link from 'next/link';
 import { X } from 'lucide-react';
+import { use } from 'react';
 import type { NavGroup } from '@/lib/nav';
 import { NAV_ICONS } from './nav-icons';
+
+// Số việc chờ đến sau (máy chủ không chờ tính xong mới gửi trang); trong lúc chờ, bảng hiện không có số
+export function FeatureSheetAsync(props: { open: boolean; groups: NavGroup[]; badges: Promise<Record<string, number>>; onClose: () => void }) {
+  return <FeatureSheet {...props} badges={use(props.badges)} />;
+}
 
 // Bảng Tính năng từ nút tròn ở tab bar. Chạm một biểu tượng sẽ mở màn hình tương ứng.
 export function FeatureSheet({ open, groups, badges, onClose }: { open: boolean; groups: NavGroup[]; badges: Record<string, number>; onClose: () => void }) {
