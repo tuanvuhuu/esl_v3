@@ -135,7 +135,7 @@ export async function studentAssignment(assignmentId: number, studentId: number)
         return [a.itemId, { scale, praise: a.praise, scores: Object.fromEntries(SCALE_CRITERIA[scale].map((k) => [k, a[k] ?? undefined])) }];
       }),
     ),
-    speakingMarks: marks.map((m) => ({ id: m.id, itemId: m.itemId, atMs: m.atMs, errorType: m.errorType as SpeakingErrorType, correctText: m.correctText, note: m.note, redo: m.redo })),
+    speakingMarks: marks.map((m) => ({ id: m.id, itemId: m.itemId, atMs: m.atMs, errorType: m.errorType as SpeakingErrorType, correctText: m.correctText, note: m.note, redo: m.redo, modelFileId: m.modelFileId })),
     title: base.title,
     description: base.description,
     dueAt: base.dueAt,

@@ -13,8 +13,9 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Field, inputClass } from '@/components/ui/Field';
 import { Alert, Pill } from '@/components/ui/primitives';
 import { SelectPanel } from '@/components/ui/SelectPanel';
+import { MiniRecorder } from './MiniRecorder';
 
-type Draft = { id: number | null; atMs: number; errorType: SpeakingErrorType; correctText: string; note: string; redo: boolean };
+type Draft = { id: number | null; atMs: number; errorType: SpeakingErrorType; correctText: string; note: string; redo: boolean; modelFileId: number | null };
 const ERROR_OPTIONS = (Object.keys(SPEAKING_ERRORS) as SpeakingErrorType[]).map((k) => ({ value: k, label: SPEAKING_ERRORS[k] }));
 
 export function SpeakingMarks({
@@ -58,7 +59,7 @@ export function SpeakingMarks({
   function startAdd() {
     audio.current?.pause();
     setError(null);
-    setDraft({ id: null, atMs: Math.round((audio.current?.currentTime ?? 0) * 1000), errorType: 'final_sound', correctText: '', note: '', redo: false });
+    setDraft({ id: null, atMs: Math.round((audio.current?.currentTime ?? 0) * 1000), errorType: 'final_sound', correctText: '', note: '', redo: false, modelFileId: null });
   }
 
   function save() {
@@ -138,6 +139,7 @@ export function SpeakingMarks({
                   <span className="font-semibold text-ink">{SPEAKING_ERRORS[m.errorType]}</span>
                   {m.correctText && <span className="text-ink-2"> · nói đúng: “{m.correctText}”</span>}
                   {m.note && <span className="block text-muted">{m.note}</span>}
+                  {m.modelFileId !== null && <audio controls preload="none" src={`/api/files/${m.modelFileId}`} aria-label={`Giọng mẫu lỗi tại ${formatMs(m.atMs)}`} className="mt-1 h-[var(--ctl-h)] max-w-full" />}
                   {m.redo && (
                     <span className="mt-1 block">
                       <Pill tone="butter">Nói lại câu này</Pill>
@@ -176,6 +178,9 @@ export function SpeakingMarks({
             <Field label="Ghi chú">
               <input value={draft.note} onChange={(e) => setDraft({ ...draft, note: e.target.value })} maxLength={300} placeholder="VD: đặt lưỡi giữa hai hàm răng" aria-label="Ghi chú lỗi" className={inputClass()} />
             </Field>
+            <div className="col-span-full">
+              <MiniRecorder fileId={draft.modelFileId} label="Ghi giọng mẫu" disabled={pending} onChange={(fileId) => setDraft({ ...draft, modelFileId: fileId })} />
+            </div>
             <label className="col-span-full flex items-center gap-2.5 text-sm text-ink-2">
               <input type="checkbox" checked={draft.redo} onChange={(e) => setDraft({ ...draft, redo: e.target.checked })} className="size-4 accent-[var(--primary-deep)]" />
               Cần nói lại câu này

@@ -5,7 +5,7 @@ import { and, asc, eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { db } from '@/db/client';
-import { assignmentItems, assignmentSubmissions, speakingAssessments, speakingFeedback, students } from '@/db/schema';
+import { assignmentItems, assignmentSubmissions, speakingAssessments, speakingFeedback, students, uploadedFiles } from '@/db/schema';
 import { ForbiddenError, requirePermission } from '@/lib/authz';
 import { requireAssignmentAccess, requireStudentAccess } from '@/lib/campus-access';
 import { getCurrentAccount } from '@/lib/session';
@@ -29,6 +29,7 @@ const markSchema = z.object({
   correctText: z.string().trim().max(200, 'Chữ đúng tối đa 200 ký tự'),
   note: z.string().trim().max(300, 'Ghi chú tối đa 300 ký tự'),
   redo: z.boolean(),
+  modelFileId: z.number().int().positive().nullable().default(null),
 });
 export type MarkInput = z.input<typeof markSchema>;
 
@@ -63,6 +64,7 @@ const toMark = (r: typeof speakingFeedback.$inferSelect): SpeakingMark => ({
   correctText: r.correctText,
   note: r.note,
   redo: r.redo,
+  modelFileId: r.modelFileId,
 });
 
 export type SpeakingRubric = { scores: Partial<Record<SpeakingCriterion, number>>; praise: string };
@@ -111,7 +113,11 @@ export async function saveSpeakingMarkAction(
     if (!parsed.success) return { ok: false, message: parsed.error.issues[0]?.message ?? 'Dữ liệu không hợp lệ' };
     const v = parsed.data;
     const account = await getCurrentAccount();
-    const values = { atMs: v.atMs, errorType: v.errorType, correctText: v.correctText, note: v.note, redo: v.redo, updatedAt: new Date() };
+    if (v.modelFileId !== null) {
+      const [f] = await db.select({ id: uploadedFiles.id }).from(uploadedFiles).where(eq(uploadedFiles.id, v.modelFileId)).limit(1);
+      if (!f) return { ok: false, message: 'Không tìm thấy giọng mẫu vừa ghi. Ghi lại.' };
+    }
+    const values = { atMs: v.atMs, errorType: v.errorType, correctText: v.correctText, note: v.note, redo: v.redo, modelFileId: v.modelFileId, updatedAt: new Date() };
     const [row] = markId
       ? await db
           .update(speakingFeedback)

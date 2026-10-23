@@ -54,6 +54,11 @@ test('chấm bài nói: đánh dấu lỗi theo mốc giây; lưu điểm không
     await page.getByRole('option', { name: 'Mất âm cuối' }).click();
     await dlg.getByLabel('Nói đúng là').fill('cats');
     await dlg.getByLabel('Cần nói lại câu này').check();
+    // Ghi giọng mẫu bằng micro giả: bấm ghi, dừng sau ~1 giây, tự lưu
+    await dlg.getByRole('button', { name: 'Ghi giọng mẫu' }).click();
+    await expect(dlg.getByText(/Dừng 0:01/)).toBeVisible({ timeout: 5_000 });
+    await dlg.getByRole('button', { name: 'Dừng ghi giọng mẫu' }).click();
+    await expect(dlg.getByLabel('Giọng mẫu đã ghi')).toBeVisible({ timeout: 30_000 });
     await dlg.getByRole('button', { name: 'Thêm lỗi' }).click();
     await expectToast(page, 'Đã đánh dấu lỗi: Mất âm cuối');
     const marks = dlg.getByRole('list', { name: 'Lỗi đã đánh dấu câu 1' });
@@ -68,6 +73,9 @@ test('chấm bài nói: đánh dấu lỗi theo mốc giây; lưu điểm không
     await expectToast(page, 'Đã sửa lỗi đã đánh dấu');
     const [row] = (await db.query<{ error_type: string; correct_text: string; redo: boolean }>('select error_type, correct_text, redo from speaking_feedback where submission_id = $1', [sub.id])).rows;
     expect(row).toEqual({ error_type: 'th', correct_text: 'three', redo: true });
+    const [model] = (await db.query<{ model_file_id: number | null }>('select model_file_id from speaking_feedback where submission_id = $1', [sub.id])).rows;
+    expect(model.model_file_id).not.toBeNull();
+    await expect(marks.getByLabel(/Giọng mẫu lỗi tại/)).toBeVisible();
 
     // Chấm theo tiêu chí (35.9): học sinh chưa có ngày sinh nên chấm sao; thiếu "Điều con làm tốt" thì không lưu được
     const rubric = dlg.getByRole('group', { name: 'Tiêu chí câu 1' });
@@ -134,8 +142,8 @@ test.describe('nói lại câu bị đánh dấu', () => {
       const [sub] = (await db.query<{ id: number }>(`insert into assignment_submissions (assignment_id, student_id, status, submitted_at, score) values ($1, $2, 'graded', now(), 5) returning id`, [asg.id, kid.id])).rows;
       await db.query(`insert into submission_item_scores (submission_id, item_id, file_id, points) values ($1, $2, $3, 5)`, [sub.id, speak.id, fileId]);
       await db.query(
-        `insert into speaking_feedback (submission_id, item_id, at_ms, error_type, correct_text, redo) values ($1, $2, 1500, 'th', 'three', true), ($1, $2, 600, 'final_sound', 'have', false), ($1, $2, 2400, 'intonation', '', false)`,
-        [sub.id, speak.id],
+        `insert into speaking_feedback (submission_id, item_id, at_ms, error_type, correct_text, redo, model_file_id) values ($1, $2, 1500, 'th', 'three', true, $3), ($1, $2, 600, 'final_sound', 'have', false, null), ($1, $2, 2400, 'intonation', '', false, null)`,
+        [sub.id, speak.id, fileId],
       );
       await db.query(`insert into speaking_assessments (submission_id, item_id, scale, pronunciation, fluency, task, praise) values ($1, $2, 'stars', 2, 3, 3, 'Con nói đủ câu, rất tự tin.')`, [sub.id, speak.id]);
 
@@ -154,6 +162,7 @@ test.describe('nói lại câu bị đánh dấu', () => {
       await expect(fb.getByText('Con nói đủ câu, rất tự tin.')).toBeVisible();
       await expect(fb.getByRole('button', { name: /Nghe lại từ/ })).toHaveCount(2);
       await expect(fb.getByText('Ngữ điệu')).toHaveCount(0);
+      await expect(fb.getByLabel('Thầy/Cô nói mẫu lỗi tại 0:01')).toBeVisible();
       await fb.getByRole('button', { name: 'Bấm để nói' }).click();
       await expect(fb.getByText('0:01 /')).toBeVisible({ timeout: 5_000 });
       await fb.getByRole('button', { name: 'Dừng ghi âm' }).click();

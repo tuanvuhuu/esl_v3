@@ -34,6 +34,7 @@ export type SpeakingMark = {
   correctText: string;
   note: string;
   redo: boolean;
+  modelFileId: number | null; // giọng mẫu của giáo viên
 };
 
 // Gợi ý cho trẻ nhỏ chỉ nêu 1–2 lỗi quan trọng nhất (35.9): ưu tiên câu cần nói lại, rồi theo thứ tự thời gian

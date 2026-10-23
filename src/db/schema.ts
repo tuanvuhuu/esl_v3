@@ -962,6 +962,8 @@ export const speakingFeedback = pgTable(
     correctText: varchar('correct_text', { length: 200 }).notNull().default(''),
     note: varchar('note', { length: 300 }).notNull().default(''),
     redo: boolean('redo').notNull().default(false),
+    // Giọng mẫu giáo viên ghi cho lỗi này, học sinh nghe để nói theo
+    modelFileId: integer('model_file_id').references(() => uploadedFiles.id, { onDelete: 'set null' }),
     createdByAccountId: integer('created_by_account_id').references(() => accounts.id, { onDelete: 'set null' }),
     ...timestamps,
   },

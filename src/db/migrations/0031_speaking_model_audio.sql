@@ -1,0 +1,2 @@
+ALTER TABLE "speaking_feedback" ADD COLUMN "model_file_id" integer;--> statement-breakpoint
+ALTER TABLE "speaking_feedback" ADD CONSTRAINT "speaking_feedback_model_file_id_uploaded_files_id_fk" FOREIGN KEY ("model_file_id") REFERENCES "public"."uploaded_files"("id") ON DELETE set null ON UPDATE no action;

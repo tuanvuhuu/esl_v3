@@ -16,7 +16,7 @@ describe('chấm bài nói', () => {
   });
 
   it('trẻ nhỏ: chỉ nêu 1–2 lỗi, ưu tiên câu cần nói lại', () => {
-    const m = (id: number, atMs: number, redo: boolean): SpeakingMark => ({ id, itemId: 1, atMs, errorType: 'other', correctText: '', note: '', redo });
+    const m = (id: number, atMs: number, redo: boolean): SpeakingMark => ({ id, itemId: 1, atMs, errorType: 'other', correctText: '', note: '', redo, modelFileId: null });
     expect(topMarks([m(1, 1000, false), m(2, 5000, true), m(3, 3000, false)]).map((x) => x.id)).toEqual([2, 1]);
   });
 });

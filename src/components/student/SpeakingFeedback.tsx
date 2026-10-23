@@ -91,6 +91,12 @@ export function SpeakingFeedback({
               <span className="font-semibold text-ink">{SPEAKING_ERRORS[m.errorType]}</span>
               {m.correctText && <span className="text-ink-2"> · nói đúng: “{m.correctText}”</span>}
               {m.note && <span className="block text-muted">{m.note}</span>}
+              {m.modelFileId !== null && (
+                <span className="mt-1 flex flex-col gap-0.5">
+                  <small className="text-xs text-muted">Nghe Thầy/Cô nói mẫu:</small>
+                  <audio controls preload="none" src={`/api/files/${m.modelFileId}`} aria-label={`Thầy/Cô nói mẫu lỗi tại ${formatMs(m.atMs)}`} className="h-[var(--ctl-h)] w-full" />
+                </span>
+              )}
               {m.redo && (
                 <span className="mt-1 block">
                   <Pill tone="butter">Cần nói lại</Pill>
