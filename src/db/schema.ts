@@ -967,3 +967,30 @@ export const speakingFeedback = pgTable(
   },
   (t) => [index('speaking_feedback_submission_item_idx').on(t.submissionId, t.itemId, t.atMs)],
 );
+
+// ---------- Chấm bài nói theo tiêu chí và độ tuổi (35.9) ----------
+
+// Mỗi câu nói của một bài làm một dòng: thang (sao cho trẻ đến 8 tuổi, điểm 0–5 từ 9 tuổi), điểm từng tiêu chí,
+// và "Điều con làm tốt" (bắt buộc). Bảng riêng để không bị xoá khi lưu bài làm ghi lại các dòng câu trả lời (E-085).
+export const speakingAssessments = pgTable(
+  'speaking_assessments',
+  {
+    id: serial('id').primaryKey(),
+    submissionId: integer('submission_id')
+      .notNull()
+      .references(() => assignmentSubmissions.id, { onDelete: 'cascade' }),
+    itemId: integer('item_id')
+      .notNull()
+      .references(() => assignmentItems.id, { onDelete: 'cascade' }),
+    scale: varchar('scale', { length: 10 }).notNull(), // stars | points
+    pronunciation: integer('pronunciation'),
+    fluency: integer('fluency'),
+    task: integer('task'),
+    vocabulary: integer('vocabulary'),
+    grammar: integer('grammar'),
+    praise: text('praise').notNull().default(''),
+    gradedByAccountId: integer('graded_by_account_id').references(() => accounts.id, { onDelete: 'set null' }),
+    ...timestamps,
+  },
+  (t) => [uniqueIndex('speaking_assessments_pair_key').on(t.submissionId, t.itemId)],
+);

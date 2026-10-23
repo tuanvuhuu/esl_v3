@@ -298,7 +298,7 @@ export function StudentAssignmentForm({ view }: { view: StudentAssignmentView })
               )}
 
               {/* Nhận xét bài nói theo mốc giây và nói lại câu bị đánh dấu (35.10) */}
-              {item.itemType.startsWith('speak_') && view.speakingMarks.some((m) => m.itemId === item.id) && (
+              {item.itemType.startsWith('speak_') && (view.speakingMarks.some((m) => m.itemId === item.id) || view.speakingRubrics[item.id]) && (
                 <SpeakingFeedback
                   assignmentId={view.id}
                   item={item}
@@ -306,6 +306,7 @@ export function StudentAssignmentForm({ view }: { view: StudentAssignmentView })
                   marks={view.speakingMarks.filter((m) => m.itemId === item.id)}
                   redone={answer?.redone ?? false}
                   voiceAllowed={view.voice.allowed}
+                  rubric={view.speakingRubrics[item.id] ?? null}
                 />
               )}
 

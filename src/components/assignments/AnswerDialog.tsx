@@ -2,7 +2,9 @@
 
 import { Paperclip, X } from 'lucide-react';
 import { useEffect, useState, useTransition } from 'react';
-import { listSpeakingMarksAction } from '@/app/(app)/bai-tap/speaking-actions';
+import { listSpeakingMarksAction, saveSpeakingRubricAction, type SpeakingRubric as Rubric } from '@/app/(app)/bai-tap/speaking-actions';
+import { rubricToPoints, type SpeakingScale } from '@/lib/speaking';
+import { SpeakingRubric } from './SpeakingRubric';
 import type { SpeakingMark } from '@/lib/speaking';
 import { useToast } from '@/components/ui/Toast';
 import { SpeakingMarks } from './SpeakingMarks';
@@ -93,13 +95,19 @@ export function AnswerDialog({
   const [pending, startTransition] = useTransition();
   // Lỗi đã đánh dấu trong bài nói (35.8): lưu ngay khi thêm, sửa, xoá, không chờ nút Lưu bài làm
   const [marks, setMarks] = useState<SpeakingMark[]>([]);
+  // Chấm theo tiêu chí và độ tuổi (35.9): thang lấy theo tuổi học sinh, kết quả từng câu nói
+  const [scale, setScale] = useState<SpeakingScale>('stars');
+  const [rubrics, setRubrics] = useState<Record<number, Rubric>>({});
   const { notify } = useToast();
   const hasSpeak = items.some((i) => SPEAK_TYPES.has(i.itemType));
   useEffect(() => {
     if (!hasSpeak) return;
     let alive = true;
     listSpeakingMarksAction(assignmentId, student.id).then((r) => {
-      if (alive && r.ok) setMarks(r.marks);
+      if (!alive || !r.ok) return;
+      setMarks(r.marks);
+      setScale(r.scale);
+      setRubrics(r.rubrics);
     });
     return () => {
       alive = false;
@@ -149,8 +157,20 @@ export function AnswerDialog({
     });
   }
 
+  // Đổi tiêu chí thì ô điểm câu theo điểm quy đổi
+  function changeRubric(item: AssignmentItem, next: Rubric) {
+    setRubrics((prev) => ({ ...prev, [item.id]: next }));
+    const pts = rubricToPoints(scale, next.scores, item.points);
+    if (pts !== null) setDraft(item.id, { points: String(pts) });
+  }
+
   function save() {
-    const payload: AnswerInput[] = items.map((i) => {
+    // Câu nói đã chấm tiêu chí (có sao/điểm hoặc lời khen): lưu tiêu chí trước, bắt buộc đủ tiêu chí và "Điều con làm tốt"
+    const rubricItems = items.filter((i) => {
+      const r = rubrics[i.id];
+      return SPEAK_TYPES.has(i.itemType) && r && (Object.keys(r.scores).length > 0 || r.praise.trim() !== '');
+    });
+    const payloadOf = (overrides: Record<number, number>): AnswerInput[] => items.map((i) => {
       const d = drafts[i.id];
       return {
         itemId: i.id,
@@ -159,13 +179,19 @@ export function AnswerDialog({
         selectedOptionId: d.selectedOptionId,
         answerText: d.answerText,
         fileId: d.fileId,
-        points: i.itemType === 'choice' || hasCriteria(i) ? null : toPoints(d.points),
+        points: overrides[i.id] ?? (i.itemType === 'choice' || hasCriteria(i) ? null : toPoints(d.points)),
         comment: d.comment,
         criterionPoints: i.criteria.map((c) => ({ criterionId: c.id, points: toPoints(d.criterionPoints[c.id] ?? '') })),
       };
     });
     startTransition(async () => {
-      const r = await saveStudentAnswersAction(assignmentId, student.id, payload);
+      const overrides: Record<number, number> = {};
+      for (const i of rubricItems) {
+        const rr = await saveSpeakingRubricAction(assignmentId, student.id, i.id, rubrics[i.id]);
+        if (!rr.ok || rr.points === undefined) return setError(rr.message ?? 'Chưa lưu được tiêu chí');
+        overrides[i.id] = rr.points;
+      }
+      const r = await saveStudentAnswersAction(assignmentId, student.id, payloadOf(overrides));
       if (!r.ok) return setError(r.message ?? 'Không lưu được');
       onSaved(r.message ?? 'Đã lưu bài làm');
     });
@@ -210,31 +236,40 @@ export function AnswerDialog({
               <audio controls preload="none" src={`/api/files/${item.audioFileId}`} aria-label={`Âm thanh câu ${item.position}`} className="w-full" />
             )}
 
-            {SPEAK_TYPES.has(item.itemType) && (
-              d.fileId !== null ? (
-                <SpeakingMarks
-                  previous={(() => {
-                    const a = answers.find((x) => x.itemId === item.id);
-                    return a?.previousFileId ? { fileId: a.previousFileId, redoneAt: a.redoneAt } : null;
-                  })()}
-                  assignmentId={assignmentId}
-                  studentId={student.id}
-                  itemId={item.id}
-                  position={item.position}
-                  fileId={d.fileId}
-                  marks={marks.filter((m) => m.itemId === item.id)}
-                  canManage={canManage}
-                  onChange={(next, message) => {
-                    setMarks((all) => [...all.filter((m) => m.itemId !== item.id), ...next]);
-                    notify(message);
-                  }}
-                />
-              ) : (
-                <div className="flex flex-col gap-1.5">
-                  <span className="text-sm font-normal text-ink-2">Bài nói của học sinh</span>
-                  <small className="text-sm text-muted">Học sinh chưa ghi âm câu này.</small>
-                </div>
-              )
+            {SPEAK_TYPES.has(item.itemType) && d.fileId !== null && (
+              <SpeakingMarks
+                previous={(() => {
+                  const a = answers.find((x) => x.itemId === item.id);
+                  return a?.previousFileId ? { fileId: a.previousFileId, redoneAt: a.redoneAt } : null;
+                })()}
+                assignmentId={assignmentId}
+                studentId={student.id}
+                itemId={item.id}
+                position={item.position}
+                fileId={d.fileId}
+                marks={marks.filter((m) => m.itemId === item.id)}
+                canManage={canManage}
+                onChange={(next, message) => {
+                  setMarks((all) => [...all.filter((m) => m.itemId !== item.id), ...next]);
+                  notify(message);
+                }}
+              />
+            )}
+            {SPEAK_TYPES.has(item.itemType) && d.fileId !== null && (
+              <SpeakingRubric
+                scale={scale}
+                rubric={rubrics[item.id] ?? { scores: {}, praise: '' }}
+                itemPoints={item.points}
+                position={item.position}
+                canManage={canManage}
+                onChange={(next) => changeRubric(item, next)}
+              />
+            )}
+            {SPEAK_TYPES.has(item.itemType) && d.fileId === null && (
+              <div className="flex flex-col gap-1.5">
+                <span className="text-sm font-normal text-ink-2">Bài nói của học sinh</span>
+                <small className="text-sm text-muted">Học sinh chưa ghi âm câu này.</small>
+              </div>
             )}
 
             {item.itemType === 'choice' && (

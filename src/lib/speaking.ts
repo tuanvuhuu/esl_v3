@@ -40,3 +40,42 @@ export type SpeakingMark = {
 export function topMarks(marks: SpeakingMark[], limit = 2): SpeakingMark[] {
   return [...marks].sort((a, b) => Number(b.redo) - Number(a.redo) || a.atMs - b.atMs).slice(0, limit);
 }
+
+// ---------- Tiêu chí bài nói theo độ tuổi (35.9) ----------
+
+// Trẻ đến 8 tuổi chấm sao (1–3 sao, ba tiêu chí); từ 9 tuổi chấm điểm 0–5, thêm từ vựng và ngữ pháp.
+// Chưa có ngày sinh thì coi như trẻ nhỏ (trung tâm mầm non thường chưa có ngày sinh).
+export type SpeakingScale = 'stars' | 'points';
+export const SPEAKING_CRITERIA = {
+  pronunciation: 'Phát âm',
+  fluency: 'Trôi chảy',
+  task: 'Hoàn thành yêu cầu',
+  vocabulary: 'Từ vựng',
+  grammar: 'Ngữ pháp',
+} as const;
+export type SpeakingCriterion = keyof typeof SPEAKING_CRITERIA;
+
+export const SCALE_CRITERIA: Record<SpeakingScale, SpeakingCriterion[]> = {
+  stars: ['pronunciation', 'fluency', 'task'],
+  points: ['pronunciation', 'fluency', 'task', 'vocabulary', 'grammar'],
+};
+export const SCALE_RANGE: Record<SpeakingScale, { min: number; max: number }> = { stars: { min: 1, max: 3 }, points: { min: 0, max: 5 } };
+
+// Tuổi tròn tại ngày todayKey (YYYY-MM-DD); dob null thì không biết
+export function speakingScale(dob: string | null, todayKey: string): SpeakingScale {
+  if (!dob) return 'stars';
+  const [y, m, d] = dob.split('-').map(Number);
+  const [ty, tm, td] = todayKey.split('-').map(Number);
+  let age = ty - y;
+  if (tm < m || (tm === m && td < d)) age--;
+  return age <= 8 ? 'stars' : 'points';
+}
+
+// Điểm tiêu chí quy ra điểm câu: tổng đạt được chia tổng tối đa, nhân điểm câu, làm tròn (1 sao vẫn được một phần điểm).
+export function rubricToPoints(scale: SpeakingScale, scores: Partial<Record<SpeakingCriterion, number>>, itemPoints: number): number | null {
+  const keys = SCALE_CRITERIA[scale];
+  const { min, max } = SCALE_RANGE[scale];
+  if (keys.some((k) => scores[k] === undefined || scores[k]! < min || scores[k]! > max || !Number.isInteger(scores[k]))) return null;
+  const got = keys.reduce((sum, k) => sum + scores[k]!, 0);
+  return Math.round((got / (keys.length * max)) * itemPoints);
+}

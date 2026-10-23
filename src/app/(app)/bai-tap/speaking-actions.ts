@@ -5,11 +5,22 @@ import { and, asc, eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { db } from '@/db/client';
-import { assignmentItems, assignmentSubmissions, speakingFeedback } from '@/db/schema';
+import { assignmentItems, assignmentSubmissions, speakingAssessments, speakingFeedback, students } from '@/db/schema';
 import { ForbiddenError, requirePermission } from '@/lib/authz';
 import { requireAssignmentAccess, requireStudentAccess } from '@/lib/campus-access';
 import { getCurrentAccount } from '@/lib/session';
-import { isSpeakingError, SPEAKING_ERRORS, type SpeakingErrorType, type SpeakingMark } from '@/lib/speaking';
+import { todayKeyVN } from '@/lib/datetime';
+import {
+  isSpeakingError,
+  rubricToPoints,
+  SCALE_CRITERIA,
+  SPEAKING_ERRORS,
+  speakingScale,
+  type SpeakingCriterion,
+  type SpeakingErrorType,
+  type SpeakingMark,
+  type SpeakingScale,
+} from '@/lib/speaking';
 import type { ActionResult } from '@/lib/validation/student';
 
 const markSchema = z.object({
@@ -54,12 +65,32 @@ const toMark = (r: typeof speakingFeedback.$inferSelect): SpeakingMark => ({
   redo: r.redo,
 });
 
-export async function listSpeakingMarksAction(assignmentId: number, studentId: number): Promise<{ ok: true; marks: SpeakingMark[] } | { ok: false; message: string }> {
+export type SpeakingRubric = { scores: Partial<Record<SpeakingCriterion, number>>; praise: string };
+
+// Thang chấm theo tuổi học sinh (35.9), lỗi đã đánh dấu và kết quả chấm theo tiêu chí của từng câu nói
+export async function listSpeakingMarksAction(
+  assignmentId: number,
+  studentId: number,
+): Promise<{ ok: true; marks: SpeakingMark[]; scale: SpeakingScale; rubrics: Record<number, SpeakingRubric> } | { ok: false; message: string }> {
   try {
     const subId = await submissionFor(assignmentId, studentId);
-    if (!subId) return { ok: true, marks: [] };
-    const rows = await db.select().from(speakingFeedback).where(eq(speakingFeedback.submissionId, subId)).orderBy(asc(speakingFeedback.itemId), asc(speakingFeedback.atMs));
-    return { ok: true, marks: rows.map(toMark) };
+    const [kid] = await db.select({ dob: students.dob }).from(students).where(eq(students.id, studentId)).limit(1);
+    const scale = speakingScale(kid?.dob ?? null, todayKeyVN());
+    if (!subId) return { ok: true, marks: [], scale, rubrics: {} };
+    const [rows, assessed] = await Promise.all([
+      db.select().from(speakingFeedback).where(eq(speakingFeedback.submissionId, subId)).orderBy(asc(speakingFeedback.itemId), asc(speakingFeedback.atMs)),
+      db.select().from(speakingAssessments).where(eq(speakingAssessments.submissionId, subId)),
+    ]);
+    const rubrics = Object.fromEntries(
+      assessed.map((a) => [
+        a.itemId,
+        {
+          scores: Object.fromEntries(SCALE_CRITERIA[a.scale as SpeakingScale].map((k) => [k, a[k]]).filter(([, v]) => v !== null)),
+          praise: a.praise,
+        },
+      ]),
+    );
+    return { ok: true, marks: rows.map(toMark), scale, rubrics };
   } catch (error) {
     const r = errorResult(error);
     return { ok: false, message: r.message ?? 'Không đọc được' };
@@ -104,6 +135,33 @@ export async function deleteSpeakingMarkAction(assignmentId: number, studentId: 
     if (removed.length === 0) return { ok: false, message: 'Lỗi này đã được xoá.' };
     revalidatePath(`/bai-tap/${assignmentId}`);
     return { ok: true, message: 'Đã xoá lỗi đã đánh dấu' };
+  } catch (error) {
+    return errorResult(error);
+  }
+}
+
+// Lưu kết quả chấm theo tiêu chí của một câu nói (35.9). "Điều con làm tốt" bắt buộc. Trả về điểm câu đã quy đổi
+// để hộp chấm điền vào ô điểm rồi lưu bài làm như thường.
+export async function saveSpeakingRubricAction(assignmentId: number, studentId: number, itemId: number, rubric: SpeakingRubric): Promise<ActionResult & { points?: number }> {
+  try {
+    const subId = await submissionFor(assignmentId, studentId, itemId);
+    if (!subId) return { ok: false, message: 'Học sinh chưa nộp bài nói này.' };
+    const [kid] = await db.select({ dob: students.dob }).from(students).where(eq(students.id, studentId)).limit(1);
+    const scale = speakingScale(kid?.dob ?? null, todayKeyVN());
+    const [item] = await db.select({ points: assignmentItems.points, position: assignmentItems.position }).from(assignmentItems).where(eq(assignmentItems.id, itemId)).limit(1);
+    const praise = rubric.praise.trim();
+    if (praise.length < 2) return { ok: false, message: `Câu ${item?.position ?? ''}: ghi "Điều con làm tốt" trước khi chấm.`, fieldErrors: { praise: 'Ghi điều con làm tốt' } };
+    if (praise.length > 300) return { ok: false, message: '"Điều con làm tốt" tối đa 300 ký tự.' };
+    const points = rubricToPoints(scale, rubric.scores, item?.points ?? 0);
+    if (points === null) return { ok: false, message: `Câu ${item?.position ?? ''}: chấm đủ các tiêu chí ${scale === 'stars' ? '(1–3 sao)' : '(0–5 điểm)'}.` };
+    const account = await getCurrentAccount();
+    const cols = Object.fromEntries((['pronunciation', 'fluency', 'task', 'vocabulary', 'grammar'] as SpeakingCriterion[]).map((k) => [k, SCALE_CRITERIA[scale].includes(k) ? rubric.scores[k]! : null]));
+    const values = { scale, ...cols, praise, gradedByAccountId: account?.id ?? null, updatedAt: new Date() };
+    await db
+      .insert(speakingAssessments)
+      .values({ submissionId: subId, itemId, ...values })
+      .onConflictDoUpdate({ target: [speakingAssessments.submissionId, speakingAssessments.itemId], set: values });
+    return { ok: true, message: 'Đã lưu tiêu chí', points };
   } catch (error) {
     return errorResult(error);
   }

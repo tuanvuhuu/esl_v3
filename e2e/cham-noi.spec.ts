@@ -69,10 +69,21 @@ test('chấm bài nói: đánh dấu lỗi theo mốc giây; lưu điểm không
     const [row] = (await db.query<{ error_type: string; correct_text: string; redo: boolean }>('select error_type, correct_text, redo from speaking_feedback where submission_id = $1', [sub.id])).rows;
     expect(row).toEqual({ error_type: 'th', correct_text: 'three', redo: true });
 
+    // Chấm theo tiêu chí (35.9): học sinh chưa có ngày sinh nên chấm sao; thiếu "Điều con làm tốt" thì không lưu được
+    const rubric = dlg.getByRole('group', { name: 'Tiêu chí câu 1' });
+    await rubric.getByRole('button', { name: 'Phát âm 3 sao' }).click();
+    await rubric.getByRole('button', { name: 'Trôi chảy 2 sao' }).click();
+    await rubric.getByRole('button', { name: 'Hoàn thành yêu cầu 3 sao' }).click();
+    await expect(rubric.getByText('Quy ra 4/5 điểm')).toBeVisible(); // 8/9 × 5 ≈ 4
+    await expect(dlg.getByLabel('Điểm câu 1')).toHaveValue('4');
+    await dlg.getByRole('button', { name: 'Lưu bài làm' }).click();
+    await expect(dlg.getByText(/ghi "Điều con làm tốt"/)).toBeVisible();
+    await rubric.getByLabel('Điều con làm tốt câu 1').fill('Con nói to và rõ cả câu.');
     // Lưu điểm câu nói: bản ghi âm và đáp án chọn tranh vẫn còn (E-085)
-    await dlg.getByLabel('Điểm câu 1').fill('4');
     await dlg.getByRole('button', { name: 'Lưu bài làm' }).click();
     await expectToast(page, /Đã lưu/);
+    const [assessed] = (await db.query<{ scale: string; pronunciation: number; fluency: number; task: number; praise: string }>('select scale, pronunciation, fluency, task, praise from speaking_assessments where submission_id = $1', [sub.id])).rows;
+    expect(assessed).toEqual({ scale: 'stars', pronunciation: 3, fluency: 2, task: 3, praise: 'Con nói to và rõ cả câu.' });
     const kept = (await db.query<{ item_id: number; file_id: number | null; selected_option_id: number | null; points: number | null }>('select item_id, file_id, selected_option_id, points from submission_item_scores where submission_id = $1 order by item_id', [sub.id])).rows;
     expect(kept.find((k) => k.item_id === speak.id)).toMatchObject({ file_id: fileId, points: 4 });
     expect(kept.find((k) => k.item_id === pic.id)).toMatchObject({ selected_option_id: opts[0].id });
@@ -122,7 +133,11 @@ test.describe('nói lại câu bị đánh dấu', () => {
       fileId = (await db.query<{ id: number }>(`insert into uploaded_files (storage_key, original_name, mime_type, size_bytes) values ($1, 'bai-noi-cu.webm', 'audio/webm', 1200) returning id`, [`e2e-noi-lai-${run}`])).rows[0].id;
       const [sub] = (await db.query<{ id: number }>(`insert into assignment_submissions (assignment_id, student_id, status, submitted_at, score) values ($1, $2, 'graded', now(), 5) returning id`, [asg.id, kid.id])).rows;
       await db.query(`insert into submission_item_scores (submission_id, item_id, file_id, points) values ($1, $2, $3, 5)`, [sub.id, speak.id, fileId]);
-      await db.query(`insert into speaking_feedback (submission_id, item_id, at_ms, error_type, correct_text, redo) values ($1, $2, 1500, 'th', 'three', true)`, [sub.id, speak.id]);
+      await db.query(
+        `insert into speaking_feedback (submission_id, item_id, at_ms, error_type, correct_text, redo) values ($1, $2, 1500, 'th', 'three', true), ($1, $2, 600, 'final_sound', 'have', false), ($1, $2, 2400, 'intonation', '', false)`,
+        [sub.id, speak.id],
+      );
+      await db.query(`insert into speaking_assessments (submission_id, item_id, scale, pronunciation, fluency, task, praise) values ($1, $2, 'stars', 2, 3, 3, 'Con nói đủ câu, rất tự tin.')`, [sub.id, speak.id]);
 
       // Học sinh đăng nhập, mở bài: thấy lỗi theo mốc giây và ghi âm lại
       const kidPage = await (await browser.newContext({ permissions: ['microphone'] })).newPage();
@@ -135,6 +150,10 @@ test.describe('nói lại câu bị đánh dấu', () => {
       const fb = kidPage.getByRole('group', { name: 'Nhận xét bài nói câu 1' });
       await expect(fb.getByRole('button', { name: 'Nghe lại từ 0:01' })).toBeVisible();
       await expect(fb.getByText('nói đúng: “three”')).toBeVisible();
+      // Trẻ nhỏ: lời khen trước, chỉ 2 lỗi quan trọng nhất (lỗi cần nói lại luôn có), không thấy lỗi thứ ba
+      await expect(fb.getByText('Con nói đủ câu, rất tự tin.')).toBeVisible();
+      await expect(fb.getByRole('button', { name: /Nghe lại từ/ })).toHaveCount(2);
+      await expect(fb.getByText('Ngữ điệu')).toHaveCount(0);
       await fb.getByRole('button', { name: 'Bấm để nói' }).click();
       await expect(fb.getByText('0:01 /')).toBeVisible({ timeout: 5_000 });
       await fb.getByRole('button', { name: 'Dừng ghi âm' }).click();

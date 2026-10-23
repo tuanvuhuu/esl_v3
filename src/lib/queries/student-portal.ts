@@ -7,6 +7,7 @@ import {
   assignmentItems,
   assignmentSubmissions,
   assignments,
+  speakingAssessments,
   speakingFeedback,
   students,
   submissionCriterionScores,
@@ -18,7 +19,7 @@ import { listItemsOfAssignment } from '@/lib/queries/assignment-items';
 import { getAssignmentBase } from '@/lib/queries/assignments';
 import { studentVoiceAccess } from '@/lib/queries/consents';
 import { sameClass } from '@/lib/student-access';
-import type { SpeakingErrorType, SpeakingMark } from '@/lib/speaking';
+import { SCALE_CRITERIA, type SpeakingCriterion, type SpeakingErrorType, type SpeakingMark, type SpeakingScale } from '@/lib/speaking';
 
 // Học sinh đang học và lớp của họ, hoặc null nếu không còn đang học
 export async function enrolledStudent(studentId: number): Promise<{ id: number; classId: number; fullName: string } | null> {
@@ -82,6 +83,8 @@ export type StudentAssignmentView = {
   // Ghi âm (P35.12): allowed khi phụ huynh đã đồng ý (và trẻ từ 7 tuổi đã đồng ý); needsChild khi chỉ còn chờ trẻ bấm đồng ý
   voice: { allowed: boolean; needsChild: boolean };
   speakingMarks: SpeakingMark[]; // lỗi giáo viên đánh dấu trong bài nói, theo mốc giây (35.10)
+  // Kết quả chấm theo tiêu chí từng câu nói (35.9): thang, điểm tiêu chí, điều con làm tốt
+  speakingRubrics: Record<number, { scale: SpeakingScale; scores: Partial<Record<SpeakingCriterion, number>>; praise: string }>;
 };
 
 // Bài của học sinh, chỉ khi bài thuộc lớp đang học của họ
@@ -122,8 +125,16 @@ export async function studentAssignment(assignmentId: number, studentId: number)
         .orderBy(asc(speakingFeedback.itemId), asc(speakingFeedback.atMs))
     : [];
 
+  const assessed = sub ? await db.select().from(speakingAssessments).where(eq(speakingAssessments.submissionId, sub.id)) : [];
+
   return {
     id: base.id,
+    speakingRubrics: Object.fromEntries(
+      assessed.map((a) => {
+        const scale = a.scale as SpeakingScale;
+        return [a.itemId, { scale, praise: a.praise, scores: Object.fromEntries(SCALE_CRITERIA[scale].map((k) => [k, a[k] ?? undefined])) }];
+      }),
+    ),
     speakingMarks: marks.map((m) => ({ id: m.id, itemId: m.itemId, atMs: m.atMs, errorType: m.errorType as SpeakingErrorType, correctText: m.correctText, note: m.note, redo: m.redo })),
     title: base.title,
     description: base.description,

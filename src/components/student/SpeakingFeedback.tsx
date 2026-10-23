@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useRef, useState } from 'react';
 import { redoSpeakingAction } from '@/app/(student)/cua-toi/actions';
 import type { StudentItem } from '@/lib/queries/student-portal';
-import { formatMs, SPEAKING_ERRORS, type SpeakingMark } from '@/lib/speaking';
+import { formatMs, SCALE_CRITERIA, SPEAKING_CRITERIA, SPEAKING_ERRORS, topMarks, type SpeakingCriterion, type SpeakingMark, type SpeakingScale } from '@/lib/speaking';
 import { Alert, Pill } from '@/components/ui/primitives';
 import { useToast } from '@/components/ui/Toast';
 import { SpeakQuestion } from './InteractiveExercisePlayer';
@@ -19,6 +19,7 @@ export function SpeakingFeedback({
   marks,
   redone,
   voiceAllowed,
+  rubric,
 }: {
   assignmentId: number;
   item: StudentItem;
@@ -26,12 +27,16 @@ export function SpeakingFeedback({
   marks: SpeakingMark[];
   redone: boolean;
   voiceAllowed: boolean;
+  rubric: { scale: SpeakingScale; scores: Partial<Record<SpeakingCriterion, number>>; praise: string } | null;
 }) {
   const router = useRouter();
   const { notify } = useToast();
   const audio = useRef<HTMLAudioElement>(null);
   const [error, setError] = useState<string | null>(null);
   const needRedo = marks.some((m) => m.redo);
+  // Trẻ nhỏ (chấm sao) chỉ thấy 1–2 lỗi quan trọng nhất, ưu tiên câu cần nói lại (35.9)
+  const young = rubric?.scale !== 'points';
+  const shown = young ? topMarks(marks, 2).sort((a, b) => a.atMs - b.atMs) : marks;
 
   function seek(ms: number) {
     const el = audio.current;
@@ -52,10 +57,25 @@ export function SpeakingFeedback({
   return (
     <div className="flex flex-col gap-2.5 rounded-[var(--radius-ctl)] border border-line bg-bg px-3 py-2.5" aria-label={`Nhận xét bài nói câu ${item.position}`} role="group">
       <b className="text-sm font-semibold text-ink">Thầy/Cô nhận xét bài nói</b>
+      {rubric?.praise && (
+        <p className="rounded-[var(--radius-ctl)] bg-mint px-3 py-2 text-sm text-mint-ink">
+          <b className="font-semibold">Điều con làm tốt:</b> {rubric.praise}
+        </p>
+      )}
+      {rubric && (
+        <ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-ink-2" aria-label="Kết quả theo tiêu chí">
+          {SCALE_CRITERIA[rubric.scale].map((k) => (
+            <li key={k}>
+              {SPEAKING_CRITERIA[k]}:{' '}
+              <b className="font-semibold text-ink">{rubric.scale === 'stars' ? `${'⭐'.repeat(rubric.scores[k] ?? 0)}` : `${rubric.scores[k] ?? ''}/5`}</b>
+            </li>
+          ))}
+        </ul>
+      )}
       {fileId !== null && <audio ref={audio} controls preload="metadata" src={`/api/files/${fileId}`} aria-label={redone ? 'Bài nói mới của con' : 'Bài nói của con'} className="w-full" />}
       {redone && <small className="text-sm text-muted">Các mốc giây bên dưới là của bản nói lần trước.</small>}
       <ul className="flex flex-col divide-y divide-line">
-        {marks.map((m) => (
+        {shown.map((m) => (
           <li key={m.id} className="flex items-start gap-2.5 py-2">
             <button
               type="button"
@@ -80,6 +100,7 @@ export function SpeakingFeedback({
           </li>
         ))}
       </ul>
+      {shown.length < marks.length && <small className="text-sm text-muted">Thầy/Cô nêu {shown.length} điều quan trọng nhất để con sửa trước.</small>}
 
       {needRedo && redone && (
         <p className="flex items-center gap-1.5 rounded-[var(--radius-ctl)] bg-mint px-3 py-2 text-sm font-semibold text-mint-ink">
