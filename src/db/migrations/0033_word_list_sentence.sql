@@ -1,0 +1,1 @@
+ALTER TABLE "word_list_items" ADD COLUMN "sentence" varchar(200) DEFAULT '' NOT NULL;

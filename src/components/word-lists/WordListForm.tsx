@@ -19,7 +19,7 @@ import { SelectPanel } from '@/components/ui/SelectPanel';
 
 type Row = WordListItem & { key: number };
 let nextKey = 1;
-const blank = (): Row => ({ key: nextKey++, word: '', meaningVi: '', emoji: '', imageFileId: null, audioFileId: null, vocabItemId: null });
+const blank = (): Row => ({ key: nextKey++, word: '', meaningVi: '', emoji: '', sentence: '', imageFileId: null, audioFileId: null, vocabItemId: null });
 
 export function WordListForm({
   mode,
@@ -72,7 +72,7 @@ export function WordListForm({
   }
 
   function save() {
-    const items = rows.filter((r) => r.word.trim() !== '').map((r) => ({ word: r.word, meaningVi: r.meaningVi, emoji: r.emoji, imageFileId: r.imageFileId, audioFileId: r.audioFileId, vocabItemId: r.vocabItemId }));
+    const items = rows.filter((r) => r.word.trim() !== '').map((r) => ({ word: r.word, meaningVi: r.meaningVi, emoji: r.emoji, sentence: r.sentence, imageFileId: r.imageFileId, audioFileId: r.audioFileId, vocabItemId: r.vocabItemId }));
     const input = { name, classId: classId || null, lessonId: lessonId || null, items };
     startSaving(async () => {
       const r = mode === 'edit' && listId ? await updateWordListAction(listId, input) : await createWordListAction(input);
@@ -124,6 +124,7 @@ export function WordListForm({
         {rows.map((r, idx) => (
           <li key={r.key} className="grid grid-cols-[4.5rem_minmax(0,1fr)_minmax(0,1fr)_auto] gap-2 rounded-[var(--radius-ctl)] border border-line p-2.5 min-[768px]:grid-cols-[minmax(0,1.2fr)_minmax(0,1.2fr)_4.5rem_auto_auto_auto] min-[768px]:items-center">
             <input value={r.word} onChange={(e) => patch(r.key, { word: e.target.value })} placeholder="Từ tiếng Anh" aria-label={`Từ ${idx + 1}`} autoComplete="off" className={`${inputClass()} max-[767px]:col-span-3`} />
+            <input value={r.sentence} onChange={(e) => patch(r.key, { sentence: e.target.value })} placeholder="Câu mẫu (cho trò Xây câu), VD: The cat is on the mat." aria-label={`Câu mẫu từ ${idx + 1}`} autoComplete="off" className={`${inputClass()} col-span-full min-[768px]:order-[10000]`} />
             <ActIcon label={`Bỏ từ ${idx + 1}`} danger onClick={() => remove(r.key)} className="max-[767px]:col-start-4 max-[767px]:row-start-1 min-[768px]:order-last">
               <X className="size-4" aria-hidden />
             </ActIcon>

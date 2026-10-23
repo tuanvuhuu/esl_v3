@@ -5,7 +5,7 @@ import { wordListItems } from '@/db/schema';
 import type { CampusScope } from '@/lib/campus';
 
 export type WordListRow = { id: number; name: string; classId: number | null; className: string | null; lessonId: number | null; lessonTitle: string | null; wordCount: number; preview: string };
-export type WordListItem = { word: string; meaningVi: string; emoji: string; imageFileId: number | null; audioFileId: number | null; vocabItemId: number | null };
+export type WordListItem = { word: string; meaningVi: string; emoji: string; sentence: string; imageFileId: number | null; audioFileId: number | null; vocabItemId: number | null };
 
 // Theo cơ sở đang xem: danh sách gắn lớp thuộc cơ sở đó, cùng danh sách không gắn lớp (dùng chung)
 export async function listWordLists(scope: CampusScope, allowedCampusIds: number[] | null): Promise<WordListRow[]> {
@@ -33,8 +33,26 @@ export async function listWordLists(scope: CampusScope, allowedCampusIds: number
 
 export async function getWordListItems(listId: number): Promise<WordListItem[]> {
   return db
-    .select({ word: wordListItems.word, meaningVi: wordListItems.meaningVi, emoji: wordListItems.emoji, imageFileId: wordListItems.imageFileId, audioFileId: wordListItems.audioFileId, vocabItemId: wordListItems.vocabItemId })
+    .select({ word: wordListItems.word, meaningVi: wordListItems.meaningVi, emoji: wordListItems.emoji, sentence: wordListItems.sentence, imageFileId: wordListItems.imageFileId, audioFileId: wordListItems.audioFileId, vocabItemId: wordListItems.vocabItemId })
     .from(wordListItems)
     .where(eq(wordListItems.listId, listId))
     .orderBy(asc(wordListItems.position));
+}
+
+// ---------- Trò chơi (35.15) ----------
+
+// Danh sách học sinh được chơi: của lớp mình hoặc dùng chung (không gắn lớp), có ít nhất 2 từ
+export async function studentWordLists(classId: number): Promise<{ id: number; name: string; wordCount: number }[]> {
+  const rows = await db.execute<{ id: number; name: string; word_count: number }>(sql`
+    SELECT wl.id, wl.name, (SELECT COUNT(*)::int FROM word_list_items i WHERE i.list_id = wl.id) AS word_count
+    FROM word_lists wl
+    WHERE wl.class_id = ${classId} OR wl.class_id IS NULL
+    ORDER BY (wl.class_id IS NULL), wl.updated_at DESC`);
+  return rows.rows.filter((r) => Number(r.word_count) >= 2).map((r) => ({ id: Number(r.id), name: r.name, wordCount: Number(r.word_count) }));
+}
+
+export async function getWordListHeader(id: number): Promise<{ id: number; name: string; classId: number | null } | null> {
+  const rows = await db.execute<{ id: number; name: string; class_id: number | null }>(sql`SELECT id, name, class_id FROM word_lists WHERE id = ${id}`);
+  const r = rows.rows[0];
+  return r ? { id: Number(r.id), name: r.name, classId: r.class_id === null ? null : Number(r.class_id) } : null;
 }

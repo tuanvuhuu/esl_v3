@@ -7,6 +7,7 @@ export const wordListItemSchema = z.object({
   word: z.string().trim().min(1, 'Nhập từ').max(60, 'Từ tối đa 60 ký tự'),
   meaningVi: z.string().trim().max(120, 'Nghĩa tối đa 120 ký tự').default(''),
   emoji: z.string().trim().max(16, 'Emoji tối đa 16 ký tự').default(''),
+  sentence: z.string().trim().max(200, 'Câu mẫu tối đa 200 ký tự').default(''),
   imageFileId: optionalId,
   audioFileId: optionalId,
   vocabItemId: optionalId,

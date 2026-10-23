@@ -1,6 +1,6 @@
 # ESL Center: kế hoạch và tiến độ
 
-> **Tiến độ tổng: 213/232 task (92%)**
+> **Tiến độ tổng: 214/232 task (92%)**
 > Cập nhật lần cuối: 2026-10-22. P1–P34 xong. P38 (giờ học từng ngày, học phí theo buổi còn lại, mã HS-00001) xong. P37 bot Telegram theo kịch bản: 37.1–37.9 xong, còn đặt cron mỗi giờ trên bản deploy và các việc đợt sau. P35: 35.2, 35.3, 35.12, 35.24, 35.27 xong; 35.4–35.6 làm dở (35.6 chỉ còn thử tay trên điện thoại). P36 Soạn nhanh xong phần code (36.1–36.6). Số đếm lấy từ các ô `[x]` và `[ ]` trong file.
 
 ## 🎯 Các task vừa hoàn thành & Lệnh test riêng (Không chạy all)
@@ -416,7 +416,7 @@ Nghiên cứu kỹ thuật cho các mục còn mở (thư viện, định dạng
 
 ### E. Trò chơi và động lực
 - [x] **35.14** Danh sách từ: từ, tranh, âm thanh, nghĩa tiếng Việt; gắn với bài giảng hoặc lớp; dùng lại cho mọi trò chơi. Kiểm chứng: E2E thêm, sửa, xoá danh sách từ. ✅ 2026-10-24: bảng `word_lists`, `word_list_items` (migration 0032; từ là bản chép riêng, ghi lại từ kho nào). Màn "Danh sách từ" (menu Đào tạo): bảng có ⋯ trên web, thẻ có nút chữ trên điện thoại; form: tên, lớp, bài giảng (không bắt buộc), từng từ có nghĩa, emoji, nút Tranh và Âm thanh, "Lấy từ kho từ vựng" theo trình độ và chủ đề; xoá có xác nhận. Danh sách theo cơ sở đang xem (không gắn lớp thì dùng chung). E2E `tu-vung.spec.ts`; toàn bộ E2E 91/91; ảnh 1440px và 390px không tràn.
-- [ ] **35.15** Bốn trò chơi đầu tiên từ danh sách từ: lật thẻ nhớ, đập chuột từ vựng (nghe rồi chạm tranh), ghép chữ, xây câu. Làm bằng React (không cần Phaser). Kiểm chứng: E2E chơi hết một lượt mỗi trò; không tràn ngang ở 360px.
+- [x] **35.15** Bốn trò chơi đầu tiên từ danh sách từ: lật thẻ nhớ, đập chuột từ vựng (nghe rồi chạm tranh), ghép chữ, xây câu. Làm bằng React (không cần Phaser). Kiểm chứng: E2E chơi hết một lượt mỗi trò; không tràn ngang ở 360px. Xong 2026-10-24: logic thuần `src/lib/games.ts` (6 unit test), `GameHub` cho điện thoại trước; học sinh chơi ở `/cua-toi/tro-choi/[id]` (danh sách của lớp mình hoặc dùng chung, lớp khác 404), giáo viên chơi thử ở `/tu-vung/[id]`; thêm cột câu mẫu (migration 0033). Âm thanh: tệp của từ hoặc giọng đọc có sẵn của trình duyệt. `e2e/tro-choi.spec.ts` chơi hết bốn trò được 3 sao, 360/390px không tràn; toàn bộ 92/92 E2E, 285 unit.
 - [ ] **35.16** Bốn trò chơi tiếp theo: bingo nghe, Simon says / tìm trong tranh (chạm đúng chỗ trong tranh lớn), đoán chữ, đua xe trả lời nhanh. Kiểm chứng: như 35.15.
 - [ ] **35.17** Động lực: sao theo bài, bộ sưu tập sticker và truyện mở khoá bằng sao, đường học theo bài, chuỗi học theo tuần (không theo ngày), mục tiêu chung của lớp thay cho xếp hạng cá nhân; không trừ sao khi sai. Kiểm chứng: unit tính sao và chuỗi tuần.
 - [ ] **35.18** Hộp từ của từng học sinh với lịch ôn lặp lại ngắt quãng (ts-fsrs): mỗi ngày gợi ý 5–10 từ cần ôn qua một trò chơi ngắn. Kiểm chứng: unit lịch ôn; E2E ôn một lượt.

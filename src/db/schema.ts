@@ -1026,6 +1026,7 @@ export const wordListItems = pgTable(
     word: varchar('word', { length: 60 }).notNull(),
     meaningVi: varchar('meaning_vi', { length: 120 }).notNull().default(''),
     emoji: varchar('emoji', { length: 16 }).notNull().default(''),
+    sentence: varchar('sentence', { length: 200 }).notNull().default(''), // câu mẫu có từ này, cho trò Xây câu (35.15)
     imageFileId: integer('image_file_id').references(() => uploadedFiles.id, { onDelete: 'set null' }),
     audioFileId: integer('audio_file_id').references(() => uploadedFiles.id, { onDelete: 'set null' }),
     vocabItemId: integer('vocab_item_id').references(() => vocabItems.id, { onDelete: 'set null' }),

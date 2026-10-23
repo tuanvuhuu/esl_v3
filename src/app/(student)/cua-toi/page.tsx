@@ -6,10 +6,11 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { Card, EmptyPanel } from '@/components/ui/surfaces';
 import { SubmissionPill } from '@/components/assignments/SubmissionPill';
 import { vnDateTimeLabel } from '@/lib/datetime';
-import { studentAssignmentList } from '@/lib/queries/student-portal';
+import { enrolledStudent, studentAssignmentList } from '@/lib/queries/student-portal';
+import { studentWordLists } from '@/lib/queries/word-lists';
 import { getCurrentAccount } from '@/lib/session';
 
-// Bài tập của lớp học sinh. Dữ liệu đọc trong Suspense (cacheComponents đang bật).
+// Bài tập của lớp học sinh và trò chơi từ vựng (35.15). Dữ liệu đọc trong Suspense (cacheComponents đang bật).
 export default function StudentHomePage() {
   return (
     <Suspense fallback={<section aria-busy="true" className="h-[240px] animate-pulse rounded-[var(--radius-panel)] bg-stone" />}>
@@ -22,7 +23,8 @@ async function StudentHomeData() {
   await connection();
   const account = await getCurrentAccount();
   if (!account || account.studentId === null) redirect('/dang-nhap');
-  const rows = await studentAssignmentList(account.studentId);
+  const [rows, student] = await Promise.all([studentAssignmentList(account.studentId), enrolledStudent(account.studentId)]);
+  const games = student ? await studentWordLists(student.classId) : [];
 
   return (
     <section className="flex flex-col gap-4">
@@ -49,6 +51,24 @@ async function StudentHomeData() {
             </li>
           ))}
         </ul>
+      )}
+
+      {games.length > 0 && (
+        <section className="flex flex-col gap-3" aria-labelledby="word-games-title">
+          <h2 id="word-games-title" className="text-lg font-extrabold text-ink">Trò chơi từ vựng</h2>
+          <ul className="grid grid-cols-1 gap-3 min-[600px]:grid-cols-2">
+            {games.map((g) => (
+              <li key={g.id}>
+                <Card>
+                  <Link href={`/cua-toi/tro-choi/${g.id}`} className="text-base font-normal text-link underline underline-offset-2 [overflow-wrap:anywhere]">
+                    {g.name}
+                  </Link>
+                  <small className="text-sm text-muted">{g.wordCount} từ · lật thẻ, nghe chọn tranh, ghép chữ, xây câu</small>
+                </Card>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
     </section>
   );

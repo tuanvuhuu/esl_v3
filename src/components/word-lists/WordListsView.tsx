@@ -1,12 +1,13 @@
 'use client';
 
-// Màn Danh sách từ (35.14): web là bảng có ⋯ (Sửa, Xoá), điện thoại là thẻ có nút chữ. Xoá luôn qua hộp xác nhận.
-import { Pencil, Plus, Trash2 } from 'lucide-react';
+// Màn Danh sách từ (35.14): web là bảng có ⋯ (Chơi thử, Sửa, Xoá), điện thoại là thẻ có nút chữ. Xoá luôn qua hộp xác nhận.
+import { Gamepad2, Pencil, Plus, Trash2 } from 'lucide-react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { deleteWordListAction, loadWordListAction } from '@/app/(app)/tu-vung/actions';
 import type { WordListItem, WordListRow } from '@/lib/queries/word-lists';
-import { Btn } from '@/components/ui/Btn';
+import { Btn, BTN_BASE, BTN_PRIMARY } from '@/components/ui/Btn';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { DataGrid, type GridColumn } from '@/components/ui/datagrid';
 import { Modal } from '@/components/ui/Modal';
@@ -60,6 +61,7 @@ export function WordListsView({ lists, classes, lessons, canManage }: { lists: W
   }
 
   const menu = (r: WordListRow): RowMenuItem[] => [
+    { kind: 'link', label: 'Chơi thử', icon: Gamepad2, href: `/tu-vung/${r.id}` },
     { kind: 'action', label: 'Sửa', icon: Pencil, onSelect: () => openEdit(r), disabled: !canManage, disabledHint: 'Không có quyền soạn bài' },
     { kind: 'action', label: 'Xoá', icon: Trash2, danger: true, onSelect: () => setToDelete(r), disabled: !canManage, disabledHint: 'Không có quyền soạn bài' },
   ];
@@ -95,6 +97,10 @@ export function WordListsView({ lists, classes, lessons, canManage }: { lists: W
         <small className="block text-sm text-muted">{linkText(r)} · {r.wordCount} từ</small>
         {r.preview && <small className="mt-1 block text-sm text-ink-2">{r.preview}</small>}
       </div>
+      <Link href={`/tu-vung/${r.id}`} className={`${BTN_BASE} ${BTN_PRIMARY} w-full`}>
+        <Gamepad2 className="size-4" aria-hidden />
+        Chơi thử
+      </Link>
       <div className="grid grid-cols-2 gap-2">
         <Btn block onClick={() => openEdit(r)} disabled={!canManage || pending}>
           <Pencil className="size-4" aria-hidden />

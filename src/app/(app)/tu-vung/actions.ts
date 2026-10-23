@@ -42,7 +42,7 @@ async function checked(input: WordListInput) {
 }
 
 const itemRows = (listId: number, items: ReturnType<typeof wordListSchema.parse>['items']) =>
-  items.map((i, idx) => ({ listId, position: idx + 1, word: i.word, meaningVi: i.meaningVi, emoji: i.emoji, imageFileId: i.imageFileId, audioFileId: i.audioFileId, vocabItemId: i.vocabItemId }));
+  items.map((i, idx) => ({ listId, position: idx + 1, word: i.word, meaningVi: i.meaningVi, emoji: i.emoji, sentence: i.sentence, imageFileId: i.imageFileId, audioFileId: i.audioFileId, vocabItemId: i.vocabItemId }));
 
 export async function createWordListAction(input: WordListInput): Promise<ActionResult> {
   try {
