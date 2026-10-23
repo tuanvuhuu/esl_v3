@@ -213,6 +213,10 @@ export function AnswerDialog({
             {SPEAK_TYPES.has(item.itemType) && (
               d.fileId !== null ? (
                 <SpeakingMarks
+                  previous={(() => {
+                    const a = answers.find((x) => x.itemId === item.id);
+                    return a?.previousFileId ? { fileId: a.previousFileId, redoneAt: a.redoneAt } : null;
+                  })()}
                   assignmentId={assignmentId}
                   studentId={student.id}
                   itemId={item.id}

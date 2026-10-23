@@ -406,6 +406,9 @@ export const submissionItemScores = pgTable(
     selectedOptionId: integer('selected_option_id').references(() => assignmentItemOptions.id, { onDelete: 'set null' }),
     answerText: text('answer_text').notNull().default(''),
     fileId: integer('file_id').references(() => uploadedFiles.id, { onDelete: 'set null' }),
+    // Nói lại câu bị đánh dấu (35.10): bản ghi cũ giữ ở đây để giáo viên nghe cạnh bản mới
+    previousFileId: integer('previous_file_id').references(() => uploadedFiles.id, { onDelete: 'set null' }),
+    redoneAt: timestamp('redone_at', { withTimezone: true }),
     points: integer('points'),
     comment: text('comment').notNull().default(''),
     ...timestamps,

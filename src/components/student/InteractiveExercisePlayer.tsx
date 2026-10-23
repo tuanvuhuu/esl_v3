@@ -8,7 +8,7 @@ import { useRouter } from 'next/navigation';
 import { clock, pickRecordingFormat, recordedFormat, starsFor } from '@/lib/recording';
 import { uploadAsStudent } from '@/lib/upload-client';
 
-type AnswerDraft = {
+export type AnswerDraft = {
   selectedOptionId: number | null;
   answerText: string;
   fileId: number | null;
@@ -655,7 +655,7 @@ type RecPhase = 'idle' | 'recording' | 'review' | 'uploading';
 
 // Ghi âm (P35.6): bấm để nói → đếm giây theo max_seconds, tự dừng khi hết giờ → nghe lại → Nói lại hoặc Dùng bản này.
 // Định dạng theo máy (WebM Opus, Safari cũ là MP4). Tải thẳng lên kho tệp, chưa cấu hình thì qua máy chủ.
-function SpeakQuestion({
+export function SpeakQuestion({
   item,
   answer,
   onChange,

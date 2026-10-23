@@ -7,6 +7,7 @@ import {
   assignmentItems,
   assignmentSubmissions,
   assignments,
+  speakingFeedback,
   students,
   submissionCriterionScores,
   submissionItemScores,
@@ -17,6 +18,7 @@ import { listItemsOfAssignment } from '@/lib/queries/assignment-items';
 import { getAssignmentBase } from '@/lib/queries/assignments';
 import { studentVoiceAccess } from '@/lib/queries/consents';
 import { sameClass } from '@/lib/student-access';
+import type { SpeakingErrorType, SpeakingMark } from '@/lib/speaking';
 
 // Học sinh đang học và lớp của họ, hoặc null nếu không còn đang học
 export async function enrolledStudent(studentId: number): Promise<{ id: number; classId: number; fullName: string } | null> {
@@ -64,6 +66,7 @@ export type StudentAnswer = {
   fileName: string | null;
   points: number | null; // điểm giáo viên cho câu viết và nộp tệp, khi đã chấm
   comment: string;
+  redone: boolean; // câu nói đã được nói lại sau khi giáo viên đánh dấu (35.10)
 };
 
 export type StudentAssignmentView = {
@@ -78,6 +81,7 @@ export type StudentAssignmentView = {
   answers: StudentAnswer[];
   // Ghi âm (P35.12): allowed khi phụ huynh đã đồng ý (và trẻ từ 7 tuổi đã đồng ý); needsChild khi chỉ còn chờ trẻ bấm đồng ý
   voice: { allowed: boolean; needsChild: boolean };
+  speakingMarks: SpeakingMark[]; // lỗi giáo viên đánh dấu trong bài nói, theo mốc giây (35.10)
 };
 
 // Bài của học sinh, chỉ khi bài thuộc lớp đang học của họ
@@ -104,14 +108,23 @@ export async function studentAssignment(assignmentId: number, studentId: number)
           fileName: uploadedFiles.originalName,
           points: submissionItemScores.points,
           comment: submissionItemScores.comment,
+          redoneAt: submissionItemScores.redoneAt,
         })
         .from(submissionItemScores)
         .leftJoin(uploadedFiles, eq(uploadedFiles.id, submissionItemScores.fileId))
         .where(eq(submissionItemScores.submissionId, sub.id))
     : [];
+  const marks = sub
+    ? await db
+        .select()
+        .from(speakingFeedback)
+        .where(eq(speakingFeedback.submissionId, sub.id))
+        .orderBy(asc(speakingFeedback.itemId), asc(speakingFeedback.atMs))
+    : [];
 
   return {
     id: base.id,
+    speakingMarks: marks.map((m) => ({ id: m.id, itemId: m.itemId, atMs: m.atMs, errorType: m.errorType as SpeakingErrorType, correctText: m.correctText, note: m.note, redo: m.redo })),
     title: base.title,
     description: base.description,
     dueAt: base.dueAt,
@@ -160,6 +173,7 @@ export async function studentAssignment(assignmentId: number, studentId: number)
         fileName: s?.fileName ?? null,
         points: s?.points ?? null,
         comment: s?.comment ?? '',
+        redone: !!s?.redoneAt,
       };
     }),
   };

@@ -6,6 +6,7 @@ import { Pencil, Play, Plus, Trash2 } from 'lucide-react';
 import { useRef, useState, useTransition } from 'react';
 import { deleteSpeakingMarkAction, saveSpeakingMarkAction } from '@/app/(app)/bai-tap/speaking-actions';
 import { formatMs, SPEAKING_ERRORS, type SpeakingErrorType, type SpeakingMark } from '@/lib/speaking';
+import { vnDateTimeLabel } from '@/lib/datetime';
 import { ActIcon } from '@/components/ui/ActIcon';
 import { Btn } from '@/components/ui/Btn';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
@@ -25,6 +26,7 @@ export function SpeakingMarks({
   marks,
   canManage,
   onChange,
+  previous,
 }: {
   assignmentId: number;
   studentId: number;
@@ -34,8 +36,10 @@ export function SpeakingMarks({
   marks: SpeakingMark[];
   canManage: boolean;
   onChange: (marks: SpeakingMark[], message: string) => void;
+  previous: { fileId: number; redoneAt: Date | null } | null; // học sinh đã nói lại (35.10): bản cũ nghe cạnh bản mới
 }) {
   const audio = useRef<HTMLAudioElement>(null);
+  const oldAudio = useRef<HTMLAudioElement>(null);
   const [nowMs, setNowMs] = useState(0);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [toDelete, setToDelete] = useState<SpeakingMark | null>(null);
@@ -43,8 +47,9 @@ export function SpeakingMarks({
   const [pending, startTransition] = useTransition();
   const sorted = [...marks].sort((a, b) => a.atMs - b.atMs);
 
+  // Mốc lỗi thuộc bản đã chấm: học sinh đã nói lại thì phát bản cũ
   function seek(ms: number) {
-    const el = audio.current;
+    const el = previous ? oldAudio.current : audio.current;
     if (!el) return;
     el.currentTime = ms / 1000;
     void el.play().catch(() => undefined);
@@ -83,7 +88,16 @@ export function SpeakingMarks({
 
   return (
     <div className="flex flex-col gap-2.5">
-      <span className="text-sm font-normal text-ink-2">Bài nói của học sinh</span>
+      {previous && (
+        <div className="flex flex-col gap-1">
+          <span className="text-sm font-normal text-ink-2">Bản cũ (lần chấm trước, các mốc lỗi bên dưới thuộc bản này)</span>
+          <audio ref={oldAudio} controls preload="metadata" src={`/api/files/${previous.fileId}`} aria-label={`Bản nói cũ câu ${position}`} className="w-full" />
+        </div>
+      )}
+      <span className="flex flex-wrap items-center gap-2 text-sm font-normal text-ink-2">
+        {previous ? 'Bản nói lại' : 'Bài nói của học sinh'}
+        {previous && <Pill tone="mint">Đã nói lại{previous.redoneAt ? ` ${vnDateTimeLabel(new Date(previous.redoneAt))}` : ''}</Pill>}
+      </span>
       <audio
         ref={audio}
         controls

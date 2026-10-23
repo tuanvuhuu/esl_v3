@@ -205,6 +205,8 @@ export type ItemAnswer = {
   points: number | null;
   comment: string;
   criterionPoints: Record<number, number | null>; // điểm từng tiêu chí theo id tiêu chí
+  previousFileId: number | null; // bản nói cũ khi học sinh đã nói lại (35.10)
+  redoneAt: Date | null;
 };
 
 // Điểm chấm lại của một câu (chấm chéo). Không đổi điểm chính thức.
@@ -245,6 +247,8 @@ export async function listItemGradingRows(assignmentId: number, classId: number,
       fileName: uploadedFiles.originalName,
       points: submissionItemScores.points,
       comment: submissionItemScores.comment,
+      previousFileId: submissionItemScores.previousFileId,
+      redoneAt: submissionItemScores.redoneAt,
     })
     .from(submissionItemScores)
     .innerJoin(assignmentSubmissions, eq(assignmentSubmissions.id, submissionItemScores.submissionId))
@@ -292,6 +296,8 @@ export async function listItemGradingRows(assignmentId: number, classId: number,
         points: s?.points ?? null,
         comment: s?.comment ?? '',
         criterionPoints: Object.fromEntries(item.criteria.map((c) => [c.id, sid === null ? null : (criterionByKey.get(`${sid}:${c.id}`) ?? null)])),
+        previousFileId: s?.previousFileId ?? null,
+        redoneAt: s?.redoneAt ?? null,
       };
     });
     const scoringAnswers: ScoringAnswer[] = answers.map((a) => ({

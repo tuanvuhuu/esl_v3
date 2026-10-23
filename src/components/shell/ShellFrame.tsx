@@ -1,11 +1,11 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { Suspense, useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import type { CampusOption, CampusScope } from '@/lib/campus';
 import type { NavGroup, NavItem } from '@/lib/nav';
 import { AppBar } from './AppBar';
-import { FeatureSheet, FeatureSheetAsync } from './FeatureSheet';
+import { FeatureSheet } from './FeatureSheet';
 import { MobileTabBar } from './MobileTabBar';
 import { Sidebar } from './Sidebar';
 
@@ -28,6 +28,17 @@ export function ShellFrame({ children, groups, tabs, badges, campuses, campusSco
   const pathname = usePathname();
   const [navOpen, setNavOpen] = useState(false);
   const [featOpen, setFeatOpen] = useState(false);
+  // Số việc chờ đến sau (máy chủ không chờ tính xong mới gửi trang): một bảng Tính năng duy nhất, số điền vào khi có
+  const [badgeCounts, setBadgeCounts] = useState<Record<string, number>>({});
+  useEffect(() => {
+    let alive = true;
+    badges.then((b) => {
+      if (alive) setBadgeCounts(b);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [badges]);
 
   // Esc đóng ngăn kéo menu hoặc bảng Tính năng
   useEffect(() => {
@@ -68,9 +79,7 @@ export function ShellFrame({ children, groups, tabs, badges, campuses, campusSco
       </div>
 
       <MobileTabBar tabs={tabs} onFeatures={() => setFeatOpen(true)} />
-      <Suspense fallback={<FeatureSheet open={featOpen} groups={groups} badges={{}} onClose={() => setFeatOpen(false)} />}>
-        <FeatureSheetAsync open={featOpen} groups={groups} badges={badges} onClose={() => setFeatOpen(false)} />
-      </Suspense>
+      <FeatureSheet open={featOpen} groups={groups} badges={badgeCounts} onClose={() => setFeatOpen(false)} />
     </div>
   );
 }

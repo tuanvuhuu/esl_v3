@@ -3,7 +3,7 @@
 import { and, eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { db } from '@/db/client';
-import { assignmentSubmissions, submissionCriterionScores, submissionItemScores, uploadedFiles } from '@/db/schema';
+import { assignmentSubmissions, speakingFeedback, submissionCriterionScores, submissionItemScores, uploadedFiles } from '@/db/schema';
 import { writeAudit } from '@/lib/authz';
 import { isAutoScoredItem, storedScore, summarizeSubmission, type ScoringAnswer } from '@/lib/assignment-scoring';
 import { listItemsOfAssignment, toScoringItems } from '@/lib/queries/assignment-items';
@@ -164,6 +164,11 @@ export async function submitMyAnswersAction(assignmentId: number, input: Student
         })
         .returning({ id: assignmentSubmissions.id });
 
+      // Giữ bản ghi cũ của câu đã nói lại (35.10) khi ghi lại các dòng
+      const redo = await tx
+        .select({ itemId: submissionItemScores.itemId, previousFileId: submissionItemScores.previousFileId, redoneAt: submissionItemScores.redoneAt })
+        .from(submissionItemScores)
+        .where(eq(submissionItemScores.submissionId, sub.id));
       await tx.delete(submissionItemScores).where(eq(submissionItemScores.submissionId, sub.id));
       await tx.delete(submissionCriterionScores).where(eq(submissionCriterionScores.submissionId, sub.id));
       const itemRows = scoringAnswers
@@ -174,6 +179,8 @@ export async function submitMyAnswersAction(assignmentId: number, input: Student
           selectedOptionId: a.selectedOptionId,
           answerText: a.answerText,
           fileId: a.fileId,
+          previousFileId: redo.find((r) => r.itemId === a.itemId)?.previousFileId ?? null,
+          redoneAt: redo.find((r) => r.itemId === a.itemId)?.redoneAt ?? null,
           points: a.points,
           comment: kept.find((k) => k.itemId === a.itemId)?.comment ?? '',
           updatedAt: now,
@@ -206,5 +213,47 @@ export async function submitMyAnswersAction(assignmentId: number, input: Student
   } catch (error) {
     console.error('Lỗi học sinh nộp bài:', error);
     return { ok: false, message: 'Không nộp được bài. Thử lại sau ít phút.' };
+  }
+}
+
+// Nói lại câu bị giáo viên đánh dấu "nói lại" (35.10): bản cũ giữ ở previous_file_id để giáo viên nghe cạnh bản mới.
+// Chỉ câu nói có ít nhất một lỗi đánh dấu nói lại; tệp phải do chính học sinh này vừa tải lên; phụ huynh đã đồng ý ghi âm.
+export async function redoSpeakingAction(assignmentId: number, itemId: number, fileId: number): Promise<ActionResult> {
+  try {
+    const me = await currentStudent();
+    if (!me) return { ok: false, message: 'Cần đăng nhập bằng tài khoản học sinh.' };
+    const student = await enrolledStudent(me.studentId);
+    const base = await getAssignmentBase(assignmentId);
+    if (!student || !base || !sameClass(student.classId, base.classId)) return { ok: false, message: 'Bài này không thuộc lớp của bạn.' };
+    if (!(await studentVoiceAccess(me.studentId)).allowed) return { ok: false, message: 'Phụ huynh chưa đồng ý cho con ghi âm.' };
+    const [file] = await db.select({ id: uploadedFiles.id }).from(uploadedFiles).where(and(eq(uploadedFiles.id, fileId), eq(uploadedFiles.uploadedByAccountId, me.accountId))).limit(1);
+    if (!file) return { ok: false, message: 'Không tìm thấy bản ghi vừa lưu. Thử ghi lại.' };
+    const [row] = await db
+      .select({ id: submissionItemScores.id, fileId: submissionItemScores.fileId, previousFileId: submissionItemScores.previousFileId })
+      .from(submissionItemScores)
+      .innerJoin(assignmentSubmissions, eq(assignmentSubmissions.id, submissionItemScores.submissionId))
+      .where(and(eq(assignmentSubmissions.assignmentId, assignmentId), eq(assignmentSubmissions.studentId, me.studentId), eq(submissionItemScores.itemId, itemId)))
+      .limit(1);
+    if (!row) return { ok: false, message: 'Câu này chưa có bài nộp.' };
+    const [redo] = await db
+      .select({ id: speakingFeedback.id })
+      .from(speakingFeedback)
+      .innerJoin(submissionItemScores, eq(submissionItemScores.submissionId, speakingFeedback.submissionId))
+      .where(and(eq(submissionItemScores.id, row.id), eq(speakingFeedback.itemId, itemId), eq(speakingFeedback.redo, true)))
+      .limit(1);
+    if (!redo) return { ok: false, message: 'Câu này không cần nói lại.' };
+    // Nói lại nhiều lần: bản cũ vẫn là bản giáo viên đã chấm lần đầu
+    await db
+      .update(submissionItemScores)
+      .set({ previousFileId: row.previousFileId ?? row.fileId, fileId, redoneAt: new Date(), updatedAt: new Date() })
+      .where(eq(submissionItemScores.id, row.id));
+    await writeAudit({ action: 'redo', entity: 'assignment', entityId: assignmentId, summary: `Học sinh nói lại câu ${itemId} bài ${base.title}` });
+    await safely('nói lại', () => notifyClassStaff(base.classId, `🎤 Em ${student.fullName} đã nói lại câu được đánh dấu trong bài "${base.title}". Thầy/Cô mở màn chấm để nghe bản mới cạnh bản cũ.`, 'submission'));
+    revalidatePath(`/cua-toi/${assignmentId}`);
+    revalidatePath(`/bai-tap/${assignmentId}`);
+    return { ok: true, message: 'Đã lưu bản nói lại. Thầy/Cô sẽ nghe và nhận xét.' };
+  } catch (error) {
+    console.error('Lỗi nói lại:', error);
+    return { ok: false, message: 'Chưa lưu được. Thử lại sau ít phút.' };
   }
 }

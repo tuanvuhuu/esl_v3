@@ -19,6 +19,7 @@ import { Notice, Card } from '@/components/ui/surfaces';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { AUDIO_ACCEPT, UPLOAD_ACCEPT } from '@/lib/upload-types';
 import { InteractiveExercisePlayer } from '@/components/student/InteractiveExercisePlayer';
+import { SpeakingFeedback } from '@/components/student/SpeakingFeedback';
 
 // Các loại tệp học sinh có thể nộp. Khớp với danh sách máy chủ kiểm khi tải lên.
 
@@ -294,6 +295,18 @@ export function StudentAssignmentForm({ view }: { view: StudentAssignmentView })
                     />
                   )}
                 </div>
+              )}
+
+              {/* Nhận xét bài nói theo mốc giây và nói lại câu bị đánh dấu (35.10) */}
+              {item.itemType.startsWith('speak_') && view.speakingMarks.some((m) => m.itemId === item.id) && (
+                <SpeakingFeedback
+                  assignmentId={view.id}
+                  item={item}
+                  fileId={answer?.fileId ?? null}
+                  marks={view.speakingMarks.filter((m) => m.itemId === item.id)}
+                  redone={answer?.redone ?? false}
+                  voiceAllowed={view.voice.allowed}
+                />
               )}
 
               {locked && item.itemType !== 'choice' && answer && (

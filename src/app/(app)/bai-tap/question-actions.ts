@@ -401,6 +401,11 @@ export async function saveStudentAnswersAction(assignmentId: number, studentId: 
         })
         .returning({ id: assignmentSubmissions.id });
 
+      // Bản ghi cũ khi học sinh nói lại (35.10) không có trong hộp chấm: đọc trước để giữ nguyên khi ghi lại
+      const redo = await tx
+        .select({ itemId: submissionItemScores.itemId, previousFileId: submissionItemScores.previousFileId, redoneAt: submissionItemScores.redoneAt })
+        .from(submissionItemScores)
+        .where(eq(submissionItemScores.submissionId, sub.id));
       // Thay toàn bộ điểm từng câu và điểm tiêu chí của bài làm này
       await tx.delete(submissionItemScores).where(eq(submissionItemScores.submissionId, sub.id));
       await tx.delete(submissionCriterionScores).where(eq(submissionCriterionScores.submissionId, sub.id));
@@ -414,6 +419,8 @@ export async function saveStudentAnswersAction(assignmentId: number, studentId: 
           selectedOptionId: row.selectedOptionId,
           answerText: row.answerText,
           fileId: row.fileId,
+          previousFileId: redo.find((r) => r.itemId === row.itemId)?.previousFileId ?? null,
+          redoneAt: redo.find((r) => r.itemId === row.itemId)?.redoneAt ?? null,
           points,
           comment: row.comment,
           updatedAt: now,

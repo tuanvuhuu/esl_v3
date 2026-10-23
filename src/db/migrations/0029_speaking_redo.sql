@@ -1,0 +1,3 @@
+ALTER TABLE "submission_item_scores" ADD COLUMN "previous_file_id" integer;--> statement-breakpoint
+ALTER TABLE "submission_item_scores" ADD COLUMN "redone_at" timestamp with time zone;--> statement-breakpoint
+ALTER TABLE "submission_item_scores" ADD CONSTRAINT "submission_item_scores_previous_file_id_uploaded_files_id_fk" FOREIGN KEY ("previous_file_id") REFERENCES "public"."uploaded_files"("id") ON DELETE set null ON UPDATE no action;
