@@ -8,7 +8,8 @@ import { isParentOf, recordConsent } from '@/lib/queries/consents';
 import { dateKeyLabel, todayKeyVN, vnDateTimeLabel, vnDayBounds } from '@/lib/datetime';
 import { formatVND } from '@/lib/money';
 import { answerCallbackQuery, editMessageText, sendMessage } from './api';
-import { chatOf, record, sendAndRecord, sendCopyToSuperAdmins, type Chat } from './core';
+import { chatOf, record, sendAndRecord, sendCopyToSuperAdmins, sendPhotoAndRecord, type Chat } from './core';
+import { tuitionQr } from '@/lib/tuition-qr';
 import { cancelLeave, chooseReason, chooseSession, decideLeave, leaveStatusMap, listPendingLeaves, promptSessions, resolveLeaveRef, startLeave, takeTypedReason } from './leave';
 import { isNotifyKind, NOTIFY_LABELS, settingsKeyboard, settingsText, toggleMuted } from './prefs';
 import {
@@ -257,6 +258,17 @@ async function tuitionText(parentId: number): Promise<string> {
       return debt > 0 ? `${k.full_name}: còn thiếu ${formatVND(debt)} (đã đóng ${formatVND(k.paid)} / ${formatVND(k.fee)})` : `${k.full_name}: đã đóng đủ ${formatVND(k.fee)}`;
     })
     .join('\n');
+}
+
+// Sau tin học phí: mỗi con còn nợ một ảnh mã VietQR (nếu trung tâm đã nhập tài khoản nhận học phí, 37.13)
+async function sendTuitionQrs(chat: Chat, parentId: number): Promise<void> {
+  for (const k of await childrenOf(parentId)) {
+    const debt = Math.max(0, k.fee - k.paid);
+    if (debt <= 0) continue;
+    const qr = await tuitionQr(Number(k.id), k.full_name, debt);
+    if (!qr) return;
+    await sendPhotoAndRecord(chat, qr.png, `Mã QR học phí của ${k.full_name}:\n${qr.bankLine}`, 'command', null);
+  }
 }
 
 async function homeworkText(parentId: number): Promise<string> {
@@ -520,7 +532,10 @@ export async function handleIncoming(message: IncomingMessage): Promise<void> {
   // Xử lý lệnh của phụ huynh (kèm menu nút bấm inline để chuyển nhanh tính năng)
   if (chat.parentId !== null) {
     if (command.kind === 'schedule') return void (await sendAndRecord(chat, await scheduleText(chat.parentId), 'command', null, QUICK_MENU_INLINE));
-    if (command.kind === 'tuition') return void (await sendAndRecord(chat, await tuitionText(chat.parentId), 'command', null, QUICK_MENU_INLINE));
+    if (command.kind === 'tuition') {
+      await sendAndRecord(chat, await tuitionText(chat.parentId), 'command', null, QUICK_MENU_INLINE);
+      return void (await sendTuitionQrs(chat, chat.parentId));
+    }
     if (command.kind === 'homework') return void (await sendAndRecord(chat, await homeworkText(chat.parentId), 'command', null, QUICK_MENU_INLINE));
     if (command.kind === 'scores') return void (await sendAndRecord(chat, await scoresText(chat.parentId), 'command', null, QUICK_MENU_INLINE));
     if (command.kind === 'attendance') return void (await sendAndRecord(chat, await attendanceText(chat.parentId), 'command', null, QUICK_MENU_INLINE));
@@ -738,6 +753,7 @@ export async function handleCallbackQuery(cb: IncomingCallback): Promise<void> {
     if (cb.data === 'cmd:tuition' && chat.parentId) {
       const text = await tuitionText(chat.parentId);
       await sendAndRecord(chat, text, 'command', null, QUICK_MENU_INLINE);
+      await sendTuitionQrs(chat, chat.parentId);
       await answerCallbackQuery(cb.id, '💳 Đã tải học phí');
       return;
     }

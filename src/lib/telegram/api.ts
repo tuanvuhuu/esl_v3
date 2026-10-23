@@ -66,6 +66,29 @@ export async function sendMessageDetailed(chatId: number, text: string, replyMar
   return { ok: false, retryable: result.retryable ?? false, blocked };
 }
 
+// Gửi ảnh PNG kèm chú thích (tối đa 1024 ký tự). Ảnh tải lên trực tiếp (multipart), không qua đường dẫn công khai.
+export async function sendPhotoDetailed(chatId: number, png: Uint8Array, caption: string): Promise<SendOutcome> {
+  const token = botToken();
+  if (!token) {
+    console.error('❌ Lỗi gọi Telegram: Thiếu TELEGRAM_BOT_TOKEN trong biến môi trường!');
+    return { ok: false, retryable: false, blocked: false };
+  }
+  const form = new FormData();
+  form.append('chat_id', String(chatId));
+  form.append('caption', caption.slice(0, 1024));
+  form.append('photo', new Blob([new Uint8Array(png)], { type: 'image/png' }), 'qr.png');
+  try {
+    const response = await fetch(`${API}/bot${token}/sendPhoto`, { method: 'POST', body: form, signal: AbortSignal.timeout(15_000) });
+    const data = (await response.json()) as { ok: boolean; description?: string };
+    if (data.ok) return { ok: true, retryable: false, blocked: false };
+    console.error('❌ Telegram sendPhoto thất bại:', data.description ?? `HTTP ${response.status}`);
+    return { ok: false, retryable: response.status === 429 || response.status >= 500, blocked: /bot was blocked|user is deactivated|bot was kicked/i.test(data.description ?? '') };
+  } catch (error) {
+    console.error('❌ Lỗi mạng khi gọi Telegram sendPhoto:', error instanceof Error ? error.message : error);
+    return { ok: false, retryable: true, blocked: false };
+  }
+}
+
 // Gửi tin dạng chữ thường (không bật HTML/Markdown, để nội dung do người dùng gõ không phá định dạng)
 export async function sendMessage(chatId: number, text: string, replyMarkup?: Record<string, unknown>): Promise<boolean> {
   const body: Record<string, unknown> = {

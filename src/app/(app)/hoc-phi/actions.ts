@@ -7,6 +7,8 @@ import { classes, students, tuitionPayments } from '@/db/schema';
 import { ForbiddenError, requirePermission, writeAudit } from '@/lib/authz';
 import { getCurrentAccount } from '@/lib/session';
 import { notifyParentsOfStudent } from '@/lib/telegram/service';
+import { parentChatsOfStudent, sendPhotoAndRecord } from '@/lib/telegram/core';
+import { tuitionQr } from '@/lib/tuition-qr';
 import { requireStudentAccess } from '@/lib/campus-access';
 import { formatVND } from '@/lib/money';
 import { listPaymentsOfStudent, paidOf, type PaymentRow } from '@/lib/queries/tuition';
@@ -83,14 +85,24 @@ export async function remindTuitionAction(studentId: number): Promise<ActionResu
     if (balance.debt <= 0) return { ok: false, message: `${balance.name} đã đóng đủ học phí, không cần nhắc.` };
     await writeAudit({ action: 'remind', entity: 'student', entityId: studentId, summary: `Nhắc đóng học phí ${balance.name}: còn thiếu ${formatVND(balance.debt)}` });
     revalidatePath('/hoc-phi');
-    // Gửi cho phụ huynh đã kết nối Telegram (P34)
+    // Gửi cho phụ huynh đã kết nối Telegram (P34). Trung tâm có tài khoản nhận học phí thì kèm ảnh mã VietQR (37.13):
+    // phụ huynh quét bằng app ngân hàng, số tiền còn thiếu và nội dung điền sẵn.
     const account = await getCurrentAccount();
-    const sent = await notifyParentsOfStudent(
-      studentId,
-      `ESL Center xin nhắc: học phí của ${balance.name} còn thiếu ${formatVND(balance.debt)} (đã đóng ${formatVND(balance.paid)} / ${formatVND(balance.fee)}). Phụ huynh gõ /hocphi để xem lại bất cứ lúc nào.`,
-      'tuition',
-      account?.id ?? null,
-    );
+    const text = `ESL Center xin nhắc: học phí của ${balance.name} còn thiếu ${formatVND(balance.debt)} (đã đóng ${formatVND(balance.paid)} / ${formatVND(balance.fee)}). Phụ huynh gõ /hocphi để xem lại bất cứ lúc nào.`;
+    const qr = await tuitionQr(studentId, balance.name, balance.debt);
+    let sent: { chats: number; delivered: number };
+    if (qr) {
+      const chats = await parentChatsOfStudent(studentId);
+      const caption = `${text}
+
+Quét mã QR bằng app ngân hàng để chuyển khoản:
+${qr.bankLine}`;
+      let delivered = 0;
+      for (const chat of chats) if (await sendPhotoAndRecord(chat, qr.png, caption, 'tuition', account?.id ?? null)) delivered++;
+      sent = { chats: chats.length, delivered };
+    } else {
+      sent = await notifyParentsOfStudent(studentId, text, 'tuition', account?.id ?? null);
+    }
     if (sent.delivered > 0) return { ok: true, message: `Đã gửi nhắc học phí qua Telegram cho phụ huynh của ${balance.name}.` };
     if (sent.chats > 0) return { ok: true, message: `Đã ghi nhắc đóng cho ${balance.name}, nhưng chưa gửi được qua Telegram (chưa cấu hình bot hoặc lỗi mạng).` };
     return { ok: true, message: `Đã ghi nhắc đóng cho ${balance.name}. Phụ huynh chưa kết nối Telegram nên chưa gửi tin.` };
@@ -99,12 +111,14 @@ export async function remindTuitionAction(studentId: number): Promise<ActionResu
   }
 }
 
-// Lịch sử thu của một học sinh, để hiện trong hộp thoại ghi thu
-export async function loadPaymentsAction(studentId: number): Promise<{ ok: true; payments: PaymentRow[] } | { ok: false; message: string }> {
+// Lịch sử thu của một học sinh và mã QR khoản còn thiếu (nếu có tài khoản nhận học phí), cho hộp thoại ghi thu
+export async function loadPaymentsAction(studentId: number): Promise<{ ok: true; payments: PaymentRow[]; qr: { payload: string; bankLine: string } | null } | { ok: false; message: string }> {
   try {
     await requirePermission('tuition.manage');
     await requireStudentAccess(studentId);
-    return { ok: true, payments: await listPaymentsOfStudent(studentId) };
+    const balance = await studentBalance(studentId);
+    const qr = balance && balance.debt > 0 ? await tuitionQr(studentId, balance.name, balance.debt) : null;
+    return { ok: true, payments: await listPaymentsOfStudent(studentId), qr: qr ? { payload: qr.payload, bankLine: qr.bankLine } : null };
   } catch (error) {
     if (error instanceof ForbiddenError) return { ok: false, message: error.message };
     console.error('Lỗi đọc lịch sử thu:', error);

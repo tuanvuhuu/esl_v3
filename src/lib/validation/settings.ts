@@ -31,6 +31,22 @@ export const centerSettingsSchema = z.object({
   notifyWeeklyReport: z.boolean(),
   notifyAbsentAlert: z.boolean(),
   notifyNewClass: z.boolean(),
+  // Tài khoản nhận học phí (mã VietQR). Để trống cả ba thì không kèm mã QR.
+  bankBin: z
+    .string()
+    .trim()
+    .refine((v) => v === '' || /^\d{6}$/.test(v), 'Chọn ngân hàng')
+    .default(''),
+  bankAccount: z
+    .string()
+    .trim()
+    .transform((v) => v.replace(/[\s.-]/g, ''))
+    .refine((v) => v === '' || /^\d{6,19}$/.test(v), 'Số tài khoản gồm 6 đến 19 chữ số')
+    .default(''),
+  bankAccountName: z.string().trim().max(80, 'Tên chủ tài khoản tối đa 80 ký tự').default(''),
+}).superRefine((v, ctx) => {
+  if (v.bankAccount && !v.bankBin) ctx.addIssue({ code: 'custom', path: ['bankBin'], message: 'Chọn ngân hàng của tài khoản' });
+  if (v.bankBin && !v.bankAccount) ctx.addIssue({ code: 'custom', path: ['bankAccount'], message: 'Nhập số tài khoản' });
 });
 
 export type CenterSettingsInput = z.infer<typeof centerSettingsSchema>;

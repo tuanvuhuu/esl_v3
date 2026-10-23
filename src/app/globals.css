@@ -9,6 +9,7 @@
 :root {
   --bg: #FFFFFF;
   --surface: #FFFFFF;
+  --qr-bg: #FFFFFF; /* nền mã QR: giữ trắng cả ở giao diện tối để app ngân hàng quét được */
   --ink: #2F2A1F;
   --ink-2: #4A4538;
   --muted: #6E6755;

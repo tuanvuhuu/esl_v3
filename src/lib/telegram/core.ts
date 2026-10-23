@@ -3,7 +3,7 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { accounts, studentParents, telegramChats, telegramMessages, telegramNotificationLog } from '@/db/schema';
-import { sendMessage, sendMessageDetailed, type SendOutcome } from './api';
+import { sendMessage, sendMessageDetailed, sendPhotoDetailed, type SendOutcome } from './api';
 import type { NotifyKind } from './prefs';
 
 export type Chat = typeof telegramChats.$inferSelect;
@@ -65,6 +65,14 @@ export async function sendAndRecord(
   replyMarkup?: Record<string, unknown>,
 ): Promise<boolean> {
   return (await deliver(chat, text, kind, sentByAccountId, replyMarkup)).ok;
+}
+
+// Gửi ảnh kèm chú thích (ví dụ mã QR học phí) và lưu chú thích vào lịch sử tin nhắn
+export async function sendPhotoAndRecord(chat: Chat, png: Uint8Array, caption: string, kind: string, sentByAccountId: number | null): Promise<boolean> {
+  const outcome = await sendPhotoDetailed(chat.chatId, png, caption);
+  if (outcome.blocked) await db.update(telegramChats).set({ active: false, updatedAt: new Date() }).where(eq(telegramChats.id, chat.id));
+  await record({ chatId: chat.chatId, parentId: chat.parentId, accountId: chat.accountId, direction: 'out', kind, text: `[Ảnh mã QR] ${caption}`, sentByAccountId, delivered: outcome.ok, read: true });
+  return outcome.ok;
 }
 
 export type SendResult = 'sent' | 'failed' | 'skipped';

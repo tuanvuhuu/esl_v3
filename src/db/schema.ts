@@ -749,6 +749,10 @@ export const centerSettings = pgTable('center_settings', {
   notifyWeeklyReport: boolean('notify_weekly_report').notNull().default(true),
   notifyAbsentAlert: boolean('notify_absent_alert').notNull().default(true),
   notifyNewClass: boolean('notify_new_class').notNull().default(false),
+  // Tài khoản nhận học phí: tạo mã VietQR trong tin nhắc học phí (37.13). bankBin là mã BIN 6 số của ngân hàng (NAPAS).
+  bankBin: varchar('bank_bin', { length: 8 }).notNull().default(''),
+  bankAccount: varchar('bank_account', { length: 30 }).notNull().default(''),
+  bankAccountName: varchar('bank_account_name', { length: 80 }).notNull().default(''),
   ...timestamps,
 });
 

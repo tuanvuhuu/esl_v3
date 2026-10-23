@@ -1,6 +1,6 @@
 'use client';
 
-import { startTransition, useActionState, type FormEvent } from 'react';
+import { startTransition, useActionState, useState, type FormEvent } from 'react';
 import { saveSettingsAction } from '@/app/(app)/cai-dat/actions';
 import type { CenterSettings } from '@/lib/queries/settings';
 import type { ActionResult } from '@/lib/validation/student';
@@ -8,6 +8,9 @@ import { Field, FORM_BTN_SUBMIT, inputClass } from '@/components/ui/Field';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Alert } from '@/components/ui/primitives';
 import { Panel } from '@/components/ui/surfaces';
+import { SelectPanel } from '@/components/ui/SelectPanel';
+import { QrImage } from '@/components/tuition/QrImage';
+import { BANKS, isBankReady, vietQrPayload } from '@/lib/vietqr';
 
 const INITIAL: ActionResult = { ok: false };
 
@@ -15,6 +18,9 @@ const INITIAL: ActionResult = { ok: false };
 export function SettingsForm({ settings, canManage }: { settings: CenterSettings; canManage: boolean }) {
   const [state, formAction, pending] = useActionState<ActionResult, FormData>(saveSettingsAction, INITIAL);
   const errors = state.fieldErrors ?? {};
+  const [bankBin, setBankBin] = useState(settings.bankBin);
+  const [bankAccount, setBankAccount] = useState(settings.bankAccount);
+  const account = bankAccount.replace(/[\s.-]/g, '');
 
   // Gọi action thủ công để ô nhập không bị reset khi có lỗi (E-028)
   function submit(e: FormEvent<HTMLFormElement>) {
@@ -66,6 +72,40 @@ export function SettingsForm({ settings, canManage }: { settings: CenterSettings
             <Field label="Đơn vị tiền">
               <input value={settings.currency} readOnly className={inputClass()} />
             </Field>
+          </div>
+        </Panel>
+
+        <Panel title="Tài khoản nhận học phí" className="min-[1200px]:col-span-2">
+          <div className="grid grid-cols-1 gap-4 min-[768px]:grid-cols-[minmax(0,1fr)_auto]">
+            <div className="grid grid-cols-1 gap-3.5 min-[768px]:grid-cols-2 min-[768px]:gap-x-4">
+              <Field label="Ngân hàng" error={errors.bankBin}>
+                <SelectPanel
+                  name="bankBin"
+                  label="Ngân hàng"
+                  block
+                  value={bankBin}
+                  onChange={setBankBin}
+                  disabled={!canManage}
+                  options={[{ value: '', label: 'Chưa chọn' }, ...BANKS.map((b) => ({ value: b.bin, label: b.name }))]}
+                  error={!!errors.bankBin}
+                />
+              </Field>
+              <Field label="Số tài khoản" error={errors.bankAccount}>
+                <input name="bankAccount" inputMode="numeric" autoComplete="off" value={bankAccount} onChange={(e) => setBankAccount(e.target.value)} disabled={!canManage} className={`${inputClass(errors.bankAccount)} tabular-nums`} />
+              </Field>
+              <Field label="Tên chủ tài khoản" error={errors.bankAccountName} wide hint="Hiện trong tin nhắc học phí để phụ huynh đối chiếu">
+                <input name="bankAccountName" defaultValue={settings.bankAccountName} placeholder="VD: TRUNG TAM ANH NGU ESL" autoComplete="off" disabled={!canManage} className={inputClass(errors.bankAccountName)} />
+              </Field>
+              <p className="col-span-full text-sm text-muted">
+                Có tài khoản thì tin nhắc học phí qua Telegram kèm mã QR: phụ huynh quét bằng app ngân hàng, số tiền còn thiếu và nội dung (mã học sinh) điền sẵn.
+              </p>
+            </div>
+            {isBankReady({ bin: bankBin, account }) && (
+              <figure className="flex flex-col items-center gap-1.5 justify-self-center">
+                <QrImage payload={vietQrPayload({ bin: bankBin, account, amount: 0, note: '' })} size={140} label="Mã QR tài khoản nhận học phí" />
+                <figcaption className="text-xs text-muted">Quét thử bằng app ngân hàng</figcaption>
+              </figure>
+            )}
           </div>
         </Panel>
 

@@ -16,6 +16,9 @@ export type CenterSettings = {
   notifyWeeklyReport: boolean;
   notifyAbsentAlert: boolean;
   notifyNewClass: boolean;
+  bankBin: string;
+  bankAccount: string;
+  bankAccountName: string;
 };
 
 export async function getCenterSettings(): Promise<CenterSettings> {
@@ -34,6 +37,9 @@ export async function getCenterSettings(): Promise<CenterSettings> {
       notifyWeeklyReport: true,
       notifyAbsentAlert: true,
       notifyNewClass: false,
+      bankBin: '',
+      bankAccount: '',
+      bankAccountName: '',
     };
   }
   return {
@@ -49,5 +55,8 @@ export async function getCenterSettings(): Promise<CenterSettings> {
     notifyWeeklyReport: row.notifyWeeklyReport,
     notifyAbsentAlert: row.notifyAbsentAlert,
     notifyNewClass: row.notifyNewClass,
+    bankBin: row.bankBin,
+    bankAccount: row.bankAccount,
+    bankAccountName: row.bankAccountName,
   };
 }

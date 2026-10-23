@@ -16,6 +16,7 @@ import { Toast, useToast } from '@/components/ui/Toast';
 import { DataGrid, type GridColumn } from '@/components/ui/datagrid';
 import { EmptyPanel, Card } from '@/components/ui/surfaces';
 import { Btn } from '@/components/ui/Btn';
+import { QrImage } from './QrImage';
 import { Chip, ChipGroup, TextInput } from '@/components/ui/controls';
 
 const STATE_META: Record<InvoiceRow['state'], { label: string; tone: Tone }> = {
@@ -203,6 +204,7 @@ export function TuitionView({
 function PaymentDialog({ row, onClose, onDone }: { row: InvoiceRow; onClose: () => void; onDone: (message: string) => void }) {
   const [history, setHistory] = useState<PaymentRow[] | null>(null);
   const [historyError, setHistoryError] = useState<string | null>(null);
+  const [qr, setQr] = useState<{ payload: string; bankLine: string } | null>(null);
   const [state, formAction, pending] = useActionState<ActionResult, FormData>(async (prev, formData) => {
     const result = await recordPaymentAction(Number(row.id), prev, formData);
     if (result.ok) onDone(result.message ?? 'Đã ghi nhận');
@@ -214,8 +216,10 @@ function PaymentDialog({ row, onClose, onDone }: { row: InvoiceRow; onClose: () 
     let alive = true;
     loadPaymentsAction(Number(row.id)).then((r) => {
       if (!alive) return;
-      if (r.ok) setHistory(r.payments);
-      else setHistoryError(r.message);
+      if (r.ok) {
+        setHistory(r.payments);
+        setQr(r.qr);
+      } else setHistoryError(r.message);
     });
     return () => {
       alive = false;
@@ -247,6 +251,17 @@ function PaymentDialog({ row, onClose, onDone }: { row: InvoiceRow; onClose: () 
             <button type="submit" disabled={pending} className={FORM_BTN_SUBMIT}>{pending ? 'Đang ghi…' : 'Ghi nhận thu'}</button>
           </FormFooter>
         </form>
+
+        {qr && (
+          <div className="flex items-center gap-3 border-t border-line pt-3 max-[767px]:flex-col max-[767px]:items-start">
+            <QrImage payload={qr.payload} size={132} label={`Mã QR chuyển khoản học phí của ${row.fullName}`} />
+            <div className="min-w-0">
+              <h3 className="mb-1 text-xs font-bold uppercase tracking-wider text-muted">Chuyển khoản</h3>
+              <p className="text-sm text-ink-2">Phụ huynh quét bằng app ngân hàng: số tiền còn thiếu và nội dung điền sẵn.</p>
+              <p className="mt-1 break-words text-sm text-ink">{qr.bankLine}</p>
+            </div>
+          </div>
+        )}
 
         <div className="border-t border-line pt-3">
           <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-muted">Lịch sử thu</h3>
