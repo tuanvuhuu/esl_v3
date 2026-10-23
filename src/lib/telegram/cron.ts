@@ -5,6 +5,7 @@ import { db } from '@/db/client';
 import { addDaysKey, dateKeyLabel, todayKeyVN, vnDayBounds, vnDateTimeLabel, vnTimeLabel, weekStartKey } from '@/lib/datetime';
 import { formatVND } from '@/lib/money';
 import { getCenterSettings } from '@/lib/queries/settings';
+import { tuitionQr } from '@/lib/tuition-qr';
 import { adminChats, chatOf, parentChatsOfStudent, sendOnce, staffChatsOfClass, type SendResult } from './core';
 import { CRON_JOBS, dueJobs, isoWeekKey, tuitionPhase, type CronJob } from './prefs';
 import { dailyReportText } from './service';
@@ -151,8 +152,13 @@ async function remindTuition(now: Date): Promise<SendResult[]> {
       phase === 'before'
         ? `💳 NHẮC HỌC PHÍ\nHọc phí của em ${r.student_name} còn thiếu ${formatVND(debt)} (đã đóng ${formatVND(r.paid)} / ${formatVND(r.fee)}).\nHạn đóng: ${dateKeyLabel(dueKey)}.\n\nQuý phụ huynh đã đóng rồi thì bỏ qua tin này. Gõ /hocphi để xem lại bất cứ lúc nào.\n\n— ESL Center`
         : `💳 HỌC PHÍ QUÁ HẠN\nHọc phí của em ${r.student_name} còn thiếu ${formatVND(debt)}, đã quá hạn ${dateKeyLabel(dueKey)}.${settings.lateFeePercent > 0 ? `\nTheo quy định, học phí trễ hạn có thể tính thêm ${settings.lateFeePercent}%.` : ''}\n\nQuý phụ huynh liên hệ văn phòng nếu cần hỗ trợ.\n\n— ESL Center`;
-    for (const chat of await parentChatsOfStudent(r.student_id)) {
-      out.push(await sendOnce(chat, { kind: 'remind_tuition', ref: `tuition:${r.student_id}:${dueKey.slice(0, 7)}:${phase}`, pref: 'tuition', text }));
+    // Có tài khoản nhận học phí thì gửi kèm ảnh mã VietQR khoản còn thiếu (37.13)
+    const chats = await parentChatsOfStudent(r.student_id);
+    if (chats.length === 0) continue;
+    const qr = await tuitionQr(r.student_id, r.student_name, debt);
+    const body = qr ? `${text}\n\nQuét mã QR bằng app ngân hàng để chuyển khoản:\n${qr.bankLine}` : text;
+    for (const chat of chats) {
+      out.push(await sendOnce(chat, { kind: 'remind_tuition', ref: `tuition:${r.student_id}:${dueKey.slice(0, 7)}:${phase}`, pref: 'tuition', text: body, photo: qr?.png }));
     }
   }
   return out;

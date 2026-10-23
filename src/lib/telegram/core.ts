@@ -68,11 +68,15 @@ export async function sendAndRecord(
 }
 
 // Gửi ảnh kèm chú thích (ví dụ mã QR học phí) và lưu chú thích vào lịch sử tin nhắn
-export async function sendPhotoAndRecord(chat: Chat, png: Uint8Array, caption: string, kind: string, sentByAccountId: number | null): Promise<boolean> {
+async function deliverPhoto(chat: Chat, png: Uint8Array, caption: string, kind: string, sentByAccountId: number | null): Promise<SendOutcome> {
   const outcome = await sendPhotoDetailed(chat.chatId, png, caption);
   if (outcome.blocked) await db.update(telegramChats).set({ active: false, updatedAt: new Date() }).where(eq(telegramChats.id, chat.id));
   await record({ chatId: chat.chatId, parentId: chat.parentId, accountId: chat.accountId, direction: 'out', kind, text: `[Ảnh mã QR] ${caption}`, sentByAccountId, delivered: outcome.ok, read: true });
-  return outcome.ok;
+  return outcome;
+}
+
+export async function sendPhotoAndRecord(chat: Chat, png: Uint8Array, caption: string, kind: string, sentByAccountId: number | null): Promise<boolean> {
+  return (await deliverPhoto(chat, png, caption, kind, sentByAccountId)).ok;
 }
 
 export type SendResult = 'sent' | 'failed' | 'skipped';
@@ -89,7 +93,7 @@ export function withOnlyChat<T>(chatId: number | null, task: () => Promise<T>): 
 // dòng nhật ký để lần chạy sau thử lại; lỗi vĩnh viễn (chat không tồn tại, bị chặn, chưa cấu hình bot) thì giữ, không gửi lại.
 export async function sendOnce(
   chat: Chat,
-  opts: { kind: string; ref: string; text: string; pref?: NotifyKind; markup?: Record<string, unknown> },
+  opts: { kind: string; ref: string; text: string; pref?: NotifyKind; markup?: Record<string, unknown>; photo?: Uint8Array },
 ): Promise<SendResult> {
   if (!chat.active) return 'skipped';
   const only = onlyChat.getStore();
@@ -102,7 +106,8 @@ export async function sendOnce(
     .onConflictDoNothing()
     .returning({ id: telegramNotificationLog.id });
   if (inserted.length === 0) return 'skipped';
-  const outcome = await deliver(chat, opts.text, opts.kind, null, opts.markup);
+  // Có ảnh (mã QR học phí) thì gửi ảnh, chữ làm chú thích
+  const outcome = opts.photo ? await deliverPhoto(chat, opts.photo, opts.text, opts.kind, null) : await deliver(chat, opts.text, opts.kind, null, opts.markup);
   if (!outcome.ok && outcome.retryable) await db.delete(telegramNotificationLog).where(eq(telegramNotificationLog.id, inserted[0].id));
   return outcome.ok ? 'sent' : 'failed';
 }

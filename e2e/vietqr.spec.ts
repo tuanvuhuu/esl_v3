@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import { Client } from 'pg';
 import { loadEnvLocal } from './env';
 import { login } from './helpers';
+import { tuitionPhase } from '../src/lib/telegram/prefs';
 
 // Mã VietQR học phí (37.13): nhập tài khoản nhận học phí ở Cài đặt, hộp Ghi thu hiện mã QR khoản còn thiếu.
 // Học sinh thử ở Cơ sở test, không có phụ huynh nên không gửi Telegram. Cài đặt ngân hàng được trả lại như cũ.
@@ -68,6 +69,53 @@ test('cài tài khoản nhận học phí; hộp Ghi thu hiện mã QR với s�
     await db.query('update center_settings set bank_bin = $1, bank_account = $2, bank_account_name = $3 where id = 1', [before.bank_bin, before.bank_account, before.bank_account_name]);
     await db.query(`delete from students where class_id in (${stale})`);
     await db.query(`delete from classes where id in (${stale})`);
+    await db.end();
+  }
+});
+
+// Nhắc học phí tự động (cron): có tài khoản nhận học phí thì tin gửi kèm ảnh mã QR. Chỉ gửi tới chat giả (?chat=).
+test('cron nhắc học phí gửi kèm ảnh mã QR', async ({ request }) => {
+  loadEnvLocal();
+  const db = new Client({ connectionString: process.env.DATABASE_URL });
+  await db.connect();
+  const run = String(Date.now()).slice(-6);
+  const cls = `QR-${run}`;
+  const chatId = 9_210_000_000 + Number(run);
+  const phone = `07${run}99`;
+  const [before] = (await db.query<{ bank_bin: string; bank_account: string; bank_account_name: string; due_day: number }>('select bank_bin, bank_account, bank_account_name, due_day from center_settings where id = 1')).rows;
+  const { phase } = tuitionPhase(new Date(Date.now() + 7 * 3_600_000).toISOString().slice(0, 10), before.due_day);
+  test.skip(phase === null, 'Hôm nay không phải ngày nhắc học phí (trước hạn 3 ngày hoặc đã quá hạn)');
+  try {
+    await db.query(`update center_settings set bank_bin = '970436', bank_account = '0011001234567', bank_account_name = 'TRUNG TAM E2E' where id = 1`);
+    const [campus] = (await db.query<{ id: number }>(`select id from campuses where name = 'Cơ sở test'`)).rows;
+    const [teacher] = (await db.query<{ id: number }>(`select t.id from teachers t join teacher_campuses tc on tc.teacher_id = t.id where tc.campus_id = $1 and t.staff_role = 'teacher' order by t.id limit 1`, [campus.id])).rows;
+    const [c] = (
+      await db.query<{ id: number }>(
+        `insert into classes (campus_id, name, course, teacher_id, schedule, weekdays, start_time, end_time, sessions_total, fee, room, capacity)
+         values ($1, $2, 'E2E QR', $3, 'T6 · 09:00–10:00', 'T6', '09:00', '10:00', 1, 1800000, 'QR-P', 10) returning id`,
+        [campus.id, cls, teacher.id],
+      )
+    ).rows;
+    const [kid] = (await db.query<{ id: number }>(`insert into students (full_name, search_key, gender, class_id, status, start_date) values ($1, $2, 'male', $3, 'active', '2026-09-01') returning id`, [`Bé cron ${run}`, `be cron ${run}`, c.id])).rows;
+    const [parent] = (await db.query<{ id: number }>(`insert into parents (full_name, phone) values ($1, $2) returning id`, [`PH cron ${run}`, phone])).rows;
+    await db.query(`insert into student_parents (student_id, parent_id, relation, is_primary) values ($1, $2, 'mother', true)`, [kid.id, parent.id]);
+    await db.query(`insert into telegram_chats (chat_id, parent_id, display_name) values ($1, $2, 'PH cron E2E')`, [chatId, parent.id]);
+
+    const key = process.env.CRON_SECRET || process.env.TELEGRAM_WEBHOOK_SECRET || '';
+    const res = await request.get(`/api/cron/telegram?key=${key}&jobs=tuition&chat=${chatId}`);
+    expect(res.status()).toBe(200);
+    const [msg] = (await db.query<{ text: string }>(`select text from telegram_messages where chat_id = $1 and kind = 'remind_tuition'`, [chatId])).rows;
+    expect(msg.text).toMatch(/^\[Ảnh mã QR\] 💳 (NHẮC HỌC PHÍ|HỌC PHÍ QUÁ HẠN)/);
+    expect(msg.text).toContain(`Bé cron ${run}`);
+    expect(msg.text).toContain('Vietcombank 0011001234567 · TRUNG TAM E2E · 1.800.000');
+  } finally {
+    await db.query('update center_settings set bank_bin = $1, bank_account = $2, bank_account_name = $3 where id = 1', [before.bank_bin, before.bank_account, before.bank_account_name]);
+    await db.query('delete from telegram_notification_log where chat_id = $1', [chatId]);
+    await db.query('delete from telegram_messages where chat_id = $1', [chatId]);
+    await db.query('delete from telegram_chats where chat_id = $1', [chatId]);
+    await db.query('delete from parents where phone = $1', [phone]);
+    await db.query(`delete from students where class_id in (select id from classes where name = $1)`, [cls]);
+    await db.query('delete from classes where name = $1', [cls]);
     await db.end();
   }
 });
