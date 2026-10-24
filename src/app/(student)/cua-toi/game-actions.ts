@@ -53,7 +53,13 @@ export async function reviewWordAction(input: { word: string; correct: boolean }
     const next = applyReview(row.card, parsed.data.correct, now);
     await db
       .update(wordReviews)
-      .set({ card: next.card, due: next.due, reviewCount: sql`${wordReviews.reviewCount} + 1`, lastReviewedAt: now })
+      .set({
+        card: next.card,
+        due: next.due,
+        reviewCount: sql`${wordReviews.reviewCount} + 1`,
+        wrongCount: parsed.data.correct ? wordReviews.wrongCount : sql`${wordReviews.wrongCount} + 1`,
+        lastReviewedAt: now,
+      })
       .where(eq(wordReviews.id, row.id));
     // Không làm mới trang: màn ôn đang mở sẽ bị dựng lại giữa chừng (từ vừa ôn hết hạn). Trang /cua-toi luôn đọc mới khi mở.
     return { ok: true, next: nextReviewLabel(next.due, now) };

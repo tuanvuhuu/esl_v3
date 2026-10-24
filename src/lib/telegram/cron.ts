@@ -3,6 +3,7 @@
 import { sql } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { addDaysKey, dateKeyLabel, todayKeyVN, vnDayBounds, vnDateTimeLabel, vnTimeLabel, weekStartKey } from '@/lib/datetime';
+import { appLink } from '@/lib/app-link';
 import { formatVND } from '@/lib/money';
 import { getCenterSettings } from '@/lib/queries/settings';
 import { tuitionQr } from '@/lib/tuition-qr';
@@ -169,8 +170,11 @@ async function remindTuition(now: Date): Promise<SendResult[]> {
 // Bài nộp chờ chấm quá 2 ngày: báo giáo viên lớp, mỗi bài mỗi ngày một lần
 async function remindGrading(now: Date): Promise<SendResult[]> {
   const today = todayKeyVN(now);
-  const rows = await db.execute<{ assignment_id: number; title: string; class_id: number; class_name: string; waiting: number; oldest: Date }>(sql`
-    SELECT a.id AS assignment_id, a.title, c.id AS class_id, c.name AS class_name, COUNT(*)::int AS waiting, MIN(sub.submitted_at) AS oldest
+  const rows = await db.execute<{ assignment_id: number; title: string; class_id: number; class_name: string; waiting: number; speaking: number; oldest: Date }>(sql`
+    SELECT a.id AS assignment_id, a.title, c.id AS class_id, c.name AS class_name, COUNT(*)::int AS waiting, MIN(sub.submitted_at) AS oldest,
+      COUNT(*) FILTER (WHERE EXISTS (
+        SELECT 1 FROM submission_item_scores sis JOIN assignment_items ai ON ai.id = sis.item_id
+        WHERE sis.submission_id = sub.id AND sis.file_id IS NOT NULL AND ai.item_type::text LIKE 'speak_%'))::int AS speaking
     FROM assignment_submissions sub
     JOIN assignments a ON a.id = sub.assignment_id
     JOIN classes c ON c.id = a.class_id
@@ -178,7 +182,15 @@ async function remindGrading(now: Date): Promise<SendResult[]> {
     GROUP BY a.id, a.title, c.id, c.name`);
   const out: SendResult[] = [];
   for (const r of rows.rows) {
-    const text = `📝 NHẮC CHẤM BÀI\nLớp ${r.class_name}, bài "${r.title}": ${r.waiting} bài nộp đang chờ chấm, bài sớm nhất nộp lúc ${vnDateTimeLabel(new Date(r.oldest))}.\n\nPhụ huynh nhận điểm qua Telegram ngay khi Thầy/Cô chấm xong.`;
+    const link = appLink(`/bai-tap/${r.assignment_id}`);
+    const lines = [
+      `📝 NHẮC CHẤM BÀI`,
+      `Lớp ${r.class_name}, bài "${r.title}": ${r.waiting} bài nộp đang chờ chấm quá 2 ngày${r.speaking > 0 ? ` (🎙️ ${r.speaking} bài có câu nói)` : ''}, bài sớm nhất nộp lúc ${vnDateTimeLabel(new Date(r.oldest))}.`,
+      link ? `Mở màn chấm: ${link}` : '',
+      '',
+      'Phụ huynh nhận điểm qua Telegram ngay khi Thầy/Cô chấm xong.',
+    ];
+    const text = lines.filter((l, i) => l !== '' || lines[i - 1] !== '').join('\n');
     for (const chat of await staffChatsOfClass(r.class_id)) out.push(await sendOnce(chat, { kind: 'remind_grading', ref: `grading:${r.assignment_id}:${today}`, text }));
   }
   return out;

@@ -1079,6 +1079,7 @@ export const wordReviews = pgTable(
     card: jsonb('card').notNull(),
     due: timestamp('due', { withTimezone: true }).notNull(),
     reviewCount: integer('review_count').notNull().default(0),
+    wrongCount: integer('wrong_count').notNull().default(0), // số lần ôn chọn sai, cho bảng theo dõi lớp (35.20)
     lastReviewedAt: timestamp('last_reviewed_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },

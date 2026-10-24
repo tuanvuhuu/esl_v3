@@ -4,11 +4,13 @@ import { connection } from 'next/server';
 import { Suspense } from 'react';
 import { AddStudentToClass } from '@/components/classes/AddStudentToClass';
 import { ClassDetailActions } from '@/components/classes/ClassDetailActions';
+import { ClassTrackingPanel } from '@/components/classes/ClassTrackingPanel';
 import { SurveyPanel } from '@/components/classes/SurveyPanel';
+import { classTracking } from '@/lib/queries/class-tracking';
 import { getSurveySummary } from '@/lib/queries/surveys';
 import { NoAccess } from '@/components/ui/NoAccess';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { Avatar, EmptyState, Pill, ProgressBar, type Tone } from '@/components/ui/primitives';
+import { EmptyState, Pill, ProgressBar, type Tone } from '@/components/ui/primitives';
 import { formatVND } from '@/lib/money';
 import { dateKeyLabel, vnDateTimeLabel } from '@/lib/datetime';
 import { hasPermission } from '@/lib/permissions';
@@ -61,7 +63,7 @@ async function ClassData({ params }: { params: Promise<{ id: string }> }) {
   if (!hasPermission(granted, 'students.view')) return <NoAccess title="Lớp học" />;
 
   const canAddStudent = hasPermission(granted, 'students.edit');
-  const [cls, teachers, assignments, levels, { campuses, scope }, classOptions, parents, survey] = await Promise.all([
+  const [cls, teachers, assignments, levels, { campuses, scope }, classOptions, parents, survey, tracking] = await Promise.all([
     getClassDetail(id),
     listTeacherChoices(null),
     listAssignmentsOfClass(id),
@@ -70,6 +72,7 @@ async function ClassData({ params }: { params: Promise<{ id: string }> }) {
     canAddStudent ? listClassOptions(null) : Promise.resolve([]),
     canAddStudent ? listParentChoices() : Promise.resolve([]),
     getSurveySummary(id),
+    classTracking(id),
   ]);
   if (!cls) notFound();
   const ownCampusId = classOptions.find((c) => c.id === id)?.campusId ?? scope ?? campuses[0]?.id ?? 0;
@@ -93,6 +96,11 @@ async function ClassData({ params }: { params: Promise<{ id: string }> }) {
           />
         }
       />
+
+      {/* Theo dõi lớp (35.20): ai chưa làm, cả lớp hay sai gì, bài nói chờ chấm */}
+      <div className="mb-4">
+        <ClassTrackingPanel data={tracking} />
+      </div>
 
       <div className="grid grid-cols-1 gap-4 min-[1200px]:grid-cols-2">
         {/* Cột trái: thông tin lớp và học sinh */}
@@ -141,7 +149,6 @@ async function ClassData({ params }: { params: Promise<{ id: string }> }) {
                 {cls.students.map((s) => (
                   <li key={s.id}>
                     <Link href={`/hoc-sinh/${s.id}`} className="flex items-center gap-3 px-1 py-2.5 hover:bg-row-hover">
-                      <Avatar name={s.fullName} seed={s.id} />
                       <span className="min-w-0 flex-1 truncate text-base font-bold text-ink">{s.fullName}</span>
                       <small className="text-xs text-muted">{s.sessionsDone} buổi</small>
                       <Pill tone={STATUS_META[s.status].tone}>{STATUS_META[s.status].label}</Pill>

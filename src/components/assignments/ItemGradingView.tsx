@@ -30,6 +30,7 @@ export function ItemGradingView({
   bank,
   canManage,
   currentAccountId,
+  initialStudentId = null,
 }: {
   assignment: { id: number; title: string; className: string; dueAt: string; maxScore: number; description: string; levelCode: string | null };
   items: AssignmentItem[];
@@ -37,13 +38,14 @@ export function ItemGradingView({
   bank: BankQuestion[];
   canManage: boolean;
   currentAccountId: number | null;
+  initialStudentId?: number | null;
 }) {
   const router = useRouter();
   const { message, notify } = useToast();
   const present = usePresent(notify);
   const [editingItems, setEditingItems] = useState(false);
   // Lưu mã học sinh đang mở, để dữ liệu luôn lấy từ danh sách mới sau khi làm mới trang
-  const [openId, setOpenId] = useState<number | null>(null);
+  const [openId, setOpenId] = useState<number | null>(() => (initialStudentId !== null && rows.some((r) => r.studentId === initialStudentId) ? initialStudentId : null));
   const open = rows.find((r) => r.studentId === openId) ?? null;
 
   const counts = {

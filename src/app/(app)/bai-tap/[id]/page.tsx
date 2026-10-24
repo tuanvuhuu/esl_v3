@@ -12,10 +12,11 @@ import { getCurrentAccount, getCurrentPermissions } from '@/lib/session';
 import { passes, requireAssignmentAccess } from '@/lib/campus-access';
 
 // Chấm điểm một bài tập. Dữ liệu đọc trong Suspense (cacheComponents đang bật).
-export default function GradingPage({ params }: { params: Promise<{ id: string }> }) {
+// ?hs=<mã học sinh>: mở thẳng hộp chấm bài của học sinh đó (liên kết từ bảng theo dõi lớp, 35.20)
+export default function GradingPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ hs?: string }> }) {
   return (
     <Suspense fallback={<GradingSkeleton />}>
-      <GradingData params={params} />
+      <GradingData params={params} searchParams={searchParams} />
     </Suspense>
   );
 }
@@ -29,9 +30,10 @@ function GradingSkeleton() {
   );
 }
 
-async function GradingData({ params }: { params: Promise<{ id: string }> }) {
+async function GradingData({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ hs?: string }> }) {
   await connection();
   const { id: raw } = await params;
+  const { hs } = await searchParams;
   if (!/^\d+$/.test(raw)) notFound();
   const id = Number(raw);
 
@@ -61,7 +63,15 @@ async function GradingData({ params }: { params: Promise<{ id: string }> }) {
     const rows = await listItemGradingRows(id, base.classId, items);
     const account = await getCurrentAccount();
     return (
-      <ItemGradingView assignment={assignment} items={items} rows={rows} bank={bank} canManage={canManage} currentAccountId={account?.id ?? null} />
+      <ItemGradingView
+        assignment={assignment}
+        items={items}
+        rows={rows}
+        bank={bank}
+        canManage={canManage}
+        currentAccountId={account?.id ?? null}
+        initialStudentId={hs && /^\d+$/.test(hs) ? Number(hs) : null}
+      />
     );
   }
   const rows = await listGradingRows(id, base.classId);

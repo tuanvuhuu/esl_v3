@@ -1,6 +1,6 @@
 # ESL Center: kế hoạch và tiến độ
 
-> **Tiến độ tổng: 218/232 task (94%)**
+> **Tiến độ tổng: 219/232 task (94%)**
 > Cập nhật lần cuối: 2026-10-22. P1–P34 xong. P38 (giờ học từng ngày, học phí theo buổi còn lại, mã HS-00001) xong. P37 bot Telegram theo kịch bản: 37.1–37.9 xong, còn đặt cron mỗi giờ trên bản deploy và các việc đợt sau. P35: 35.2, 35.3, 35.12, 35.24, 35.27 xong; 35.4–35.6 làm dở (35.6 chỉ còn thử tay trên điện thoại). P36 Soạn nhanh xong phần code (36.1–36.6). Số đếm lấy từ các ô `[x]` và `[ ]` trong file.
 
 ## 🎯 Các task vừa hoàn thành & Lệnh test riêng (Không chạy all)
@@ -423,7 +423,7 @@ Nghiên cứu kỹ thuật cho các mục còn mở (thư viện, định dạng
 
 ### F. Công cụ cho giáo viên
 - [x] **35.19** Chế độ trình chiếu: giáo viên chọn trò chơi hoặc bài, chiếu lên màn hình lớn, cả lớp chơi chung, giáo viên điều khiển bằng điện thoại hoặc bàn phím. Kiểm chứng: E2E mở chế độ trình chiếu và chuyển câu. Xong 2026-10-24: chiếu danh sách từ (menu ⋯ "Trình chiếu" ở Danh sách từ; kiểu Thẻ từ hoặc Đố cả lớp) hoặc câu hỏi của bài (nút "Trình chiếu" ở màn chấm theo câu; trắc nghiệm, chọn tranh tô đáp án đúng, các dạng khác hiện đáp án mẫu). Màn chiếu `/trinh-chieu/[token]` không khung menu, chữ theo bề rộng màn (token `--fs-stage*`); bàn phím, bút trình chiếu (PageUp/PageDown), chuột; Tiếp hiện đáp án trước rồi mới sang trang. Điện thoại quét mã QR mở `/trinh-chieu/[token]/dieu-khien` (cùng tài khoản; chưa đăng nhập thì đăng nhập xong về đúng trang, `?next=` chỉ nhận đường dẫn trong trang). Đồng bộ qua bảng `present_sessions` (migration 0036): đổi ngay trên máy bấm, máy kia hỏi lại mỗi giây, `version` chống ghi đè trạng thái cũ; không dùng dịch vụ ngoài. Logic `src/lib/presentation.ts` (unit 4 test); E2E `trinh-chieu.spec.ts` (bàn phím, điện thoại ↔ máy chiếu, đổi kiểu, chiếu bài, đăng nhập về trang điều khiển); toàn bộ 95/95 E2E, 304 unit; ảnh 1440px (máy chiếu) và 390px (điện thoại).
-- [ ] **35.20** Bảng theo dõi lớp: em nào chưa làm, từ nào cả lớp hay sai, bài nói đang chờ chấm (liên kết thẳng màn chấm); bot nhắc giáo viên chấm bài nói quá 2 ngày (34.19). Kiểm chứng: E2E số liệu khớp dữ liệu thử.
+- [x] **35.20** Bảng theo dõi lớp: em nào chưa làm, từ nào cả lớp hay sai, bài nói đang chờ chấm (liên kết thẳng màn chấm); bot nhắc giáo viên chấm bài nói quá 2 ngày (34.19). Kiểm chứng: E2E số liệu khớp dữ liệu thử. Xong 2026-10-24: khung "Theo dõi lớp" ở trang lớp (bài có hạn trong 30 ngày qua và bài chưa tới hạn): em chưa làm (gom theo em, đánh dấu quá hạn); cả lớp hay sai (câu tự chấm có tỉ lệ sai cao, kèm đáp án đúng, chấm lại từ đáp án đã lưu; từ hay quên khi ôn hộp từ, cột `wrong_count` migration 0037); bài nói chờ chấm (chờ quá 2 ngày tô đỏ, bấm mở thẳng hộp chấm của em đó qua `/bai-tap/[id]?hs=`). Bot nhắc chấm ghi rõ số bài có câu nói, kèm liên kết màn chấm khi đặt `APP_URL`. Bỏ avatar ở danh sách học sinh trang lớp (quy tắc học sinh không avatar). Logic `src/lib/class-tracking.ts` (unit 5 test); E2E `theo-doi-lop.spec.ts` (số liệu khớp dữ liệu thử, mở hộp chấm, bot chỉ gửi chat giả); toàn bộ 96/96 E2E, 315 unit; ảnh 1440px, 390px.
 - [ ] **35.21** Bộ bài mẫu đầu tiên theo 35.1 (ví dụ 3 bài Starters đủ dạng câu, giọng mẫu, tranh, một danh sách từ), dùng để demo và kiểm thử đầu cuối. Kiểm chứng: học sinh thử làm trọn một bài trên điện thoại.
 
 ### G. Chấm phát âm tự động (gợi ý cho giáo viên)

@@ -1,0 +1,1 @@
+ALTER TABLE "word_reviews" ADD COLUMN "wrong_count" integer DEFAULT 0 NOT NULL;
