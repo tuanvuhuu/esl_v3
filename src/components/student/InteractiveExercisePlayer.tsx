@@ -652,6 +652,20 @@ type RecPhase = 'idle' | 'recording' | 'review' | 'uploading';
 
 // Ghi âm (P35.6): bấm để nói → đếm giây theo max_seconds, tự dừng khi hết giờ → nghe lại → Nói lại hoặc Dùng bản này.
 // Định dạng theo máy (WebM Opus, Safari cũ là MP4). Tải thẳng lên kho tệp, chưa cấu hình thì qua máy chủ.
+// Giọng mẫu của câu nói: tệp giáo viên thu (model_audio_file_id) nếu có, không thì giọng đọc tiếng Anh có sẵn của trình duyệt
+function playModel(item: StudentItem) {
+  if (item.modelAudioFileId) {
+    void new Audio(`/api/files/${item.modelAudioFileId}`).play().catch(() => undefined);
+    return;
+  }
+  if (!item.referenceText || typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+  const u = new SpeechSynthesisUtterance(item.referenceText);
+  u.lang = 'en-US';
+  u.rate = 0.85;
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(u);
+}
+
 export function SpeakQuestion({
   item,
   answer,
@@ -767,6 +781,11 @@ export function SpeakQuestion({
     <div className="flex flex-col items-center gap-4 py-2">
       {item.referenceText && (
         <div className="rounded-2xl border border-line bg-stone/40 p-3 text-center text-lg font-extrabold leading-relaxed text-ink">“{item.referenceText}”</div>
+      )}
+      {(item.modelAudioFileId || item.referenceText) && (
+        <button type="button" onClick={() => playModel(item)} disabled={recording} className="inline-flex min-h-11 items-center gap-2 rounded-full border-2 border-line bg-surface px-4 text-base font-extrabold text-ink active:scale-95 disabled:opacity-40">
+          <Volume2 className="size-5" aria-hidden /> Nghe mẫu
+        </button>
       )}
 
       {(phase === 'idle' || recording) && (

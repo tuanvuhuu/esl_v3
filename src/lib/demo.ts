@@ -22,7 +22,7 @@ import { DEMO_LESSONS, type DemoLesson } from './demo-lessons';
 
 const DEMO_TEACHER_NAME = 'Giáo viên học thử';
 
-type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+export type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 // Dấu nhận biết nội dung bài: đổi câu trong demo-lessons.ts thì dấu đổi, bài được dựng lại
 type SignatureRow = { itemType: string; prompt: string; referenceText: string; options: number; pairs: number };
@@ -51,7 +51,7 @@ async function storedSignature(tx: Tx, assignmentId: number): Promise<string> {
 
 // Ghi các câu của một bài trong ba truy vấn. Đáp án đúng nằm đầu danh sách trong dữ liệu,
 // nên xoay vị trí theo số thứ tự câu để đáp án đúng không luôn là A.
-async function insertLessonItems(tx: Tx, assignmentId: number, lesson: DemoLesson): Promise<void> {
+export async function insertLessonItems(tx: Tx, assignmentId: number, lesson: DemoLesson): Promise<void> {
   const rows = await tx
     .insert(assignmentItems)
     .values(

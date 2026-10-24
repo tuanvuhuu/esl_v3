@@ -1,10 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { BarChart3, ClipboardCheck, Library, Pencil, Plus, Trash2 } from 'lucide-react';
+import { BarChart3, ClipboardCheck, Library, Pencil, Plus, Sparkles, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCallback, useState, useTransition } from 'react';
 import { deleteAssignmentAction, loadAssignmentForm, type AssignmentFormValues } from '@/app/(app)/bai-tap/actions';
+import { installSampleSetAction } from '@/app/(app)/bai-tap/sample-actions';
+import { FormFooter } from '@/components/ui/Field';
+import { STARTERS_SET } from '@/lib/sample-sets';
 import type { AssignmentRow } from '@/lib/queries/assignments';
 import { addDaysKey, todayKeyVN, vnDateTimeLabel } from '@/lib/datetime';
 import { BTN_BASE, Btn } from '@/components/ui/Btn';
@@ -34,6 +37,7 @@ export function AssignmentsView({
   const router = useRouter();
   const { message, notify } = useToast();
   const [creating, setCreating] = useState(false);
+  const [sampleOpen, setSampleOpen] = useState(false);
   const [editing, setEditing] = useState<{ id: number; values: AssignmentFormValues } | null>(null);
   const [toDelete, setToDelete] = useState<AssignmentRow | null>(null);
   const [pending, startTransition] = useTransition();
@@ -76,6 +80,16 @@ export function AssignmentsView({
 
   const cls = classes.find((c) => c.id === classId);
 
+  // Bộ bài mẫu Starters (35.21): thêm vào lớp đang chọn, bài đã có thì bỏ qua
+  function installSample() {
+    startTransition(async () => {
+      const r = await installSampleSetAction(classId);
+      setSampleOpen(false);
+      notify(r.message ?? (r.ok ? 'Đã thêm' : 'Không thêm được'));
+      router.refresh();
+    });
+  }
+
   return (
     <section className="flex flex-col">
       <PageHeader
@@ -93,6 +107,12 @@ export function AssignmentsView({
                 <Library className="size-4" aria-hidden />
                 Ngân hàng câu hỏi
               </Btn>
+              {classes.length > 0 && (
+                <Btn variant="ghost" onClick={() => setSampleOpen(true)}>
+                  <Sparkles className="size-4" aria-hidden />
+                  Bộ bài mẫu
+                </Btn>
+              )}
               {classes.length > 0 && (
                 <Btn variant="primary" onClick={() => setCreating(true)}>
                   <Plus className="size-4" aria-hidden />
@@ -188,6 +208,30 @@ export function AssignmentsView({
             onCancel={() => setEditing(null)}
           />
         )}
+      </Modal>
+
+      <Modal open={sampleOpen} title={`Thêm ${STARTERS_SET.name} vào lớp ${cls?.name ?? ''}`} subtitle={STARTERS_SET.description} onClose={() => setSampleOpen(false)} labelledBy="sample-set-title">
+        <div className="flex flex-col gap-3 pb-2">
+          <ul className="flex flex-col gap-1.5 text-base text-ink" aria-label="Nội dung bộ bài mẫu">
+            {STARTERS_SET.lessons.map((l) => (
+              <li key={l.title}>
+                <b>{l.title}</b> <span className="text-sm text-muted">· {l.items.length} câu · {l.description}</span>
+              </li>
+            ))}
+            <li>
+              <b>Danh sách từ: {STARTERS_SET.wordList.name}</b> <span className="text-sm text-muted">· {STARTERS_SET.wordList.words.length} từ cho trò chơi</span>
+            </li>
+          </ul>
+          <p className="text-sm text-ink-2">Bài hạn nộp sau 7 ngày, sửa được như bài thường. Bài đã có trong lớp thì bỏ qua. Không gửi tin bài mới cho phụ huynh.</p>
+          <FormFooter>
+            <Btn onClick={() => setSampleOpen(false)} disabled={pending}>
+              Huỷ
+            </Btn>
+            <Btn variant="primary" onClick={installSample} disabled={pending}>
+              {pending ? 'Đang thêm…' : 'Thêm vào lớp'}
+            </Btn>
+          </FormFooter>
+        </div>
       </Modal>
 
       <ConfirmDialog

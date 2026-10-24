@@ -18,7 +18,7 @@ export type DemoItem = {
 export type DemoLesson = { title: string; description: string; items: DemoItem[] };
 
 // Gọn cho từng dạng câu. Đáp án đúng của trắc nghiệm và chọn tranh luôn là phần tử đầu, khi tạo sẽ đảo vị trí.
-const pic = (prompt: string, promptVi: string, correct: string, ...wrong: string[]): DemoItem => ({
+export const pic = (prompt: string, promptVi: string, correct: string, ...wrong: string[]): DemoItem => ({
   skill: 'listening',
   itemType: 'picture_choice',
   prompt,
@@ -26,7 +26,7 @@ const pic = (prompt: string, promptVi: string, correct: string, ...wrong: string
   points: 1,
   options: [{ label: correct, isCorrect: true }, ...wrong.map((label) => ({ label }))],
 });
-const choice = (prompt: string, promptVi: string, correct: string, ...wrong: string[]): DemoItem => ({
+export const choice = (prompt: string, promptVi: string, correct: string, ...wrong: string[]): DemoItem => ({
   skill: 'reading',
   itemType: 'choice',
   prompt,
@@ -34,7 +34,7 @@ const choice = (prompt: string, promptVi: string, correct: string, ...wrong: str
   points: 1,
   options: [{ label: correct, isCorrect: true }, ...wrong.map((label) => ({ label }))],
 });
-const match = (prompt: string, promptVi: string, pairs: [string, string][]): DemoItem => ({
+export const match = (prompt: string, promptVi: string, pairs: [string, string][]): DemoItem => ({
   skill: 'reading',
   itemType: 'match',
   prompt,
@@ -42,7 +42,7 @@ const match = (prompt: string, promptVi: string, pairs: [string, string][]): Dem
   points: 2,
   pairs: pairs.map(([left, right]) => ({ left, right })),
 });
-const order = (sentence: string): DemoItem => ({
+export const order = (sentence: string): DemoItem => ({
   skill: 'writing',
   itemType: 'order',
   prompt: 'Put the words in order.',
@@ -50,7 +50,7 @@ const order = (sentence: string): DemoItem => ({
   referenceText: sentence,
   points: 1,
 });
-const gap = (prompt: string, promptVi: string, answers: string): DemoItem => ({
+export const gap = (prompt: string, promptVi: string, answers: string): DemoItem => ({
   skill: 'writing',
   itemType: 'gap_fill',
   prompt,
@@ -58,7 +58,7 @@ const gap = (prompt: string, promptVi: string, answers: string): DemoItem => ({
   referenceText: answers,
   points: 1,
 });
-const repeat = (sentence: string): DemoItem => ({
+export const repeat = (sentence: string): DemoItem => ({
   skill: 'speaking',
   itemType: 'speak_repeat',
   prompt: 'Listen and repeat.',
@@ -67,7 +67,7 @@ const repeat = (sentence: string): DemoItem => ({
   maxSeconds: 10,
   points: 1,
 });
-const read = (sentence: string): DemoItem => ({
+export const read = (sentence: string): DemoItem => ({
   skill: 'speaking',
   itemType: 'speak_read',
   prompt: 'Read aloud.',
@@ -76,7 +76,7 @@ const read = (sentence: string): DemoItem => ({
   maxSeconds: 15,
   points: 1,
 });
-const write = (prompt: string, promptVi: string): DemoItem => ({ skill: 'writing', itemType: 'text', prompt, promptVi, points: 1 });
+export const write = (prompt: string, promptVi: string): DemoItem => ({ skill: 'writing', itemType: 'text', prompt, promptVi, points: 1 });
 
 export const DEMO_LESSONS: DemoLesson[] = [
   {
