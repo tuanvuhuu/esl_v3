@@ -1,6 +1,7 @@
 // Khu học sinh (P28): bài của lớp mình, bài làm của chính học sinh, và quyền đọc tệp. Chỉ chạy trên server.
 // Mọi truy vấn đều lọc theo mã học sinh đang đăng nhập, không nhận mã từ giao diện để tra cứu.
 import { and, asc, eq, inArray, sql } from 'drizzle-orm';
+import { arrangeForStudent } from '@/lib/student-shuffle';
 import { db } from '@/db/client';
 import {
   assignmentItemOptions,
@@ -31,7 +32,9 @@ export async function enrolledStudent(studentId: number): Promise<{ id: number; 
   return row ?? null;
 }
 
-// Câu hỏi nhìn từ học sinh: không có đáp án đúng
+// Câu hỏi nhìn từ học sinh: không có đáp án đúng. Thứ tự câu và đáp án đã xáo theo học sinh (src/lib/student-shuffle.ts):
+// câu sắp xếp chỉ có các từ đã xáo (orderWords), ghép đôi có hai cột xáo riêng (matchLeft, matchRight),
+// referenceText chỉ còn ở câu nói (câu mẫu để đọc theo).
 export type StudentItem = {
   id: number;
   position: number;
@@ -48,14 +51,9 @@ export type StudentItem = {
   referenceText: string | null;
   maxSeconds: number | null;
   options: { id: number; label: string; imageFileId: number | null; audioFileId: number | null }[];
-  pairs: {
-    id: number;
-    position: number;
-    leftLabel: string;
-    leftImageFileId: number | null;
-    rightLabel: string;
-    rightImageFileId: number | null;
-  }[];
+  orderWords: string[];
+  matchLeft: { label: string; imageFileId: number | null }[];
+  matchRight: { label: string; imageFileId: number | null }[];
   criteriaCount: number;
 };
 
@@ -143,37 +141,29 @@ export async function studentAssignment(assignmentId: number, studentId: number)
     status: sub?.status ?? 'not_submitted',
     score: sub?.score ?? null,
     voice: await studentVoiceAccess(studentId),
-    items: items.map((i) => ({
-      id: i.id,
-      position: i.position,
-      skill: i.skill,
-      itemType: i.itemType,
-      prompt: i.prompt,
-      passage: i.passage,
-      points: i.points,
-      audioFileId: i.audioFileId,
-      audioName: i.audioName,
-      imageFileId: i.imageFileId,
-      modelAudioFileId: i.modelAudioFileId,
-      promptVi: i.promptVi,
-      referenceText: i.referenceText,
-      maxSeconds: i.maxSeconds,
-      options: i.options.map((o) => ({
-        id: o.id,
-        label: o.label,
-        imageFileId: o.imageFileId,
-        audioFileId: o.audioFileId,
+    items: arrangeForStudent(
+      items.map((i) => ({
+        id: i.id,
+        position: i.position,
+        skill: i.skill,
+        itemType: i.itemType,
+        prompt: i.prompt,
+        passage: i.passage,
+        points: i.points,
+        audioFileId: i.audioFileId,
+        audioName: i.audioName,
+        imageFileId: i.imageFileId,
+        modelAudioFileId: i.modelAudioFileId,
+        promptVi: i.promptVi,
+        referenceText: i.referenceText,
+        maxSeconds: i.maxSeconds,
+        options: i.options.map((o) => ({ id: o.id, label: o.label, imageFileId: o.imageFileId, audioFileId: o.audioFileId })),
+        pairs: i.pairs,
+        criteriaCount: i.criteria.length,
       })),
-      pairs: i.pairs.map((p) => ({
-        id: p.id,
-        position: p.position,
-        leftLabel: p.leftLabel,
-        leftImageFileId: p.leftImageFileId,
-        rightLabel: p.rightLabel,
-        rightImageFileId: p.rightImageFileId,
-      })),
-      criteriaCount: i.criteria.length,
-    })),
+      studentId,
+      assignmentId,
+    ),
     answers: items.map((i) => {
       const s = scores.find((x) => x.itemId === i.id);
       return {

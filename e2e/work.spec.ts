@@ -652,10 +652,12 @@ test.describe('bài tập, điểm danh, học phí', () => {
       await page.waitForURL('**/cua-toi');
       await page.goto(assignmentUrl);
 
-      // Làm bài và nộp: trắc nghiệm, viết, nộp tệp (bài chỉ có dạng câu cũ nên mở ở dạng danh sách)
-      await page.getByLabel('B. Tuesday').check();
-      await page.getByLabel('Bài làm câu 2').fill('I went hiking with my friends.');
-      await page.getByLabel('Tải tệp bài làm câu 3').setInputFiles({ name: 'bai-noi.mp3', mimeType: 'audio/mpeg', buffer: Buffer.from('fake-audio-content') });
+      // Làm bài và nộp: trắc nghiệm, viết, nộp tệp (bài chỉ có dạng câu cũ nên mở ở dạng danh sách).
+      // Câu và đáp án đã xáo theo từng học sinh: tìm câu theo nội dung, đáp án theo chữ (chữ cái A–D tuỳ thứ tự)
+      const question = (text: string) => page.getByRole('region').filter({ hasText: text });
+      await question('Listen and choose the day.').getByLabel(/^[A-D]\. Tuesday$/).check();
+      await question('Write about your weekend.').getByLabel(/^Bài làm câu \d$/).fill('I went hiking with my friends.');
+      await question('Record your voice.').getByLabel(/^Tải tệp bài làm câu \d$/).setInputFiles({ name: 'bai-noi.mp3', mimeType: 'audio/mpeg', buffer: Buffer.from('fake-audio-content') });
       await expect(page.getByText('bai-noi.mp3')).toBeVisible();
       await page.getByRole('button', { name: 'Nộp bài', exact: true }).click();
       await expectToast(page, 'Đã nộp bài. Giáo viên sẽ chấm câu viết, câu nói và tệp nộp.');

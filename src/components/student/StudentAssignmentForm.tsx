@@ -213,6 +213,13 @@ export function StudentAssignmentForm({ view }: { view: StudentAssignmentView })
               )}
 
               {/* Sắp xếp câu hoặc điền từ */}
+              {item.itemType === 'order' && item.orderWords.length > 0 && (
+                <p className="flex flex-wrap gap-1.5" aria-label={`Các từ câu ${item.position}`}>
+                  {item.orderWords.map((w, k) => (
+                    <span key={k} className="rounded-lg border border-line bg-stone/40 px-2 py-1 text-sm font-bold text-ink">{w}</span>
+                  ))}
+                </p>
+              )}
               {(item.itemType === 'order' || item.itemType === 'gap_fill') && (
                 <Field label={item.itemType === 'order' ? 'Xếp các từ thành câu đúng' : 'Điền từ vào chỗ trống'}>
                   <input
@@ -229,15 +236,19 @@ export function StudentAssignmentForm({ view }: { view: StudentAssignmentView })
               {/* Ghép đôi */}
               {item.itemType === 'match' && (
                 <div className="flex flex-col gap-2">
-                  <span className="text-xs font-bold text-muted">Các cặp cần ghép đôi:</span>
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    {item.pairs.map((p, pi) => (
-                      <div key={p.id} className="flex items-center justify-between rounded-lg border border-line bg-stone/40 p-2">
-                        <span className="font-bold">{pi + 1}. {p.leftLabel}</span>
-                        <span className="text-muted">⇄</span>
-                        <span className="font-bold text-ink">{p.rightLabel}</span>
-                      </div>
-                    ))}
+                  <span className="text-xs font-bold text-muted">Ghép mỗi ô bên trái với một ô bên phải:</span>
+                  {/* Hai cột xáo riêng theo từng học sinh, không hiện sẵn cặp đúng */}
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <ul className="flex flex-col gap-1.5" aria-label={`Cột trái câu ${item.position}`}>
+                      {item.matchLeft.map((s, k) => (
+                        <li key={k} className="rounded-lg border border-line bg-stone/40 p-2 font-bold text-ink">{k + 1}. {s.label}</li>
+                      ))}
+                    </ul>
+                    <ul className="flex flex-col gap-1.5" aria-label={`Cột phải câu ${item.position}`}>
+                      {item.matchRight.map((s, k) => (
+                        <li key={k} className="rounded-lg border border-line bg-stone/40 p-2 font-bold text-ink">{String.fromCharCode(65 + k)}. {s.label}</li>
+                      ))}
+                    </ul>
                   </div>
                   <Field label="Bài làm ghép đôi của bạn (hoặc vào Chế độ tương tác để chạm nối sinh động)">
                     <input

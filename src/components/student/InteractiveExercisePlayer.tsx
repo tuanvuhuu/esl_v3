@@ -374,8 +374,9 @@ function MatchQuestion({
     }
   });
 
-  const leftItems = item.pairs.map((p) => p.leftLabel || '').filter(Boolean);
-  const rightItems = item.pairs.map((p) => p.rightLabel || '').filter(Boolean);
+  // Hai cột đã xáo riêng trên máy chủ theo từng học sinh (cột phải không cùng thứ tự cột trái)
+  const leftItems = item.matchLeft.map((s) => s.label).filter(Boolean);
+  const rightItems = item.matchRight.map((s) => s.label).filter(Boolean);
 
   function handleSelectLeft(leftText: string) {
     if (paired.some((p) => p.left === leftText)) return;
@@ -457,7 +458,7 @@ function MatchQuestion({
       </div>
 
       <div className="text-center text-xs font-bold text-muted">
-        Đã ghép: {paired.length}/{item.pairs.length} cặp {paired.length === item.pairs.length && '🎉 Giỏi quá!'}
+        Đã ghép: {paired.length}/{item.matchLeft.length} cặp {paired.length === item.matchLeft.length && '🎉 Giỏi quá!'}
       </div>
     </div>
   );
@@ -475,16 +476,12 @@ function OrderQuestion({
   answer: AnswerDraft | undefined;
   onChange: (patch: Partial<AnswerDraft>) => void;
 }) {
-  const targetWords = (item.referenceText || '').split(/\s+/).filter(Boolean);
   const [placedWords, setPlacedWords] = useState<string[]>(() =>
     answer?.answerText ? answer.answerText.split(/\s+/).filter(Boolean) : [],
   );
 
-  // Xáo trộn ngân hàng từ
-  const [bankWords] = useState<string[]>(() => {
-    const list = [...targetWords];
-    return list.sort(() => Math.random() - 0.5);
-  });
+  // Các từ đã xáo trên máy chủ theo từng học sinh (mở lại vẫn cùng thứ tự; máy chủ không gửi câu đúng)
+  const bankWords = item.orderWords;
 
   function addWord(word: string) {
     const next = [...placedWords, word];

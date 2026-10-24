@@ -818,3 +818,12 @@ Mỗi lỗi gặp phải được ghi ở đây, theo mẫu dưới đây. Trư�
 - Cách sửa: Bộ câu chốt một lần lúc mở màn (`useState` với hàm khởi tạo). Action ghi lượt ôn không làm mới trang (trang `/cua-toi` luôn đọc mới khi mở).
 - Quy tắc phòng ngừa: Màn nhiều bước chạy trên client (chơi, ôn, làm bài) mà mỗi bước gọi server action thì không `revalidatePath` trang đang mở, hoặc phải chốt dữ liệu đầu vào lúc mở màn.
 - Đã áp dụng ở: `src/components/games/ReviewSession.tsx`, `src/app/(student)/cua-toi/game-actions.ts`.
+
+## E-089 · Bài tập dễ đoán: đáp án đúng nằm cố định và đáp án bị gửi xuống trình duyệt học sinh
+- Ngày: 2026-10-24
+- Khu vực: `studentAssignment` (`src/lib/queries/student-portal.ts`), `StudentAssignmentForm.tsx`, `InteractiveExercisePlayer.tsx`
+- Triệu chứng: Người dùng báo bài tập "rất dễ chọn". Rà lại thấy: câu và đáp án hiện đúng thứ tự giáo viên soạn (đáp án đúng hay nằm đầu); câu ghép đôi ở dạng danh sách hiện sẵn từng cặp "trái ⇄ phải"; ở dạng tương tác cột phải cùng thứ tự cột trái; dữ liệu gửi xuống trình duyệt có câu đúng của câu sắp xếp (`referenceText`) và đáp án chấp nhận của câu điền chỗ trống (`referenceText`, các lựa chọn đúng). Câu sắp xếp ở dạng danh sách lại không hiện các từ để xếp.
+- Nguyên nhân: Kiểu `StudentItem` chép gần nguyên câu hỏi của giáo viên (chỉ bỏ `isCorrect`), không nghĩ tới các trường khác cũng là đáp án; thứ tự lấy theo `position`.
+- Cách sửa: `src/lib/student-shuffle.ts` xáo thứ tự câu và đáp án theo từng học sinh (hạt giống theo mã học sinh và mã bài: mở lại vẫn cùng thứ tự, mỗi em một thứ tự), áp dụng lúc hiển thị nên đúng cho mọi bài cũ và mới, không sửa dữ liệu. Máy chủ chỉ gửi: các từ đã xáo của câu sắp xếp (`orderWords`), hai cột xáo riêng của câu ghép đôi (`matchLeft`, `matchRight`, cột phải không trùng thứ tự cột trái); câu điền chỗ trống không gửi đáp án; `referenceText` chỉ còn ở câu nói. Unit `student-shuffle.test.ts`.
+- Quy tắc phòng ngừa: Dữ liệu câu hỏi gửi cho học sinh phải đi qua `arrangeForStudent`. Thêm dạng câu mới thì liệt kê trường nào là đáp án và bỏ khỏi dữ liệu gửi xuống; E2E chọn đáp án theo nội dung, không theo chữ cái hay số thứ tự câu.
+- Đã áp dụng ở: các tệp trên, `e2e/work.spec.ts`, `e2e/hoc-thu.spec.ts`.
