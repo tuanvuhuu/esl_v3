@@ -109,6 +109,9 @@ export const itemFormSchema = z
     }
     if (v.itemType === 'match') {
       if (v.pairs.length < 2) ctx.addIssue({ code: 'custom', path: ['pairs'], message: 'Ghép đôi cần ít nhất 2 cặp' });
+      if (v.pairs.some((p) => (!p.leftLabel && !p.leftImageFileId) || (!p.rightLabel && !p.rightImageFileId))) {
+        ctx.addIssue({ code: 'custom', path: ['pairs'], message: 'Mỗi cặp ghép cần đủ vế trái và vế phải' });
+      }
     }
     if (v.itemType === 'order') {
       if (!v.referenceText.trim()) ctx.addIssue({ code: 'custom', path: ['referenceText'], message: 'Nhập câu chuẩn để đối chiếu thứ tự đúng' });

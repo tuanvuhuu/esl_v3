@@ -63,7 +63,9 @@ describe('gửi dữ liệu câu hỏi lên máy chủ', () => {
     const input = draftToInput(d);
     expect(input.points).toBe(3);
     expect(input.criteria).toEqual([]);
-    expect(input.options).toHaveLength(2);
+    // Đáp án để trống hoàn toàn bị bỏ khi gửi, trừ ô đang đánh dấu đúng (để máy chủ báo thiếu đáp án)
+    expect(input.options).toHaveLength(1);
+    expect(input.options[0].isCorrect).toBe(true);
   });
 
   it('câu có tiêu chí: điểm câu là tổng điểm tiêu chí', () => {

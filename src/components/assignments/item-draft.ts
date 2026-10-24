@@ -215,8 +215,9 @@ export function draftToInput(d: Draft): ItemInput {
     wordTimings: d.itemType === 'speak_read' ? d.wordTimings : '',
     maxSeconds: Number(d.maxSeconds) || 15,
     sourceLicense: d.sourceLicense.trim(),
+    // Bỏ đáp án và cặp ghép để trống hoàn toàn (thêm ô rồi không điền), để câu không có cặp hay đáp án rỗng
     options: hasOptions
-      ? d.options.map((o) => ({
+      ? d.options.filter((o) => o.label.trim() || o.imageFileId !== null || o.audioFileId !== null || o.isCorrect).map((o) => ({
           id: o.id,
           label: o.label,
           isCorrect: o.isCorrect,
@@ -226,7 +227,7 @@ export function draftToInput(d: Draft): ItemInput {
       : [],
     pairs:
       d.itemType === 'match'
-        ? d.pairs.map((p, idx) => ({
+        ? d.pairs.filter((p) => p.leftLabel.trim() || p.rightLabel.trim() || p.leftImageFileId !== null || p.rightImageFileId !== null).map((p, idx) => ({
             id: p.id,
             position: idx + 1,
             leftLabel: p.leftLabel.trim(),
