@@ -13,6 +13,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { Pill } from '@/components/ui/primitives';
 import { Card, EmptyPanel, Notice } from '@/components/ui/surfaces';
 import { Toast, useToast } from '@/components/ui/Toast';
+import { usePresent } from '@/components/present/usePresent';
 import { SubmissionPill } from './SubmissionPill';
 import { AnswerDialog } from './AnswerDialog';
 import { ItemsEditor } from './ItemsEditor';
@@ -39,6 +40,7 @@ export function ItemGradingView({
 }) {
   const router = useRouter();
   const { message, notify } = useToast();
+  const present = usePresent(notify);
   const [editingItems, setEditingItems] = useState(false);
   // Lưu mã học sinh đang mở, để dữ liệu luôn lấy từ danh sách mới sau khi làm mới trang
   const [openId, setOpenId] = useState<number | null>(null);
@@ -94,11 +96,17 @@ export function ItemGradingView({
         title={assignment.title}
         subtitle={`${assignment.className} · hạn ${vnDateTimeLabel(new Date(assignment.dueAt))} · tối đa ${assignment.maxScore} điểm`}
         actions={
-          canManage && (
-            <Btn variant="primary" onClick={() => setEditingItems(true)}>
-              Sửa câu hỏi
+          <>
+            {/* Chiếu câu hỏi của bài lên màn lớn cho cả lớp cùng làm (35.19) */}
+            <Btn variant="ghost" onClick={() => present.start('assignment', assignment.id)} disabled={present.starting}>
+              Trình chiếu
             </Btn>
-          )
+            {canManage && (
+              <Btn variant="primary" onClick={() => setEditingItems(true)}>
+                Sửa câu hỏi
+              </Btn>
+            )}
+          </>
         }
       />
 

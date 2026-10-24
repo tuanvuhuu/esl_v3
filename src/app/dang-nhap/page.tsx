@@ -6,18 +6,20 @@ import { demoLoginEnabled } from '@/lib/demo-account';
 import { getCurrentAccount } from '@/lib/session';
 
 // Trang đăng nhập. Đã đăng nhập thì chuyển thẳng vào Tổng quan.
-export default function LoginPage() {
+export default function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
   return (
     <Suspense fallback={null}>
-      <LoginData />
+      <LoginData searchParams={searchParams} />
     </Suspense>
   );
 }
 
-async function LoginData() {
+async function LoginData({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
   await connection();
   const account = await getCurrentAccount();
-  if (account) redirect('/tong-quan');
+  // ?next=: mở tiếp trang đó sau khi đăng nhập (máy chủ kiểm lại đường dẫn trong loginAction)
+  const next = (await searchParams).next ?? '';
+  if (account) redirect(next.startsWith('/trinh-chieu/') ? next : '/tong-quan');
   // Đăng nhập nhanh chỉ khi không phải production (tạm thời, xem devQuickLoginAction)
-  return <LoginForm quickLogin={process.env.NODE_ENV !== 'production'} demo={demoLoginEnabled()} />;
+  return <LoginForm quickLogin={process.env.NODE_ENV !== 'production'} demo={demoLoginEnabled()} next={next} />;
 }

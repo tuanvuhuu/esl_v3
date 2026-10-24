@@ -1084,3 +1084,29 @@ export const wordReviews = pgTable(
   },
   (t) => [uniqueIndex('word_reviews_student_word_key').on(t.studentId, t.wordKey), index('word_reviews_due_idx').on(t.studentId, t.due)],
 );
+
+// ---------- Trình chiếu cho cả lớp (35.19) ----------
+
+// Một lần trình chiếu: nguồn (danh sách từ hoặc bài tập), kiểu chiếu, trang đang chiếu, đã hiện đáp án chưa.
+// Máy chiếu và điện thoại điều khiển cùng đọc, ghi dòng này (máy chiếu hỏi lại mỗi giây). token nằm trong đường dẫn,
+// chỉ chính tài khoản tạo mới mở và điều khiển được. version tăng mỗi lần đổi để hai bên không ghi đè trạng thái cũ.
+export const presentSessions = pgTable(
+  'present_sessions',
+  {
+    id: serial('id').primaryKey(),
+    token: varchar('token', { length: 32 }).notNull(),
+    accountId: integer('account_id')
+      .notNull()
+      .references(() => accounts.id, { onDelete: 'cascade' }),
+    sourceKind: varchar('source_kind', { length: 20 }).notNull(),
+    sourceId: integer('source_id').notNull(),
+    mode: varchar('mode', { length: 10 }).notNull().default('flash'),
+    seed: integer('seed').notNull(),
+    total: integer('total').notNull(),
+    slide: integer('slide').notNull().default(0),
+    revealed: boolean('revealed').notNull().default(false),
+    version: integer('version').notNull().default(0),
+    ...timestamps,
+  },
+  (t) => [uniqueIndex('present_sessions_token_key').on(t.token)],
+);

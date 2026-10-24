@@ -40,16 +40,23 @@ async function authenticate(email: string, password: string): Promise<{ ok: true
   }
 }
 
+// Trang mở tiếp sau khi đăng nhập (ví dụ điện thoại quét mã điều khiển trình chiếu). Chỉ nhận đường dẫn trong trang,
+// không nhận "//" hay địa chỉ đầy đủ để không bị dẫn sang trang ngoài.
+function safeNext(raw: FormDataEntryValue | null): string {
+  const next = typeof raw === 'string' ? raw : '';
+  return /^\/(?![\/\\])[^\s]*$/.test(next) ? next : '/tong-quan';
+}
+
 // Đăng nhập bằng email và mật khẩu từ form
 export async function loginAction(_prev: ActionResult, formData: FormData): Promise<ActionResult> {
-  const parsed = loginSchema.safeParse(Object.fromEntries(formData));
+  const parsed = loginSchema.safeParse({ email: formData.get('email'), password: formData.get('password') });
   if (!parsed.success) {
     return { ok: false, message: 'Vui lòng nhập email và mật khẩu.', fieldErrors: fieldErrorsFrom(parsed.error) };
   }
   const result = await authenticate(parsed.data.email, parsed.data.password);
   if (!result.ok) return { ok: false, message: result.message };
   await startSession(result.accountId);
-  redirect('/tong-quan');
+  redirect(safeNext(formData.get('next')));
 }
 
 // TẠM THỜI (chỉ phát triển): đăng nhập nhanh theo vai trò bằng tài khoản mẫu.

@@ -13,7 +13,7 @@ const INITIAL: ActionResult = { ok: false };
 // Form đăng nhập. Mật khẩu không được điền sẵn; lỗi hiện ngay trong ô.
 // quickLogin: bật nút đăng nhập nhanh theo vai trò (tạm thời, chỉ khi phát triển).
 // demo: nút "Vào học thử" mở thẳng bài học mẫu, không cần mật khẩu (DEMO_LOGIN=off để tắt).
-export function LoginForm({ quickLogin = false, demo = false }: { quickLogin?: boolean; demo?: boolean }) {
+export function LoginForm({ quickLogin = false, demo = false, next = '' }: { quickLogin?: boolean; demo?: boolean; next?: string }) {
   const [state, formAction, pending] = useActionState<ActionResult, FormData>(loginAction, INITIAL);
   const [quickPending, startQuick] = useTransition();
   const [quickError, setQuickError] = useState<string | null>(null);
@@ -47,6 +47,7 @@ export function LoginForm({ quickLogin = false, demo = false }: { quickLogin?: b
         </header>
 
         <form onSubmit={submit} noValidate className="flex flex-col gap-4">
+          {next && <input type="hidden" name="next" value={next} />}
           {state.message && !state.ok && (
             <Alert>{state.message}</Alert>
           )}

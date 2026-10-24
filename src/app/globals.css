@@ -216,6 +216,10 @@
   --fs-h1: 26px;
   --fs-display: 56px;
   --fs-input: 15px;
+  /* Trình chiếu lên màn lớn (35.19): theo bề rộng màn, không theo breakpoint */
+  --fs-stage-sm: clamp(18px, 2.4vw, 44px);
+  --fs-stage: clamp(28px, 4.6vw, 88px);
+  --fs-stage-xl: clamp(64px, 12vw, 220px);
 }
 
 /* ---------- Máy tính bảng (768–1199px) ---------- */
@@ -304,6 +308,9 @@
   --text-h1: var(--fs-h1);
   --text-display: var(--fs-display);
   --text-input: var(--fs-input);
+  --text-stage-sm: var(--fs-stage-sm);
+  --text-stage: var(--fs-stage);
+  --text-stage-xl: var(--fs-stage-xl);
 
   --shadow-card: var(--shadow);
   --shadow-lift: var(--lift);

@@ -1,12 +1,13 @@
 'use client';
 
-// Màn Danh sách từ (35.14): web là bảng có ⋯ (Chơi thử, Sửa, Xoá), điện thoại là thẻ có nút chữ. Xoá luôn qua hộp xác nhận.
-import { Gamepad2, Pencil, Plus, Trash2 } from 'lucide-react';
+// Màn Danh sách từ (35.14): web là bảng có ⋯ (Chơi thử, Trình chiếu, Sửa, Xoá), điện thoại là thẻ có nút chữ. Xoá luôn qua hộp xác nhận.
+import { Gamepad2, MonitorPlay, Pencil, Plus, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { deleteWordListAction, loadWordListAction } from '@/app/(app)/tu-vung/actions';
 import type { WordListItem, WordListRow } from '@/lib/queries/word-lists';
+import { usePresent } from '@/components/present/usePresent';
 import { Btn, BTN_BASE, BTN_PRIMARY } from '@/components/ui/Btn';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { DataGrid, type GridColumn } from '@/components/ui/datagrid';
@@ -29,6 +30,7 @@ const linkText = (r: WordListRow) => [r.className ? `Lớp ${r.className}` : '',
 export function WordListsView({ lists, classes, lessons, canManage }: { lists: WordListRow[]; classes: { id: number; name: string }[]; lessons: { id: number; title: string }[]; canManage: boolean }) {
   const router = useRouter();
   const { message, notify } = useToast();
+  const present = usePresent(notify);
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<{ row: WordListRow; items: WordListItem[] } | null>(null);
   const [toDelete, setToDelete] = useState<WordListRow | null>(null);
@@ -62,6 +64,7 @@ export function WordListsView({ lists, classes, lessons, canManage }: { lists: W
 
   const menu = (r: WordListRow): RowMenuItem[] => [
     { kind: 'link', label: 'Chơi thử', icon: Gamepad2, href: `/tu-vung/${r.id}` },
+    { kind: 'action', label: 'Trình chiếu', icon: MonitorPlay, onSelect: () => present.start('word_list', r.id), disabled: present.starting },
     { kind: 'action', label: 'Sửa', icon: Pencil, onSelect: () => openEdit(r), disabled: !canManage, disabledHint: 'Không có quyền soạn bài' },
     { kind: 'action', label: 'Xoá', icon: Trash2, danger: true, onSelect: () => setToDelete(r), disabled: !canManage, disabledHint: 'Không có quyền soạn bài' },
   ];
