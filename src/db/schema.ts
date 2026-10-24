@@ -10,6 +10,7 @@ import {
   date,
   index,
   integer,
+  jsonb,
   pgEnum,
   pgTable,
   serial,
@@ -1055,4 +1056,31 @@ export const gamePlays = pgTable(
     playedAt: timestamp('played_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index('game_plays_student_idx').on(t.studentId, t.playedAt)],
+);
+
+// ---------- Hộp từ của học sinh, ôn lặp lại ngắt quãng (35.18) ----------
+
+// Mỗi học sinh một thẻ cho mỗi từ (word_key = từ viết thường). Từ vào hộp khi học sinh chơi xong một trò của danh sách.
+// Lưu bản chép nghĩa, emoji, tranh, âm thanh để danh sách bị sửa hoặc xoá vẫn ôn được. card là thẻ FSRS (ts-fsrs), due tách cột để lọc.
+export const wordReviews = pgTable(
+  'word_reviews',
+  {
+    id: serial('id').primaryKey(),
+    studentId: integer('student_id')
+      .notNull()
+      .references(() => students.id, { onDelete: 'cascade' }),
+    wordKey: varchar('word_key', { length: 60 }).notNull(),
+    word: varchar('word', { length: 60 }).notNull(),
+    meaningVi: varchar('meaning_vi', { length: 120 }).notNull().default(''),
+    emoji: varchar('emoji', { length: 16 }).notNull().default(''),
+    imageFileId: integer('image_file_id').references(() => uploadedFiles.id, { onDelete: 'set null' }),
+    audioFileId: integer('audio_file_id').references(() => uploadedFiles.id, { onDelete: 'set null' }),
+    wordListId: integer('word_list_id').references(() => wordLists.id, { onDelete: 'set null' }),
+    card: jsonb('card').notNull(),
+    due: timestamp('due', { withTimezone: true }).notNull(),
+    reviewCount: integer('review_count').notNull().default(0),
+    lastReviewedAt: timestamp('last_reviewed_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex('word_reviews_student_word_key').on(t.studentId, t.wordKey), index('word_reviews_due_idx').on(t.studentId, t.due)],
 );

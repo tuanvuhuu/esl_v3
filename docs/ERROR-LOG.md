@@ -800,3 +800,21 @@ Mỗi lỗi gặp phải được ghi ở đây, theo mẫu dưới đây. Trư�
 - Cách sửa: Pool giữ kết nối rảnh 5 phút, bật keepAlive. Quyền và cơ sở lấy song song; số việc chờ không chặn trang (truyền promise, bảng Tính năng dùng `use`). Ngày đến hạn học phí đọc song song với danh sách.
 - Quy tắc phòng ngừa: DB ở xa thì mỗi lượt đi về đáng kể: các truy vấn không phụ thuộc nhau chạy bằng `Promise.all`; phần khung chung không chờ dữ liệu phụ. Dùng hằng ngày bằng bản build (`npm run build` + `npm start`), không bằng `npm run dev` (dev biên dịch từng trang lần đầu mở).
 - Đã áp dụng ở: các tệp trên.
+
+## E-087 · Học sinh không xem được tranh, âm thanh của danh sách từ trong trò chơi
+- Ngày: 2026-10-24
+- Khu vực: `studentMayReadFile` (`src/lib/queries/student-portal.ts`), `/api/files/[id]`
+- Triệu chứng: Phát hiện khi đọc code để làm hộp từ (35.18). Giáo viên tải tranh, âm thanh cho từ trong danh sách; học sinh mở trò chơi thì `/api/files` trả 403: tranh vỡ, âm thanh tải lên không phát (trò chơi phải đọc bằng giọng máy).
+- Nguyên nhân: Quyền đọc tệp của học sinh chỉ gồm tệp bài nộp của chính mình và âm thanh câu hỏi của lớp mình. Danh sách từ (35.14) thêm loại tệp mới nhưng không thêm vào hàm kiểm quyền. E2E trò chơi dùng emoji nên không lộ.
+- Cách sửa: Cho học sinh đọc tranh, âm thanh của danh sách từ thuộc lớp mình hoặc dùng chung, và bản chép trong hộp từ của chính mình. E2E `on-tu.spec.ts` kiểm tệp của lớp mình qua được (404 vì tệp thử không có trong kho), của lớp khác 403.
+- Quy tắc phòng ngừa: Thêm bảng có cột tệp (`*_file_id`) mà học sinh sẽ thấy thì phải thêm vào `studentMayReadFile` và có E2E học sinh mở tệp đó (kiểm mã trả về, không chỉ kiểm giao diện).
+- Đã áp dụng ở: `src/lib/queries/student-portal.ts`, `e2e/on-tu.spec.ts`.
+
+## E-088 · Màn ôn từ đổi số câu giữa chừng rồi mất màn kết quả
+- Ngày: 2026-10-24
+- Khu vực: `src/components/games/ReviewSession.tsx`, `reviewWordAction`
+- Triệu chứng: E2E ôn 4 từ: sau câu đầu, màn ghi "Từ 2/3"; trả lời câu cuối xong thì hiện "Hôm nay con ôn xong rồi" thay cho màn kết quả.
+- Nguyên nhân: Action ghi lượt ôn gọi `revalidatePath`, Next làm mới trang đang mở. Từ vừa ôn không còn đến hạn nên máy chủ gửi danh sách ngắn hơn; `useMemo` theo props dựng lại bộ câu, và khi hết từ thì trang thay cả màn ôn bằng thông báo trống.
+- Cách sửa: Bộ câu chốt một lần lúc mở màn (`useState` với hàm khởi tạo). Action ghi lượt ôn không làm mới trang (trang `/cua-toi` luôn đọc mới khi mở).
+- Quy tắc phòng ngừa: Màn nhiều bước chạy trên client (chơi, ôn, làm bài) mà mỗi bước gọi server action thì không `revalidatePath` trang đang mở, hoặc phải chốt dữ liệu đầu vào lúc mở màn.
+- Đã áp dụng ở: `src/components/games/ReviewSession.tsx`, `src/app/(student)/cua-toi/game-actions.ts`.

@@ -1,6 +1,6 @@
 // Khu học sinh (P28): bài của lớp mình, bài làm của chính học sinh, và quyền đọc tệp. Chỉ chạy trên server.
 // Mọi truy vấn đều lọc theo mã học sinh đang đăng nhập, không nhận mã từ giao diện để tra cứu.
-import { and, asc, eq, inArray } from 'drizzle-orm';
+import { and, asc, eq, inArray, sql } from 'drizzle-orm';
 import { db } from '@/db/client';
 import {
   assignmentItemOptions,
@@ -228,7 +228,16 @@ export async function studentMayReadFile(studentId: number, fileId: number): Pro
     .innerJoin(assignments, eq(assignments.id, assignmentItems.assignmentId))
     .where(and(eq(assignmentItems.audioFileId, fileId), eq(assignments.classId, student.classId)))
     .limit(1);
-  return !!audio;
+  if (audio) return true;
+
+  // Tranh, âm thanh của danh sách từ (35.15) lớp mình hoặc dùng chung, và bản chép trong hộp từ của chính học sinh (35.18)
+  const words = await db.execute<{ ok: number }>(sql`
+    SELECT 1 AS ok FROM word_list_items i JOIN word_lists l ON l.id = i.list_id
+    WHERE (i.image_file_id = ${fileId} OR i.audio_file_id = ${fileId}) AND (l.class_id = ${student.classId} OR l.class_id IS NULL)
+    UNION ALL
+    SELECT 1 FROM word_reviews r WHERE r.student_id = ${studentId} AND (r.image_file_id = ${fileId} OR r.audio_file_id = ${fileId})
+    LIMIT 1`);
+  return words.rows.length > 0;
 }
 
 // Đáp án đúng của một câu. Dùng ở máy chủ để chấm trắc nghiệm, không gửi xuống trình duyệt của học sinh.
