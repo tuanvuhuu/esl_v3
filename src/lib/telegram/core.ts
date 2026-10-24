@@ -3,7 +3,7 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { accounts, studentParents, telegramChats, telegramMessages, telegramNotificationLog } from '@/db/schema';
-import { sendMessage, sendMessageDetailed, sendPhotoDetailed, type SendOutcome } from './api';
+import { sendAudioDetailed, sendMessage, sendMessageDetailed, sendPhotoDetailed, type SendOutcome } from './api';
 import type { NotifyKind } from './prefs';
 
 export type Chat = typeof telegramChats.$inferSelect;
@@ -75,11 +75,20 @@ async function deliverPhoto(chat: Chat, png: Uint8Array, caption: string, kind: 
   return outcome;
 }
 
+// Gửi tệp âm thanh (giọng mẫu của giáo viên, 35.11) và lưu lại; chữ lưu kèm nhãn để màn Tin nhắn hiện được
+async function deliverAudio(chat: Chat, file: AudioFile, caption: string, kind: string, sentByAccountId: number | null): Promise<SendOutcome> {
+  const outcome = await sendAudioDetailed(chat.chatId, file.bytes, file.name, file.mime, caption);
+  if (outcome.blocked) await db.update(telegramChats).set({ active: false, updatedAt: new Date() }).where(eq(telegramChats.id, chat.id));
+  await record({ chatId: chat.chatId, parentId: chat.parentId, accountId: chat.accountId, direction: 'out', kind, text: `[Âm thanh: ${file.name}] ${caption}`, sentByAccountId, delivered: outcome.ok, read: true });
+  return outcome;
+}
+
 export async function sendPhotoAndRecord(chat: Chat, png: Uint8Array, caption: string, kind: string, sentByAccountId: number | null): Promise<boolean> {
   return (await deliverPhoto(chat, png, caption, kind, sentByAccountId)).ok;
 }
 
 export type SendResult = 'sent' | 'failed' | 'skipped';
+export type AudioFile = { bytes: Uint8Array; name: string; mime: string };
 
 // Giới hạn tin tự động chỉ gửi cho một chat (cron ?chat=<id>): để chạy thử hay kiểm thử mà không gửi tới phụ huynh thật
 const onlyChat = new AsyncLocalStorage<number>();
@@ -99,7 +108,7 @@ export function chatAllowed(chatId: number): boolean {
 // dòng nhật ký để lần chạy sau thử lại; lỗi vĩnh viễn (chat không tồn tại, bị chặn, chưa cấu hình bot) thì giữ, không gửi lại.
 export async function sendOnce(
   chat: Chat,
-  opts: { kind: string; ref: string; text: string; pref?: NotifyKind; markup?: Record<string, unknown>; photo?: Uint8Array },
+  opts: { kind: string; ref: string; text: string; pref?: NotifyKind; markup?: Record<string, unknown>; photo?: Uint8Array; audio?: AudioFile; sentByAccountId?: number | null },
 ): Promise<SendResult> {
   if (!chat.active) return 'skipped';
   const only = onlyChat.getStore();
@@ -113,7 +122,12 @@ export async function sendOnce(
     .returning({ id: telegramNotificationLog.id });
   if (inserted.length === 0) return 'skipped';
   // Có ảnh (mã QR học phí) thì gửi ảnh, chữ làm chú thích
-  const outcome = opts.photo ? await deliverPhoto(chat, opts.photo, opts.text, opts.kind, null) : await deliver(chat, opts.text, opts.kind, null, opts.markup);
+  const by = opts.sentByAccountId ?? null;
+  const outcome = opts.photo
+    ? await deliverPhoto(chat, opts.photo, opts.text, opts.kind, by)
+    : opts.audio
+      ? await deliverAudio(chat, opts.audio, opts.text, opts.kind, by)
+      : await deliver(chat, opts.text, opts.kind, by, opts.markup);
   if (!outcome.ok && outcome.retryable) await db.delete(telegramNotificationLog).where(eq(telegramNotificationLog.id, inserted[0].id));
   return outcome.ok ? 'sent' : 'failed';
 }

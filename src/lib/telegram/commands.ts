@@ -9,6 +9,7 @@ export type BotCommand =
   | { kind: 'tuition' }
   | { kind: 'homework' }
   | { kind: 'scores' }
+  | { kind: 'speaking' }
   | { kind: 'attendance' }
   | { kind: 'leave'; arg?: string }
   | { kind: 'today' }
@@ -85,6 +86,7 @@ export const QUICK_MENU_INLINE = {
 export const DEFAULT_BOT_COMMANDS = [
   { command: 'lich', description: '📅 Xem lịch học 7 ngày tới' },
   { command: 'diem', description: '📊 Xem bảng điểm & nhận xét bài tập' },
+  { command: 'nhanxet', description: '🎙️ Nhận xét bài nói của Thầy/Cô' },
   { command: 'chuyencan', description: '📝 Xem điểm danh, chuyên cần' },
   { command: 'hocphi', description: '💳 Tra cứu học phí đã đóng & còn lại' },
   { command: 'baitap', description: '📚 Xem bài tập về nhà chưa nộp' },
@@ -117,8 +119,11 @@ export function parseCommand(raw: string): BotCommand {
       case 'diem':
       case 'scores':
       case 'grade':
-      case 'nhanxet':
         return { kind: 'scores' };
+      // Nhận xét bài nói của Thầy/Cô (35.11)
+      case 'nhanxet':
+      case 'speaking':
+        return { kind: 'speaking' };
       case 'chuyencan':
       case 'attendance':
         return { kind: 'attendance' };
@@ -167,8 +172,11 @@ export function parseCommand(raw: string): BotCommand {
   if (['lich', 'lich hoc', 'xem lich', 'thoi khoa bieu', 'tkb', 'schedule'].includes(norm)) {
     return { kind: 'schedule' };
   }
-  if (['diem', 'diem so', 'bang diem', 'xem diem', 'nhan xet', 'ket qua', 'scores', 'grade'].includes(norm)) {
+  if (['diem', 'diem so', 'bang diem', 'xem diem', 'ket qua', 'scores', 'grade'].includes(norm)) {
     return { kind: 'scores' };
+  }
+  if (['nhan xet', 'nhan xet bai noi', 'bai noi'].includes(norm)) {
+    return { kind: 'speaking' };
   }
   if (['chuyen can', 'diem danh', 'tinh hinh di hoc', 'attendance'].includes(norm)) {
     return { kind: 'attendance' };
@@ -248,6 +256,7 @@ export const HELP_TEXT = [
   '',
   '• 📅 Lịch học: Xem lịch học 7 ngày tới, giờ học và phòng học của con',
   '• 📊 Điểm số: Xem điểm bài kiểm tra và nhận xét của Thầy/Cô',
+  '• /nhanxet: Nhận xét bài nói của Thầy/Cô (lỗi cần luyện, lời khen)',
   '• 📝 Chuyên cần: Xem số buổi đi học, đi trễ hoặc vắng mặt',
   '• 💳 Học phí: Xem các khoản đã đóng và học phí còn lại',
   '• 📚 Bài tập: Xem danh sách bài tập về nhà và hạn nộp',

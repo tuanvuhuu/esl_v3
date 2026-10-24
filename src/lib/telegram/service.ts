@@ -9,6 +9,7 @@ import { dateKeyLabel, todayKeyVN, vnDateTimeLabel, vnDayBounds } from '@/lib/da
 import { formatVND } from '@/lib/money';
 import { answerCallbackQuery, editMessageText, sendMessage } from './api';
 import { chatOf, record, sendAndRecord, sendCopyToSuperAdmins, sendPhotoAndRecord, type Chat } from './core';
+import { speakingFeedbackForParent } from './speaking';
 import { tuitionQr } from '@/lib/tuition-qr';
 import { answerSurveyContinue, answerSurveyScore } from './survey';
 import { cancelLeave, chooseMakeup, chooseReason, chooseSession, decideLeave, promptMakeup, leaveStatusMap, listPendingLeaves, promptSessions, resolveLeaveRef, startLeave, takeTypedReason } from './leave';
@@ -539,6 +540,7 @@ export async function handleIncoming(message: IncomingMessage): Promise<void> {
     }
     if (command.kind === 'homework') return void (await sendAndRecord(chat, await homeworkText(chat.parentId), 'command', null, QUICK_MENU_INLINE));
     if (command.kind === 'scores') return void (await sendAndRecord(chat, await scoresText(chat.parentId), 'command', null, QUICK_MENU_INLINE));
+    if (command.kind === 'speaking') return void (await sendAndRecord(chat, await speakingFeedbackForParent(await childrenOf(chat.parentId)), 'command', null, QUICK_MENU_INLINE));
     if (command.kind === 'attendance') return void (await sendAndRecord(chat, await attendanceText(chat.parentId), 'command', null, QUICK_MENU_INLINE));
     if (command.kind === 'leave') return void (await startLeave(chat));
     if (command.kind === 'settings') return void (await showSettings(chat));

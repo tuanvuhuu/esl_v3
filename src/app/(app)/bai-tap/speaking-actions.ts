@@ -9,6 +9,7 @@ import { assignmentItems, assignmentSubmissions, speakingAssessments, speakingFe
 import { ForbiddenError, requirePermission } from '@/lib/authz';
 import { requireAssignmentAccess, requireStudentAccess } from '@/lib/campus-access';
 import { getCurrentAccount } from '@/lib/session';
+import { sendSpeakingFeedback } from '@/lib/telegram/speaking';
 import { todayKeyVN } from '@/lib/datetime';
 import {
   isSpeakingError,
@@ -168,6 +169,24 @@ export async function saveSpeakingRubricAction(assignmentId: number, studentId: 
       .values({ submissionId: subId, itemId, ...values })
       .onConflictDoUpdate({ target: [speakingAssessments.submissionId, speakingAssessments.itemId], set: values });
     return { ok: true, message: 'Đã lưu tiêu chí', points };
+  } catch (error) {
+    return errorResult(error);
+  }
+}
+
+// Gửi nhận xét bài nói của một học sinh cho phụ huynh qua Telegram (35.11): lời khen, tiêu chí, lỗi cần luyện, giọng mẫu,
+// chữ ký giáo viên, bản sao cho super admin. Lấy từ dữ liệu đã lưu, nên hộp chấm lưu trước rồi mới gọi.
+export async function sendSpeakingFeedbackAction(assignmentId: number, studentId: number): Promise<ActionResult> {
+  try {
+    const submissionId = await submissionFor(assignmentId, studentId);
+    if (!submissionId) return { ok: false, message: 'Học sinh chưa nộp bài này.' };
+    const account = await getCurrentAccount();
+    if (!account) return { ok: false, message: 'Cần đăng nhập.' };
+    const r = await sendSpeakingFeedback(submissionId, account.id);
+    if (r.status === 'sent') return { ok: true, message: `Đã gửi nhận xét bài nói cho ${r.chats} phụ huynh qua Telegram` };
+    if (r.status === 'no_parent') return { ok: false, message: 'Phụ huynh của em này chưa kết nối Telegram nên chưa gửi được nhận xét.' };
+    if (r.status === 'unchanged') return { ok: true, message: 'Nhận xét này đã gửi phụ huynh rồi. Sửa nhận xét thì gửi được bản mới.' };
+    return { ok: false, message: 'Chưa có nhận xét bài nói để gửi: chấm tiêu chí, ghi điều con làm tốt hoặc đánh dấu lỗi trước.' };
   } catch (error) {
     return errorResult(error);
   }

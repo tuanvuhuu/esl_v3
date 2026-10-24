@@ -89,6 +89,31 @@ export async function sendPhotoDetailed(chatId: number, png: Uint8Array, caption
   }
 }
 
+// Gửi tệp âm thanh kèm chú thích (giọng mẫu của giáo viên, 35.11). MP3/M4A gửi dạng âm thanh (phát ngay trong Telegram),
+// OGG gửi dạng tin thoại, định dạng khác (webm của trình duyệt) gửi dạng tệp đính kèm.
+export async function sendAudioDetailed(chatId: number, bytes: Uint8Array, fileName: string, mimeType: string, caption: string): Promise<SendOutcome> {
+  const token = botToken();
+  if (!token) {
+    console.error('❌ Lỗi gọi Telegram: Thiếu TELEGRAM_BOT_TOKEN trong biến môi trường!');
+    return { ok: false, retryable: false, blocked: false };
+  }
+  const [method, field] = /mpeg|mp3|mp4|m4a|aac/.test(mimeType) ? ['sendAudio', 'audio'] : /ogg/.test(mimeType) ? ['sendVoice', 'voice'] : ['sendDocument', 'document'];
+  const form = new FormData();
+  form.append('chat_id', String(chatId));
+  form.append('caption', caption.slice(0, 1024));
+  form.append(field, new Blob([new Uint8Array(bytes)], { type: mimeType }), fileName);
+  try {
+    const response = await fetch(`${API}/bot${token}/${method}`, { method: 'POST', body: form, signal: AbortSignal.timeout(30_000) });
+    const data = (await response.json()) as { ok: boolean; description?: string };
+    if (data.ok) return { ok: true, retryable: false, blocked: false };
+    console.error(`❌ Telegram ${method} thất bại:`, data.description ?? `HTTP ${response.status}`);
+    return { ok: false, retryable: response.status === 429 || response.status >= 500, blocked: /bot was blocked|user is deactivated|bot was kicked/i.test(data.description ?? '') };
+  } catch (error) {
+    console.error(`❌ Lỗi mạng khi gọi Telegram ${method}:`, error instanceof Error ? error.message : error);
+    return { ok: false, retryable: true, blocked: false };
+  }
+}
+
 // Gửi tin dạng chữ thường (không bật HTML/Markdown, để nội dung do người dùng gõ không phá định dạng)
 export async function sendMessage(chatId: number, text: string, replyMarkup?: Record<string, unknown>): Promise<boolean> {
   const body: Record<string, unknown> = {

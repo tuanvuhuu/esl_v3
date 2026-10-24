@@ -2,7 +2,7 @@
 
 import { Paperclip, X } from 'lucide-react';
 import { useEffect, useState, useTransition } from 'react';
-import { listSpeakingMarksAction, saveSpeakingRubricAction, type SpeakingRubric as Rubric } from '@/app/(app)/bai-tap/speaking-actions';
+import { listSpeakingMarksAction, saveSpeakingRubricAction, sendSpeakingFeedbackAction, type SpeakingRubric as Rubric } from '@/app/(app)/bai-tap/speaking-actions';
 import { rubricToPoints, type SpeakingScale } from '@/lib/speaking';
 import { SpeakingRubric } from './SpeakingRubric';
 import type { SpeakingMark } from '@/lib/speaking';
@@ -164,7 +164,7 @@ export function AnswerDialog({
     if (pts !== null) setDraft(item.id, { points: String(pts) });
   }
 
-  function save() {
+  function persister() {
     // Câu nói đã chấm tiêu chí (có sao/điểm hoặc lời khen): lưu tiêu chí trước, bắt buộc đủ tiêu chí và "Điều con làm tốt"
     const rubricItems = items.filter((i) => {
       const r = rubrics[i.id];
@@ -184,16 +184,43 @@ export function AnswerDialog({
         criterionPoints: i.criteria.map((c) => ({ criterionId: c.id, points: toPoints(d.criterionPoints[c.id] ?? '') })),
       };
     });
-    startTransition(async () => {
+    // Lưu tiêu chí rồi bài làm; lỗi thì hiện trong hộp và trả null
+    const persist = async (): Promise<string | null> => {
       const overrides: Record<number, number> = {};
       for (const i of rubricItems) {
         const rr = await saveSpeakingRubricAction(assignmentId, student.id, i.id, rubrics[i.id]);
-        if (!rr.ok || rr.points === undefined) return setError(rr.message ?? 'Chưa lưu được tiêu chí');
+        if (!rr.ok || rr.points === undefined) {
+          setError(rr.message ?? 'Chưa lưu được tiêu chí');
+          return null;
+        }
         overrides[i.id] = rr.points;
       }
       const r = await saveStudentAnswersAction(assignmentId, student.id, payloadOf(overrides));
-      if (!r.ok) return setError(r.message ?? 'Không lưu được');
-      onSaved(r.message ?? 'Đã lưu bài làm');
+      if (!r.ok) {
+        setError(r.message ?? 'Không lưu được');
+        return null;
+      }
+      return r.message ?? 'Đã lưu bài làm';
+    };
+    return persist;
+  }
+
+  function save() {
+    const persist = persister();
+    startTransition(async () => {
+      const msg = await persist();
+      if (msg) onSaved(msg);
+    });
+  }
+
+  // Lưu trước (nhận xét gửi đi lấy từ dữ liệu đã lưu), rồi gửi nhận xét bài nói cho phụ huynh qua Telegram (35.11)
+  function saveAndSend() {
+    const persist = persister();
+    startTransition(async () => {
+      const msg = await persist();
+      if (!msg) return;
+      const sent = await sendSpeakingFeedbackAction(assignmentId, student.id);
+      onSaved(`${msg}. ${sent.message ?? ''}`.trim());
     });
   }
 
@@ -414,7 +441,12 @@ export function AnswerDialog({
       })}
 
       {canManage && (
-        <div className="flex justify-end">
+        <div className="flex flex-wrap justify-end gap-2.5">
+          {hasSpeak && (
+            <Btn onClick={saveAndSend} disabled={pending} className="max-[767px]:w-full">
+              Lưu và gửi nhận xét bài nói cho phụ huynh
+            </Btn>
+          )}
           <Btn variant="primary" onClick={save} disabled={pending} className="max-[767px]:flex-1">
             {pending ? 'Đang lưu…' : 'Lưu bài làm'}
           </Btn>

@@ -16,7 +16,7 @@ describe('đọc lệnh Telegram', () => {
     expect(parseCommand('/hocphi@esl_center_bot')).toEqual({ kind: 'tuition' });
     expect(parseCommand('/homework')).toEqual({ kind: 'homework' });
     expect(parseCommand('/diem')).toEqual({ kind: 'scores' });
-    expect(parseCommand('/nhanxet')).toEqual({ kind: 'scores' });
+    expect(parseCommand('/nhanxet')).toEqual({ kind: 'speaking' });
     expect(parseCommand('/chuyencan')).toEqual({ kind: 'attendance' });
     expect(parseCommand('/nghi')).toEqual({ kind: 'leave', arg: undefined });
     expect(parseCommand('/nghi vi con om')).toEqual({ kind: 'leave', arg: 'vi con om' });
