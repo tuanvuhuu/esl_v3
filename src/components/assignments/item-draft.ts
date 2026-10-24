@@ -40,6 +40,7 @@ export type Draft = {
   imageFileId: number | null;
   modelAudioFileId: number | null;
   modelAudioName: string | null;
+  wordTimings: string; // mốc karaoke của câu đọc to (35.7)
   maxSeconds: string;
   sourceLicense: string;
   options: DraftOption[];
@@ -62,6 +63,7 @@ export type DraftSource = {
   modelAudioFileId?: number | null;
   promptVi?: string | null;
   referenceText?: string | null;
+  wordTimings?: string | null;
   maxSeconds?: number | null;
   sourceLicense?: string | null;
   options: { id: number; label: string; isCorrect: boolean; imageFileId?: number | null; audioFileId?: number | null }[];
@@ -96,6 +98,7 @@ export function toDraft(source: DraftSource, bankQuestionId: number | null = nul
     imageFileId: source.imageFileId ?? null,
     modelAudioFileId: source.modelAudioFileId ?? null,
     modelAudioName: null,
+    wordTimings: source.wordTimings ?? '',
     maxSeconds: source.maxSeconds ? String(source.maxSeconds) : '15',
     sourceLicense: source.sourceLicense ?? '',
     options: source.options.map((o) => ({
@@ -137,6 +140,7 @@ export function draftFromInput(input: ItemInput): Draft {
     imageFileId: input.imageFileId ?? null,
     modelAudioFileId: input.modelAudioFileId ?? null,
     modelAudioName: null,
+    wordTimings: input.wordTimings ?? '',
     maxSeconds: String(input.maxSeconds ?? 15),
     sourceLicense: input.sourceLicense ?? '',
     options: input.options.map((o) => ({ key: newKey(), id: null, label: o.label, isCorrect: o.isCorrect, imageFileId: o.imageFileId ?? null, audioFileId: o.audioFileId ?? null })),
@@ -163,6 +167,7 @@ export function blankDraft(): Draft {
     imageFileId: null,
     modelAudioFileId: null,
     modelAudioName: null,
+    wordTimings: '',
     maxSeconds: '15',
     sourceLicense: '',
     options: [
@@ -207,6 +212,7 @@ export function draftToInput(d: Draft): ItemInput {
     bankQuestionId: d.bankQuestionId,
     imageFileId: d.imageFileId,
     modelAudioFileId: d.modelAudioFileId,
+    wordTimings: d.itemType === 'speak_read' ? d.wordTimings : '',
     maxSeconds: Number(d.maxSeconds) || 15,
     sourceLicense: d.sourceLicense.trim(),
     options: hasOptions

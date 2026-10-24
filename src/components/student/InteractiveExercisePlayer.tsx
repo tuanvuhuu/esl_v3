@@ -7,6 +7,7 @@ import { childAgreeVoiceAction, submitMyAnswersAction, type StudentAnswerInput, 
 import { useRouter } from 'next/navigation';
 import { clock, pickRecordingFormat, recordedFormat, starsFor } from '@/lib/recording';
 import { uploadAsStudent } from '@/lib/upload-client';
+import { KaraokeText } from './KaraokeText';
 
 export type AnswerDraft = {
   selectedOptionId: number | null;
@@ -779,10 +780,12 @@ export function SpeakQuestion({
   const recording = phase === 'recording';
   return (
     <div className="flex flex-col items-center gap-4 py-2">
-      {item.referenceText && (
-        <div className="rounded-2xl border border-line bg-stone/40 p-3 text-center text-lg font-extrabold leading-relaxed text-ink">“{item.referenceText}”</div>
+      {item.itemType === 'speak_read' && item.referenceText ? (
+        <KaraokeText text={item.referenceText} audioFileId={item.modelAudioFileId ?? item.audioFileId} wordTimings={item.wordTimings} disabled={recording} />
+      ) : (
+        item.referenceText && <div className="rounded-2xl border border-line bg-stone/40 p-3 text-center text-lg font-extrabold leading-relaxed text-ink">“{item.referenceText}”</div>
       )}
-      {(item.modelAudioFileId || item.referenceText) && (
+      {item.itemType !== 'speak_read' && (item.modelAudioFileId || item.referenceText) && (
         <button type="button" onClick={() => playModel(item)} disabled={recording} className="inline-flex min-h-11 items-center gap-2 rounded-full border-2 border-line bg-surface px-4 text-base font-extrabold text-ink active:scale-95 disabled:opacity-40">
           <Volume2 className="size-5" aria-hidden /> Nghe mẫu
         </button>

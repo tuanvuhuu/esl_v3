@@ -49,6 +49,7 @@ export type AssignmentItem = {
   modelAudioFileId: number | null;
   promptVi: string | null;
   referenceText: string | null;
+  wordTimings: string;
   maxSeconds: number | null;
   sourceLicense: string | null;
   options: ItemOption[];
@@ -80,6 +81,7 @@ export async function listItemsForAssignments(assignmentIds: number[]): Promise<
       modelAudioFileId: assignmentItems.modelAudioFileId,
       promptVi: assignmentItems.promptVi,
       referenceText: assignmentItems.referenceText,
+      wordTimings: assignmentItems.wordTimings,
       maxSeconds: assignmentItems.maxSeconds,
       sourceLicense: assignmentItems.sourceLicense,
       audioName: uploadedFiles.originalName,
@@ -149,6 +151,7 @@ export async function listItemsForAssignments(assignmentIds: number[]): Promise<
       modelAudioFileId: i.modelAudioFileId,
       promptVi: i.promptVi,
       referenceText: i.referenceText,
+      wordTimings: i.wordTimings,
       maxSeconds: i.maxSeconds,
       sourceLicense: i.sourceLicense,
       options: options

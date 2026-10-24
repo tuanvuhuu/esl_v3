@@ -267,6 +267,13 @@
       "when": 1792810762175,
       "tag": "0037_word_review_wrong_count",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1792814057327,
+      "tag": "0038_word_timings",
+      "breakpoints": true
     }
   ]
 }

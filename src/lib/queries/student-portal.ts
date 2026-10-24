@@ -49,6 +49,7 @@ export type StudentItem = {
   modelAudioFileId: number | null;
   promptVi: string | null;
   referenceText: string | null;
+  wordTimings: string; // mốc karaoke câu đọc to (35.7), trống thì chia đều
   maxSeconds: number | null;
   options: { id: number; label: string; imageFileId: number | null; audioFileId: number | null }[];
   orderWords: string[];
@@ -156,6 +157,7 @@ export async function studentAssignment(assignmentId: number, studentId: number)
         modelAudioFileId: i.modelAudioFileId,
         promptVi: i.promptVi,
         referenceText: i.referenceText,
+        wordTimings: i.wordTimings,
         maxSeconds: i.maxSeconds,
         options: i.options.map((o) => ({ id: o.id, label: o.label, imageFileId: o.imageFileId, audioFileId: o.audioFileId })),
         pairs: i.pairs,

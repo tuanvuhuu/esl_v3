@@ -1,5 +1,6 @@
 // Validate bài tập và chấm điểm. Dùng ở server action.
 import { z } from 'zod';
+import { karaokeWords, parseTimings } from '@/lib/karaoke';
 import { isRealIsoDate } from './student';
 import { CRITERIA_PER_ITEM, CRITERION_MAX_POINTS, ITEM_TYPES, SKILLS } from '@/lib/assignment-scoring';
 
@@ -84,6 +85,7 @@ export const itemFormSchema = z
     imageFileId: z.number().int().positive().nullable().default(null),
     modelAudioFileId: z.number().int().positive().nullable().default(null),
     referenceText: z.string().trim().max(2000, 'Văn bản mẫu tối đa 2000 ký tự').default(''),
+    wordTimings: z.string().trim().max(4000).regex(/^(\d+(,\d+)*)?$/, 'Mốc từng từ không hợp lệ').default(''),
     maxSeconds: z.number().int().min(5).max(180).default(10),
     sourceLicense: z.string().trim().max(300).default(''),
     options: z.array(itemOptionSchema).max(6, 'Tối đa 6 đáp án').default([]),
@@ -93,6 +95,10 @@ export const itemFormSchema = z
     bankQuestionId: z.number().int().positive().nullable().default(null),
   })
   .superRefine((v, ctx) => {
+    // Mốc karaoke phải khớp số từ của câu mẫu; sửa câu mẫu thì chỉnh lại mốc hoặc bấm Chia đều
+    if (v.wordTimings && parseTimings(v.wordTimings, karaokeWords(v.referenceText).length) === null) {
+      ctx.addIssue({ code: 'custom', path: ['wordTimings'], message: 'Mốc từng từ không khớp câu mẫu. Bấm Chia đều hoặc chỉnh lại mốc.' });
+    }
     if (!v.prompt && v.audioFileId === null && v.imageFileId === null && v.modelAudioFileId === null) {
       ctx.addIssue({ code: 'custom', path: ['prompt'], message: 'Nhập nội dung câu hỏi hoặc đính âm thanh/ảnh' });
     }

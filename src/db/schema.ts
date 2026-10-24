@@ -348,6 +348,8 @@ export const assignmentItems = pgTable(
     imageFileId: integer('image_file_id').references(() => uploadedFiles.id, { onDelete: 'set null' }),
     modelAudioFileId: integer('model_audio_file_id').references(() => uploadedFiles.id, { onDelete: 'set null' }),
     referenceText: text('reference_text').notNull().default(''),
+    // Mốc bắt đầu từng từ của câu đọc to theo giọng mẫu, mili giây "0,420,900" (karaoke 35.7). Trống thì chia đều.
+    wordTimings: text('word_timings').notNull().default(''),
     maxSeconds: integer('max_seconds').notNull().default(10),
     sourceLicense: varchar('source_license', { length: 300 }).notNull().default(''),
     // Câu chép từ ngân hàng (P24). Xoá câu trong ngân hàng thì bài vẫn giữ nội dung đã chép.

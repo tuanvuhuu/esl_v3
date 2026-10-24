@@ -54,6 +54,7 @@ export type ItemInput = {
   modelAudioFileId?: number | null;
   promptVi?: string | null;
   referenceText?: string | null;
+  wordTimings?: string | null;
   maxSeconds?: number | null;
   sourceLicense?: string | null;
   options: {
@@ -179,6 +180,7 @@ export async function saveAssignmentItemsAction(assignmentId: number, input: Ite
           modelAudioFileId: item.modelAudioFileId ?? null,
           promptVi: item.promptVi ?? null,
           referenceText: item.referenceText ?? null,
+          wordTimings: item.wordTimings ?? '',
           maxSeconds: item.maxSeconds ?? null,
           sourceLicense: item.sourceLicense ?? null,
           updatedAt: new Date(),

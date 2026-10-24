@@ -17,6 +17,8 @@ import { ActIcon } from '@/components/ui/ActIcon';
 import { Btn } from '@/components/ui/Btn';
 import { Field, inputClass, textareaClass, FileInput } from '@/components/ui/Field';
 import { SelectPanel } from '@/components/ui/SelectPanel';
+import { KaraokeTimingEditor } from './KaraokeTimingEditor';
+import { MiniRecorder } from './MiniRecorder';
 import { criteriaTotal, MAX_OPTIONS, MAX_PAIRS, newKey, type Draft } from './item-draft';
 import { ItemMiniPreview } from './ItemMiniPreview';
 import { AUDIO_ACCEPT, IMAGE_ACCEPT } from '@/lib/upload-types';
@@ -139,6 +141,17 @@ export function ItemDraftCard({
       const r = await uploadAsStaff(file);
       if (!r.ok) return onError(r.message);
       patch({ audioFileId: r.fileId, audioName: r.name });
+      onError(null);
+    });
+  }
+
+  // Giọng mẫu riêng của câu nói (35.7): đổi giọng mẫu thì mốc karaoke cũ không còn đúng, về chia đều
+  function uploadModelAudio(file: File | undefined) {
+    if (!file) return;
+    startUpload(async () => {
+      const r = await uploadAsStaff(file);
+      if (!r.ok) return onError(r.message);
+      patch({ modelAudioFileId: r.fileId, modelAudioName: r.name, wordTimings: '' });
       onError(null);
     });
   }
@@ -508,6 +521,20 @@ export function ItemDraftCard({
               className={textareaClass()}
             />
           </Field>
+          <div className="flex flex-col gap-2 rounded-xl border border-line bg-stone/30 p-3">
+            <span className="text-xs font-bold uppercase tracking-wider text-muted">Giọng mẫu của Thầy/Cô (học sinh bấm Nghe mẫu)</span>
+            <MiniRecorder
+              fileId={d.modelAudioFileId}
+              label={`Ghi giọng mẫu câu ${n}`}
+              maxSec={Number(d.maxSeconds) || 15}
+              disabled={busy}
+              onChange={(fileId) => patch({ modelAudioFileId: fileId, modelAudioName: null, wordTimings: '' })}
+            />
+            {d.modelAudioFileId === null && <FileInput label={`Tải tệp giọng mẫu cho câu ${n}`} accept={AUDIO_ACCEPT} disabled={busy} onFile={(file) => uploadModelAudio(file)} />}
+            {d.itemType === 'speak_read' && (
+              <KaraokeTimingEditor n={n} text={d.referenceText} audioFileId={d.modelAudioFileId ?? d.audioFileId} value={d.wordTimings} disabled={busy} onChange={(v) => patch({ wordTimings: v })} />
+            )}
+          </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="Thời gian ghi âm tối đa (giây)">
               <input
