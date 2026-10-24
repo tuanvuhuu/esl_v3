@@ -1,0 +1,1 @@
+ALTER TABLE "assignments" ADD COLUMN "mode" varchar(10) DEFAULT 'test' NOT NULL;

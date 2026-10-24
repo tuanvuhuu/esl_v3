@@ -40,6 +40,7 @@ export type AssignmentFormValues = {
   dueTime: string;
   maxScore: number;
   lessonId: string; // '' là không gắn bài giảng
+  mode: 'test' | 'practice';
 };
 
 // Bài giảng gắn với bài tập phải dùng ở cơ sở của lớp. Trả về mã bài giảng hoặc null khi không gắn.
@@ -72,7 +73,7 @@ export async function createAssignmentAction(_prev: ActionResult, formData: Form
 
     const [created] = await db
       .insert(assignments)
-      .values({ classId: v.classId, title: v.title, description: v.description, dueAt: dueAtFrom(v.dueDate, v.dueTime), maxScore: v.maxScore, lessonId: lesson.lessonId })
+      .values({ classId: v.classId, title: v.title, description: v.description, dueAt: dueAtFrom(v.dueDate, v.dueTime), maxScore: v.maxScore, lessonId: lesson.lessonId, mode: v.mode })
       .returning({ id: assignments.id });
     await writeAudit({ action: 'create', entity: 'assignment', entityId: created.id, summary: `Tạo bài tập ${v.title} cho lớp ${cls.name}` });
     revalidateAssignments(v.classId);
@@ -116,7 +117,7 @@ export async function updateAssignmentAction(id: number, _prev: ActionResult, fo
 
     await db
       .update(assignments)
-      .set({ title: v.title, description: v.description, dueAt: dueAtFrom(v.dueDate, v.dueTime), maxScore: v.maxScore, lessonId: lesson.lessonId, updatedAt: new Date() })
+      .set({ title: v.title, description: v.description, dueAt: dueAtFrom(v.dueDate, v.dueTime), maxScore: v.maxScore, lessonId: lesson.lessonId, mode: v.mode, updatedAt: new Date() })
       .where(eq(assignments.id, id));
     await writeAudit({ action: 'update', entity: 'assignment', entityId: id, summary: `Sửa bài tập ${v.title}` });
     revalidateAssignments(base.classId, id);
@@ -143,6 +144,7 @@ export async function loadAssignmentForm(id: number): Promise<{ ok: true; values
         dueTime: due.slice(11, 16),
         maxScore: base.maxScore,
         lessonId: base.lessonId === null ? '' : String(base.lessonId),
+        mode: base.mode === 'practice' ? 'practice' : 'test',
       },
     };
   } catch (error) {

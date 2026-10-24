@@ -81,6 +81,7 @@ export async function getAssignmentBase(id: number) {
       dueAt: assignments.dueAt,
       maxScore: assignments.maxScore,
       lessonId: assignments.lessonId,
+      mode: assignments.mode,
       campusId: classes.campusId,
       levelCode: courseLevels.code, // trình độ của lớp, Soạn nhanh dùng để chỉnh độ khó (P36)
     })

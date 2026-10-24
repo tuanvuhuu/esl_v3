@@ -267,6 +267,8 @@ export const assignments = pgTable(
     description: text('description').notNull().default(''),
     dueAt: timestamp('due_at', { withTimezone: true }).notNull(),
     maxScore: integer('max_score').notNull().default(10),
+    // Chế độ làm bài (35.5): test = kiểm tra (làm một lượt rồi nộp); practice = luyện tập (kiểm từng câu, sai làm lại ngay)
+    mode: varchar('mode', { length: 10 }).notNull().default('test'),
     // Bài tập có thể gắn một bài giảng (P25). Xoá bài giảng đang gắn thì bị chặn ở ứng dụng.
     lessonId: integer('lesson_id').references(() => lessons.id, { onDelete: 'set null' }),
     ...timestamps,

@@ -6,6 +6,7 @@ import type { ActionResult } from '@/lib/validation/student';
 import { Field, FORM_BTN_CANCEL, FORM_BTN_SUBMIT, inputClass, textareaClass, FormFooter } from '@/components/ui/Field';
 import { SelectPanel } from '@/components/ui/SelectPanel';
 import { Alert } from '@/components/ui/primitives';
+import { ASSIGNMENT_MODE_LABELS, ASSIGNMENT_MODES } from '@/lib/validation/assignment';
 
 const INITIAL: ActionResult = { ok: false };
 
@@ -39,9 +40,11 @@ export function AssignmentForm({
     dueTime: '23:59',
     maxScore: 10,
     lessonId: '',
+    mode: 'test',
   };
   const [classId, setClassId] = useState(String(values.classId));
   const [lessonId, setLessonId] = useState(values.lessonId);
+  const [workMode, setWorkMode] = useState<string>(values.mode ?? 'test');
   const campusOfClass = classes.find((c) => String(c.id) === classId)?.campusId ?? null;
   const lessonChoices = lessons.filter((l) => campusOfClass !== null && l.campusIds.includes(campusOfClass));
   // Bài giảng đã chọn nhưng không còn thuộc cơ sở của lớp thì hiện là chưa chọn
@@ -91,6 +94,16 @@ export function AssignmentForm({
       </Field>
       <Field label="Điểm tối đa *" error={errors.maxScore}>
         <input name="maxScore" type="number" inputMode="numeric" min={1} max={100} step={1} defaultValue={values.maxScore} className={inputClass(errors.maxScore)} />
+      </Field>
+      <Field label="Chế độ làm bài" wide hint="Luyện tập: con bấm Kiểm tra từng câu, sai thì làm lại ngay. Kiểm tra: làm một lượt rồi nộp.">
+        <SelectPanel
+          name="mode"
+          label="Chế độ làm bài"
+          value={workMode}
+          onChange={setWorkMode}
+          options={ASSIGNMENT_MODES.map((m) => ({ value: m, label: ASSIGNMENT_MODE_LABELS[m] }))}
+          block
+        />
       </Field>
       <Field label="Bài giảng (không bắt buộc)" error={errors.lessonId} wide hint={lessonChoices.length === 0 ? 'Cơ sở của lớp chưa có bài giảng nào' : undefined}>
         <SelectPanel

@@ -13,6 +13,10 @@ export const SUBMISSION_LABELS: Record<(typeof SUBMISSION_STATUSES)[number], str
 
 const TIME = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
+export const ASSIGNMENT_MODES = ['test', 'practice'] as const;
+export type AssignmentMode = (typeof ASSIGNMENT_MODES)[number];
+export const ASSIGNMENT_MODE_LABELS: Record<AssignmentMode, string> = { test: 'Kiểm tra (làm một lượt rồi nộp)', practice: 'Luyện tập (sai được làm lại ngay)' };
+
 export const assignmentFormSchema = z.object({
   classId: z.coerce.number({ error: 'Vui lòng chọn lớp' }).int().positive('Vui lòng chọn lớp'),
   title: z.string({ error: 'Vui lòng nhập tiêu đề bài tập' }).trim().min(2, 'Tiêu đề cần ít nhất 2 ký tự').max(160, 'Tiêu đề tối đa 160 ký tự'),
@@ -29,6 +33,8 @@ export const assignmentFormSchema = z.object({
     .max(100, 'Điểm tối đa tối đa 100'),
   // Bài giảng gắn với bài tập (không bắt buộc). Để trống là không gắn.
   lessonId: z.string().trim().default(''),
+  // Kiểm tra: làm một lượt rồi nộp. Luyện tập: kiểm từng câu, sai làm lại ngay (35.5)
+  mode: z.enum(ASSIGNMENT_MODES).default('test'),
 });
 
 export type AssignmentFormInput = z.infer<typeof assignmentFormSchema>;

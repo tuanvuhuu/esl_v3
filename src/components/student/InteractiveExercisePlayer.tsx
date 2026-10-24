@@ -3,8 +3,11 @@
 import { Check, Mic, RotateCcw, Volume2, X } from 'lucide-react';
 import { useEffect, useRef, useState, useTransition } from 'react';
 import type { StudentAssignmentView, StudentItem } from '@/lib/queries/student-portal';
-import { childAgreeVoiceAction, submitMyAnswersAction, type StudentAnswerInput, type SubmitScore } from '@/app/(student)/cua-toi/actions';
+import { checkPracticeAnswerAction, childAgreeVoiceAction, submitMyAnswersAction, type StudentAnswerInput, type SubmitScore } from '@/app/(student)/cua-toi/actions';
 import { useRouter } from 'next/navigation';
+import { closestCenter, DndContext, KeyboardSensor, PointerSensor, TouchSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
+import { arrayMove, rectSortingStrategy, SortableContext, sortableKeyboardCoordinates, useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { clock, pickRecordingFormat, recordedFormat, starsFor } from '@/lib/recording';
 import { uploadAsStudent } from '@/lib/upload-client';
 import { KaraokeText } from './KaraokeText';
@@ -126,6 +129,7 @@ export function InteractiveExercisePlayer({
           />
         </div>
 
+        {view.mode === 'practice' && <span className="rounded-full bg-mint px-2 py-0.5 text-xs font-extrabold text-ink">Luyện tập</span>}
         <span className="text-xs font-extrabold text-muted">
           {currentIndex + 1}/{total}
         </span>
@@ -142,6 +146,8 @@ export function InteractiveExercisePlayer({
           isLast={currentIndex === total - 1}
           submitting={submitting}
           voice={view.voice}
+          practice={view.mode === 'practice'}
+          assignmentId={view.id}
         />
       )}
 
@@ -152,6 +158,22 @@ export function InteractiveExercisePlayer({
       )}
     </div>
   );
+}
+
+// Dạng câu tự chấm: chế độ luyện tập kiểm ngay được
+const AUTO_TYPES = new Set<string>(['choice', 'picture_choice', 'match', 'order', 'gap_fill']);
+
+// Đọc hướng dẫn: đề tiếng Anh rồi lời nhắc tiếng Việt (máy không có giọng tiếng Việt thì đọc bằng giọng mặc định)
+function speakInstructions(en: string, vi: string) {
+  if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+  window.speechSynthesis.cancel();
+  for (const [text, lang] of [[en, 'en-US'], [vi, 'vi-VN']] as const) {
+    if (!text.trim()) continue;
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = lang;
+    u.rate = 0.9;
+    window.speechSynthesis.speak(u);
+  }
 }
 
 // ==========================================
@@ -165,6 +187,8 @@ function ExerciseItem({
   isLast,
   submitting,
   voice,
+  practice,
+  assignmentId,
 }: {
   item: StudentItem;
   answer: AnswerDraft | undefined;
@@ -173,9 +197,31 @@ function ExerciseItem({
   isLast: boolean;
   submitting: boolean;
   voice: StudentAssignmentView['voice'];
+  practice: boolean;
+  assignmentId: number;
 }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  // Luyện tập (35.5): câu tự chấm phải bấm Kiểm tra; đúng thì mới sang câu, sai thì làm lại hoặc bỏ qua
+  const [verdict, setVerdict] = useState<'right' | 'wrong' | null>(null);
+  const [checkError, setCheckError] = useState<string | null>(null);
+  const [checking, startCheck] = useTransition();
+  const needsCheck = practice && AUTO_TYPES.has(item.itemType) && verdict !== 'right';
+  const hasAnswer = (answer?.selectedOptionId ?? null) !== null || (answer?.answerText ?? '').trim() !== '';
+
+  function change(patch: Partial<AnswerDraft>) {
+    onChange(patch);
+    if (verdict === 'wrong') setVerdict(null);
+  }
+
+  function check() {
+    startCheck(async () => {
+      const r = await checkPracticeAnswerAction(assignmentId, { itemId: item.id, selectedOptionId: answer?.selectedOptionId ?? null, answerText: answer?.answerText ?? '', fileId: null });
+      if (!r.ok) return setCheckError(r.message);
+      setCheckError(null);
+      setVerdict(r.correct ? 'right' : 'wrong');
+    });
+  }
 
   function playAudio() {
     if (!audioRef.current) return;
@@ -216,9 +262,15 @@ function ExerciseItem({
               <Volume2 className="size-7" />
             </button>
           ) : (
-            <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-stone text-xl">
-              ⭐
-            </div>
+            // Hướng dẫn bằng giọng nói (35.5): đọc đề tiếng Anh rồi lời nhắc tiếng Việt bằng giọng có sẵn của máy
+            <button
+              type="button"
+              onClick={() => speakInstructions(item.prompt, item.promptVi ?? '')}
+              aria-label="Nghe hướng dẫn"
+              className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-stone text-ink active:scale-95"
+            >
+              <Volume2 className="size-6" aria-hidden />
+            </button>
           )}
 
           <div className="min-w-0 flex-1">
@@ -245,26 +297,26 @@ function ExerciseItem({
       {/* Thân câu hỏi theo từng dạng */}
       <div className="my-auto py-4">
         {item.itemType === 'picture_choice' && (
-          <PictureChoiceQuestion item={item} answer={answer} onChange={onChange} />
+          <PictureChoiceQuestion item={item} answer={answer} onChange={change} />
         )}
 
         {item.itemType === 'match' && (
-          <MatchQuestion item={item} answer={answer} onChange={onChange} />
+          <MatchQuestion item={item} answer={answer} onChange={change} />
         )}
 
         {item.itemType === 'order' && (
-          <OrderQuestion item={item} answer={answer} onChange={onChange} />
+          <OrderQuestion item={item} answer={answer} onChange={change} />
         )}
 
         {item.itemType === 'gap_fill' && (
-          <GapFillQuestion answer={answer} onChange={onChange} />
+          <GapFillQuestion answer={answer} onChange={change} />
         )}
 
         {(item.itemType === 'speak_repeat' || item.itemType === 'speak_read' || item.itemType === 'speak_picture') &&
           (voice.allowed ? <SpeakQuestion item={item} answer={answer} onChange={onChange} /> : <VoiceGate needsChild={voice.needsChild} referenceText={item.referenceText ?? ''} />)}
 
         {item.itemType === 'choice' && (
-          <ChoiceQuestion item={item} answer={answer} onChange={onChange} />
+          <ChoiceQuestion item={item} answer={answer} onChange={change} />
         )}
 
         {(item.itemType === 'text' || item.itemType === 'file') && (
@@ -272,15 +324,29 @@ function ExerciseItem({
         )}
       </div>
 
-      {/* Nút Tiếp tục / Hoàn thành */}
+      {/* Kết quả kiểm câu ở chế độ luyện tập */}
+      {practice && verdict === 'right' && (
+        <p role="status" className="mb-2 animate-bounce rounded-2xl bg-mint p-3 text-center text-lg font-black text-ink">Đúng rồi! Giỏi quá 🎉</p>
+      )}
+      {practice && verdict === 'wrong' && (
+        <div role="status" className="mb-2 flex flex-col items-center gap-1 rounded-2xl bg-blush p-3 text-center">
+          <b className="text-lg font-black text-blush-ink">Chưa đúng, con thử lại nhé!</b>
+          <button type="button" onClick={onNext} className="text-sm font-bold text-ink underline underline-offset-4">
+            Bỏ qua câu này
+          </button>
+        </div>
+      )}
+      {checkError && <p role="alert" className="mb-2 text-center text-sm font-bold text-blush-ink">{checkError}</p>}
+
+      {/* Nút Tiếp tục / Hoàn thành (luyện tập: Kiểm tra trước) */}
       <div className="pt-2">
         <button
           type="button"
-          onClick={onNext}
-          disabled={submitting}
+          onClick={needsCheck ? check : onNext}
+          disabled={submitting || checking || (needsCheck && (!hasAnswer || verdict === 'wrong'))}
           className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-[var(--primary)] text-lg font-black text-[var(--on-primary)] shadow-[0_4px_0_var(--primary-deep)] active:translate-y-1 active:shadow-none transition-all disabled:opacity-50"
         >
-          {submitting ? 'Đang gửi…' : isLast ? 'Xong bài 🎉' : 'Tiếp tục ➔'}
+          {needsCheck ? (checking ? 'Đang kiểm…' : 'Kiểm tra') : submitting ? 'Đang gửi…' : isLast ? 'Xong bài 🎉' : 'Tiếp tục ➔'}
         </button>
       </div>
     </div>
@@ -477,49 +543,59 @@ function OrderQuestion({
   answer: AnswerDraft | undefined;
   onChange: (patch: Partial<AnswerDraft>) => void;
 }) {
-  const [placedWords, setPlacedWords] = useState<string[]>(() =>
-    answer?.answerText ? answer.answerText.split(/\s+/).filter(Boolean) : [],
+  // Mỗi từ đã xếp có mã riêng để kéo đổi chỗ (dnd-kit, 35.5): chạm vào từ là bỏ ra, kéo là đổi chỗ, bàn phím cũng dùng được
+  const [placed, setPlaced] = useState<{ id: string; w: string }[]>(() =>
+    (answer?.answerText ? answer.answerText.split(/\s+/).filter(Boolean) : []).map((w, i) => ({ id: `p${i}`, w })),
+  );
+  const nextId = useRef(placed.length);
+  const placedWords = placed.map((p) => p.w);
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 120, tolerance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
   // Các từ đã xáo trên máy chủ theo từng học sinh (mở lại vẫn cùng thứ tự; máy chủ không gửi câu đúng)
   const bankWords = item.orderWords;
 
-  function addWord(word: string) {
-    const next = [...placedWords, word];
-    setPlacedWords(next);
-    onChange({ answerText: next.join(' ') });
+  function save(next: { id: string; w: string }[]) {
+    setPlaced(next);
+    onChange({ answerText: next.map((p) => p.w).join(' ') });
   }
 
-  function removeWord(index: number) {
-    const next = placedWords.filter((_, i) => i !== index);
-    setPlacedWords(next);
-    onChange({ answerText: next.join(' ') });
+  function addWord(word: string) {
+    save([...placed, { id: `p${nextId.current++}`, w: word }]);
+  }
+
+  function removeWord(id: string) {
+    save(placed.filter((p) => p.id !== id));
   }
 
   function reset() {
-    setPlacedWords([]);
-    onChange({ answerText: '' });
+    save([]);
+  }
+
+  function onDragEnd(e: DragEndEvent) {
+    if (!e.over || e.active.id === e.over.id) return;
+    const from = placed.findIndex((p) => p.id === e.active.id);
+    const to = placed.findIndex((p) => p.id === e.over!.id);
+    if (from >= 0 && to >= 0) save(arrayMove(placed, from, to));
   }
 
   return (
     <div className="flex flex-col gap-4">
       {/* Khung ô câu đã xếp */}
-      <div className="min-h-16 rounded-2xl border-2 border-dashed border-line bg-stone/30 p-3 flex flex-wrap items-center gap-2">
-        {placedWords.length === 0 ? (
-          <span className="text-xs text-muted">Chạm các từ bên dưới để ghép câu…</span>
-        ) : (
-          placedWords.map((w, wi) => (
-            <button
-              key={wi}
-              type="button"
-              onClick={() => removeWord(wi)}
-              className="flex h-10 items-center justify-center rounded-xl border-2 border-[var(--primary-deep)] bg-[var(--primary-soft)] px-3 text-sm font-extrabold text-ink shadow-xs active:scale-95"
-            >
-              {w}
-            </button>
-          ))
-        )}
-      </div>
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+        <SortableContext items={placed.map((p) => p.id)} strategy={rectSortingStrategy}>
+          <div className="min-h-16 rounded-2xl border-2 border-dashed border-line bg-stone/30 p-3 flex flex-wrap items-center gap-2" aria-label="Câu đang xếp">
+            {placed.length === 0 ? (
+              <span className="text-xs text-muted">Chạm các từ bên dưới để ghép câu, kéo từ để đổi chỗ…</span>
+            ) : (
+              placed.map((p) => <PlacedWord key={p.id} id={p.id} word={p.w} onRemove={() => removeWord(p.id)} />)
+            )}
+          </div>
+        </SortableContext>
+      </DndContext>
 
       {/* Ngân hàng từ */}
       <div className="flex flex-wrap gap-2">
@@ -557,6 +633,33 @@ function OrderQuestion({
         </button>
       </div>
     </div>
+  );
+}
+
+// Một từ đã xếp: kéo để đổi chỗ, chạm để bỏ ra (dnd-kit phân biệt kéo và chạm theo quãng di chuyển; bàn phím: Space kéo, Delete bỏ)
+function PlacedWord({ id, word, onRemove }: { id: string; word: string; onRemove: () => void }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  return (
+    <button
+      ref={setNodeRef}
+      type="button"
+      {...attributes}
+      {...listeners}
+      // Chuột, chạm: bấm là bỏ từ ra. Bàn phím: Space để nhấc lên kéo (dnd-kit) nên không bỏ; Delete hoặc Backspace để bỏ
+      onClick={(e) => {
+        if (e.detail > 0) onRemove();
+      }}
+      onKeyDown={(e) => {
+        listeners?.onKeyDown?.(e);
+        if (e.key === 'Delete' || e.key === 'Backspace') onRemove();
+      }}
+      aria-label={`${word} (kéo để đổi chỗ, bấm để bỏ ra)`}
+      data-placed={word}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+      className={`flex h-10 touch-none items-center justify-center rounded-xl border-2 border-[var(--primary-deep)] bg-[var(--primary-soft)] px-3 text-sm font-extrabold text-ink shadow-xs ${isDragging ? 'z-10 scale-110 shadow-lg' : 'active:scale-95'}`}
+    >
+      {word}
+    </button>
   );
 }
 

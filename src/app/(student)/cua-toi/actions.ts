@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { db } from '@/db/client';
 import { assignmentSubmissions, speakingFeedback, submissionCriterionScores, submissionItemScores, uploadedFiles } from '@/db/schema';
 import { writeAudit } from '@/lib/authz';
-import { isAutoScoredItem, storedScore, summarizeSubmission, type ScoringAnswer } from '@/lib/assignment-scoring';
+import { isAutoScoredItem, itemPoints, storedScore, summarizeSubmission, type ScoringAnswer } from '@/lib/assignment-scoring';
 import { listItemsOfAssignment, toScoringItems } from '@/lib/queries/assignment-items';
 import { getAssignmentBase } from '@/lib/queries/assignments';
 import { criterionScoresOf, enrolledStudent, existingSubmissionScores } from '@/lib/queries/student-portal';
@@ -255,5 +255,26 @@ export async function redoSpeakingAction(assignmentId: number, itemId: number, f
   } catch (error) {
     console.error('Lỗi nói lại:', error);
     return { ok: false, message: 'Chưa lưu được. Thử lại sau ít phút.' };
+  }
+}
+
+// Chế độ luyện tập (35.5): kiểm một câu tự chấm ngay khi con bấm Kiểm tra. Chỉ trả đúng hay sai, không gửi đáp án đúng
+// (như E-089); chỉ dùng được với bài đặt chế độ luyện tập. Không lưu gì: bài làm vẫn nộp một lần ở cuối.
+export async function checkPracticeAnswerAction(assignmentId: number, input: StudentAnswerInput): Promise<{ ok: true; correct: boolean } | { ok: false; message: string }> {
+  try {
+    const me = await currentStudent();
+    if (!me) return { ok: false, message: 'Cần đăng nhập bằng tài khoản học sinh.' };
+    const student = await enrolledStudent(me.studentId);
+    const base = await getAssignmentBase(assignmentId);
+    if (!student || !base || !sameClass(student.classId, base.classId)) return { ok: false, message: 'Bài này không thuộc lớp của bạn.' };
+    if (base.mode !== 'practice') return { ok: false, message: 'Bài này không ở chế độ luyện tập.' };
+    const items = await listItemsOfAssignment(assignmentId);
+    const item = toScoringItems(items).find((i) => i.id === input.itemId);
+    if (!item || !isAutoScoredItem(item.itemType)) return { ok: false, message: 'Câu này không tự kiểm được.' };
+    const got = itemPoints(item, { itemId: item.id, selectedOptionId: input.selectedOptionId, answerText: input.answerText ?? '', fileId: null, points: null });
+    return { ok: true, correct: (got ?? 0) >= item.points };
+  } catch (error) {
+    console.error('Lỗi kiểm câu luyện tập:', error);
+    return { ok: false, message: 'Chưa kiểm được. Thử lại nhé.' };
   }
 }

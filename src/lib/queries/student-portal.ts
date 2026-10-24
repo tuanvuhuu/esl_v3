@@ -77,6 +77,7 @@ export type StudentAssignmentView = {
   maxScore: number;
   status: 'not_submitted' | 'submitted' | 'graded';
   score: number | null;
+  mode: 'test' | 'practice'; // luyện tập thì kiểm từng câu (35.5)
   items: StudentItem[];
   answers: StudentAnswer[];
   // Ghi âm (P35.12): allowed khi phụ huynh đã đồng ý (và trẻ từ 7 tuổi đã đồng ý); needsChild khi chỉ còn chờ trẻ bấm đồng ý
@@ -141,6 +142,7 @@ export async function studentAssignment(assignmentId: number, studentId: number)
     maxScore: base.maxScore,
     status: sub?.status ?? 'not_submitted',
     score: sub?.score ?? null,
+    mode: base.mode === 'practice' ? 'practice' : 'test',
     voice: await studentVoiceAccess(studentId),
     items: arrangeForStudent(
       items.map((i) => ({
