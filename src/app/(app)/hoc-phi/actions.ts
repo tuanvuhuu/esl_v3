@@ -136,7 +136,7 @@ export async function setTuitionDiscountAction(studentId: number, discount: numb
     const parsed = z.number().int().min(0).max(1_000_000_000).safeParse(discount);
     if (!parsed.success) return { ok: false, message: 'Số tiền miễn giảm không hợp lệ.' };
     const [row] = await db
-      .select({ name: students.fullName, ownFee: students.tuitionFee, classFee: classes.fee })
+      .select({ name: students.fullName, ownFee: students.tuitionFee, classFee: classes.fee, discount: students.tuitionDiscount })
       .from(students)
       .innerJoin(classes, eq(classes.id, students.classId))
       .where(eq(students.id, studentId))
@@ -145,6 +145,10 @@ export async function setTuitionDiscountAction(studentId: number, discount: numb
     const base = row.ownFee ?? row.classFee;
     if (parsed.data > base) {
       return { ok: false, message: `Miễn giảm không được lớn hơn học phí ${formatVND(base)}.`, fieldErrors: { discount: `Tối đa ${formatVND(base)}` } };
+    }
+    // Đã đóng đủ học phí thì không thêm miễn giảm được (chỉ được giảm miễn giảm đi)
+    if (parsed.data > row.discount && (await paidOf(studentId)) >= netFee(base, row.discount)) {
+      return { ok: false, message: `${row.name} đã đóng đủ học phí nên không thêm miễn giảm được.`, fieldErrors: { discount: 'Đã đóng đủ học phí' } };
     }
     await db.update(students).set({ tuitionDiscount: parsed.data, updatedAt: new Date() }).where(eq(students.id, studentId));
     await writeAudit({ action: 'update', entity: 'student', entityId: studentId, summary: `Đặt miễn giảm học phí ${row.name}: ${formatVND(parsed.data)}` });
