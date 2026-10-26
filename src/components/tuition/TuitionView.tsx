@@ -281,7 +281,8 @@ function DiscountInput({ row, canManage, onSave }: { row: InvoiceRow; canManage:
       return;
     }
     const amount = text === '' ? 0 : Number(text);
-    if (String(amount) === current) return;
+    // So sánh theo số: chưa đổi thì không gọi máy chủ, không báo gì
+    if (amount === row.discount) return;
     await onSave(Number(row.id), amount);
   }
 
