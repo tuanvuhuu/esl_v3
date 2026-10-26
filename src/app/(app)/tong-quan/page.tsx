@@ -16,6 +16,7 @@ import { getDashboardStats, listFrequentAbsentees } from '@/lib/queries/dashboar
 import { listSessionsBetween } from '@/lib/queries/sessions';
 import { listInvoices } from '@/lib/queries/tuition';
 import { getCurrentPermissions } from '@/lib/session';
+import { classTone } from '@/lib/class-tone';
 
 // Tổng quan (trang chủ): việc cần làm hôm nay đứng đầu, rồi số liệu, lịch hôm nay và lớp đang học. Tất cả từ DB.
 export default function DashboardPage() {
@@ -90,15 +91,15 @@ async function DashboardData() {
       />
 
       <div className="grid grid-cols-2 gap-3 min-[768px]:grid-cols-4 min-[768px]:gap-4">
-        <Kpi label="Đang học" value={String(stats.active)} sub={`${stats.trial} học thử`} />
-        <Kpi label="Chuyên cần 30 ngày" value={`${stats.attendanceRate}%`} bar={stats.attendanceRate} />
+        <Kpi label="Đang học" tone="mint" value={String(stats.active)} sub={`${stats.trial} học thử`} />
+        <Kpi label="Chuyên cần 30 ngày" tone="lav" value={`${stats.attendanceRate}%`} bar={stats.attendanceRate} />
         {canTuition ? (
-          <Kpi label="Công nợ quá hạn" value={formatVND(debtTotal)} alert={debtTotal > 0} sub={`${debtCount} học sinh`} />
+          <Kpi label="Công nợ quá hạn" tone={debtTotal > 0 ? 'blush' : 'mint'} value={formatVND(debtTotal)} sub={`${debtCount} học sinh`} />
         ) : (
-          <Kpi label="Sắp hết buổi" value={String(stats.nearlyDone)} sub="còn từ 3 buổi" />
+          <Kpi label="Sắp hết buổi" tone="blush" value={String(stats.nearlyDone)} sub="còn từ 3 buổi" />
         )}
         {canStudents && (
-          <Kpi label="Buổi hôm nay" value={String(sessionsToday.length)} sub={nextSession ? `Tiếp theo ${nextSession.timeLabel.split('–')[0]}` : cancelledToday > 0 ? `${cancelledToday} buổi đã huỷ` : 'Không còn buổi sắp học'} />
+          <Kpi label="Buổi hôm nay" tone="butter" value={String(sessionsToday.length)} sub={nextSession ? `Tiếp theo ${nextSession.timeLabel.split('–')[0]}` : cancelledToday > 0 ? `${cancelledToday} buổi đã huỷ` : 'Không còn buổi sắp học'} />
         )}
       </div>
 
@@ -167,7 +168,7 @@ async function DashboardData() {
                   const label = isNext ? { tone: 'butter' as Tone, text: 'Tiếp theo' } : sessionLabel(s);
                   return (
                     <li key={s.id} className={`grid grid-cols-[72px_minmax(0,1fr)_auto] items-center gap-3 border-t border-line py-3 first:border-t-0 ${isNext ? '-mx-2.5 rounded-[var(--radius-ctl)] border-t-transparent bg-primary-soft px-2.5' : ''}`}>
-                      <time className="text-sm font-extrabold tabular-nums text-ink-2">{s.timeLabel.split('–')[0]}</time>
+                      <time className={`text-sm font-extrabold tabular-nums ${classTone(s.classId).text}`}>{s.timeLabel.split('–')[0]}</time>
                       <div className="min-w-0">
                         <b className="block truncate text-base text-ink">{s.className}</b>
                         <small className="block truncate text-xs text-muted">{s.teacherName}{s.room ? ` · ${s.room}` : ''}</small>
@@ -184,10 +185,11 @@ async function DashboardData() {
             <ul className="grid grid-cols-1 gap-2.5 min-[768px]:grid-cols-2 min-[1100px]:grid-cols-1">
               {classes.slice(0, 6).map((c) => (
                 <li key={c.id}>
-                  <Link href={`/lop-hoc/${c.id}`} className="block rounded-[var(--radius-ctl)] border border-line p-3 hover:bg-row-hover">
+                  <Link href={`/lop-hoc/${c.id}`} className="relative block overflow-hidden rounded-[var(--radius-ctl)] border border-line p-3 hover:bg-row-hover">
+                    <span aria-hidden className={`absolute inset-y-0 left-0 w-1.5 ${classTone(c.id).ink}`} />
                     <div className="flex items-baseline justify-between gap-3">
                       <b className="min-w-0 truncate text-base text-ink">{c.name}</b>
-                      <span className="shrink-0 text-sm font-bold tabular-nums text-ink-2">{c.studentCount}/{c.capacity}</span>
+                      <span className={`shrink-0 rounded-full px-2 py-0.5 text-sm font-bold tabular-nums ${classTone(c.id).bg}`}>{c.studentCount}/{c.capacity}</span>
                     </div>
                     <small className="block truncate text-xs text-muted">{c.teacherName} · {c.schedule}</small>
                     <ProgressBar value={c.studentCount} max={c.capacity} className="mt-2" />
@@ -216,15 +218,21 @@ function sessionLabel(s: { status: string; isPast: boolean }): { tone: Tone; tex
   return { tone: 'mint', text: 'Sắp học' };
 }
 
-const KPI_ALERT = 'text-blush-ink';
+// Màu nền từng ô số liệu, chữ cùng tông đậm
+const KPI_TONE: Record<'mint' | 'lav' | 'blush' | 'butter', string> = {
+  mint: 'bg-mint text-mint-ink',
+  lav: 'bg-lav text-lav-ink',
+  blush: 'bg-blush text-blush-ink',
+  butter: 'bg-butter text-butter-ink',
+};
 
-function Kpi({ label, value, sub, alert = false, bar }: { label: string; value: string; sub?: string; alert?: boolean; bar?: number }) {
+function Kpi({ label, value, sub, tone, bar }: { label: string; value: string; sub?: string; tone: keyof typeof KPI_TONE; bar?: number }) {
   return (
-    <div className="min-w-0 rounded-[var(--radius-panel)] bg-surface p-4 shadow-card min-[768px]:p-5">
-      <small className="block truncate text-xs text-muted min-[768px]:text-sm">{label}</small>
-      <b className={`mt-1 block truncate text-xl font-extrabold tabular-nums min-[768px]:text-2xl ${alert ? KPI_ALERT : 'text-ink'}`}>{value}</b>
+    <div className={`min-w-0 rounded-[var(--radius-panel)] p-4 shadow-card min-[768px]:p-5 ${KPI_TONE[tone]}`}>
+      <small className="block truncate text-xs min-[768px]:text-sm">{label}</small>
+      <b className="mt-1 block truncate text-xl font-extrabold tabular-nums min-[768px]:text-2xl">{value}</b>
       {bar !== undefined && <ProgressBar value={bar} max={100} className="mt-2.5" />}
-      {sub && <small className="mt-0.5 block truncate text-xs text-muted">{sub}</small>}
+      {sub && <small className="mt-0.5 block truncate text-xs opacity-80">{sub}</small>}
     </div>
   );
 }
@@ -235,10 +243,15 @@ const LANE_TONE: Record<'blush' | 'butter' | 'lav', string> = {
   butter: 'bg-butter text-butter-ink',
   lav: 'bg-lav text-lav-ink',
 };
+const LANE_WRAP: Record<'blush' | 'butter' | 'lav', string> = {
+  blush: 'bg-blush/40',
+  butter: 'bg-butter/40',
+  lav: 'bg-lav/40',
+};
 
 function Lane({ href, icon: Icon, tone, title, hint, count }: { href: string; icon: LucideIcon; tone: keyof typeof LANE_TONE; title: string; hint: string; count: number }) {
   return (
-    <Link href={href} className="flex items-center gap-3 rounded-[var(--radius-ctl)] border border-line bg-row-hover p-3 hover:bg-stone">
+    <Link href={href} className={`flex items-center gap-3 rounded-[var(--radius-ctl)] border border-line p-3 hover:opacity-90 ${LANE_WRAP[tone]}`}>
       <span className={`grid size-9 shrink-0 place-items-center rounded-[10px] ${LANE_TONE[tone]}`}>
         <Icon className="size-4" aria-hidden />
       </span>

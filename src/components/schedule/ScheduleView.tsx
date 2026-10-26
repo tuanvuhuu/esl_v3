@@ -20,6 +20,7 @@ import { RangeNav } from './RangeNav';
 import { SessionDialog } from './SessionDialog';
 import { moveSessionAction } from '@/app/(app)/lich-hoc/actions';
 import { draggedStart, hhmm } from '@/lib/schedule-drag';
+import { classTone } from '@/lib/class-tone';
 
 export type ScheduleFilters = { cls: string; teacher: string };
 
@@ -31,15 +32,6 @@ export function sessionState(s: SessionRow): { label: string; tone: Tone } {
   return { label: 'Sắp học', tone: 'mint' };
 }
 
-// Màu nền và viền theo lớp (năm màu nhẹ, cố định theo id lớp). Chữ luôn là màu chữ chính.
-const CLASS_TONE: { bg: string; edge: string }[] = [
-  { bg: 'bg-mint', edge: 'border-mint-ink' },
-  { bg: 'bg-lav', edge: 'border-lav-ink' },
-  { bg: 'bg-butter', edge: 'border-butter-ink' },
-  { bg: 'bg-blush', edge: 'border-blush-ink' },
-  { bg: 'bg-stone', edge: 'border-stone-ink' },
-];
-const toneOf = (classId: number) => CLASS_TONE[Math.abs(classId) % CLASS_TONE.length];
 
 // Phút trong ngày theo giờ Việt Nam (UTC+7) của một mốc thời gian
 function minutesOfDay(iso: string): number {
@@ -371,7 +363,7 @@ function CalendarBlock({ placed, style, onOpen, canDrag }: { placed: { s: Sessio
   const { setNodeRef, attributes, listeners, transform, isDragging } = useDraggable({ id: `session-${s.id}`, data: { session: s }, disabled: !canDrag });
   const state = sessionState(s);
   const cancelled = s.status === 'cancelled';
-  const tone = toneOf(s.classId);
+  const tone = classTone(s.classId);
   // Chấm màu theo trạng thái, chữ trạng thái vẫn hiện ngay bên cạnh
   const dot = state.tone === 'mint' ? 'bg-mint-ink' : state.tone === 'butter' ? 'bg-butter-ink' : state.tone === 'blush' ? 'bg-blush-ink' : 'bg-stone-ink';
   return (
@@ -411,7 +403,7 @@ function DayColumn({ day, today, height, children }: { day: string; today: strin
 function AgendaCard({ session: s, onOpen }: { session: SessionRow; onOpen: () => void }) {
   const state = sessionState(s);
   const cancelled = s.status === 'cancelled';
-  const tone = toneOf(s.classId);
+  const tone = classTone(s.classId);
   return (
     <button
       type="button"
