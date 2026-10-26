@@ -371,3 +371,9 @@
 .scroll-quiet:focus-within {
   scrollbar-color: var(--muted) transparent;
 }
+
+/* Trẻ 3–5 tuổi (35.5): mọi nút làm bài tối thiểu 64px, chữ lớn hơn. Nút đóng (kid-skip) giữ cỡ cũ. */
+.kid-touch button:not(.kid-skip) {
+  min-height: 4rem;
+  font-size: 1.25rem;
+}

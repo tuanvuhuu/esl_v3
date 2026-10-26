@@ -21,6 +21,8 @@ import { getAssignmentBase } from '@/lib/queries/assignments';
 import { studentVoiceAccess } from '@/lib/queries/consents';
 import { sameClass } from '@/lib/student-access';
 import { SCALE_CRITERIA, type SpeakingCriterion, type SpeakingErrorType, type SpeakingMark, type SpeakingScale } from '@/lib/speaking';
+import { isYoungLearner } from '@/lib/age';
+import { todayKeyVN } from '@/lib/datetime';
 
 // Học sinh đang học và lớp của họ, hoặc null nếu không còn đang học
 export async function enrolledStudent(studentId: number): Promise<{ id: number; classId: number; fullName: string } | null> {
@@ -71,6 +73,7 @@ export type StudentAnswer = {
 
 export type StudentAssignmentView = {
   id: number;
+  youngLearner: boolean; // 3–5 tuổi: màn làm bài dùng nút lớn (35.5)
   title: string;
   description: string;
   dueAt: Date;
@@ -91,6 +94,7 @@ export type StudentAssignmentView = {
 export async function studentAssignment(assignmentId: number, studentId: number): Promise<StudentAssignmentView | null> {
   const student = await enrolledStudent(studentId);
   if (!student) return null;
+  const [dobRow] = await db.select({ dob: students.dob }).from(students).where(eq(students.id, studentId)).limit(1);
   const base = await getAssignmentBase(assignmentId);
   if (!base || !sameClass(student.classId, base.classId)) return null;
 
@@ -129,6 +133,7 @@ export async function studentAssignment(assignmentId: number, studentId: number)
 
   return {
     id: base.id,
+    youngLearner: isYoungLearner(dobRow?.dob ?? null, todayKeyVN()),
     speakingRubrics: Object.fromEntries(
       assessed.map((a) => {
         const scale = a.scale as SpeakingScale;

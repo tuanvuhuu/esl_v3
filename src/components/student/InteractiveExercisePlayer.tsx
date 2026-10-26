@@ -110,14 +110,14 @@ export function InteractiveExercisePlayer({
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-[420px] flex-col overflow-hidden rounded-[36px] border border-line bg-surface shadow-2xl min-h-[640px]">
+    <div className={`mx-auto flex w-full max-w-[420px] flex-col overflow-hidden rounded-[36px] border border-line bg-surface shadow-2xl min-h-[640px] ${view.youngLearner ? 'kid-touch' : ''}`}>
       {/* Top bar: Nút đóng, thanh tiến trình & số câu */}
       <div className="flex items-center gap-3 px-5 pt-4 pb-2">
         <button
           type="button"
           onClick={onExit}
           aria-label="Thoát"
-          className="flex size-9 items-center justify-center rounded-xl border border-line bg-surface text-ink-2 hover:bg-stone active:scale-95"
+          className="kid-skip flex size-9 items-center justify-center rounded-xl border border-line bg-surface text-ink-2 hover:bg-stone active:scale-95"
         >
           <X className="size-5" />
         </button>
