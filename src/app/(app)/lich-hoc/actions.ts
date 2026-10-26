@@ -20,6 +20,14 @@ function errorResult(error: unknown): ActionResult {
   return { ok: false, message: 'Không lưu được. Thử lại sau ít phút.' };
 }
 
+// Đánh lại số buổi của lớp theo thứ tự ngày, dùng cho cả thêm buổi và dời buổi để số buổi luôn tăng theo ngày
+async function renumberSessions(tx: Parameters<Parameters<typeof db.transaction>[0]>[0], classId: number) {
+  await tx.execute(sql`
+    UPDATE class_sessions cs SET session_no = r.rn
+    FROM (SELECT id, row_number() OVER (ORDER BY starts_at, id) AS rn FROM class_sessions WHERE class_id = ${classId}) r
+    WHERE cs.id = r.id AND cs.session_no <> r.rn`);
+}
+
 async function loadSession(id: number) {
   const [row] = await db
     .select({
@@ -106,11 +114,8 @@ export async function createSessionAction(classId: number, _prev: ActionResult, 
         .insert(classSessions)
         .values({ classId, sessionNo: 0, startsAt, endsAt, teacherId: v.teacherId, room: v.room, topic: v.topic })
         .returning({ id: classSessions.id });
-      // Đánh lại số buổi theo thứ tự ngày, để buổi thêm nằm đúng chỗ
-      await tx.execute(sql`
-        UPDATE class_sessions cs SET session_no = r.rn
-        FROM (SELECT id, row_number() OVER (ORDER BY starts_at, id) AS rn FROM class_sessions WHERE class_id = ${classId}) r
-        WHERE cs.id = r.id AND cs.session_no <> r.rn`);
+      // Buổi thêm nằm đúng chỗ theo ngày
+      await renumberSessions(tx, classId);
       return row.id;
     });
 
@@ -256,7 +261,10 @@ export async function moveSessionAction(id: number, date: string, startTime: str
     const conflicts = await findScheduleConflicts({ slots: [{ startsAt, endsAt }], teacherId: session.teacherId, room: session.room, campusId: row.campusId, excludeSessionId: id });
     if (conflicts.length > 0) return conflictResult(conflicts);
 
-    await db.update(classSessions).set({ startsAt, endsAt, updatedAt: new Date() }).where(eq(classSessions.id, id));
+    await db.transaction(async (tx) => {
+      await tx.update(classSessions).set({ startsAt, endsAt, updatedAt: new Date() }).where(eq(classSessions.id, id));
+      await renumberSessions(tx, session.classId);
+    });
     await writeAudit({ action: 'update', entity: 'session', entityId: id, summary: `Dời buổi ${session.sessionNo} từ ${session.startsAt.toISOString()} sang ${startsAt.toISOString()}` });
     revalidatePath('/lich-hoc');
     revalidatePath(`/lop-hoc/${session.classId}`);
