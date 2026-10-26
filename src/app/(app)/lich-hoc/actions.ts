@@ -7,6 +7,7 @@ import { classes, classSessions, teachers } from '@/db/schema';
 import { teacherTeachesCampus } from '@/lib/queries/teachers';
 import { ForbiddenError, requirePermission, writeAudit } from '@/lib/authz';
 import { requireClassAccess, requireSessionAccess } from '@/lib/campus-access';
+import { isPastStart } from '@/lib/schedule-drag';
 import { findScheduleConflicts, summarizeConflicts } from '@/lib/queries/schedule-conflicts';
 import { safely } from '@/lib/telegram/core';
 import { notifySessionCancelled, notifySessionChanged, notifySessionRestored } from '@/lib/telegram/notify';
@@ -243,6 +244,7 @@ export async function moveSessionAction(id: number, date: string, startTime: str
     const startsAt = new Date(`${date}T${startTime}:00+07:00`);
     const endsAt = new Date(startsAt.getTime() + durationMs);
     if (startsAt.getTime() === session.startsAt.getTime()) return { ok: true, message: 'Buổi học vẫn ở giờ cũ.' };
+    if (isPastStart(startsAt, new Date())) return { ok: false, message: 'Không dời buổi về thời điểm đã qua.' };
 
     const [clash] = await db
       .select({ id: classSessions.id })

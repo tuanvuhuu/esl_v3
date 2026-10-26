@@ -1,6 +1,6 @@
 # ESL Center: kế hoạch và tiến độ
 
-> **Tiến độ tổng: 225/233 task (97%)**
+> **Tiến độ tổng: 226/234 task (97%)**
 > Cập nhật lần cuối: 2026-10-22. P1–P34 xong. P38 (giờ học từng ngày, học phí theo buổi còn lại, mã HS-00001) xong. P37 bot Telegram theo kịch bản: 37.1–37.9 xong, còn đặt cron mỗi giờ trên bản deploy và các việc đợt sau. P35: 35.2, 35.3, 35.12, 35.24, 35.27 xong; 35.4–35.6 làm dở (35.6 chỉ còn thử tay trên điện thoại). P36 Soạn nhanh xong phần code (36.1–36.6). Số đếm lấy từ các ô `[x]` và `[ ]` trong file.
 
 ## 🎯 Các task vừa hoàn thành & Lệnh test riêng (Không chạy all)
@@ -531,3 +531,4 @@ Rà soát theo luồng thật khi nhập lớp GS 02 (ESL Mầm Xanh). Mỗi m�
 - [x] **40.2** Sổ thu chỉ thêm, không xoá (migration 0042: cột `kind` payment/refund/void và `ref_id`). Huỷ khoản thu ghi nhầm: ghi dòng huỷ có số âm kèm lý do, không huỷ lần hai, không huỷ khi đã hoàn tiền từ khoản đó. Hoàn số dư cho học sinh đã nghỉ hoặc bảo lưu: không vượt số dư, dòng hoàn có số âm. Đổi học phí lớp: ô "học sinh đang học giữ học phí cũ" (mặc định bật) chép học phí cũ cho học sinh chưa có học phí riêng. Kiểm chứng: E2E `so-thu.spec.ts` (huỷ, chặn huỷ lần hai, hoàn số dư, sổ còn nguyên dòng) và `doi-hoc-phi-lop.spec.ts`; toàn bộ 103/103 E2E trước hai test này. *(2026-10-26).*
 - [x] **35.5b** (bổ sung cho 35.5, 2026-10-26) Trẻ 3–5 tuổi (tính từ ngày sinh hồ sơ): mọi nút làm bài tối thiểu 64px, chữ lớn (`kid-touch` trong `globals.css`). Hàm tuổi `src/lib/age.ts` (unit `age.test.ts`). Kiểm chứng: typecheck, lint, 342 unit; E2E `chuan`, `luyen-tap`, `hoc-thu`, `bai-mau`, `karaoke` (7 test) đều qua. Cỡ nút 64px chưa đo trên thiết bị thật; cần thử tay với trẻ 3–5 tuổi.
 - [x] **40.3** E2E kéo thả (`e2e/keo-tha.spec.ts`): trên lưới tuần, kéo buổi sang thứ Năm mở hộp "Dời buổi học?"; Huỷ thì DB giữ nguyên giờ; kéo lại và bấm Dời buổi thì buổi sang thứ Năm, giữ 09:00 và có thông báo. Trong form tạo lớp, kéo ca 2 thứ Hai lên trước ca 1 (đổi thứ tự trong ngày) rồi sang thứ Tư. Ô lưới có `data-day`. Kiểm chứng: spec qua 3/3 lần chạy liên tiếp; typecheck và lint sạch. Chưa kiểm trên trình duyệt có người xem (yêu cầu 2: đối chiếu học phí, lịch và form lớp, cần người dùng cùng kiểm). *(2026-10-26).*
+- [x] **40.4** Không dời buổi về thời điểm đã qua: máy chủ (`moveSessionAction`) và lưới tuần (ngày trước hôm nay không nhận thả). Hàm `isPastStart` trong `src/lib/schedule-drag.ts`. Kiểm chứng: unit `schedule-drag.test.ts`; E2E `keo-tha`, `lich`, `xep-lich` (10/10). *(2026-10-26).*

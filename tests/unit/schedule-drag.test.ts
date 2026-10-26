@@ -1,8 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { draggedStart, hhmm } from '@/lib/schedule-drag';
+import { draggedStart, hhmm, isPastStart } from '@/lib/schedule-drag';
 import { moveSlot } from '@/lib/slot-move';
 
 describe('kéo buổi học trên lịch', () => {
+  it('không dời buổi về thời điểm đã qua', () => {
+    const now = new Date('2026-10-26T10:00:00+07:00');
+    expect(isPastStart(new Date('2026-10-26T09:59:00+07:00'), now)).toBe(true);
+    expect(isPastStart(new Date('2026-10-26T10:00:00+07:00'), now)).toBe(false);
+    expect(isPastStart(new Date('2026-10-27T08:00:00+07:00'), now)).toBe(false);
+  });
+
   // Khung 7 đến 21 giờ (14 giờ), cột cao 14 × 60 px: 1 px = 1 phút
   const px = 14 * 60;
   it('dời theo độ dời dọc, làm tròn 15 phút', () => {

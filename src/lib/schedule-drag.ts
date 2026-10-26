@@ -9,6 +9,11 @@ export function draggedStart(startMin: number, deltaY: number, columnPx: number,
   return Math.min(Math.max(snapped, frameStartMin), Math.max(frameStartMin, frameEndMin - durationMin));
 }
 
+// Buổi chưa học không được dời về thời điểm đã qua (so với lúc `now`)
+export function isPastStart(startsAt: Date, now: Date): boolean {
+  return startsAt.getTime() < now.getTime();
+}
+
 // "18:30" từ số phút trong ngày
 export function hhmm(minutes: number): string {
   return `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;

@@ -398,7 +398,8 @@ function CalendarBlock({ placed, style, onOpen, canDrag }: { placed: { s: Sessio
 
 // Cột một ngày trên lưới tuần: vùng thả buổi đang kéo
 function DayColumn({ day, today, height, children }: { day: string; today: string; height: string; children: ReactNode }) {
-  const { setNodeRef, isOver } = useDroppable({ id: `day-${day}`, data: { day } });
+  // Ngày đã qua không nhận buổi được thả
+  const { setNodeRef, isOver } = useDroppable({ id: `day-${day}`, data: { day }, disabled: day < today });
   return (
     <div ref={setNodeRef} data-day={day} className={`relative border-l border-line ${day === today ? 'bg-primary-soft/40' : ''} ${isOver ? 'bg-primary-soft/70' : ''}`} style={{ height }}>
       {children}
