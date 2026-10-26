@@ -1,8 +1,10 @@
 'use client';
 
+import { DndContext, KeyboardSensor, PointerSensor, pointerWithin, useDraggable, useDroppable, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
+import { CSS } from '@dnd-kit/utilities';
 import { Filter, Plus, Users } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { startTransition, useEffect, useOptimistic, useRef, useState, type CSSProperties } from 'react';
+import { startTransition, useEffect, useOptimistic, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import type { SessionRow } from '@/lib/queries/sessions';
 import { addDaysKey, dateKeyLabel, daysBetweenKeys, weekdayLabel, weekdayOfKey, weekStartKey } from '@/lib/datetime';
 import { listParam } from '@/lib/list-param';
@@ -15,6 +17,8 @@ import { useToast } from '@/components/ui/Toast';
 import { AddSessionDialog, type ClassPick } from './AddSessionDialog';
 import { RangeNav } from './RangeNav';
 import { SessionDialog } from './SessionDialog';
+import { moveSessionAction } from '@/app/(app)/lich-hoc/actions';
+import { draggedStart, hhmm } from '@/lib/schedule-drag';
 
 export type ScheduleFilters = { cls: string; teacher: string };
 
@@ -160,6 +164,34 @@ export function ScheduleView({
     ? `Tuần ${dateKeyLabel(rangeFrom)} – ${dateKeyLabel(rangeTo)}. Bấm vào buổi để xem hoặc sửa.`
     : `Từ ${dateKeyLabel(rangeFrom)} đến ${dateKeyLabel(rangeTo)} (${days.length} ngày). Bấm vào buổi để xem hoặc sửa.`;
 
+
+  // Kéo buổi trên lưới tuần để dời (người quản lý lớp). Thả xong giờ mới làm tròn 15 phút, kiểm trùng ở máy chủ.
+  const dragging = useRef(false);
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }), useSensor(KeyboardSensor));
+  function onDragStart() {
+    dragging.current = true;
+  }
+  function onDragCancel() {
+    dragging.current = false;
+  }
+  function onDragEnd(e: DragEndEvent) {
+    setTimeout(() => {
+      dragging.current = false;
+    }, 0);
+    const s = e.active.data.current?.session as SessionRow | undefined;
+    const day = e.over?.data.current?.day as string | undefined;
+    if (!s || !day || !e.over) return;
+    const from = minutesOfDay(s.startsAt);
+    const duration = minutesOfDay(s.endsAt) - from;
+    const next = draggedStart(from, e.delta.y, e.over.rect.height, hours.length, hourStart * 60, hourEnd * 60, duration);
+    if (day === s.dateKey && next === from) return;
+    startTransition(async () => {
+      const r = await moveSessionAction(s.id, day, hhmm(next));
+      notify(r.message ?? (r.ok ? 'Đã dời buổi' : 'Không dời được'));
+      if (r.ok) router.refresh();
+    });
+  }
+
   return (
     <section className="flex flex-col">
       <PageHeader
@@ -224,6 +256,7 @@ export function ScheduleView({
           {/* Máy tính bảng và máy tính: lưới giờ, mỗi ngày một cột. Chỉ dùng khi khoảng có tối đa 7 ngày. */}
           {!longRange && (
             <div className="hidden overflow-hidden rounded-[var(--radius-panel)] bg-surface shadow-card min-[768px]:block">
+              <DndContext sensors={sensors} collisionDetection={pointerWithin} onDragStart={onDragStart} onDragCancel={onDragCancel} onDragEnd={onDragEnd}>
               <div ref={gridScroll} data-testid="week-grid" className="relative max-h-[calc(100dvh-13rem)] min-h-[24rem] overflow-auto">
                 <div style={{ minWidth: `${TIME_COL_PX + days.length * DAY_COL_MIN_PX}px` }}>
                   {/* Tiêu đề ngày: dính trên cùng khi cuộn; hôm nay tô màu */}
@@ -250,7 +283,7 @@ export function ScheduleView({
                       ))}
                     </div>
                     {days.map((day) => (
-                      <div key={day} className={`relative border-l border-line ${day === today ? 'bg-primary-soft/40' : ''}`} style={{ height: gridHeight }}>
+                      <DayColumn key={day} day={day} today={today} height={gridHeight}>
                         {hours.map((h) => (
                           <div key={h} className="absolute inset-x-0 border-t border-line" style={{ top: hourTop(h) }} />
                         ))}
@@ -264,14 +297,16 @@ export function ScheduleView({
                               left: `calc(${(p.lane / p.lanes) * 100}% + 2px)`,
                               width: `calc(${100 / p.lanes}% - 4px)`,
                             }}
-                            onOpen={() => setOpen(p.s)}
+                            onOpen={() => { if (!dragging.current) setOpen(p.s); }}
+                            canDrag={canManage}
                           />
                         ))}
-                      </div>
+                      </DayColumn>
                     ))}
                   </div>
                 </div>
               </div>
+              </DndContext>
             </div>
           )}
 
@@ -308,8 +343,9 @@ export function ScheduleView({
 
 // Khối một buổi trên lưới tuần. Luôn hiện đủ giờ, lớp, giáo viên và trạng thái.
 // Khi buổi trùng giờ làn hẹp, chữ xuống dòng chứ không cắt.
-function CalendarBlock({ placed, style, onOpen }: { placed: { s: SessionRow; start: number; end: number }; style: CSSProperties; onOpen: () => void }) {
+function CalendarBlock({ placed, style, onOpen, canDrag }: { placed: { s: SessionRow; start: number; end: number }; style: CSSProperties; onOpen: () => void; canDrag: boolean }) {
   const s = placed.s;
+  const { setNodeRef, attributes, listeners, transform, isDragging } = useDraggable({ id: `session-${s.id}`, data: { session: s }, disabled: !canDrag });
   const state = sessionState(s);
   const cancelled = s.status === 'cancelled';
   const tone = toneOf(s.classId);
@@ -317,10 +353,13 @@ function CalendarBlock({ placed, style, onOpen }: { placed: { s: SessionRow; sta
   const dot = state.tone === 'mint' ? 'bg-mint-ink' : state.tone === 'butter' ? 'bg-butter-ink' : state.tone === 'blush' ? 'bg-blush-ink' : 'bg-stone-ink';
   return (
     <button
+      ref={setNodeRef}
+      {...attributes}
+      {...listeners}
       type="button"
       data-card="true"
       onClick={onOpen}
-      style={style}
+      style={{ ...style, transform: CSS.Translate.toString(transform), zIndex: isDragging ? 20 : undefined, cursor: canDrag ? 'grab' : undefined, touchAction: canDrag ? 'none' : undefined }}
       className={`absolute flex flex-col overflow-hidden rounded-[var(--radius-ctl)] border-l-4 px-1 py-0.5 text-left leading-tight transition-shadow hover:shadow-card ${tone.bg} ${tone.edge} ${cancelled ? 'opacity-60' : ''}`}
     >
       <span className={`text-2xs font-bold tabular-nums tracking-tight text-ink ${cancelled ? 'line-through' : ''}`}>{s.timeLabel}</span>
@@ -331,6 +370,16 @@ function CalendarBlock({ placed, style, onOpen }: { placed: { s: SessionRow; sta
         {state.label}
       </span>
     </button>
+  );
+}
+
+// Cột một ngày trên lưới tuần: vùng thả buổi đang kéo
+function DayColumn({ day, today, height, children }: { day: string; today: string; height: string; children: ReactNode }) {
+  const { setNodeRef, isOver } = useDroppable({ id: `day-${day}`, data: { day } });
+  return (
+    <div ref={setNodeRef} className={`relative border-l border-line ${day === today ? 'bg-primary-soft/40' : ''} ${isOver ? 'bg-primary-soft/70' : ''}`} style={{ height }}>
+      {children}
+    </div>
   );
 }
 

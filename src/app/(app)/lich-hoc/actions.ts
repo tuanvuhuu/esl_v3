@@ -223,3 +223,44 @@ export async function restoreSessionAction(id: number): Promise<ActionResult> {
     return errorResult(error);
   }
 }
+
+// Kéo buổi sang ngày hoặc giờ khác trên lưới tuần. Giữ nguyên độ dài, giáo viên, phòng, chủ đề;
+// kiểm trùng giờ của lớp, giáo viên và phòng như khi sửa buổi. Buổi đã học hoặc đã huỷ thì không dời.
+export async function moveSessionAction(id: number, date: string, startTime: string): Promise<ActionResult> {
+  try {
+    await requirePermission('classes.manage');
+    await requireSessionAccess(id);
+    const time = /^([01]\d|2[0-3]):[0-5]\d$/;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !time.test(startTime)) return { ok: false, message: 'Ngày hoặc giờ không hợp lệ.' };
+    const session = await loadSession(id);
+    if (!session) return { ok: false, message: 'Không tìm thấy buổi học này.' };
+    if (session.status === 'done') return { ok: false, message: 'Buổi này đã học xong nên không dời được.' };
+    if (session.status === 'cancelled') return { ok: false, message: 'Buổi này đã huỷ. Khôi phục trước khi dời.' };
+
+    const [row] = await db.select({ endsAt: classSessions.endsAt, campusId: classes.campusId }).from(classSessions).innerJoin(classes, eq(classes.id, classSessions.classId)).where(eq(classSessions.id, id)).limit(1);
+    if (!row) return { ok: false, message: 'Không tìm thấy buổi học này.' };
+    const durationMs = row.endsAt.getTime() - session.startsAt.getTime();
+    const startsAt = new Date(`${date}T${startTime}:00+07:00`);
+    const endsAt = new Date(startsAt.getTime() + durationMs);
+    if (startsAt.getTime() === session.startsAt.getTime()) return { ok: true, message: 'Buổi học vẫn ở giờ cũ.' };
+
+    const [clash] = await db
+      .select({ id: classSessions.id })
+      .from(classSessions)
+      .where(and(eq(classSessions.classId, session.classId), eq(classSessions.startsAt, startsAt), ne(classSessions.id, id)))
+      .limit(1);
+    if (clash) return { ok: false, message: 'Lớp đã có buổi học vào thời điểm này.' };
+
+    const conflicts = await findScheduleConflicts({ slots: [{ startsAt, endsAt }], teacherId: session.teacherId, room: session.room, campusId: row.campusId, excludeSessionId: id });
+    if (conflicts.length > 0) return conflictResult(conflicts);
+
+    await db.update(classSessions).set({ startsAt, endsAt, updatedAt: new Date() }).where(eq(classSessions.id, id));
+    await writeAudit({ action: 'update', entity: 'session', entityId: id, summary: `Dời buổi ${session.sessionNo} từ ${session.startsAt.toISOString()} sang ${startsAt.toISOString()}` });
+    revalidatePath('/lich-hoc');
+    revalidatePath(`/lop-hoc/${session.classId}`);
+    await safely('dời buổi học', () => notifySessionChanged(id, { startsAt: session.startsAt, room: session.room, teacherId: session.teacherId }));
+    return { ok: true, message: `Đã dời buổi ${session.sessionNo}` };
+  } catch (error) {
+    return errorResult(error);
+  }
+}

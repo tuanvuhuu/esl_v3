@@ -3,14 +3,15 @@
 import { startTransition, useActionState, useEffect, useRef, useState, type FormEvent } from 'react';
 import { createClassAction, previewScheduleAction, rescheduleClassAction, updateClassAction, type ClassCoreValues, type SchedulePreview } from '@/app/(app)/lop-hoc/actions';
 import { dateKeyLabel, vnDateKey, vnTimeLabel, weekdayLabel, weekdayOfKey } from '@/lib/datetime';
-import { WEEKDAY_CODES, WEEKDAY_CODE_LABELS, type WeekdayCode } from '@/lib/validation/class';
+import { MAX_SLOTS_PER_DAY, WEEKDAY_CODES, WEEKDAY_CODE_LABELS, type WeekdayCode } from '@/lib/validation/class';
 import type { StaffRole } from '@/lib/validation/teacher';
 import type { ActionResult } from '@/lib/validation/student';
 import { Field, FORM_BTN_CANCEL, FORM_BTN_SUBMIT, inputClass, FormFooter } from '@/components/ui/Field';
 import { SelectPanel } from '@/components/ui/SelectPanel';
 import { Alert } from '@/components/ui/primitives';
 import { Notice } from '@/components/ui/surfaces';
-import { DayTimeRows, type DaySlots, type SlotDraft } from '@/components/classes/DayTimeRows';
+import { DayTimeRows, type DaySlots, type SlotDraft, type SlotPos } from '@/components/classes/DayTimeRows';
+import { moveSlot } from '@/lib/slot-move';
 
 // staffRole: vị trí người này có thể giữ (chủ nhiệm, giáo viên nước ngoài, trợ giảng). campusIds: các cơ sở người này dạy.
 // Form lớp chỉ cho chọn đúng vai trò và người dạy ở cơ sở của lớp.
@@ -117,6 +118,14 @@ export function ClassForm({
   function toggleDay(code: WeekdayCode, on: boolean) {
     setDays((prev) => (on ? [...prev, code] : prev.filter((c) => c !== code)));
     if (on && !times.has(code)) setTimes((prev) => new Map(prev).set(code, [lastTime]));
+  }
+
+  // Kéo ca sang vị trí khác: đổi thứ tự trong ngày hoặc chuyển sang ngày khác (ngày nguồn còn ít nhất một ca)
+  function moveSlotTo(from: SlotPos, to: SlotPos) {
+    const next = moveSlot(times, from, to, MAX_SLOTS_PER_DAY);
+    if (!next) return;
+    setTimes(next as Map<WeekdayCode, SlotDraft[]>);
+    setTouched((prev) => new Set(prev).add(from.code as WeekdayCode).add(to.code as WeekdayCode));
   }
 
   function changeTime(code: WeekdayCode, index: number, field: 'start' | 'end', value: string) {
@@ -300,7 +309,7 @@ export function ClassForm({
             {errors.weekdays && <span className="text-sm font-semibold text-blush-ink">{errors.weekdays}</span>}
           </fieldset>
 
-          <DayTimeRows days={daySlots} errors={errors} canEditSlots onChange={changeTime} onAddSlot={addSlot} onRemoveSlot={removeSlot} />
+          <DayTimeRows days={daySlots} errors={errors} canEditSlots onChange={changeTime} onAddSlot={addSlot} onRemoveSlot={removeSlot} onMoveSlot={moveSlotTo} />
           <Field
             label={isReschedule && kept > 0 ? 'Xếp lại từ ngày *' : 'Ngày khai giảng *'}
             error={errors.startDate}
