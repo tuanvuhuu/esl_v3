@@ -128,3 +128,12 @@ describe('mã học sinh 5 chữ số', () => {
     expect(parseStudentCode('hs-0012')).toBe(12);
   });
 });
+
+describe('mô tả lịch cho lớp có dữ liệu thiếu', () => {
+  it('lớp chưa có ngày học không làm sập: hiện chưa có ngày học', async () => {
+    const { describeSchedule } = await import('@/lib/schedule');
+    expect(describeSchedule('', '18:00', '19:30')).toBe('Chưa có ngày học');
+    expect(describeSchedule('T2,XX', '18:00', '19:30')).toBe('Lịch chưa đủ, cần sửa lại');
+    expect(describeSchedule('T2,T4', '18:00', '19:30')).toContain('18:00–19:30');
+  });
+});

@@ -114,7 +114,17 @@ export function generateSessions(input: { weekdays: string; startTime: string; e
 // Mô tả lịch lớp để hiển thị, thứ Hai đứng đầu tuần.
 // Mọi ngày cùng một giờ: "T2 · T4 · T6 · 18:30–20:30". Giờ khác nhau: "T3 18:00–19:30 · T7 08:00–09:30".
 // Các ngày có cùng ca gộp lại: "T2, T4 18:00–19:30 · T7 08:00–09:30". Một ngày nhiều ca: "T7 08:00–09:30, 14:00–15:30".
+// Lớp có dữ liệu thiếu hoặc sai (chưa chọn ngày học, giờ không đúng dạng) thì ghi rõ là chưa đủ lịch,
+// không ném lỗi: một lớp hỏng không được làm sập cả trang tổng quan, danh sách lớp.
 export function describeSchedule(weekdays: string, startTime: string, endTime: string, dayTimes = ''): string {
+  try {
+    return describeScheduleStrict(weekdays, startTime, endTime, dayTimes);
+  } catch {
+    return weekdays.trim() ? 'Lịch chưa đủ, cần sửa lại' : 'Chưa có ngày học';
+  }
+}
+
+function describeScheduleStrict(weekdays: string, startTime: string, endTime: string, dayTimes = ''): string {
   const times = resolveDayTimes(weekdays, startTime, endTime, dayTimes);
   const perDay: { code: string; ranges: string[] }[] = [];
   for (const t of times) {
