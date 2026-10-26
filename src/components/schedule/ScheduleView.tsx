@@ -400,7 +400,7 @@ function CalendarBlock({ placed, style, onOpen, canDrag }: { placed: { s: Sessio
 function DayColumn({ day, today, height, children }: { day: string; today: string; height: string; children: ReactNode }) {
   const { setNodeRef, isOver } = useDroppable({ id: `day-${day}`, data: { day } });
   return (
-    <div ref={setNodeRef} className={`relative border-l border-line ${day === today ? 'bg-primary-soft/40' : ''} ${isOver ? 'bg-primary-soft/70' : ''}`} style={{ height }}>
+    <div ref={setNodeRef} data-day={day} className={`relative border-l border-line ${day === today ? 'bg-primary-soft/40' : ''} ${isOver ? 'bg-primary-soft/70' : ''}`} style={{ height }}>
       {children}
     </div>
   );
