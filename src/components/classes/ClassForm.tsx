@@ -7,6 +7,7 @@ import { MAX_SLOTS_PER_DAY, WEEKDAY_CODES, WEEKDAY_CODE_LABELS, type WeekdayCode
 import type { StaffRole } from '@/lib/validation/teacher';
 import type { ActionResult } from '@/lib/validation/student';
 import { Field, FORM_BTN_CANCEL, FORM_BTN_SUBMIT, inputClass, FormFooter } from '@/components/ui/Field';
+import { Btn } from '@/components/ui/Btn';
 import { SelectPanel } from '@/components/ui/SelectPanel';
 import { Alert } from '@/components/ui/primitives';
 import { Notice } from '@/components/ui/surfaces';
@@ -159,6 +160,18 @@ export function ClassForm({
     setTouched((prev) => new Set(prev).add(code));
   }
 
+  // Đặt cùng một giờ cho mọi ngày học: lấy ca đầu của ngày đầu tiên, các ngày khác giữ nguyên ca thêm
+  function applyFirstTimeToAll() {
+    const first = daySlots[0]?.slots[0];
+    if (!first) return;
+    setTimes((prev) => {
+      const next = new Map(prev);
+      for (const d of daySlots) next.set(d.code, [{ ...first }, ...(next.get(d.code) ?? [lastTime]).slice(1)]);
+      return next;
+    });
+    setTouched(new Set(days));
+  }
+
   function removeSlot(code: WeekdayCode, index: number) {
     const slots = times.get(code) ?? [lastTime];
     setTimes((prev) => new Map(prev).set(code, slots.filter((_, i) => i !== index)));
@@ -275,7 +288,10 @@ export function ClassForm({
       {mode === 'edit' && (
         <label className="col-span-full flex items-start gap-2 text-sm text-ink-2">
           <input type="checkbox" name="keepOldFee" defaultChecked className="mt-1 size-4 accent-[var(--primary-deep)]" />
-          <span>Nếu đổi học phí: học sinh đang học giữ học phí cũ (học sinh vào sau thì theo học phí mới)</span>
+          <span>
+            Nếu đổi học phí: học sinh đang học giữ học phí cũ
+            {values.affectedStudents !== undefined && <> ({values.affectedStudents} học sinh chưa có học phí riêng)</>}. Học sinh vào sau thì theo học phí mới.
+          </span>
         </label>
       )}
       <Field label="Sĩ số tối đa *" error={errors.capacity}>
@@ -315,6 +331,13 @@ export function ClassForm({
             {errors.weekdays && <span className="text-sm font-semibold text-blush-ink">{errors.weekdays}</span>}
           </fieldset>
 
+          {daySlots.length > 1 && (
+            <div className="col-span-full flex justify-end">
+              <Btn variant="ghost" onClick={applyFirstTimeToAll}>
+                Dùng giờ ca đầu của {daySlots[0].code} cho mọi ngày học
+              </Btn>
+            </div>
+          )}
           <DayTimeRows days={daySlots} errors={errors} canEditSlots onChange={changeTime} onAddSlot={addSlot} onRemoveSlot={removeSlot} onMoveSlot={moveSlotTo} />
           <Field
             label={isReschedule && kept > 0 ? 'Xếp lại từ ngày *' : 'Ngày khai giảng *'}
@@ -330,10 +353,11 @@ export function ClassForm({
         </>
       ) : (
         <>
-          <DayTimeRows days={daySlots} errors={errors} canEditSlots={false} onChange={changeTime} onAddSlot={addSlot} onRemoveSlot={removeSlot} />
+          {/* Hướng dẫn đặt trên ô giờ: người dùng hay bỏ qua chữ ở cuối form */}
           <Notice className={`col-span-full ${daySlots.length === 0 ? 'hidden' : ''}`}>
-            Đổi giờ một ca thì các buổi sắp tới của ca đó dời sang giờ mới. Đổi ngày khai giảng, số buổi, ngày học hoặc thêm ca: dùng nút Xếp lại lịch. Sửa, huỷ một buổi riêng ở màn Lịch học.
+            <b>Đổi giờ từng ca tại đây:</b> các buổi sắp tới của ca đó sẽ dời theo giờ mới. <b>Muốn thêm ca, đổi ngày học hoặc số buổi</b>, bấm <b>Xếp lại lịch</b> trong menu ⋯ của lớp ở danh sách. Sửa hoặc huỷ một buổi riêng ở màn Lịch học.
           </Notice>
+          <DayTimeRows days={daySlots} errors={errors} canEditSlots={false} onChange={changeTime} onAddSlot={addSlot} onRemoveSlot={removeSlot} />
         </>
       )}
 

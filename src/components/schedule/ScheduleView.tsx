@@ -1,6 +1,7 @@
 'use client';
 
 import { DndContext, KeyboardSensor, PointerSensor, pointerWithin, useDraggable, useDroppable, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { CSS } from '@dnd-kit/utilities';
 import { Filter, Plus, Users } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -167,6 +168,7 @@ export function ScheduleView({
 
   // Kéo buổi trên lưới tuần để dời (người quản lý lớp). Thả xong giờ mới làm tròn 15 phút, kiểm trùng ở máy chủ.
   const dragging = useRef(false);
+  const [pendingMove, setPendingMove] = useState<{ session: SessionRow; day: string; start: number } | null>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }), useSensor(KeyboardSensor));
   function onDragStart() {
     dragging.current = true;
@@ -185,8 +187,16 @@ export function ScheduleView({
     const duration = minutesOfDay(s.endsAt) - from;
     const next = draggedStart(from, e.delta.y, e.over.rect.height, hours.length, hourStart * 60, hourEnd * 60, duration);
     if (day === s.dateKey && next === from) return;
+    // Chưa dời ngay: hỏi xác nhận trước, vì dời buổi sẽ báo phụ huynh và giáo viên
+    setPendingMove({ session: s, day, start: next });
+  }
+
+  function confirmMove() {
+    if (!pendingMove) return;
+    const { session: s, day, start } = pendingMove;
+    setPendingMove(null);
     startTransition(async () => {
-      const r = await moveSessionAction(s.id, day, hhmm(next));
+      const r = await moveSessionAction(s.id, day, hhmm(start));
       notify(r.message ?? (r.ok ? 'Đã dời buổi' : 'Không dời được'));
       if (r.ok) router.refresh();
     });
@@ -337,6 +347,19 @@ export function ScheduleView({
       )}
 
       <SessionDialog session={open} teachers={teachers} canManage={canManage} onClose={() => setOpen(null)} />
+      <ConfirmDialog
+        open={!!pendingMove}
+        title="Dời buổi học?"
+        tone="primary"
+        confirmLabel="Dời buổi"
+        text={
+          pendingMove
+            ? `${pendingMove.session.className}, buổi ${pendingMove.session.sessionNo}: từ ${pendingMove.session.timeLabel} (${dateKeyLabel(pendingMove.session.dateKey)}) sang ${hhmm(pendingMove.start)} ${dateKeyLabel(pendingMove.day)}. Phụ huynh và giáo viên sẽ nhận tin báo lịch mới.`
+            : ''
+        }
+        onConfirm={confirmMove}
+        onCancel={() => setPendingMove(null)}
+      />
     </section>
   );
 }

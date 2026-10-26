@@ -100,6 +100,8 @@ export type ClassCoreValues = {
   sessionsTotal?: number;
   keptSessions?: number;
   nextDate?: string;
+  // Form sửa: số học sinh đang học chưa có học phí riêng (sẽ giữ học phí cũ nếu đổi học phí lớp)
+  affectedStudents?: number;
 };
 
 // Tạo lớp và sinh toàn bộ buổi học trong một transaction
@@ -471,6 +473,10 @@ export async function loadClassForm(id: number): Promise<{ ok: true; values: Cla
       .limit(1);
     const today = todayKeyVN();
     const nextDate = next ? vnDateKey(next.startsAt) : lastDate && lastDate >= today ? addDaysKey(lastDate, 1) : today;
+    const [affected] = await db
+      .select({ n: sql<number>`COUNT(*)::int` })
+      .from(students)
+      .where(and(eq(students.classId, id), isNull(students.tuitionFee), inArray(students.status, ['active', 'trial', 'paused'])));
     return {
       ok: true,
       values: {
@@ -488,6 +494,7 @@ export async function loadClassForm(id: number): Promise<{ ok: true; values: Cla
         sessionsTotal: row.sessionsTotal,
         keptSessions: kept,
         nextDate,
+        affectedStudents: affected?.n ?? 0,
       },
     };
   } catch (error) {
