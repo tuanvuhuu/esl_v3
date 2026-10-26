@@ -17,6 +17,7 @@ import { listSessionsBetween } from '@/lib/queries/sessions';
 import { listInvoices } from '@/lib/queries/tuition';
 import { getCurrentPermissions } from '@/lib/session';
 import { classTone } from '@/lib/class-tone';
+import { NatureBanner, natureSceneFor } from '@/components/ui/NatureBanner';
 
 // Tổng quan (trang chủ): việc cần làm hôm nay đứng đầu, rồi số liệu, lịch hôm nay và lớp đang học. Tất cả từ DB.
 export default function DashboardPage() {
@@ -89,6 +90,8 @@ async function DashboardData() {
           ) : undefined
         }
       />
+
+      <NatureBanner scene={natureSceneFor(weekdayOfKey(today))} />
 
       <div className="grid grid-cols-2 gap-3 min-[768px]:grid-cols-4 min-[768px]:gap-4">
         <Kpi label="Đang học" tone="mint" value={String(stats.active)} sub={`${stats.trial} học thử`} />
