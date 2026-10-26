@@ -7,8 +7,9 @@ import { login } from './helpers';
 test('chuông thông báo: số việc khớp với Cần chú ý ở Tổng quan, mở rồi đóng bằng Esc', async ({ page }) => {
   await login(page);
   await page.goto('/tong-quan', { waitUntil: 'load' });
-  const heading = await page.getByRole('heading', { name: /Cần chú ý \(\d+\)/ }).textContent();
-  const expected = Number(heading?.match(/\((\d+)\)/)?.[1] ?? '0');
+  // Số việc nằm ở huy hiệu trong khối Cần chú ý (aria-label "N việc")
+  const badge = await page.getByRole('region', { name: 'Cần chú ý' }).getByLabel(/^\d+ việc$/).textContent();
+  const expected = Number(badge?.trim() ?? '0');
   const bell = page.getByRole('button', { name: /^Thông báo/ });
   if (expected === 0) await expect(bell).toHaveAccessibleName('Thông báo');
   else await expect(bell).toHaveAccessibleName(`Thông báo, ${expected} việc cần chú ý`);
