@@ -17,7 +17,6 @@ import { listSessionsBetween } from '@/lib/queries/sessions';
 import { listInvoices } from '@/lib/queries/tuition';
 import { getCurrentPermissions } from '@/lib/session';
 import { classTone } from '@/lib/class-tone';
-import { NatureBackdrop, natureSceneFor } from '@/components/ui/NatureBanner';
 
 // Tổng quan (trang chủ): việc cần làm hôm nay đứng đầu, rồi số liệu, lịch hôm nay và lớp đang học. Tất cả từ DB.
 export default function DashboardPage() {
@@ -76,8 +75,7 @@ async function DashboardData() {
   const weekday = weekdayLabel(weekdayOfKey(today));
 
   return (
-    <section className="relative isolate flex flex-col gap-5">
-      <NatureBackdrop scene={natureSceneFor(weekdayOfKey(today))} />
+    <section className="flex flex-col gap-5">
       <PageHeader
         crumbs={['Trung tâm']}
         title="Tổng quan"

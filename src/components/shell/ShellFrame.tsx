@@ -1,6 +1,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
+import { AppBackdrop } from '@/components/shell/AppBackdrop';
 import { useEffect, useState, type ReactNode } from 'react';
 import type { CampusOption, CampusScope } from '@/lib/campus';
 import type { NavGroup, NavItem } from '@/lib/nav';
@@ -54,6 +55,7 @@ export function ShellFrame({ children, groups, tabs, badges, campuses, campusSco
 
   return (
     <div className="grid min-h-screen min-[1200px]:grid-cols-[208px_minmax(0,1fr)]">
+      <AppBackdrop />
       <Sidebar groups={groups} open={navOpen} onNavigate={() => setNavOpen(false)} />
 
       {navOpen && <div className="fixed inset-0 z-[55] bg-scrim" onClick={() => setNavOpen(false)} aria-hidden />}

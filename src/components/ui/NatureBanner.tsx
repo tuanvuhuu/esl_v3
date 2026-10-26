@@ -2,7 +2,7 @@ import type { CSSProperties, ReactNode } from 'react';
 
 // Ảnh thiên nhiên minh hoạ, vẽ bằng SVG. Màu lấy từ token nên đổi theo màu nhấn và chế độ tối.
 // Chỉ để trang trí: ẩn với trình đọc màn hình.
-export type NatureScene = 'hills' | 'forest' | 'sea';
+export type NatureScene = 'hills' | 'forest' | 'sea' | 'mountain' | 'meadow';
 
 const SCENES: NatureScene[] = ['hills', 'forest', 'sea'];
 
@@ -121,16 +121,68 @@ const SEA = (
   </>
 );
 
-const SVG_SCENE: Record<NatureScene, ReactNode> = { hills: HILLS, forest: FOREST, sea: SEA };
+const MOUNTAIN = (
+  <>
+    <defs>
+      <Sky id="sky-mountain" from="var(--surface)" to="var(--lav)" />
+    </defs>
+    <rect width="1200" height="240" style={{ fill: 'url(#sky-mountain)' }} />
+    <g style={fill('var(--surface)', 0.85)}>
+      <path d={cloud(120, 40, 0.9)} />
+      <path d={cloud(900, 28, 1)} />
+    </g>
+    <path d="M0 170 L150 60 L260 130 L380 40 L520 140 L640 70 L780 150 L900 50 L1040 130 L1200 70 V240 H0Z" style={fill('var(--lav-ink)', 0.3)} />
+    <path d="M150 60 L168 92 L132 92Z M380 40 L404 80 L356 80Z M900 50 L922 84 L878 84Z M1200 70 L1176 98 L1200 98Z" style={fill('var(--surface)', 0.9)} />
+    <path d="M0 200 L120 120 L240 180 L400 100 L560 190 L720 130 L900 200 L1060 115 L1200 180 V240 H0Z" style={fill('var(--mint-ink)', 0.45)} />
+    <rect x="0" y="196" width="1200" height="44" style={fill('var(--accent)', 0.5)} />
+    <path d="M200 214 L400 214 M600 222 L800 222 M300 230 L480 230" style={line('var(--surface)', 2, 0.35)} />
+    <path d={pine(180, 214, 40) + ' ' + pine(230, 218, 30) + ' ' + pine(980, 212, 44)} style={fill('var(--mint-ink)')} />
+  </>
+);
 
-// Nền cả khung hình: cảnh phủ toàn màn hình, neo ở đáy để đồi và rừng nằm dưới. Mờ để chữ và các khung trắng vẫn rõ.
-// Khung trắng nằm trên lớp nền, nên nền chỉ lộ ra ở các khoảng hở.
-export function NatureBackdrop({ scene }: { scene: NatureScene }) {
+// Đồng cỏ: mặt trời, đồi xanh nhiều lớp, cây tròn và hoa dại
+const MEADOW = (
+  <>
+    <defs>
+      <Sky id="sky-meadow" from="var(--primary-soft)" to="var(--surface)" />
+    </defs>
+    <rect width="1200" height="240" style={{ fill: 'url(#sky-meadow)' }} />
+    <circle cx="240" cy="66" r="58" style={fill('var(--primary)', 0.18)} />
+    <circle cx="240" cy="66" r="32" style={fill('var(--primary)')} />
+    <path d="M0 150 Q240 118 480 150 T960 138 T1200 150 V240 H0Z" style={fill('var(--mint)')} />
+    <path d="M0 184 Q320 150 640 180 T1200 176 V240 H0Z" style={fill('var(--accent)', 0.55)} />
+    <path d="M520 240 Q600 200 700 206 T900 240" style={line('var(--surface)', 6, 0.5)} />
+    <path d="M0 214 Q300 188 620 210 T1200 206 V240 H0Z" style={fill('var(--mint-ink)', 0.35)} />
+    {[860, 1010].map((x, i) => (
+      <g key={`tree-${x}`}>
+        <rect x={x - 3} y={170 + i * 4} width="6" height="22" style={fill('var(--mint-ink)')} />
+        <circle cx={x} cy={160 + i * 4} r={22 - i * 3} style={fill('var(--accent)')} />
+      </g>
+    ))}
+    {[120, 180, 300, 360, 430, 560, 700, 780, 1080, 1140].map((x, i) => (
+      <circle key={`flower-${x}`} cx={x} cy={204 + (i % 4) * 8} r={3.5} style={fill(i % 3 === 0 ? 'var(--blush-ink)' : i % 3 === 1 ? 'var(--butter-ink)' : 'var(--surface)', 0.9)} />
+    ))}
+  </>
+);
+
+const SVG_SCENE: Record<NatureScene, ReactNode> = { hills: HILLS, forest: FOREST, sea: SEA, mountain: MOUNTAIN, meadow: MEADOW };
+
+// Năm cảnh mặc định cho ảnh nền, theo thứ tự hiện trong menu
+export const NATURE_SCENES: NatureScene[] = ['hills', 'forest', 'sea', 'mountain', 'meadow'];
+
+export const NATURE_LABEL: Record<NatureScene, string> = {
+  hills: 'Đồi',
+  forest: 'Rừng',
+  sea: 'Biển',
+  mountain: 'Núi',
+  meadow: 'Đồng cỏ',
+};
+
+// Hình cảnh (không kèm khung). Dùng cho nền phủ cả khu nội dung và cho ảnh thu nhỏ trong menu.
+export function NatureSvg({ scene, slice = 'xMidYMax' }: { scene: NatureScene; slice?: 'xMidYMax' | 'xMidYMid' }) {
   return (
-    <div aria-hidden className="pointer-events-none fixed inset-x-0 bottom-0 top-[60px] -z-10 overflow-hidden opacity-40 min-[1200px]:left-[208px]">
-      <svg viewBox="0 0 1200 240" preserveAspectRatio="xMidYMax slice" className="size-full" focusable="false">
-        {SVG_SCENE[scene]}
-      </svg>
-    </div>
+    <svg viewBox="0 0 1200 240" preserveAspectRatio={`${slice} slice`} className="size-full" focusable="false" aria-hidden>
+      {SVG_SCENE[scene]}
+    </svg>
   );
 }
