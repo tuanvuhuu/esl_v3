@@ -105,14 +105,16 @@ export async function listInvoices(todayKey: string, q: string, filter: InvoiceF
   return { rows, counts, totalDebt: all.reduce((sum, r) => sum + r.debt, 0), totals };
 }
 
-export type PaymentRow = { id: number; amount: number; paidDate: string; note: string };
+// kind: payment (khoản thu), refund (hoàn số dư), void (dòng huỷ một khoản thu). voided: khoản thu đã bị huỷ.
+export type PaymentRow = { id: number; amount: number; paidDate: string; note: string; kind: 'payment' | 'refund' | 'void'; voided: boolean };
 
 export async function listPaymentsOfStudent(studentId: number): Promise<PaymentRow[]> {
-  const result = await db.execute<{ id: number; amount: number; paid_date: string; note: string }>(sql`
-    SELECT id, amount, to_char(paid_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'YYYY-MM-DD') AS paid_date, note
-    FROM tuition_payments WHERE student_id = ${studentId} ORDER BY paid_at DESC, id DESC
+  const result = await db.execute<{ id: number; amount: number; paid_date: string; note: string; kind: PaymentRow['kind']; voided: boolean }>(sql`
+    SELECT p.id, p.amount, to_char(p.paid_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'YYYY-MM-DD') AS paid_date, p.note, p.kind,
+      EXISTS (SELECT 1 FROM tuition_payments v WHERE v.ref_id = p.id AND v.kind = 'void') AS voided
+    FROM tuition_payments p WHERE p.student_id = ${studentId} ORDER BY p.paid_at DESC, p.id DESC
   `);
-  return result.rows.map((r) => ({ id: r.id, amount: r.amount, paidDate: r.paid_date, note: r.note }));
+  return result.rows.map((r) => ({ id: r.id, amount: r.amount, paidDate: r.paid_date, note: r.note, kind: r.kind, voided: r.voided }));
 }
 
 export type RevenueReport = {

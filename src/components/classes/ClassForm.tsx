@@ -272,6 +272,12 @@ export function ClassForm({
       <Field label="Học phí (VND) *" error={errors.fee} hint="Học phí cả khoá, gõ số, app tự thêm dấu chấm">
         <MoneyInput name="fee" defaultValue={values.fee} className={inputClass(errors.fee)} />
       </Field>
+      {mode === 'edit' && (
+        <label className="col-span-full flex items-start gap-2 text-sm text-ink-2">
+          <input type="checkbox" name="keepOldFee" defaultChecked className="mt-1 size-4 accent-[var(--primary-deep)]" />
+          <span>Nếu đổi học phí: học sinh đang học giữ học phí cũ (học sinh vào sau thì theo học phí mới)</span>
+        </label>
+      )}
       <Field label="Sĩ số tối đa *" error={errors.capacity}>
         <input name="capacity" type="number" inputMode="numeric" min={1} max={100} step={1} defaultValue={values.capacity} className={inputClass(errors.capacity)} />
       </Field>

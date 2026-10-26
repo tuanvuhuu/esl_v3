@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useActionState, useEffect, useRef, useState, useTransition, startTransition, type FormEvent } from 'react';
-import { loadPaymentsAction, recordPaymentAction, remindTuitionAction, setTuitionDiscountAction } from '@/app/(app)/hoc-phi/actions';
+import { loadPaymentsAction, recordPaymentAction, refundSurplusAction, remindTuitionAction, setTuitionDiscountAction, voidPaymentAction } from '@/app/(app)/hoc-phi/actions';
 import type { InvoiceFilter, InvoiceRow, InvoiceTotals, PaymentRow } from '@/lib/queries/tuition';
 import { formatVND } from '@/lib/money';
 import { dateKeyLabel } from '@/lib/datetime';
@@ -66,6 +66,7 @@ export function TuitionView({
   const router = useRouter();
   const { message, notify } = useToast();
   const [paying, setPaying] = useState<InvoiceRow | null>(null);
+  const [refunding, setRefunding] = useState<InvoiceRow | null>(null);
   const [pending, startRemind] = useTransition();
   const [search, setSearch] = useState(q);
 
@@ -93,6 +94,8 @@ export function TuitionView({
       notify(r.message ?? (r.ok ? 'Đã ghi nhắc' : 'Không ghi được'));
     });
   }
+
+  const canRefund = (r: InvoiceRow) => canManage && r.balance > 0 && (r.status === 'finished' || r.status === 'paused');
 
   const cell = (r: InvoiceRow, key: string) => {
     switch (key) {
@@ -129,6 +132,7 @@ export function TuitionView({
                 <Btn onClick={() => remind(r)} disabled={pending}>Nhắc</Btn>
               </>
             )}
+            {canRefund(r) && <Btn onClick={() => setRefunding(r)}>Hoàn số dư</Btn>}
           </div>
         );
       default:
@@ -164,6 +168,7 @@ export function TuitionView({
           <Btn block onClick={() => remind(r)} disabled={pending}>Nhắc đóng</Btn>
         </div>
       )}
+      {canRefund(r) && <Btn block onClick={() => setRefunding(r)}>Hoàn số dư</Btn>}
     </Card>
   );
 
@@ -214,7 +219,8 @@ export function TuitionView({
         empty={<EmptyPanel title="Không có học sinh phù hợp với bộ lọc này." />}
       />
 
-      {paying && <PaymentDialog row={paying} onClose={() => setPaying(null)} onDone={(m) => { setPaying(null); notify(m); router.refresh(); }} />}
+      {paying && <PaymentDialog row={paying} canManage={canManage} onClose={() => setPaying(null)} onDone={(m) => { setPaying(null); notify(m); router.refresh(); }} />}
+      {refunding && <RefundDialog row={refunding} onClose={() => setRefunding(null)} onDone={(m) => { setRefunding(null); notify(m); router.refresh(); }} />}
       <Toast message={message} />
     </section>
   );
@@ -315,9 +321,13 @@ function DiscountInput({ row, canManage, onSave }: { row: InvoiceRow; canManage:
 }
 
 // Hộp thoại ghi thu: số tiền mặc định là số còn nợ, có lịch sử thu của học sinh
-function PaymentDialog({ row, onClose, onDone }: { row: InvoiceRow; onClose: () => void; onDone: (message: string) => void }) {
+function PaymentDialog({ row, canManage, onClose, onDone }: { row: InvoiceRow; canManage: boolean; onClose: () => void; onDone: (message: string) => void }) {
   const [history, setHistory] = useState<PaymentRow[] | null>(null);
   const [historyError, setHistoryError] = useState<string | null>(null);
+  const [voidId, setVoidId] = useState<number | null>(null);
+  const [voidReason, setVoidReason] = useState('');
+  const [voidError, setVoidError] = useState<string | null>(null);
+  const [voiding, startVoid] = useTransition();
   const [qr, setQr] = useState<{ payload: string; bankLine: string } | null>(null);
   const [state, formAction, pending] = useActionState<ActionResult, FormData>(async (prev, formData) => {
     const result = await recordPaymentAction(Number(row.id), prev, formData);
@@ -345,6 +355,16 @@ function PaymentDialog({ row, onClose, onDone }: { row: InvoiceRow; onClose: () 
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     startTransition(() => formAction(formData));
+  }
+
+  // Huỷ khoản thu đã ghi nhầm: ghi dòng huỷ có lý do, rồi đóng hộp và làm mới số liệu
+  function confirmVoid(p: PaymentRow) {
+    setVoidError(null);
+    startVoid(async () => {
+      const r = await voidPaymentAction(p.id, voidReason);
+      if (r.ok) onDone(r.message ?? 'Đã huỷ khoản thu');
+      else setVoidError(r.message ?? 'Không huỷ được');
+    });
   }
 
   return (
@@ -382,18 +402,84 @@ function PaymentDialog({ row, onClose, onDone }: { row: InvoiceRow; onClose: () 
           {historyError && <p className="text-sm text-blush-ink">{historyError}</p>}
           {!history && !historyError && <p className="text-sm text-muted">Đang tải…</p>}
           {history && history.length === 0 && <p className="text-sm text-muted">Chưa có khoản thu nào.</p>}
+          {voidError && <p role="alert" className="mb-2 text-sm text-blush-ink">{voidError}</p>}
           {history && history.length > 0 && (
             <ul className="flex flex-col gap-2">
-              {history.map((p) => (
-                <li key={p.id} className="flex items-center justify-between gap-3 text-sm">
-                  <span className="text-muted">{dateKeyLabel(p.paidDate)}{p.note ? ` · ${p.note}` : ''}</span>
-                  <b className="text-ink">{formatVND(p.amount)}</b>
-                </li>
-              ))}
+              {history.map((p) => {
+                const label = p.kind === 'refund' ? 'Hoàn tiền' : p.kind === 'void' ? 'Huỷ khoản' : '';
+                const struck = p.voided ? 'line-through text-muted' : '';
+                return (
+                  <li key={p.id} className="flex flex-col gap-1.5 text-sm">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className={`min-w-0 ${p.voided ? 'text-muted line-through' : 'text-muted'}`}>
+                        {dateKeyLabel(p.paidDate)}
+                        {label ? ` · ${label}` : ''}
+                        {p.note ? ` · ${p.note}` : ''}
+                        {p.voided ? ' · đã huỷ' : ''}
+                      </span>
+                      <span className="flex shrink-0 items-center gap-2">
+                        <b className={struck || 'text-ink'}>{formatVND(p.amount)}</b>
+                        {canManage && p.kind === 'payment' && !p.voided && voidId !== p.id && (
+                          <Btn onClick={() => { setVoidId(p.id); setVoidReason(''); setVoidError(null); }}>Huỷ</Btn>
+                        )}
+                      </span>
+                    </div>
+                    {voidId === p.id && (
+                      <div className="flex flex-wrap items-center gap-2">
+                        <input
+                          value={voidReason}
+                          onChange={(e) => setVoidReason(e.target.value)}
+                          placeholder="Lý do huỷ (VD: ghi nhầm số tiền)"
+                          aria-label="Lý do huỷ khoản thu"
+                          className={`${inputClass()} min-w-0 flex-1`}
+                        />
+                        <Btn variant="danger" onClick={() => confirmVoid(p)} disabled={voiding}>Xác nhận huỷ</Btn>
+                        <Btn onClick={() => setVoidId(null)} disabled={voiding}>Không huỷ</Btn>
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>
       </div>
+    </Modal>
+  );
+}
+
+// Hoàn số dư cho học sinh đã nghỉ hoặc đang bảo lưu. Số tiền mặc định là toàn bộ số dư, không vượt số dư.
+function RefundDialog({ row, onClose, onDone }: { row: InvoiceRow; onClose: () => void; onDone: (message: string) => void }) {
+  const [amount, setAmount] = useState(String(row.balance));
+  const [note, setNote] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [pending, start] = useTransition();
+
+  function submit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError(null);
+    start(async () => {
+      const r = await refundSurplusAction(Number(row.id), Number(amount), note);
+      if (r.ok) onDone(r.message ?? 'Đã hoàn');
+      else setError(r.message ?? 'Không hoàn được');
+    });
+  }
+
+  return (
+    <Modal open title={`Hoàn số dư · ${row.fullName}`} subtitle={`Đã đóng dư ${formatVND(row.balance)}`} onClose={onClose} labelledBy="refund-title">
+      <form onSubmit={submit} noValidate className="grid grid-cols-1 gap-3.5 pb-2 min-[768px]:grid-cols-2 min-[768px]:gap-x-4">
+        {error && <Alert className="col-span-full">{error}</Alert>}
+        <Field label="Số tiền hoàn (VND) *" hint={`Tối đa ${formatVND(row.balance)}`}>
+          <input name="amount" type="number" inputMode="numeric" min={1} max={row.balance} step={1} value={amount} onChange={(e) => setAmount(e.target.value)} className={inputClass()} />
+        </Field>
+        <Field label="Ghi chú">
+          <input name="note" value={note} onChange={(e) => setNote(e.target.value)} placeholder="VD: nghỉ học từ tháng 10" autoComplete="off" className={inputClass()} />
+        </Field>
+        <FormFooter className="col-span-full">
+          <button type="button" onClick={onClose} className={FORM_BTN_CANCEL}>Huỷ</button>
+          <button type="submit" disabled={pending} className={FORM_BTN_SUBMIT}>{pending ? 'Đang hoàn…' : 'Hoàn tiền'}</button>
+        </FormFooter>
+      </form>
     </Modal>
   );
 }

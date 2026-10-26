@@ -248,7 +248,10 @@ export const tuitionPayments = pgTable(
     studentId: integer('student_id')
       .notNull()
       .references(() => students.id, { onDelete: 'cascade' }),
+    // Sổ thu chỉ thêm, không xoá. payment: khoản thu (số dương). refund: hoàn tiền thừa, void: huỷ khoản thu ref_id (cả hai số âm).
     amount: integer('amount').notNull(),
+    kind: varchar('kind', { length: 10 }).notNull().default('payment'),
+    refId: integer('ref_id'),
     paidAt: timestamp('paid_at', { withTimezone: true }).notNull().defaultNow(),
     note: varchar('note', { length: 200 }).notNull().default(''),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

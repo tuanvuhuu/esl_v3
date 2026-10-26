@@ -1,6 +1,6 @@
 'use server';
 
-import { and, eq, gt, ne, sql } from 'drizzle-orm';
+import { and, eq, gt, inArray, isNull, ne, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { db } from '@/db/client';
 import { attendance, campuses, classes, classSessions, leaveRequests, students, teachers } from '@/db/schema';
@@ -296,8 +296,21 @@ export async function updateClassAction(id: number, _prev: ActionResult, formDat
           }
         : {};
 
+    // Đổi học phí lớp: học sinh đang học (chưa có học phí riêng) giữ học phí cũ nếu người nhập chọn ô đó,
+    // để đổi giá lớp không làm lệch số tiền đã thu của họ. Học sinh mới vào sau thì theo học phí mới.
+    const keepOld = formData.get('keepOldFee') === 'on';
+    const feeChanged = v.fee !== current.fee;
+    let keptOld = 0;
     let movedSessions = 0;
     await db.transaction(async (tx) => {
+      if (feeChanged && keepOld) {
+        const kept = await tx
+          .update(students)
+          .set({ tuitionFee: current.fee, updatedAt: new Date() })
+          .where(and(eq(students.classId, id), isNull(students.tuitionFee), inArray(students.status, ['active', 'trial', 'paused'])))
+          .returning({ id: students.id });
+        keptOld = kept.length;
+      }
       await tx
         .update(classes)
         .set({
@@ -345,12 +358,14 @@ export async function updateClassAction(id: number, _prev: ActionResult, formDat
     });
 
     const timeNote = changedSlots.length > 0 ? `, đổi giờ ${changedSlots.map((t) => `${t.code} ${t.start}–${t.end}`).join(', ')} (${movedSessions} buổi sắp tới)` : '';
-    await writeAudit({ action: 'update', entity: 'class', entityId: id, summary: `Sửa lớp ${v.name}${timeNote}` });
+    const feeNote = feeChanged ? `, học phí ${current.fee} → ${v.fee}${keepOld ? ` (${keptOld} học sinh giữ học phí cũ)` : ''}` : '';
+    await writeAudit({ action: 'update', entity: 'class', entityId: id, summary: `Sửa lớp ${v.name}${timeNote}${feeNote}` });
     revalidatePath('/lop-hoc');
     revalidatePath(`/lop-hoc/${id}`);
     revalidatePath('/lich-hoc');
     revalidatePath('/giao-vien');
-    return { ok: true, message: movedSessions > 0 ? `Đã lưu lớp ${v.name}, dời giờ ${movedSessions} buổi sắp tới` : `Đã lưu lớp ${v.name}` };
+    const feeMsg = feeChanged && keepOld ? `, ${keptOld} học sinh giữ học phí cũ` : '';
+    return { ok: true, message: (movedSessions > 0 ? `Đã lưu lớp ${v.name}, dời giờ ${movedSessions} buổi sắp tới` : `Đã lưu lớp ${v.name}`) + feeMsg };
   } catch (error) {
     return errorResult(error);
   }

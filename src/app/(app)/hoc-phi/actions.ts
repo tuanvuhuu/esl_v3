@@ -1,6 +1,6 @@
 'use server';
 
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { db } from '@/db/client';
 import { classes, students, tuitionPayments } from '@/db/schema';
@@ -161,5 +161,84 @@ export async function setTuitionDiscountAction(studentId: number, discount: numb
     if (error instanceof ForbiddenError) return { ok: false, message: error.message };
     console.error('Lỗi đặt miễn giảm học phí:', error);
     return { ok: false, message: 'Không lưu được. Thử lại sau ít phút.' };
+  }
+}
+
+// Huỷ một khoản thu đã ghi nhầm. Không xoá dòng cũ: ghi thêm một dòng huỷ có số âm, có lý do, để sổ thu còn nguyên vết.
+export async function voidPaymentAction(paymentId: number, reason: string): Promise<ActionResult> {
+  try {
+    await requirePermission('tuition.manage');
+    const why = reason.trim();
+    if (why.length < 3) return { ok: false, message: 'Ghi rõ lý do huỷ khoản thu (ít nhất 3 ký tự).', fieldErrors: { reason: 'Cần ghi lý do' } };
+    if (why.length > 150) return { ok: false, message: 'Lý do huỷ tối đa 150 ký tự.', fieldErrors: { reason: 'Tối đa 150 ký tự' } };
+    const [pay] = await db.select().from(tuitionPayments).where(eq(tuitionPayments.id, paymentId)).limit(1);
+    if (!pay) return { ok: false, message: 'Không tìm thấy khoản thu này.' };
+    await requireStudentAccess(pay.studentId);
+    if (pay.kind !== 'payment') return { ok: false, message: 'Chỉ huỷ được khoản thu, không huỷ được dòng hoàn hay dòng huỷ.' };
+    const [done] = await db.select({ id: tuitionPayments.id }).from(tuitionPayments).where(and(eq(tuitionPayments.refId, paymentId), eq(tuitionPayments.kind, 'void'))).limit(1);
+    if (done) return { ok: false, message: 'Khoản thu này đã được huỷ.' };
+    const paid = await paidOf(pay.studentId);
+    if (paid - pay.amount < 0) return { ok: false, message: 'Không huỷ được: học sinh đã được hoàn tiền từ khoản này. Xử lý phần hoàn trước.' };
+
+    await db.insert(tuitionPayments).values({
+      studentId: pay.studentId,
+      amount: -pay.amount,
+      kind: 'void',
+      refId: paymentId,
+      note: `Huỷ khoản thu ${formatVND(pay.amount)}: ${why}`.slice(0, 200),
+      paidAt: new Date(),
+    });
+    await writeAudit({ action: 'void', entity: 'student', entityId: pay.studentId, summary: `Huỷ khoản thu ${formatVND(pay.amount)} (#${paymentId}): ${why}` });
+    revalidatePath('/hoc-phi');
+    revalidatePath(`/hoc-sinh/${pay.studentId}`);
+    revalidatePath('/bao-cao');
+    revalidatePath('/tong-quan');
+    return { ok: true, message: `Đã huỷ khoản thu ${formatVND(pay.amount)}` };
+  } catch (error) {
+    if (error instanceof ForbiddenError) return { ok: false, message: error.message };
+    console.error('Lỗi huỷ khoản thu:', error);
+    return { ok: false, message: 'Không huỷ được. Thử lại sau ít phút.' };
+  }
+}
+
+// Hoàn số dư (đã đóng dư) cho học sinh đã nghỉ hoặc đang bảo lưu. Ghi một dòng hoàn có số âm, không vượt số dư.
+export async function refundSurplusAction(studentId: number, amount: number, note: string): Promise<ActionResult> {
+  try {
+    await requirePermission('tuition.manage');
+    await requireStudentAccess(studentId);
+    const [row] = await db
+      .select({ name: students.fullName, status: students.status, ownFee: students.tuitionFee, classFee: classes.fee, discount: students.tuitionDiscount })
+      .from(students)
+      .innerJoin(classes, eq(classes.id, students.classId))
+      .where(eq(students.id, studentId))
+      .limit(1);
+    if (!row) return { ok: false, message: 'Không tìm thấy học sinh này. Có thể đã bị xoá.' };
+    if (row.status !== 'finished' && row.status !== 'paused') {
+      return { ok: false, message: 'Chỉ hoàn số dư cho học sinh đã nghỉ hoặc đang bảo lưu.' };
+    }
+    const fee = netFee(row.ownFee ?? row.classFee, row.discount);
+    const surplus = (await paidOf(studentId)) - fee;
+    if (surplus <= 0) return { ok: false, message: `${row.name} không có số dư để hoàn.` };
+    if (!Number.isInteger(amount) || amount < 1 || amount > surplus) {
+      return { ok: false, message: `Số tiền hoàn từ 1 đến ${formatVND(surplus)}.`, fieldErrors: { amount: `Tối đa ${formatVND(surplus)}` } };
+    }
+    const why = note.trim().slice(0, 150);
+    await db.insert(tuitionPayments).values({
+      studentId,
+      amount: -amount,
+      kind: 'refund',
+      note: `Hoàn ${formatVND(amount)}${why ? `: ${why}` : ''}`.slice(0, 200),
+      paidAt: new Date(),
+    });
+    await writeAudit({ action: 'refund', entity: 'student', entityId: studentId, summary: `Hoàn ${formatVND(amount)} số dư học phí ${row.name}${why ? `: ${why}` : ''}` });
+    revalidatePath('/hoc-phi');
+    revalidatePath(`/hoc-sinh/${studentId}`);
+    revalidatePath('/bao-cao');
+    revalidatePath('/tong-quan');
+    return { ok: true, message: `Đã hoàn ${formatVND(amount)} cho ${row.name}. Còn dư ${formatVND(surplus - amount)}.` };
+  } catch (error) {
+    if (error instanceof ForbiddenError) return { ok: false, message: error.message };
+    console.error('Lỗi hoàn số dư:', error);
+    return { ok: false, message: 'Không hoàn được. Thử lại sau ít phút.' };
   }
 }
