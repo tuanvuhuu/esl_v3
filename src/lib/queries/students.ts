@@ -52,6 +52,7 @@ export type StudentRow = {
   fee: number;
   paid: number;
   debt: number;
+  discount: number; // miễn giảm cố định (VND), 0 nếu không có
   tuition: 'paid' | 'partial' | 'unpaid';
   attendanceRate: number; // phần trăm, không tính buổi vắng
   parentName: string | null;
@@ -183,6 +184,7 @@ type RawRow = {
   sessions_done: number;
   sessions_total: number;
   fee: number;
+  discount: number;
   paid: number;
   att_total: number;
   att_absent: number;
@@ -237,6 +239,7 @@ export async function listStudents(
     sessionsDone: r.sessions_done,
     sessionsTotal: r.sessions_total,
     fee: r.fee,
+    discount: r.discount,
     paid: r.paid,
     debt: Math.max(0, r.fee - r.paid),
     tuition: r.tuition,

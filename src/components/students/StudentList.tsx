@@ -171,6 +171,7 @@ export function StudentList({
           <>
             <Pill tone={TUITION_META[row.tuition].tone}>{TUITION_META[row.tuition].label}</Pill>
             {row.debt > 0 && <small className="mt-1.5 block truncate text-xs text-muted">Thiếu {formatVND(row.debt)}</small>}
+            {row.discount > 0 && <small className="block truncate text-xs text-muted">Miễn giảm {formatVND(row.discount)}</small>}
           </>
         );
       case 'status':
@@ -321,6 +322,7 @@ function StudentCard({ row, viewHref, canEdit, canDelete, onEdit, onDelete }: { 
         <div className="flex flex-col items-end gap-1">
           <Pill tone={TUITION_META[row.tuition].tone}>{TUITION_META[row.tuition].label}</Pill>
           {row.debt > 0 && <small className="text-xs text-muted">Thiếu {formatVNDShort(row.debt)}</small>}
+          {row.discount > 0 && <small className="text-xs text-muted">Miễn giảm {formatVNDShort(row.discount)}</small>}
         </div>
       </div>
 
