@@ -12,3 +12,13 @@ describe('học phí thực thu (giảm trừ theo số tiền)', () => {
     expect(netFee(1_000_000, -300_000)).toBe(1_000_000);
   });
 });
+
+import { balanceOf } from '@/lib/tuition';
+
+describe('thừa hoặc thiếu so với phải nộp', () => {
+  it('đã nộp trừ phải nộp: âm là thiếu, dương là thừa', () => {
+    expect(balanceOf(4_400_000, 1_000_000)).toBe(-3_400_000);
+    expect(balanceOf(4_400_000, 4_400_000)).toBe(0);
+    expect(balanceOf(4_400_000, 5_000_000)).toBe(600_000);
+  });
+});

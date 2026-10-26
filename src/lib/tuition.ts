@@ -37,3 +37,8 @@ export function proratedFee(fee: number, totalSessions: number, remainingSession
 export function isOverdue(fee: number, paid: number, dueDate: string, todayKey: string): boolean {
   return debtOf(fee, paid) > 0 && dueDate < todayKey;
 }
+
+// Thừa hay thiếu: đã thu trừ phải nộp. Dương là thừa, âm là thiếu, 0 là vừa đủ.
+export function balanceOf(fee: number, paid: number): number {
+  return paid - fee;
+}

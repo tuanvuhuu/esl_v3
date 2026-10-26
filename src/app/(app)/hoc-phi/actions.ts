@@ -126,3 +126,36 @@ export async function loadPaymentsAction(studentId: number): Promise<{ ok: true;
     return { ok: false, message: 'Không đọc được lịch sử thu.' };
   }
 }
+
+// Đặt miễn giảm cố định (VND) cho một học sinh, sửa trực tiếp ở ô Miễn giảm của bảng học phí.
+// Không phần trăm. Không được lớn hơn học phí gốc (học phí riêng, hoặc học phí lớp).
+export async function setTuitionDiscountAction(studentId: number, discount: number): Promise<ActionResult> {
+  try {
+    await requirePermission('tuition.manage');
+    await requireStudentAccess(studentId);
+    const parsed = z.number().int().min(0).max(1_000_000_000).safeParse(discount);
+    if (!parsed.success) return { ok: false, message: 'Số tiền miễn giảm không hợp lệ.' };
+    const [row] = await db
+      .select({ name: students.fullName, ownFee: students.tuitionFee, classFee: classes.fee })
+      .from(students)
+      .innerJoin(classes, eq(classes.id, students.classId))
+      .where(eq(students.id, studentId))
+      .limit(1);
+    if (!row) return { ok: false, message: 'Không tìm thấy học sinh này. Có thể đã bị xoá.' };
+    const base = row.ownFee ?? row.classFee;
+    if (parsed.data > base) {
+      return { ok: false, message: `Miễn giảm không được lớn hơn học phí ${formatVND(base)}.`, fieldErrors: { discount: `Tối đa ${formatVND(base)}` } };
+    }
+    await db.update(students).set({ tuitionDiscount: parsed.data, updatedAt: new Date() }).where(eq(students.id, studentId));
+    await writeAudit({ action: 'update', entity: 'student', entityId: studentId, summary: `Đặt miễn giảm học phí ${row.name}: ${formatVND(parsed.data)}` });
+    revalidatePath('/hoc-phi');
+    revalidatePath('/hoc-sinh');
+    revalidatePath(`/hoc-sinh/${studentId}`);
+    revalidatePath('/tong-quan');
+    return { ok: true, message: `Đã lưu miễn giảm ${formatVND(parsed.data)} cho ${row.name}` };
+  } catch (error) {
+    if (error instanceof ForbiddenError) return { ok: false, message: error.message };
+    console.error('Lỗi đặt miễn giảm học phí:', error);
+    return { ok: false, message: 'Không lưu được. Thử lại sau ít phút.' };
+  }
+}

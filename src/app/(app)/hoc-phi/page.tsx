@@ -45,7 +45,7 @@ async function TuitionData({ searchParams }: { searchParams: Promise<SearchParam
   const filter: InvoiceFilter = FILTERS.includes(fRaw) ? fRaw : 'all';
   const q = first(sp.q).slice(0, 80);
   const { scope } = await getCampusContext();
-  const { rows, counts, totalDebt } = await listInvoices(todayKeyVN(), q, filter, scope);
+  const { rows, counts, totalDebt, totals } = await listInvoices(todayKeyVN(), q, filter, scope);
 
-  return <TuitionView rows={rows} counts={counts} totalDebt={totalDebt} filter={filter} q={q} canManage={hasPermission(granted, 'tuition.manage')} />;
+  return <TuitionView rows={rows} counts={counts} totalDebt={totalDebt} totals={totals} filter={filter} q={q} canManage={hasPermission(granted, 'tuition.manage')} />;
 }

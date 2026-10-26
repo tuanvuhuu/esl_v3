@@ -4,7 +4,7 @@ import { db } from '@/db/client';
 import type { CampusScope } from '@/lib/campus';
 import { campusCond } from '@/lib/queries/campuses';
 import { centerSettings, tuitionPayments } from '@/db/schema';
-import { debtOf, dueDateFor, isOverdue, tuitionState, type TuitionState } from '@/lib/tuition';
+import { balanceOf, debtOf, dueDateFor, isOverdue, tuitionState, type TuitionState } from '@/lib/tuition';
 import { parseStudentCode, studentCode } from '@/lib/student-code';
 import { normalizeSearch } from '@/lib/text';
 import { NET_FEE_SQL } from '@/lib/tuition-fee';
@@ -15,9 +15,12 @@ export type InvoiceRow = {
   fullName: string;
   status: 'active' | 'trial' | 'paused' | 'finished';
   className: string;
-  fee: number;
+  fee: number; // phải nộp (đã trừ miễn giảm)
+  baseFee: number; // học phí gốc (riêng hoặc của lớp), trần của miễn giảm
+  discount: number; // miễn giảm cố định (VND)
   paid: number;
-  debt: number;
+  debt: number; // còn nợ
+  balance: number; // thừa (dương) hoặc thiếu (âm) so với phải nộp
   state: TuitionState;
   dueDate: string; // YYYY-MM-DD
   overdue: boolean;
@@ -33,13 +36,16 @@ export async function getDueDay(): Promise<number> {
 
 // Hoá đơn học phí của mọi học sinh: học phí lớp, số đã thu, còn nợ, hạn đóng, quá hạn.
 // Học phí của học sinh trong cơ sở đang xem (scope null: mọi cơ sở). Số đếm và tổng nợ tính trên cơ sở đó.
-export async function listInvoices(todayKey: string, q: string, filter: InvoiceFilter, scope: CampusScope): Promise<{ rows: InvoiceRow[]; counts: Record<InvoiceFilter, number>; totalDebt: number }> {
+export type InvoiceTotals = { due: number; discount: number; paid: number; balance: number };
+
+export async function listInvoices(todayKey: string, q: string, filter: InvoiceFilter, scope: CampusScope): Promise<{ rows: InvoiceRow[]; counts: Record<InvoiceFilter, number>; totalDebt: number; totals: InvoiceTotals }> {
   // Ngày đến hạn và danh sách đọc cùng lúc
   const [dueDay, result] = await Promise.all([getDueDay(), db.execute<{
     id: number; full_name: string; search_key: string; status: InvoiceRow['status']; start_date: string; class_name: string;
-    fee: number; paid: number; last_paid: string | null;
+    fee: number; base_fee: number; discount: number; paid: number; last_paid: string | null;
   }>(sql`
     SELECT s.id, s.full_name, s.search_key, s.status, s.start_date::text AS start_date, c.name AS class_name, ${NET_FEE_SQL} AS fee,
+      COALESCE(s.tuition_fee, c.fee) AS base_fee, COALESCE(s.tuition_discount, 0)::int AS discount,
       COALESCE(p.paid, 0)::int AS paid,
       to_char(p.last_paid AT TIME ZONE 'Asia/Ho_Chi_Minh', 'YYYY-MM-DD') AS last_paid
     FROM students s
@@ -64,8 +70,11 @@ export async function listInvoices(todayKey: string, q: string, filter: InvoiceF
       status: r.status,
       className: r.class_name,
       fee: r.fee,
+      baseFee: r.base_fee,
+      discount: r.discount,
       paid: r.paid,
       debt,
+      balance: balanceOf(r.fee, r.paid),
       state: tuitionState(r.fee, r.paid),
       dueDate,
       overdue: isOverdue(r.fee, r.paid, dueDate, todayKey),
@@ -87,7 +96,13 @@ export async function listInvoices(todayKey: string, q: string, filter: InvoiceF
       return r.state === filter;
     });
 
-  return { rows, counts, totalDebt: all.reduce((sum, r) => sum + r.debt, 0) };
+  const totals: InvoiceTotals = {
+    due: all.reduce((sum, r) => sum + r.fee, 0),
+    discount: all.reduce((sum, r) => sum + r.discount, 0),
+    paid: all.reduce((sum, r) => sum + r.paid, 0),
+    balance: all.reduce((sum, r) => sum + r.balance, 0),
+  };
+  return { rows, counts, totalDebt: all.reduce((sum, r) => sum + r.debt, 0), totals };
 }
 
 export type PaymentRow = { id: number; amount: number; paidDate: string; note: string };

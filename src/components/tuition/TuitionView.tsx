@@ -2,9 +2,9 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useActionState, useEffect, useState, useTransition, startTransition, type FormEvent } from 'react';
-import { loadPaymentsAction, recordPaymentAction, remindTuitionAction } from '@/app/(app)/hoc-phi/actions';
-import type { InvoiceFilter, InvoiceRow, PaymentRow } from '@/lib/queries/tuition';
+import { useActionState, useEffect, useRef, useState, useTransition, startTransition, type FormEvent } from 'react';
+import { loadPaymentsAction, recordPaymentAction, remindTuitionAction, setTuitionDiscountAction } from '@/app/(app)/hoc-phi/actions';
+import type { InvoiceFilter, InvoiceRow, InvoiceTotals, PaymentRow } from '@/lib/queries/tuition';
 import { formatVND } from '@/lib/money';
 import { dateKeyLabel } from '@/lib/datetime';
 import type { ActionResult } from '@/lib/validation/student';
@@ -27,9 +27,10 @@ const STATE_META: Record<InvoiceRow['state'], { label: string; tone: Tone }> = {
 
 const COLUMNS: GridColumn<InvoiceRow>[] = [
   { key: 'fullName', label: 'Học sinh', width: 'minmax(180px,1.6fr)' },
-  { key: 'fee', label: 'Học phí', width: 'minmax(110px,1fr)' },
-  { key: 'paid', label: 'Đã thu', width: 'minmax(110px,1fr)' },
-  { key: 'debt', label: 'Còn nợ', width: 'minmax(110px,1fr)' },
+  { key: 'fee', label: 'Phải nộp', width: 'minmax(110px,1fr)' },
+  { key: 'discount', label: 'Miễn giảm', width: 'minmax(130px,1fr)' },
+  { key: 'paid', label: 'Đã nộp', width: 'minmax(110px,1fr)' },
+  { key: 'balance', label: 'Thừa/thiếu', width: 'minmax(130px,1fr)', sortValue: (r) => r.balance },
   { key: 'due', label: 'Hạn đóng', width: 'minmax(120px,1fr)', sortValue: (r) => r.dueDate },
   { key: 'status', label: 'Trạng thái', width: 'minmax(110px,1fr)', sortValue: (r) => r.state },
   // Đủ chỗ cho hai nút có chữ "Ghi thu", "Nhắc" trên một dòng
@@ -49,6 +50,7 @@ export function TuitionView({
   rows,
   counts,
   totalDebt,
+  totals,
   filter,
   q,
   canManage,
@@ -56,6 +58,7 @@ export function TuitionView({
   rows: InvoiceRow[];
   counts: Record<InvoiceFilter, number>;
   totalDebt: number;
+  totals: InvoiceTotals;
   filter: InvoiceFilter;
   q: string;
   canManage: boolean;
@@ -76,6 +79,14 @@ export function TuitionView({
     router.push(qs ? `/hoc-phi?${qs}` : '/hoc-phi', { scroll: false });
   }
 
+  // Lưu miễn giảm sửa trực tiếp ở ô: báo kết quả, lưu được thì làm mới số liệu. Trả về có lưu được hay không.
+  async function saveDiscount(studentId: number, amount: number): Promise<boolean> {
+    const r = await setTuitionDiscountAction(studentId, amount);
+    notify(r.message ?? (r.ok ? 'Đã lưu miễn giảm' : 'Không lưu được'));
+    if (r.ok) router.refresh();
+    return r.ok;
+  }
+
   function remind(row: InvoiceRow) {
     startRemind(async () => {
       const r = await remindTuitionAction(Number(row.id));
@@ -94,10 +105,12 @@ export function TuitionView({
         );
       case 'fee':
         return <span className="text-base text-ink">{formatVND(r.fee)}</span>;
+      case 'discount':
+        return <DiscountInput key={`${r.id}-${r.discount}`} row={r} canManage={canManage} onSave={saveDiscount} />;
       case 'paid':
         return <span className="text-base text-ink">{formatVND(r.paid)}</span>;
-      case 'debt':
-        return <span className={`text-base font-bold ${r.debt > 0 ? 'text-blush-ink' : 'text-muted'}`}>{formatVND(r.debt)}</span>;
+      case 'balance':
+        return <BalanceText balance={r.balance} />;
       case 'due':
         return (
           <div className="text-sm">
@@ -135,10 +148,14 @@ export function TuitionView({
           {r.overdue && <Pill tone="blush">Quá hạn</Pill>}
         </div>
       </div>
-      <div className="grid grid-cols-3 gap-2 rounded-xl bg-bg px-3 py-2.5 text-center">
-        <div><small className="block text-xs text-muted">Học phí</small><b className="text-sm text-ink">{formatVND(r.fee)}</b></div>
-        <div><small className="block text-xs text-muted">Đã thu</small><b className="text-sm text-ink">{formatVND(r.paid)}</b></div>
-        <div><small className="block text-xs text-muted">Còn nợ</small><b className={`text-sm ${r.debt > 0 ? 'text-blush-ink' : 'text-ink'}`}>{formatVND(r.debt)}</b></div>
+      <div className="grid grid-cols-2 gap-2 rounded-xl bg-bg px-3 py-2.5 text-center">
+        <div><small className="block text-xs text-muted">Phải nộp</small><b className="text-sm text-ink">{formatVND(r.fee)}</b></div>
+        <div>
+          <small className="block text-xs text-muted">Miễn giảm</small>
+          <DiscountInput key={`${r.id}-${r.discount}`} row={r} canManage={canManage} onSave={saveDiscount} />
+        </div>
+        <div><small className="block text-xs text-muted">Đã nộp</small><b className="text-sm text-ink">{formatVND(r.paid)}</b></div>
+        <div><small className="block text-xs text-muted">Thừa/thiếu</small><BalanceText balance={r.balance} /></div>
       </div>
       <small className="text-sm text-ink-2">Hạn đóng {dateKeyLabel(r.dueDate)}</small>
       {canManage && r.debt > 0 && (
@@ -184,6 +201,8 @@ export function TuitionView({
         <Btn type="submit" variant="ghost">Tìm</Btn>
       </form>
 
+      <TotalsStrip totals={totals} />
+
       <DataGrid
         label="Hoá đơn học phí"
         columns={COLUMNS}
@@ -198,6 +217,80 @@ export function TuitionView({
       {paying && <PaymentDialog row={paying} onClose={() => setPaying(null)} onDone={(m) => { setPaying(null); notify(m); router.refresh(); }} />}
       <Toast message={message} />
     </section>
+  );
+}
+
+// Dải tổng ngoài bảng: phải nộp, miễn giảm, đã nộp, thừa hoặc thiếu của mọi học sinh trong phạm vi đang xem
+function TotalsStrip({ totals }: { totals: InvoiceTotals }) {
+  const label = totals.balance < 0 ? 'Thiếu' : totals.balance > 0 ? 'Thừa' : 'Thừa/thiếu';
+  const items: { label: string; value: string; tone: string }[] = [
+    { label: 'Phải nộp', value: formatVND(totals.due), tone: 'text-ink' },
+    { label: 'Miễn giảm', value: formatVND(totals.discount), tone: 'text-ink' },
+    { label: 'Đã nộp', value: formatVND(totals.paid), tone: 'text-ink' },
+    { label, value: formatVND(Math.abs(totals.balance)), tone: totals.balance < 0 ? 'text-blush-ink' : totals.balance > 0 ? 'text-mint-ink' : 'text-muted' },
+  ];
+  return (
+    <dl className="mb-4 grid grid-cols-2 gap-2.5 min-[768px]:grid-cols-4" aria-label="Tổng học phí">
+      {items.map((it) => (
+        <div key={it.label} className="rounded-[var(--radius-panel)] bg-surface p-3.5 shadow-card">
+          <dt className="text-xs text-muted">{it.label}</dt>
+          <dd className={`mt-0.5 text-lg font-extrabold tabular-nums ${it.tone}`}>{it.value}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+// Thừa hay thiếu của một học sinh, có dấu chữ để không chỉ dựa vào màu
+function BalanceText({ balance }: { balance: number }) {
+  if (balance < 0) return <span className="text-base font-bold text-blush-ink">Thiếu {formatVND(-balance)}</span>;
+  if (balance > 0) return <span className="text-base font-bold text-mint-ink">Thừa {formatVND(balance)}</span>;
+  return <span className="text-base text-muted">{formatVND(0)}</span>;
+}
+
+// Ô miễn giảm sửa trực tiếp: bấm vào là sửa được (chỉ số tiền cụ thể). Rời ô hoặc Enter thì lưu,
+// Esc bỏ thay đổi. Không có quyền thì chỉ hiện số tiền.
+function DiscountInput({ row, canManage, onSave }: { row: InvoiceRow; canManage: boolean; onSave: (studentId: number, amount: number) => Promise<boolean> }) {
+  const [text, setText] = useState(row.discount ? String(row.discount) : '');
+  const [focused, setFocused] = useState(false);
+  const cancelled = useRef(false);
+  if (!canManage) return <span className="text-base text-ink">{formatVND(row.discount)}</span>;
+  const shown = focused ? text : text ? Number(text).toLocaleString('vi-VN') : '';
+  const current = row.discount ? String(row.discount) : '';
+
+  async function commit() {
+    setFocused(false);
+    if (cancelled.current) {
+      cancelled.current = false;
+      setText(current);
+      return;
+    }
+    const amount = text === '' ? 0 : Number(text);
+    if (String(amount) === current || (amount === 0 && current === '')) return;
+    const ok = await onSave(Number(row.id), amount);
+    if (!ok) setText(current);
+  }
+
+  return (
+    <input
+      type="text"
+      inputMode="numeric"
+      autoComplete="off"
+      aria-label={`Miễn giảm của ${row.fullName} (VND)`}
+      value={shown}
+      placeholder="0"
+      onFocus={() => setFocused(true)}
+      onChange={(e) => setText(e.target.value.replace(/\D/g, '').replace(/^0+(?=\d)/, '').slice(0, 12))}
+      onBlur={() => void commit()}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') e.currentTarget.blur();
+        if (e.key === 'Escape') {
+          cancelled.current = true;
+          e.currentTarget.blur();
+        }
+      }}
+      className={`${inputClass()} h-9 w-full min-w-0 tabular-nums text-sm`}
+    />
   );
 }
 
