@@ -1,0 +1,1 @@
+ALTER TABLE "center_settings" DROP COLUMN "late_fee_percent";

@@ -45,6 +45,17 @@ async function ownFee(classId: number, tuitionFee: number | null): Promise<numbe
   return cls && cls.fee === tuitionFee ? null : tuitionFee;
 }
 
+// Giảm trừ không được lớn hơn học phí gốc (học phí riêng, hoặc học phí lớp khi để trống)
+async function discountError(classId: number, tuitionFee: number | null, discount: number): Promise<ActionResult | null> {
+  if (discount <= 0) return null;
+  const [cls] = await db.select({ fee: classes.fee }).from(classes).where(eq(classes.id, classId)).limit(1);
+  const base = tuitionFee ?? cls?.fee ?? 0;
+  if (discount > base) {
+    return { ok: false, message: 'Giảm trừ lớn hơn học phí của học sinh.', fieldErrors: { tuitionDiscount: 'Không được lớn hơn học phí' } };
+  }
+  return null;
+}
+
 export type TuitionPreview = { fee: number; total: number; remaining: number; suggested: number; firstKey: string | null };
 
 // Gợi ý học phí khi học sinh vào lớp từ ngày startDate: số buổi còn lại (không tính buổi huỷ) và học phí tương ứng
@@ -79,6 +90,8 @@ export async function createStudentAction(_prev: ActionResult, formData: FormDat
     const v = parsed.data;
     await requireClassAccess(v.classId);
     const tuitionFee = await ownFee(v.classId, v.tuitionFee);
+    const bad = await discountError(v.classId, v.tuitionFee, v.tuitionDiscount);
+    if (bad) return bad;
     const id = await db.transaction(async (tx) => {
       const [student] = await tx
         .insert(students)
@@ -91,6 +104,7 @@ export async function createStudentAction(_prev: ActionResult, formData: FormDat
           status: v.status,
           startDate: v.startDate,
           tuitionFee,
+          tuitionDiscount: v.tuitionDiscount,
           note: v.note,
         })
         .returning({ id: students.id });
@@ -131,6 +145,8 @@ export async function updateStudentAction(id: number, _prev: ActionResult, formD
 
     const classChanged = before.classId !== v.classId;
     const tuitionFee = await ownFee(v.classId, v.tuitionFee);
+    const bad = await discountError(v.classId, v.tuitionFee, v.tuitionDiscount);
+    if (bad) return bad;
     await db.transaction(async (tx) => {
       await tx
         .update(students)
@@ -143,6 +159,7 @@ export async function updateStudentAction(id: number, _prev: ActionResult, formD
           status: v.status,
           startDate: v.startDate,
           tuitionFee,
+          tuitionDiscount: v.tuitionDiscount,
           note: v.note,
           updatedAt: new Date(),
         })
@@ -195,6 +212,7 @@ export type StudentFormValues = {
   status: 'active' | 'trial' | 'paused' | 'finished';
   startDate: string;
   tuitionFee: number | null; // học phí riêng, null: theo học phí lớp
+  tuitionDiscount: number; // giảm trừ cố định (VND), 0: không giảm
   note: string;
   parentId: string; // id phụ huynh liên hệ chính, rỗng nếu chưa có
   parentName: string;
@@ -216,6 +234,7 @@ export async function loadStudentForm(id: number): Promise<{ ok: true; values: S
         status: students.status,
         startDate: students.startDate,
         tuitionFee: students.tuitionFee,
+        tuitionDiscount: students.tuitionDiscount,
         classFee: classes.fee,
         note: students.note,
         parentId: parents.id,
@@ -240,6 +259,7 @@ export async function loadStudentForm(id: number): Promise<{ ok: true; values: S
         status: row.status,
         startDate: row.startDate,
         tuitionFee: row.tuitionFee ?? row.classFee,
+        tuitionDiscount: row.tuitionDiscount,
         note: row.note,
         parentId: row.parentId ? String(row.parentId) : '',
         parentName: row.parentName ?? '',

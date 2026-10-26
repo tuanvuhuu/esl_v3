@@ -37,6 +37,7 @@ const EMPTY: StudentFormValues = {
   status: 'active',
   startDate: '',
   tuitionFee: null,
+  tuitionDiscount: 0,
   note: '',
   parentId: '',
   parentName: '',
@@ -252,6 +253,21 @@ export function StudentForm({
           )}
         </div>
       )}
+
+      <Field label="Giảm trừ (VND)" error={errors.tuitionDiscount} hint="Số tiền cố định trừ vào học phí (không tính theo phần trăm). Để trống là không giảm.">
+        <input
+          name="tuitionDiscount"
+          type="text"
+          inputMode="numeric"
+          autoComplete="off"
+          defaultValue={values.tuitionDiscount ? values.tuitionDiscount.toLocaleString('vi-VN') : ''}
+          onChange={(e) => {
+            const digits = e.target.value.replace(/\D/g, '').replace(/^0+(?=\d)/, '').slice(0, 12);
+            e.target.value = digits === '' ? '' : Number(digits).toLocaleString('vi-VN');
+          }}
+          className={`${inputClass(errors.tuitionDiscount)} tabular-nums`}
+        />
+      </Field>
 
       <FormSection>Phụ huynh</FormSection>
       <Field label="Phụ huynh *" error={errors.parentId} wide hint="Chọn người đã có trong danh sách, hoặc để 'Thêm phụ huynh mới' và nhập bên dưới.">

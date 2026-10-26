@@ -281,6 +281,20 @@
       "when": 1792816433195,
       "tag": "0039_assignment_mode",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1792981561623,
+      "tag": "0040_tuition_discount",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1792982023021,
+      "tag": "0041_drop_late_fee_percent",
+      "breakpoints": true
     }
   ]
 }

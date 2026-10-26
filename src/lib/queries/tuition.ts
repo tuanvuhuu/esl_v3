@@ -7,6 +7,7 @@ import { centerSettings, tuitionPayments } from '@/db/schema';
 import { debtOf, dueDateFor, isOverdue, tuitionState, type TuitionState } from '@/lib/tuition';
 import { parseStudentCode, studentCode } from '@/lib/student-code';
 import { normalizeSearch } from '@/lib/text';
+import { NET_FEE_SQL } from '@/lib/tuition-fee';
 
 export type InvoiceRow = {
   id: number;
@@ -38,7 +39,7 @@ export async function listInvoices(todayKey: string, q: string, filter: InvoiceF
     id: number; full_name: string; search_key: string; status: InvoiceRow['status']; start_date: string; class_name: string;
     fee: number; paid: number; last_paid: string | null;
   }>(sql`
-    SELECT s.id, s.full_name, s.search_key, s.status, s.start_date::text AS start_date, c.name AS class_name, COALESCE(s.tuition_fee, c.fee) AS fee,
+    SELECT s.id, s.full_name, s.search_key, s.status, s.start_date::text AS start_date, c.name AS class_name, ${NET_FEE_SQL} AS fee,
       COALESCE(p.paid, 0)::int AS paid,
       to_char(p.last_paid AT TIME ZONE 'Asia/Ho_Chi_Minh', 'YYYY-MM-DD') AS last_paid
     FROM students s

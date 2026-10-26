@@ -8,6 +8,7 @@ import type { CampusScope } from '@/lib/campus';
 import { campusCond } from '@/lib/queries/campuses';
 import { parseStudentCode, studentCode } from '@/lib/student-code';
 import { normalizeSearch } from '@/lib/text';
+import { NET_FEE_SQL } from '@/lib/tuition-fee';
 
 // Học phí và lớp chọn nhiều: danh sách rỗng nghĩa là không lọc
 export type TuitionFilter = 'paid' | 'partial' | 'unpaid';
@@ -149,7 +150,7 @@ const BASE_CTE = sql`
   base AS (
     SELECT
       s.id, s.full_name, s.search_key, s.gender, s.status, s.class_id, s.sessions_done,
-      c.name AS class_name, c.campus_id, c.sessions_total, COALESCE(s.tuition_fee, c.fee) AS fee,
+      c.name AS class_name, c.campus_id, c.sessions_total, ${NET_FEE_SQL} AS fee, COALESCE(s.tuition_discount, 0) AS discount,
       t.name AS teacher_name,
       COALESCE(paid.paid, 0) AS paid,
       COALESCE(att.total, 0) AS att_total,
@@ -157,7 +158,7 @@ const BASE_CTE = sql`
       pp.full_name AS parent_name,
       pp.phone AS parent_phone,
       CASE
-        WHEN COALESCE(paid.paid, 0) >= COALESCE(s.tuition_fee, c.fee) THEN 'paid'
+        WHEN COALESCE(paid.paid, 0) >= ${NET_FEE_SQL} THEN 'paid'
         WHEN COALESCE(paid.paid, 0) > 0 THEN 'partial'
         ELSE 'unpaid'
       END AS tuition,
@@ -292,7 +293,8 @@ export type StudentDetail = {
   teacherName: string;
   sessionsDone: number;
   sessionsTotal: number;
-  fee: number;
+  fee: number; // học phí thực thu (đã trừ giảm trừ)
+  discount: number; // giảm trừ cố định (VND), 0 nếu không có
   paid: number;
   debt: number;
   tuition: StudentRow['tuition'];
@@ -309,13 +311,13 @@ export async function getStudentDetail(id: number): Promise<StudentDetail | null
   const base = await db.execute<{
     id: number; full_name: string; gender: 'male' | 'female'; dob: string | null; start_date: string; note: string;
     status: StudentRow['status']; class_id: number; class_name: string; course: string; schedule: string;
-    room: string; teacher_name: string; sessions_done: number; sessions_total: number; fee: number; paid: number;
+    room: string; teacher_name: string; sessions_done: number; sessions_total: number; fee: number; discount: number; paid: number;
     att_total: number; att_absent: number; tuition: StudentRow['tuition'];
   }>(sql`
     ${BASE_CTE}
     SELECT b.id, b.full_name, b.gender, s.dob::text AS dob, s.start_date::text AS start_date, s.note,
       b.status, b.class_id, b.class_name, c.course, c.schedule, c.room, b.teacher_name,
-      b.sessions_done, b.sessions_total, b.fee, b.paid, b.att_total, b.att_absent, b.tuition
+      b.sessions_done, b.sessions_total, b.fee, b.discount, b.paid, b.att_total, b.att_absent, b.tuition
     FROM base b
     JOIN students s ON s.id = b.id
     JOIN classes c ON c.id = b.class_id
@@ -358,6 +360,7 @@ export async function getStudentDetail(id: number): Promise<StudentDetail | null
     sessionsDone: row.sessions_done,
     sessionsTotal: row.sessions_total,
     fee: row.fee,
+    discount: row.discount,
     paid: row.paid,
     debt: Math.max(0, row.fee - row.paid),
     tuition: row.tuition,

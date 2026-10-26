@@ -22,11 +22,6 @@ export const centerSettingsSchema = z.object({
     .int('Ngày đến hạn phải là số nguyên')
     .min(1, 'Ngày đến hạn từ 1 đến 28')
     .max(28, 'Ngày đến hạn từ 1 đến 28'),
-  lateFeePercent: z.coerce
-    .number({ error: 'Phí trễ hạn phải là số' })
-    .int('Phí trễ hạn phải là số nguyên')
-    .min(0, 'Phí trễ hạn không âm')
-    .max(50, 'Phí trễ hạn tối đa 50%'),
   notifySmsBeforeDue: z.boolean(),
   notifyWeeklyReport: z.boolean(),
   notifyAbsentAlert: z.boolean(),

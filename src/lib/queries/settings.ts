@@ -10,7 +10,6 @@ export type CenterSettings = {
   email: string;
   workingHours: string;
   dueDay: number;
-  lateFeePercent: number;
   currency: string;
   notifySmsBeforeDue: boolean;
   notifyWeeklyReport: boolean;
@@ -31,7 +30,6 @@ export async function getCenterSettings(): Promise<CenterSettings> {
       email: '',
       workingHours: '',
       dueDay: 10,
-      lateFeePercent: 5,
       currency: 'VND',
       notifySmsBeforeDue: true,
       notifyWeeklyReport: true,
@@ -49,7 +47,6 @@ export async function getCenterSettings(): Promise<CenterSettings> {
     email: row.email,
     workingHours: row.workingHours,
     dueDay: row.dueDay,
-    lateFeePercent: row.lateFeePercent,
     currency: row.currency,
     notifySmsBeforeDue: row.notifySmsBeforeDue,
     notifyWeeklyReport: row.notifyWeeklyReport,

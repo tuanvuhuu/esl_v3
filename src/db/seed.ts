@@ -313,7 +313,6 @@ async function main() {
       email: 'hello@esl-center.vn',
       workingHours: '08:00 – 21:30, từ thứ Hai đến Chủ nhật',
       dueDay: 10,
-      lateFeePercent: 5,
       currency: 'VND',
       notifySmsBeforeDue: true,
       notifyWeeklyReport: true,

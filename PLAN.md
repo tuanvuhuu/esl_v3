@@ -524,3 +524,7 @@ Rà soát theo luồng thật khi nhập lớp GS 02 (ESL Mầm Xanh). Mỗi m�
 2. Đổi mật khẩu user `postgres`, hiện là `admin`, quá yếu cho dữ liệu thật. Đổi bằng `ALTER USER postgres WITH PASSWORD '...';` trong psql.
 3. **Trước khi đưa lên máy chủ thật:** xoá đăng nhập nhanh theo vai trò (tạm thời): hàm `devQuickLoginAction` trong `src/app/dang-nhap/actions.ts`, nút trong `src/components/auth/LoginForm.tsx`, prop trong `src/app/dang-nhap/page.tsx`, và kịch bản E2E "đăng nhập nhanh" trong `e2e/auth.spec.ts`. Hàm đã tự tắt khi `NODE_ENV=production`, nhưng vẫn nên xoá.
 4. Thêm giới hạn số lần đăng nhập sai trước khi dùng ngoài mạng nội bộ (xem `README.md`). Chức năng tự đổi mật khẩu đã có ở P30.
+
+## P40. Học phí: giảm trừ theo số tiền
+
+- [x] **40.1** Giảm trừ cố định theo số tiền (VND) cho từng học sinh, không theo phần trăm: cột `students.tuition_discount` (migration 0040), ô "Giảm trừ (VND)" trong form học sinh, không được lớn hơn học phí gốc. Học phí thực thu = học phí gốc (riêng hoặc của lớp) − giảm trừ, không âm (`src/lib/tuition-fee.ts`, dùng chung trong mọi truy vấn và tin Telegram). Hồ sơ hiện dòng "Giảm trừ". Đã bỏ "Phí trễ hạn (%)" khỏi Cài đặt (migration 0041). Kiểm chứng: unit `tuition-fee.test.ts`; E2E `giam-tru.spec.ts` (lưu giảm trừ, chặn quá học phí, hồ sơ và ghi thu dùng 4.400.000 ₫). *(2026-10-26).*

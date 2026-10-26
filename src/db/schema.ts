@@ -144,6 +144,8 @@ export const students = pgTable(
     startDate: date('start_date').notNull(),
     // Học phí riêng (VND) khi vào giữa khoá, tính theo số buổi còn lại. Rỗng: đóng đủ học phí của lớp.
     tuitionFee: integer('tuition_fee'),
+    // Giảm trừ cố định (VND) trừ vào học phí. Chỉ là số tiền, không tính theo phần trăm. 0: không giảm.
+    tuitionDiscount: integer('tuition_discount').notNull().default(0),
     sessionsDone: integer('sessions_done').notNull().default(0),
     note: text('note').notNull().default(''),
     // Trình độ hiện tại (P27). Để trống là chưa xếp.
@@ -751,7 +753,6 @@ export const centerSettings = pgTable('center_settings', {
   email: varchar('email', { length: 160 }).notNull().default(''),
   workingHours: varchar('working_hours', { length: 200 }).notNull().default(''),
   dueDay: integer('due_day').notNull().default(10),
-  lateFeePercent: integer('late_fee_percent').notNull().default(5),
   currency: varchar('currency', { length: 10 }).notNull().default('VND'),
   notifySmsBeforeDue: boolean('notify_sms_before_due').notNull().default(true),
   notifyWeeklyReport: boolean('notify_weekly_report').notNull().default(true),

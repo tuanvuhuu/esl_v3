@@ -13,6 +13,7 @@ import { requireStudentAccess } from '@/lib/campus-access';
 import { formatVND } from '@/lib/money';
 import { listPaymentsOfStudent, paidOf, type PaymentRow } from '@/lib/queries/tuition';
 import { debtOf } from '@/lib/tuition';
+import { netFee } from '@/lib/tuition-fee';
 import { z } from 'zod';
 import { fieldErrorsFrom, type ActionResult } from '@/lib/validation/student';
 
@@ -33,14 +34,14 @@ function errorResult(error: unknown): ActionResult {
 // Số tiền còn nợ của một học sinh: học phí (riêng của học sinh, hoặc của lớp) trừ tổng đã thu
 async function studentBalance(studentId: number): Promise<{ name: string; fee: number; paid: number; debt: number } | null> {
   const [row] = await db
-    .select({ name: students.fullName, fee: classes.fee, ownFee: students.tuitionFee })
+    .select({ name: students.fullName, fee: classes.fee, ownFee: students.tuitionFee, discount: students.tuitionDiscount })
     .from(students)
     .innerJoin(classes, eq(classes.id, students.classId))
     .where(eq(students.id, studentId))
     .limit(1);
   if (!row) return null;
   const paid = await paidOf(studentId);
-  const fee = row.ownFee ?? row.fee;
+  const fee = netFee(row.ownFee ?? row.fee, row.discount);
   return { name: row.name, fee, paid, debt: debtOf(fee, paid) };
 }
 

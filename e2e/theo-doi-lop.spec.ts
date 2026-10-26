@@ -50,7 +50,7 @@ test('theo dõi lớp: em chưa làm, câu và từ hay sai, bài nói chờ ch�
 
     const sub = async (asg: number, student: number, status: string, at: string) =>
       (await db.query<{ id: number }>(`insert into assignment_submissions (assignment_id, student_id, status, submitted_at) values ($1, $2, $3, now() - $4::interval) returning id`, [asg, student, status, at])).rows[0].id;
-    const sAn = await sub(a1, an, 'submitted', '3 days');
+    const sAn = await sub(a1, an, 'submitted', '3 days 2 hours');
     await db.query(`insert into submission_item_scores (submission_id, item_id, selected_option_id) values ($1, $2, $3)`, [sAn, choice, opts[0].id]);
     await db.query(`insert into submission_item_scores (submission_id, item_id, answer_text) values ($1, $2, 'have')`, [sAn, gap]);
     await db.query(`insert into submission_item_scores (submission_id, item_id, file_id) values ($1, $2, $3)`, [sAn, speak, fileIds[0]]);

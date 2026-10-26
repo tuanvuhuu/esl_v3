@@ -66,9 +66,6 @@ export function SettingsForm({ settings, canManage }: { settings: CenterSettings
             <Field label="Ngày đến hạn trong tháng *" error={errors.dueDay} hint="Hạn đóng là ngày này của tháng sau tháng khai giảng (từ 1 đến 28)">
               <input name="dueDay" type="number" inputMode="numeric" min={1} max={28} step={1} defaultValue={settings.dueDay} disabled={!canManage} className={inputClass(errors.dueDay)} />
             </Field>
-            <Field label="Phí trễ hạn (%)" error={errors.lateFeePercent} hint="Lưu để dùng sau, chưa tự cộng vào hoá đơn">
-              <input name="lateFeePercent" type="number" inputMode="numeric" min={0} max={50} step={1} defaultValue={settings.lateFeePercent} disabled={!canManage} className={inputClass(errors.lateFeePercent)} />
-            </Field>
             <Field label="Đơn vị tiền">
               <input value={settings.currency} readOnly className={inputClass()} />
             </Field>

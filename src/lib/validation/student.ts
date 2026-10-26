@@ -50,6 +50,15 @@ export const studentFormSchema = z.object({
       .max(1_000_000_000, 'Học phí quá lớn')
       .nullable(),
   ),
+  // Giảm trừ cố định (VND) trừ vào học phí. Chỉ là số tiền, không có phần trăm. Trống là không giảm.
+  tuitionDiscount: z.preprocess(
+    (v) => (v === '' || v === undefined || v === null ? 0 : typeof v === 'string' ? Number(v.replace(/[.\s]/g, '')) : v),
+    z
+      .number({ error: 'Giảm trừ phải là số tiền' })
+      .int('Giảm trừ phải là số nguyên VND')
+      .min(0, 'Giảm trừ không âm')
+      .max(1_000_000_000, 'Giảm trừ quá lớn'),
+  ),
   note: z.string().trim().max(1000, 'Ghi chú tối đa 1000 ký tự').default(''),
   // Phụ huynh: chọn người có sẵn (parentId), hoặc nhập người mới (tên và SĐT)
   parentId: z

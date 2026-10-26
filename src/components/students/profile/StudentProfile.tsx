@@ -122,7 +122,8 @@ export function StudentProfile({
 
         <Panel title="Học phí">
           <dl className="flex flex-col gap-2.5 text-base">
-            <Row label="Học phí khoá" value={formatVND(student.fee)} />
+            <Row label={student.discount > 0 ? 'Học phí khoá (sau giảm trừ)' : 'Học phí khoá'} value={formatVND(student.fee)} />
+            {student.discount > 0 && <Row label="Giảm trừ" value={`− ${formatVND(student.discount)}`} />}
             <Row label="Đã đóng" value={formatVND(student.paid)} />
             <Row label="Còn thiếu" value={formatVND(student.debt)} tone={student.debt > 0 ? 'text-blush-ink' : 'text-muted'} />
           </dl>

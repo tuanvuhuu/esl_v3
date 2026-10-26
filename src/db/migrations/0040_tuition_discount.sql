@@ -1,0 +1,1 @@
+ALTER TABLE "students" ADD COLUMN "tuition_discount" integer DEFAULT 0 NOT NULL;
