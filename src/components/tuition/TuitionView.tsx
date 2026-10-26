@@ -293,11 +293,16 @@ function DiscountInput({ row, canManage, onSave }: { row: InvoiceRow; canManage:
       inputMode="numeric"
       autoComplete="off"
       aria-label={`Miễn giảm của ${row.fullName} (VND)`}
-      value={text}
+      value={text ? Number(text).toLocaleString('vi-VN') : ''}
       placeholder="0"
       onChange={(e) => setText(e.target.value.replace(/\D/g, '').replace(/^0+(?=\d)/, '').slice(0, 12))}
       onBlur={() => void commit()}
       onKeyDown={(e) => {
+        // Chỉ nhận chữ số: chặn phím chữ và ký tự khác (phím điều khiển như Backspace, mũi tên vẫn dùng được)
+        if (e.key.length === 1 && !/\d/.test(e.key) && !e.ctrlKey && !e.metaKey) {
+          e.preventDefault();
+          return;
+        }
         if (e.key === 'Enter') e.currentTarget.blur();
         if (e.key === 'Escape') {
           cancelled.current = true;
