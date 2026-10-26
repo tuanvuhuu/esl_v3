@@ -39,13 +39,24 @@ function minutesOfDay(iso: string): number {
   return vn.getUTCHours() * 60 + vn.getUTCMinutes();
 }
 
-// Xếp các buổi trùng giờ trong một ngày thành nhiều làn để không đè lên nhau
+// Xếp các buổi trùng giờ thành làn để không đè lên nhau. Làn tính theo từng cụm buổi nối tiếp nhau trùng giờ,
+// nên một cụm đông không làm hẹp các buổi ở cụm khác trong cùng ngày.
 function placeLanes(list: SessionRow[]): { s: SessionRow; start: number; end: number; lane: number; lanes: number }[] {
   const items = list
     .map((s) => ({ s, start: minutesOfDay(s.startsAt), end: minutesOfDay(s.endsAt) }))
     .sort((a, b) => a.start - b.start || a.end - b.end);
-  const laneEnds: number[] = [];
-  const placed = items.map((it) => {
+  const out: { s: SessionRow; start: number; end: number; lane: number; lanes: number }[] = [];
+  let cluster: typeof out = [];
+  let laneEnds: number[] = [];
+  let clusterEnd = -1;
+  const flush = () => {
+    const total = Math.max(1, laneEnds.length);
+    for (const p of cluster) out.push({ ...p, lanes: total });
+    cluster = [];
+    laneEnds = [];
+  };
+  for (const it of items) {
+    if (cluster.length > 0 && it.start >= clusterEnd) flush();
     let lane = laneEnds.findIndex((end) => end <= it.start);
     if (lane === -1) {
       lane = laneEnds.length;
@@ -53,16 +64,19 @@ function placeLanes(list: SessionRow[]): { s: SessionRow; start: number; end: nu
     } else {
       laneEnds[lane] = it.end;
     }
-    return { ...it, lane, lanes: 0 };
-  });
-  const total = Math.max(1, laneEnds.length);
-  return placed.map((p) => ({ ...p, lanes: total }));
+    cluster.push({ ...it, lane, lanes: 0 });
+    clusterEnd = Math.max(clusterEnd, it.end);
+  }
+  if (cluster.length > 0) flush();
+  return out;
 }
 
 // Lưới giờ: cột giờ và độ rộng tối thiểu của mỗi ngày (px). Lưới chỉ dùng khi khoảng có tối đa 7 ngày.
 const TIME_COL = '3.5rem';
 const TIME_COL_PX = 56;
 const DAY_COL_MIN_PX = 150;
+// Mỗi làn cần đủ rộng để đọc được tên lớp và giờ; ngày nhiều buổi trùng giờ thì lưới rộng ra và cuộn ngang
+const LANE_MIN_PX = 80;
 // Danh sách theo ngày: trên điện thoại luôn hiện; trên máy tính chỉ hiện khi khoảng dài hơn 7 ngày.
 const AGENDA_PHONE = 'flex flex-col gap-5 min-[768px]:hidden';
 const AGENDA_ALL = 'flex flex-col gap-5';
@@ -102,6 +116,11 @@ export function ScheduleView({
   const isWeek = days.length === 7 && weekStartKey(rangeFrom) === rangeFrom;
   const byDay = new Map<string, SessionRow[]>(days.map((d) => [d, []]));
   for (const s of sessions) byDay.get(s.dateKey)?.push(s);
+  // Làn và độ rộng cột tính sau khi đã có đủ buổi của từng ngày
+  const placedByDay = new Map(days.map((d) => [d, placeLanes(byDay.get(d) ?? [])]));
+  const dayWidth = (d: string) => Math.max(DAY_COL_MIN_PX, Math.max(1, ...(placedByDay.get(d) ?? []).map((p) => p.lanes)) * LANE_MIN_PX);
+  const dayColumns = days.map((d) => `minmax(${dayWidth(d)}px, 1fr)`).join(' ');
+  const gridWidth = TIME_COL_PX + days.reduce((sum, d) => sum + dayWidth(d), 0);
 
   // Khung giờ của lịch: từ giờ sớm nhất đến giờ muộn nhất, tối thiểu tám giờ
   const starts = sessions.map((s) => minutesOfDay(s.startsAt));
@@ -260,9 +279,9 @@ export function ScheduleView({
             <div className="hidden overflow-hidden rounded-[var(--radius-panel)] bg-surface shadow-card min-[768px]:block">
               <DndContext sensors={sensors} collisionDetection={pointerWithin} onDragStart={onDragStart} onDragCancel={onDragCancel} onDragEnd={onDragEnd}>
               <div ref={gridScroll} data-testid="week-grid" className="relative max-h-[calc(100dvh-13rem)] min-h-[24rem] overflow-auto">
-                <div style={{ minWidth: `${TIME_COL_PX + days.length * DAY_COL_MIN_PX}px` }}>
+                <div style={{ minWidth: `${gridWidth}px` }}>
                   {/* Tiêu đề ngày: dính trên cùng khi cuộn; hôm nay tô màu */}
-                  <div className="sticky top-0 z-10 grid border-b border-line bg-surface" style={{ gridTemplateColumns: `${TIME_COL} repeat(${days.length}, minmax(0, 1fr))` }}>
+                  <div className="sticky top-0 z-10 grid border-b border-line bg-surface" style={{ gridTemplateColumns: `${TIME_COL} ${dayColumns}` }}>
                     <div />
                     {days.map((day) => (
                       <div key={day} aria-current={day === today ? 'date' : undefined} className={`px-2 py-2.5 text-center ${day === today ? 'bg-primary-soft' : ''}`}>
@@ -276,7 +295,7 @@ export function ScheduleView({
                   </div>
 
                   {/* Lưới giờ */}
-                  <div className="grid" style={{ gridTemplateColumns: `${TIME_COL} repeat(${days.length}, minmax(0, 1fr))` }}>
+                  <div className="grid" style={{ gridTemplateColumns: `${TIME_COL} ${dayColumns}` }}>
                     <div className="relative" style={{ height: gridHeight }}>
                       {hours.map((h) => (
                         <span key={h} data-hour={h} className="absolute right-2 -translate-y-1/2 text-xs tabular-nums text-muted" style={{ top: hourTop(h) }}>
@@ -289,7 +308,7 @@ export function ScheduleView({
                         {hours.map((h) => (
                           <div key={h} className="absolute inset-x-0 border-t border-line" style={{ top: hourTop(h) }} />
                         ))}
-                        {placeLanes(byDay.get(day) ?? []).map((p) => (
+                        {(placedByDay.get(day) ?? []).map((p) => (
                           <CalendarBlock
                             key={p.s.id}
                             placed={p}
@@ -356,7 +375,13 @@ export function ScheduleView({
   );
 }
 
-// Khối một buổi trên lưới tuần. Luôn hiện đủ giờ, lớp, giáo viên và trạng thái.
+// Tên giáo viên rút gọn cho khối buổi: bỏ chức danh (Cô, Thầy, GV), lấy tên cuối (tên gọi)
+function shortTeacher(name: string): string {
+  const parts = name.replace(/^(Cô|Thầy|GV|Ms\.?|Mr\.?)\s+/i, '').trim().split(/\s+/);
+  return parts[parts.length - 1] ?? '';
+}
+
+// Khối một buổi trên lưới tuần: giờ, lớp, giáo viên (tên gọi) và trạng thái. Đầy đủ tên hiện ở tooltip khi rê chuột.
 // Khi buổi trùng giờ làn hẹp, chữ xuống dòng chứ không cắt.
 function CalendarBlock({ placed, style, onOpen, canDrag }: { placed: { s: SessionRow; start: number; end: number }; style: CSSProperties; onOpen: () => void; canDrag: boolean }) {
   const s = placed.s;
@@ -375,12 +400,13 @@ function CalendarBlock({ placed, style, onOpen, canDrag }: { placed: { s: Sessio
       data-card="true"
       onClick={onOpen}
       style={{ ...style, transform: CSS.Translate.toString(transform), zIndex: isDragging ? 20 : undefined, cursor: canDrag ? 'grab' : undefined, touchAction: canDrag ? 'none' : undefined }}
-      className={`absolute flex flex-col overflow-hidden rounded-[var(--radius-ctl)] border-l-4 px-1 py-0.5 text-left leading-tight transition-shadow hover:shadow-card ${tone.bg} ${tone.edge} ${cancelled ? 'opacity-60' : ''}`}
+      title={`${s.className} · ${s.timeLabel} · ${s.teacherName}${s.room ? ` · ${s.room}` : ''} · ${state.label}`}
+      className={`absolute flex flex-col overflow-hidden rounded-[var(--radius-ctl)] border-l-4 px-1.5 py-1 text-left leading-tight transition-shadow hover:shadow-card ${tone.bg} ${tone.edge} ${cancelled ? 'opacity-60' : ''}`}
     >
-      <span className={`text-2xs font-bold tabular-nums tracking-tight text-ink ${cancelled ? 'line-through' : ''}`}>{s.timeLabel}</span>
-      <span className={`break-words text-xs font-bold text-ink ${cancelled ? 'line-through' : ''}`}>{s.className}</span>
-      <span className="break-words text-2xs text-ink-2">{s.teacherName}{s.room ? ` · ${s.room}` : ''}</span>
-      <span className="mt-auto flex items-center gap-1 pt-0.5 text-2xs text-ink-2">
+      <span className={`block truncate text-2xs font-bold tabular-nums text-ink ${cancelled ? 'line-through' : ''}`}>{s.timeLabel.split('–')[0]}</span>
+      <span className={`block truncate text-sm font-extrabold leading-tight text-ink ${cancelled ? 'line-through' : ''}`}>{s.className}</span>
+      <span className="block truncate text-2xs text-ink-2">{shortTeacher(s.teacherName)}{s.room ? ` · ${s.room}` : ''}</span>
+      <span className="mt-auto flex items-center gap-1 pt-0.5 whitespace-nowrap text-2xs text-ink-2">
         <span aria-hidden className={`size-1.5 shrink-0 rounded-full ${dot}`} />
         {state.label}
       </span>
