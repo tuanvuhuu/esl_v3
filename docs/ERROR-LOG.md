@@ -845,3 +845,12 @@ Mỗi lỗi gặp phải được ghi ở đây, theo mẫu dưới đây. Trư�
 - Cách sửa: Dòng có mọi ô rỗng hoặc bằng `0` được bỏ qua. Ô kiểu object không rõ được coi là trống. Unit test "dòng chỉ có số 0" trong `tests/unit/import.test.ts`.
 - Quy tắc phòng ngừa: Đọc file Excel: ô công thức và ô số 0 không được coi là dữ liệu. Không bao giờ đưa `String(object)` vào dữ liệu nhập; object không rõ thì trả `null` và để lỗi nghiệp vụ hiện ra đúng chỗ.
 - Đã áp dụng ở: `src/lib/import/excel.ts`, `src/lib/import/rows.ts`, `tests/unit/import.test.ts`.
+
+## E-092 · Hai file nhập có chung mã HS khác người: học sinh file sau ghi đè học sinh file trước
+- Ngày: 2026-10-26
+- Khu vực: nhập dữ liệu Excel (`src/lib/import/plan.ts`, khớp học sinh theo Mã HS), dữ liệu nguồn từ hai file
+- Triệu chứng: Nhập file mẫu sau file SILA báo "học sinh cập nhật 4" thay vì "thêm 4". Kiểm tra: HS-19010, HS-18038, HS-17048, HS-20163 là hai học sinh khác nhau (tên, lớp, ngày sinh khác), nhưng bị ghi đè: đổi tên, lớp và thêm phụ huynh từ file mẫu.
+- Nguyên nhân: Hai file cùng dùng một bảng mã HS cũ. Nhập theo mã nên file sau được hiểu là cập nhật học sinh đã có. Trước khi nhập không kiểm tra trùng mã giữa các file.
+- Cách sửa: Khôi phục bằng nhập lại file SILA (đúng giá trị theo file). Xoá 4 liên kết phụ huynh và 4 sự kiện chuyển lớp do lần nhập sai tạo ra. Nhập lại file mẫu với 4 mã trùng bỏ trống, 4 học sinh được tạo mới (HS-24221 đến HS-24224).
+- Quy tắc phòng ngừa: Trước khi nhập nhiều file cùng lúc, kiểm tra Mã HS trùng giữa các file, và so tên, ngày sinh của cặp trùng mã. Mã trùng mà tên khác thì không nhập. Trình xem trước nên cảnh báo khi một mã trong file khớp học sinh có họ tên khác hẳn.
+- Đã áp dụng ở: dữ liệu (các học sinh trên, dữ liệu bị ghi đè đã khôi phục); cần thêm cảnh báo trong `src/lib/import/plan.ts` (chưa làm).
