@@ -248,38 +248,52 @@ function BalanceText({ balance }: { balance: number }) {
   return <span className="text-base text-muted">{formatVND(0)}</span>;
 }
 
-// Ô miễn giảm sửa trực tiếp: bấm vào là sửa được (chỉ số tiền cụ thể). Rời ô hoặc Enter thì lưu,
-// Esc bỏ thay đổi. Không có quyền thì chỉ hiện số tiền.
+// Ô miễn giảm sửa trực tiếp: bình thường chỉ hiện số tiền dạng liên kết; bấm vào mới hiện ô nhập (chỉ số tiền cụ thể).
+// Rời ô hoặc Enter thì lưu, Esc bỏ thay đổi. Không có quyền thì chỉ hiện số tiền.
 function DiscountInput({ row, canManage, onSave }: { row: InvoiceRow; canManage: boolean; onSave: (studentId: number, amount: number) => Promise<boolean> }) {
-  const [text, setText] = useState(row.discount ? String(row.discount) : '');
-  const [focused, setFocused] = useState(false);
-  const cancelled = useRef(false);
-  if (!canManage) return <span className="text-base text-ink">{formatVND(row.discount)}</span>;
-  const shown = focused ? text : text ? Number(text).toLocaleString('vi-VN') : '';
   const current = row.discount ? String(row.discount) : '';
+  const [editing, setEditing] = useState(false);
+  const [text, setText] = useState(current);
+  const cancelled = useRef(false);
+  if (!canManage) return <span className="text-base text-ink">{row.discount ? formatVND(row.discount) : ''}</span>;
+
+  if (!editing) {
+    return (
+      <button
+        type="button"
+        onClick={() => {
+          setText(current);
+          setEditing(true);
+        }}
+        title="Bấm để sửa miễn giảm"
+        aria-label={`Sửa miễn giảm của ${row.fullName}`}
+        className="min-h-9 min-w-[7rem] rounded-lg text-left text-base text-link underline underline-offset-2 hover:bg-stone"
+      >
+        {row.discount ? formatVND(row.discount) : ''}
+      </button>
+    );
+  }
 
   async function commit() {
-    setFocused(false);
+    setEditing(false);
     if (cancelled.current) {
       cancelled.current = false;
-      setText(current);
       return;
     }
     const amount = text === '' ? 0 : Number(text);
-    if (String(amount) === current || (amount === 0 && current === '')) return;
-    const ok = await onSave(Number(row.id), amount);
-    if (!ok) setText(current);
+    if (String(amount) === current) return;
+    await onSave(Number(row.id), amount);
   }
 
   return (
     <input
+      autoFocus
       type="text"
       inputMode="numeric"
       autoComplete="off"
       aria-label={`Miễn giảm của ${row.fullName} (VND)`}
-      value={shown}
+      value={text}
       placeholder="0"
-      onFocus={() => setFocused(true)}
       onChange={(e) => setText(e.target.value.replace(/\D/g, '').replace(/^0+(?=\d)/, '').slice(0, 12))}
       onBlur={() => void commit()}
       onKeyDown={(e) => {
