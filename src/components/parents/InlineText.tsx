@@ -15,6 +15,7 @@ export function InlineText({
   label,
   placeholder,
   multiline = false,
+  wrap = false,
   inputType = 'text',
   canEdit,
   className = '',
@@ -24,6 +25,7 @@ export function InlineText({
   label: string; // tên ô, cho trình đọc màn hình
   placeholder: string; // chữ khi ô trống
   multiline?: boolean;
+  wrap?: boolean; // hiện tối đa hai dòng thay vì một dòng cắt bớt (cột ghi chú bảng phụ huynh)
   inputType?: 'text' | 'tel' | 'email';
   canEdit: boolean;
   className?: string;
@@ -120,7 +122,7 @@ export function InlineText({
 
   const isEmpty = !value.trim();
   // Không có quyền: ô trống để trống, không hiện gợi ý
-  if (!canEdit) return isEmpty ? null : <span className={`block min-w-0 truncate ${className}`} title={value}>{value}</span>;
+  if (!canEdit) return isEmpty ? null : <span className={`block min-w-0 ${wrap ? 'line-clamp-2 break-words' : 'truncate'} ${className}`} title={value}>{value}</span>;
   // Nút cao đúng chuẩn ô (32px), chữ căn giữa. Ô trống không hiện chữ: gợi ý (Thêm email…) hiện khi rê chuột hoặc Tab vào ô.
   // Ghi chú dài hiện một dòng; bấm để sửa và xem đủ.
   return (
@@ -128,12 +130,12 @@ export function InlineText({
       type="button"
       onClick={start}
       aria-label={`Sửa ${label}`}
-      className={`group -mx-1 flex h-[var(--ctl-h)] max-w-full min-w-0 items-center rounded-[var(--radius-ctl)] px-1 text-left hover:bg-stone ${isEmpty ? '' : className}`}
+      className={`group -mx-1 flex max-w-full min-w-0 rounded-[var(--radius-ctl)] px-1 text-left hover:bg-stone ${wrap ? 'min-h-[var(--ctl-h)] items-start py-1' : 'h-[var(--ctl-h)] items-center'} ${isEmpty ? '' : className}`}
     >
       {isEmpty ? (
         <span className="min-w-0 truncate text-sm text-muted opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">{placeholder}</span>
       ) : (
-        <span className="min-w-0 truncate" title={value}>{value}</span>
+        <span className={`min-w-0 ${wrap ? 'line-clamp-2 break-words' : 'truncate'}`} title={value}>{value}</span>
       )}
     </button>
   );

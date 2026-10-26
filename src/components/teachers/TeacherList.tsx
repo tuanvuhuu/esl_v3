@@ -166,7 +166,7 @@ export function TeacherList({
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-x-4 gap-y-1.5 rounded-xl bg-bg px-3 py-2.5">
+      <div className="flex flex-wrap gap-x-4 gap-y-1.5 rounded-xl bg-stone/60 px-3 py-2.5">
         {row.classes.length === 0 ? (
           <small className="text-sm text-muted">Chưa dạy lớp nào</small>
         ) : (

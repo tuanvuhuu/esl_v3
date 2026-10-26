@@ -152,11 +152,7 @@ export function ParentList(props: { parents: ParentRow[]; students?: StudentChoi
     const overflow = kids.length > childColumns;
     if (overflow && i === childColumns - 1) {
       const rest = kids.slice(i);
-      return (
-        <span className="text-sm text-muted" title={rest.map((c) => c.studentName).join(', ')}>
-          +{rest.length} học sinh khác
-        </span>
-      );
+      return <MoreChildren names={rest.map((c) => c.studentName)} />;
     }
     const child = kids[i];
     if (child) {
@@ -245,6 +241,7 @@ export function ParentList(props: { parents: ParentRow[]; students?: StudentChoi
             multiline
             canEdit={canManage}
             className="text-sm text-ink-2"
+            wrap
             onSave={(next) => updateParentFieldAction(row.id, 'note', next)}
           />
         );
@@ -479,5 +476,24 @@ function ParentCard({
         </Btn>
       </div>
     </Card>
+  );
+}
+
+// Phụ huynh có nhiều con hơn số cột học sinh: bấm để xem đủ tên (không dựa vào rê chuột nên dùng được trên cảm ứng)
+function MoreChildren({ names }: { names: string[] }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="flex flex-col items-start gap-1">
+      <button type="button" aria-expanded={open} onClick={() => setOpen((o) => !o)} className="text-sm font-semibold text-muted underline underline-offset-4 hover:text-ink">
+        {open ? 'Ẩn bớt' : `+${names.length} học sinh khác`}
+      </button>
+      {open && (
+        <ul className="flex flex-col gap-0.5 text-sm text-ink-2">
+          {names.map((n, i) => (
+            <li key={`${i}-${n}`}>{n}</li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
