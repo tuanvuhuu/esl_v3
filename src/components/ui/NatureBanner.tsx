@@ -123,10 +123,12 @@ const SEA = (
 
 const SVG_SCENE: Record<NatureScene, ReactNode> = { hills: HILLS, forest: FOREST, sea: SEA };
 
-export function NatureBanner({ scene }: { scene: NatureScene }) {
+// Nền cả khung hình: cảnh phủ toàn màn hình, neo ở đáy để đồi và rừng nằm dưới. Mờ để chữ và các khung trắng vẫn rõ.
+// Khung trắng nằm trên lớp nền, nên nền chỉ lộ ra ở các khoảng hở.
+export function NatureBackdrop({ scene }: { scene: NatureScene }) {
   return (
-    <div aria-hidden className="relative h-24 overflow-hidden rounded-[var(--radius-panel)] bg-primary-soft min-[768px]:h-56">
-      <svg viewBox="0 0 1200 240" preserveAspectRatio="xMidYMid slice" className="absolute inset-0 size-full" focusable="false">
+    <div aria-hidden className="pointer-events-none fixed inset-x-0 bottom-0 top-[60px] -z-10 overflow-hidden opacity-40 min-[1200px]:left-[208px]">
+      <svg viewBox="0 0 1200 240" preserveAspectRatio="xMidYMax slice" className="size-full" focusable="false">
         {SVG_SCENE[scene]}
       </svg>
     </div>
