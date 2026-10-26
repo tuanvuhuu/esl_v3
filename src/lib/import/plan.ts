@@ -3,7 +3,7 @@
 // Bản ghi nhận ra theo khoá: cơ sở theo tên; lớp theo cơ sở và mã lớp; giáo viên và phụ huynh theo số điện thoại
 // (giáo viên không có số thì theo họ tên); học sinh theo mã HS, không có mã thì theo họ tên và ngày sinh.
 // Đã có thì cập nhật các ô có giá trị (ô trống giữ nguyên), chưa có thì thêm. Không xoá bản ghi nào.
-import { and, eq, min } from 'drizzle-orm';
+import { and, eq, min, sql } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { campuses, classes, classSessions, learningEvents, parents, studentParents, students, teacherCampuses, teachers } from '@/db/schema';
 import { describeSchedule, generateSessions } from '@/lib/schedule';
@@ -85,6 +85,8 @@ type ClassPlan = {
 type StudentValues = { fullName: string; gender: Gender; dob: string | null; status: StudentStatus; startDate: string; note: string };
 type StudentPlan = {
   id: number | null;
+  // Mã HS có trong file nhưng chưa có trong hệ thống: học sinh mới được tạo với đúng id (mã) này
+  forcedId: number | null;
   classKey: string;
   values: StudentValues;
   set: Partial<StudentValues>;
@@ -200,6 +202,7 @@ export async function planImport(rawRows: RawRow[], q: Q = db, allowedCampusIds:
   const classPlans = new Map<string, ClassPlan>();
   const studentPlans: StudentPlan[] = [];
   const studentSeen = new Map<string, number>(); // khoá học sinh → dòng đầu tiên
+  const forcedIds = new Map<number, number>(); // mã HS tạo mới trong file → dòng đầu tiên
   const parentPlans = new Map<string, ParentPlan>();
   const linkPlans: LinkPlan[] = [];
   const linkSeen = new Set<string>();
@@ -471,16 +474,23 @@ export async function planImport(rawRows: RawRow[], q: Q = db, allowedCampusIds:
     const s = row.student;
     if (!s) return null;
     let found: ReturnType<typeof snap.studentById.get>;
+    let forcedId: number | null = null;
     if (s.id !== null) {
       found = snap.studentById.get(s.id);
       if (!found) {
-        result.errors.push(`Không có học sinh ${studentCode(s.id)}. Để trống mã để thêm học sinh mới.`);
-        return null;
-      }
-      const ownCampus = snap.classById.get(found.classId)?.campusId;
-      if (ownCampus !== undefined && !inScope(ownCampus)) {
-        result.errors.push(`Học sinh ${studentCode(s.id)} học ở cơ sở bạn không làm việc.`);
-        return null;
+        // Mã chưa có trong hệ thống (ví dụ file từ phần mềm cũ): tạo học sinh mới với đúng mã này
+        const firstRow = forcedIds.get(s.id);
+        if (firstRow !== undefined) {
+          result.errors.push(`Mã ${studentCode(s.id)} đã có ở dòng ${firstRow}.`);
+          return null;
+        }
+        forcedId = s.id;
+      } else {
+        const ownCampus = snap.classById.get(found.classId)?.campusId;
+        if (ownCampus !== undefined && !inScope(ownCampus)) {
+          result.errors.push(`Học sinh ${studentCode(s.id)} học ở cơ sở bạn không làm việc.`);
+          return null;
+        }
       }
     } else if (s.fullName && s.dob) {
       // Chỉ so với học sinh ở cơ sở trong phạm vi, để không lộ học sinh của cơ sở khác
@@ -540,6 +550,7 @@ export async function planImport(rawRows: RawRow[], q: Q = db, allowedCampusIds:
     const classChanged = found !== undefined && (classPlan.id === null || classPlan.id !== found.classId);
     const plan: StudentPlan = {
       id: found?.id ?? null,
+      forcedId,
       classKey: classPlan.key,
       values,
       set,
@@ -547,8 +558,12 @@ export async function planImport(rawRows: RawRow[], q: Q = db, allowedCampusIds:
       rowNumber: row.rowNumber,
     };
     studentSeen.set(seenKey, row.rowNumber);
+    if (forcedId !== null) {
+      forcedIds.set(forcedId, row.rowNumber);
+      result.notes.push(`Mã ${studentCode(forcedId)} chưa có trong hệ thống: tạo học sinh mới với mã này.`);
+    }
     studentPlans.push(plan);
-    const label = found ? `${values.fullName} (${studentCode(found.id)})` : values.fullName;
+    const label = found ? `${values.fullName} (${studentCode(found.id)})` : forcedId !== null ? `${values.fullName} (${studentCode(forcedId)})` : values.fullName;
     result.student = values.fullName;
     result.actions.push({ kind: 'student', label, action: actionOf(plan.id, Object.keys(set).length > 0 || classChanged) });
     if (plan.classChange) result.notes.push(`Chuyển lớp ${plan.classChange.from} → ${plan.classChange.to}, ghi vào lịch sử học tập.`);
@@ -734,7 +749,7 @@ export async function applyImport(plan: ImportPlan, tx: Tx): Promise<void> {
     if (s.id === null) {
       const [created] = await tx
         .insert(students)
-        .values({ ...s.values, searchKey: normalizeSearch(s.values.fullName), classId: cid })
+        .values({ ...(s.forcedId !== null ? { id: s.forcedId } : {}), ...s.values, searchKey: normalizeSearch(s.values.fullName), classId: cid })
         .returning({ id: students.id });
       studentId.set(s, created.id);
       continue;
@@ -749,6 +764,11 @@ export async function applyImport(plan: ImportPlan, tx: Tx): Promise<void> {
     if (s.classChange) {
       await tx.insert(learningEvents).values({ studentId: s.id, eventType: 'class_change', title: `Chuyển từ ${s.classChange.from} sang ${s.classChange.to}`, detail: 'Nhập từ file Excel' });
     }
+  }
+
+  // Học sinh có mã cố định đã ghi id tay: đặt lại bộ đếm để học sinh tạo sau này không trùng mã
+  if (plan.students.some((s) => s.forcedId !== null)) {
+    await tx.execute(sql`select setval(pg_get_serial_sequence('students', 'id'), (select max(id) from students))`);
   }
 
   // 5. Phụ huynh, rồi liên kết với học sinh
