@@ -523,7 +523,7 @@ Rà soát theo luồng thật khi nhập lớp GS 02 (ESL Mầm Xanh). Mỗi m�
 ## Việc cần người dùng làm
 
 1. Xác nhận tab thứ tư trên điện thoại (D5).
-2. Đổi mật khẩu user `postgres`, hiện là `admin`, quá yếu cho dữ liệu thật. Đổi bằng `ALTER USER postgres WITH PASSWORD '...';` trong psql.
+2. Đổi mật khẩu user `postgres`, hiện là `admin`, quá yếu cho dữ liệu thật. Đổi bằng `ALTER USER postgres WITH PASSWORD '...';` trong psql. → **Đã làm 2026-10-26:** mật khẩu ngẫu nhiên (lưu ở `%USERPROFILE%\.pgpass`, không ghi trong repo), `listen_addresses = 'localhost'` (PostgreSQL 18 chỉ nhận kết nối từ máy này), kiểm tra: mật khẩu cũ bị từ chối, IP LAN bị từ chối, ứng dụng vẫn kết nối Neon.
 3. **Trước khi đưa lên máy chủ thật:** xoá đăng nhập nhanh theo vai trò (tạm thời): hàm `devQuickLoginAction` trong `src/app/dang-nhap/actions.ts`, nút trong `src/components/auth/LoginForm.tsx`, prop trong `src/app/dang-nhap/page.tsx`, và kịch bản E2E "đăng nhập nhanh" trong `e2e/auth.spec.ts`. Hàm đã tự tắt khi `NODE_ENV=production`, nhưng vẫn nên xoá.
 4. Thêm giới hạn số lần đăng nhập sai trước khi dùng ngoài mạng nội bộ (xem `README.md`). Chức năng tự đổi mật khẩu đã có ở P30.
 
