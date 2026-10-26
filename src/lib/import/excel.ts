@@ -66,6 +66,8 @@ function plainValue(value: ExcelJS.CellValue): CellValue {
     if ('text' in value && typeof value.text === 'string') return value.text;
     if ('result' in value) return plainValue(value.result as ExcelJS.CellValue);
     if ('error' in value) return null;
+    // Ô công thức chưa có kết quả hoặc kiểu khác: coi như trống, không biến thành chuỗi "[object Object]"
+    return null;
   }
   return String(value);
 }

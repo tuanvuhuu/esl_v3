@@ -196,7 +196,8 @@ function staff(row: RawRow, nameKey: ImportColumnKey, phoneKey: ImportColumnKey,
 // Dòng trống hoàn toàn thì bỏ qua (trả về null)
 export function parseRow(row: RawRow): ParsedRow | null {
   const c = row.cells;
-  if (Object.values(c).every((v) => cellText(v) === '')) return null;
+  // Dòng trống: không có chữ nào. Ô số 0 (học phí 0 hay số 0 do định dạng ô) không tính là có dữ liệu.
+  if (Object.values(c).every((v) => cellText(v) === '' || cellText(v) === '0')) return null;
   const errors: string[] = [];
   const notes: string[] = [];
 

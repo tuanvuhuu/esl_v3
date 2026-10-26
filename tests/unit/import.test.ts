@@ -41,6 +41,11 @@ describe('đọc ô của file nhập', () => {
 });
 
 describe('đọc một dòng', () => {
+  it('dòng chỉ có số 0 (học phí 0 do định dạng ô) được coi là dòng trống', () => {
+    expect(parseRow({ rowNumber: 107, cells: { fee: '0' } })).toBeNull();
+    expect(parseRow({ rowNumber: 108, cells: { fee: 0 } })).toBeNull();
+  });
+
   it('dòng trống bị bỏ qua; thiếu cơ sở và lớp thì báo lỗi', () => {
     expect(parseRow({ rowNumber: 2, cells: { campusName: '', studentName: null } })).toBeNull();
     const row = parseRow({ rowNumber: 3, cells: { studentName: 'Nguyễn An' } });

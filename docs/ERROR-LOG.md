@@ -836,3 +836,12 @@ Mỗi lỗi gặp phải được ghi ở đây, theo mẫu dưới đây. Trư�
 - Cách sửa: Trong `dragTo`, chờ 150 ms sau `mouse.up` trước khi thao tác tiếp. `center()` cuộn phần tử nguồn tới giữa khung bằng `behavior: 'instant'` rồi đọc toạ độ; phần tử đích đọc bằng `boxCenter()` không cuộn. Kéo buổi sang thứ Năm giữ nguyên toạ độ dọc để giờ không đổi. Ô lưới có `data-day` để locator chỉ lấy thẻ trên lưới, không lấy thẻ điện thoại (cùng `data-card`).
 - Quy tắc phòng ngừa: Viết E2E kéo thả: sau `mouse.up` chờ ~150 ms trước khi bấm nút trong hộp xác nhận (dnd-kit chặn click 50 ms). Lấy toạ độ nguồn và đích không cuộn lại giữa chừng; tắt cuộn mượt khi đọc toạ độ. Locator phải chỉ đúng một phần tử (lọc theo `[data-day]`, `[role=dialog]`); tên nút lấy từ `aria-label` thật, không đoán. Mọi `locator.evaluate`/`click` trong test kéo thả nên có timeout ngắn để lỗi báo rõ thay vì treo.
 - Đã áp dụng ở: `e2e/keo-tha.spec.ts`, `src/components/schedule/ScheduleView.tsx` (thuộc tính `data-day`).
+
+## E-091 · Nhập file Excel báo lỗi "Thiếu tên cơ sở" ở dòng trống và "[object Object]" trong ô
+- Ngày: 2026-10-26
+- Khu vực: `readImportFile` và `plainValue` (`src/lib/import/excel.ts`), `parseRow` (`src/lib/import/rows.ts`)
+- Triệu chứng: File nhập từ máy có 17 dòng trống cuối bảng (ô học phí còn số 0). Trình xem trước báo 13 dòng "Thiếu tên cơ sở", "Thiếu mã lớp", "Học phí là số nguyên VND".
+- Nguyên nhân: (1) `parseRow` chỉ bỏ dòng khi mọi ô là chuỗi rỗng, nên ô số 0 làm dòng trống thành dòng dữ liệu. (2) Ô công thức không có kết quả đọc được được `plainValue` đổi thành chuỗi `"[object Object]"`, rồi bị coi là học phí không hợp lệ.
+- Cách sửa: Dòng có mọi ô rỗng hoặc bằng `0` được bỏ qua. Ô kiểu object không rõ được coi là trống. Unit test "dòng chỉ có số 0" trong `tests/unit/import.test.ts`.
+- Quy tắc phòng ngừa: Đọc file Excel: ô công thức và ô số 0 không được coi là dữ liệu. Không bao giờ đưa `String(object)` vào dữ liệu nhập; object không rõ thì trả `null` và để lỗi nghiệp vụ hiện ra đúng chỗ.
+- Đã áp dụng ở: `src/lib/import/excel.ts`, `src/lib/import/rows.ts`, `tests/unit/import.test.ts`.
