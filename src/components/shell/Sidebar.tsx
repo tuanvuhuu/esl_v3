@@ -54,7 +54,7 @@ export function Sidebar({ groups, open, onNavigate }: { groups: NavGroup[]; open
       id="side"
       aria-label="Menu chính"
       className={[
-        'scroll-quiet flex flex-col gap-4 overflow-y-auto bg-surface px-3 py-4',
+        'scroll-quiet flex flex-col gap-4 overflow-y-auto bg-surface/55 px-3 py-4 backdrop-blur-[2px]',
         'max-[767px]:hidden',
         'min-[1200px]:sticky min-[1200px]:top-0 min-[1200px]:h-screen min-[1200px]:w-52 min-[1200px]:border-r min-[1200px]:border-line',
         'max-[1199px]:fixed max-[1199px]:inset-y-0 max-[1199px]:left-0 max-[1199px]:z-[56] max-[1199px]:w-[min(272px,86vw)] max-[1199px]:rounded-r-[24px] max-[1199px]:shadow-lift max-[1199px]:transition-transform max-[1199px]:duration-300',
