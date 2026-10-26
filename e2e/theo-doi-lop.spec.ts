@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { Client } from 'pg';
 import { loadEnvLocal } from './env';
-import { login } from './helpers';
+import { cronAuth, login } from './helpers';
 import { hashPassword } from '../src/lib/auth/password';
 
 // Bảng theo dõi lớp (35.20). Lớp thử ở Cơ sở test, 3 em (An, Bình, Chi); giáo viên thử có chat Telegram giả.
@@ -16,7 +16,6 @@ const CHAT = 9_500_000_000 + Number(run);
 test('theo dõi lớp: em chưa làm, câu và từ hay sai, bài nói chờ chấm mở thẳng màn chấm; bot nhắc chấm bài nói', async ({ page }) => {
   test.setTimeout(120_000);
   loadEnvLocal();
-  const secret = process.env.TELEGRAM_WEBHOOK_SECRET ?? '';
   const db = new Client({ connectionString: process.env.DATABASE_URL });
   await db.connect();
   const stale = `select id from classes where name ~ '^TD-[0-9]{6}$' and campus_id = (select id from campuses where name = 'Cơ sở test')`;
@@ -102,7 +101,7 @@ test('theo dõi lớp: em chưa làm, câu và từ hay sai, bài nói chờ ch�
     await expect(page.getByRole('dialog', { name: `Bài làm của An ${run}` })).toBeVisible();
 
     // Bot nhắc chấm (chỉ gửi chat giả của giáo viên thử): ghi rõ số bài có câu nói
-    const res = await page.request.get(`/api/cron/telegram?key=${secret}&jobs=grading&chat=${CHAT}`);
+    const res = await page.request.get(`/api/cron/telegram?jobs=grading&chat=${CHAT}`, { headers: cronAuth() });
     expect(res.status()).toBe(200);
     const sent = (await db.query<{ text: string }>(`select text from telegram_messages where chat_id = $1 and direction = 'out' and kind = 'remind_grading'`, [CHAT])).rows;
     expect(sent).toHaveLength(1);

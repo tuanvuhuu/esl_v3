@@ -14,7 +14,11 @@ function createPool(): Pool {
   }
   // Giữ kết nối rảnh 5 phút (mặc định của pg là 10 giây). DB ở Singapore: mở kết nối mới (TLS, đăng nhập) mất 330–450ms,
   // còn một truy vấn trên kết nối sẵn có chỉ ~50ms. Đóng sau 10 giây thì người dùng dừng tay một chút là trang sau chậm hẳn.
-  return new Pool({ connectionString, max: 10, idleTimeoutMillis: 300_000, keepAlive: true });
+  // Neon bắt buộc TLS. Xác thực chứng chỉ máy chủ (verify-full), không chấp nhận chứng chỉ giả.
+  // sslmode trong chuỗi kết nối bị bỏ để cấu hình ssl bên dưới là nguồn duy nhất (pg cảnh báo khi để sslmode=require).
+  const url = new URL(connectionString);
+  url.searchParams.delete('sslmode');
+  return new Pool({ connectionString: url.toString(), ssl: { rejectUnauthorized: true }, max: 10, idleTimeoutMillis: 300_000, keepAlive: true });
 }
 
 // Giữ một pool duy nhất. Khi Next.js nạp lại module trong lúc phát triển, pool cũ vẫn được dùng tiếp.

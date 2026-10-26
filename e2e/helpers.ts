@@ -40,3 +40,8 @@ export async function expectToast(page: Page, text: string | RegExp): Promise<vo
 export function uniq(prefix: string): string {
   return `${prefix} ${Date.now().toString().slice(-6)}`;
 }
+
+// Header gọi route cron Telegram: khoá CRON_SECRET gửi qua Authorization, không đặt trên URL
+export function cronAuth(): { authorization: string } {
+  return { authorization: `Bearer ${process.env.CRON_SECRET ?? ''}` };
+}

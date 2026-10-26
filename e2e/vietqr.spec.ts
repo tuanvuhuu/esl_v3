@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { Client } from 'pg';
 import { loadEnvLocal } from './env';
-import { login } from './helpers';
+import { cronAuth, login } from './helpers';
 import { tuitionPhase } from '../src/lib/telegram/prefs';
 
 // Mã VietQR học phí (37.13): nhập tài khoản nhận học phí ở Cài đặt, hộp Ghi thu hiện mã QR khoản còn thiếu.
@@ -101,8 +101,7 @@ test('cron nhắc học phí gửi kèm ảnh mã QR', async ({ request }) => {
     await db.query(`insert into student_parents (student_id, parent_id, relation, is_primary) values ($1, $2, 'mother', true)`, [kid.id, parent.id]);
     await db.query(`insert into telegram_chats (chat_id, parent_id, display_name) values ($1, $2, 'PH cron E2E')`, [chatId, parent.id]);
 
-    const key = process.env.CRON_SECRET || process.env.TELEGRAM_WEBHOOK_SECRET || '';
-    const res = await request.get(`/api/cron/telegram?key=${key}&jobs=tuition&chat=${chatId}`);
+    const res = await request.get(`/api/cron/telegram?jobs=tuition&chat=${chatId}`, { headers: cronAuth() });
     expect(res.status()).toBe(200);
     const [msg] = (await db.query<{ text: string }>(`select text from telegram_messages where chat_id = $1 and kind = 'remind_tuition'`, [chatId])).rows;
     expect(msg.text).toMatch(/^\[Ảnh mã QR\] 💳 (NHẮC HỌC PHÍ|HỌC PHÍ QUÁ HẠN)/);

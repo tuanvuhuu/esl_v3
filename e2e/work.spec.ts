@@ -8,7 +8,7 @@ import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { Client } from 'pg';
 import { ACADEMIC, loadEnvLocal } from './env';
-import { dialogById, dialogFieldErrors, expectToast, login, uniq } from './helpers';
+import { cronAuth, dialogById, dialogFieldErrors, expectToast, login, uniq } from './helpers';
 
 test.describe('bài tập, điểm danh, học phí', () => {
   test('tạo bài tập, chấm điểm vượt mức bị chặn, xoá bài kèm bài nộp', async ({ page }) => {
@@ -973,7 +973,7 @@ test.describe('bài tập, điểm danh, học phí', () => {
 
       // Route cron Telegram kiểm tra token và chạy thành công
       // Chỉ gửi cho chat thử (?chat=), không gửi tới phụ huynh thật
-      const cronRes = await page.request.get(`/api/cron/telegram?key=${secret}&chat=${chatId}`);
+      const cronRes = await page.request.get(`/api/cron/telegram?chat=${chatId}`, { headers: cronAuth() });
       expect(cronRes.status()).toBe(200);
       const cronJson = await cronRes.json();
       expect(cronJson.ok).toBe(true);

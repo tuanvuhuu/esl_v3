@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { Client } from 'pg';
 import { loadEnvLocal } from './env';
-import { login } from './helpers';
+import { cronAuth, login } from './helpers';
 
 // Khảo sát cuối khoá (37.14): lớp thử vừa học xong buổi cuối, cron gửi khảo sát (chỉ tới chat giả 922xxxxxxx),
 // phụ huynh giả bấm sao và chọn học tiếp qua webhook, trang lớp hiện kết quả. Không chạm phụ huynh thật.
@@ -15,7 +15,6 @@ const otherChat = chatId + 1;
 test('khảo sát cuối khoá: cron gửi, phụ huynh chấm sao và chọn học tiếp, trang lớp hiện kết quả', async ({ page, request }) => {
   loadEnvLocal();
   const secret = process.env.TELEGRAM_WEBHOOK_SECRET ?? '';
-  const cronKey = process.env.CRON_SECRET || secret;
   const db = new Client({ connectionString: process.env.DATABASE_URL });
   await db.connect();
   const stale = `select id from classes where name ~ '^KS-[0-9]{6}$' and campus_id = (select id from campuses where name = 'Cơ sở test')`;
@@ -44,7 +43,7 @@ test('khảo sát cuối khoá: cron gửi, phụ huynh chấm sao và chọn h�
     await db.query(`insert into telegram_chats (chat_id, parent_id, display_name) values ($1, $2, 'PH KS E2E'), ($3, null, 'Người lạ E2E')`, [chatId, parent.id, otherChat]);
 
     // Cron gửi khảo sát cho lớp vừa xong, chỉ tới chat giả; chạy lại không gửi lần hai
-    for (let i = 0; i < 2; i++) expect((await request.get(`/api/cron/telegram?key=${cronKey}&jobs=survey&chat=${chatId}`)).status()).toBe(200);
+    for (let i = 0; i < 2; i++) expect((await request.get(`/api/cron/telegram?jobs=survey&chat=${chatId}`, { headers: cronAuth() })).status()).toBe(200);
     const sent = (await db.query<{ text: string }>(`select text from telegram_messages where chat_id = $1 and kind = 'survey' order by id`, [chatId])).rows;
     expect(sent).toHaveLength(1);
     expect(sent[0].text).toContain(`Lớp ${CLS}`);

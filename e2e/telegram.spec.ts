@@ -3,7 +3,7 @@
 import { expect, test, type APIRequestContext } from '@playwright/test';
 import { Client } from 'pg';
 import { loadEnvLocal } from './env';
-import { dialogById, expectToast, login, uniq } from './helpers';
+import { cronAuth, dialogById, expectToast, login, uniq } from './helpers';
 
 type Ctx = { db: Client; secret: string; stamp: string };
 
@@ -362,7 +362,7 @@ test.describe('bot Telegram: kịch bản P37', () => {
       // Nhắc hạn: hạn còn 2 giờ, chạy cron hai lần chỉ một tin
       await db.query(`update assignments set due_at = now() + interval '2 hours' where title = $1`, [title]);
       for (let i = 0; i < 2; i++) {
-        const res = await page.request.get(`/api/cron/telegram?key=${secret}&jobs=homework_due&chat=${chatId}`);
+        const res = await page.request.get(`/api/cron/telegram?jobs=homework_due&chat=${chatId}`, { headers: cronAuth() });
         expect(res.status()).toBe(200);
         expect((await res.json()).result.jobs).toEqual(['homework_due']);
       }
@@ -403,8 +403,8 @@ test.describe('bot Telegram: kịch bản P37', () => {
       expect(await scoreTexts()).toHaveLength(1);
 
       // Tên việc lạ trong ?jobs bị bỏ qua; sai khoá thì 401
-      expect((await page.request.get(`/api/cron/telegram?key=sai&jobs=weekly`)).status()).toBe(401);
-      const odd = await page.request.get(`/api/cron/telegram?key=${secret}&jobs=khong-co,weekly&chat=${chatId}`);
+      expect((await page.request.get(`/api/cron/telegram?jobs=weekly`, { headers: { authorization: 'Bearer sai' } })).status()).toBe(401);
+      const odd = await page.request.get(`/api/cron/telegram?jobs=khong-co,weekly&chat=${chatId}`, { headers: cronAuth() });
       expect((await odd.json()).result.jobs).toEqual(['weekly']);
     } finally {
       await db.query(`delete from assignments where title = $1`, [title]);
