@@ -75,7 +75,6 @@ export function StudentProfile({
   perms: { tuition: boolean; parents: boolean; learning: boolean; assignments: boolean };
   drawerClose?: string;
 }) {
-  const remaining = Math.max(0, student.sessionsTotal - student.sessionsDone);
   const primary = student.parents.find((p) => p.isPrimary) ?? student.parents[0];
 
   let body: ReactNode;
@@ -118,7 +117,7 @@ export function StudentProfile({
           <ProgressBar value={student.sessionsDone} max={student.sessionsTotal} className="mt-4" />
           <div className="mt-2 flex justify-between text-sm text-muted">
             <span>Bắt đầu {dateKeyLabel(student.startDate)}</span>
-            <span>Còn {remaining} buổi</span>
+            <span>Đã đóng {student.sessionsPaid}/{student.sessionsOwed} buổi</span>
           </div>
         </Panel>
 
@@ -127,6 +126,7 @@ export function StudentProfile({
             <Row label={student.discount > 0 ? 'Học phí khoá (sau giảm trừ)' : 'Học phí khoá'} value={formatVND(student.fee)} />
             {student.discount > 0 && <Row label="Giảm trừ" value={`− ${formatVND(student.discount)}`} />}
             <Row label="Đã đóng" value={formatVND(student.paid)} />
+            <Row label="Số buổi đã đóng" value={`${student.sessionsPaid}/${student.sessionsOwed} buổi`} />
             <Row label="Còn thiếu" value={formatVND(student.debt)} tone={student.debt > 0 ? 'text-blush-ink' : 'text-muted'} />
           </dl>
           <div className="mt-4 border-t border-line pt-3">

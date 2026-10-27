@@ -8,6 +8,7 @@ import type { CampusScope } from '@/lib/campus';
 import { campusCond } from '@/lib/queries/campuses';
 import { parseStudentCode, studentCode } from '@/lib/student-code';
 import { normalizeSearch } from '@/lib/text';
+import { sessionsCovered } from '@/lib/tuition';
 import { NET_FEE_SQL } from '@/lib/tuition-fee';
 
 // Học phí và lớp chọn nhiều: danh sách rỗng nghĩa là không lọc
@@ -300,6 +301,8 @@ export type StudentDetail = {
   discount: number; // giảm trừ cố định (VND), 0 nếu không có
   paid: number;
   debt: number;
+  sessionsOwed: number; // số buổi từ ngày bắt đầu học đến hết khoá (không tính buổi huỷ)
+  sessionsPaid: number; // số buổi đã đóng, theo số tiền đã thu
   tuition: StudentRow['tuition'];
   attendanceRate: number;
   recentMarks: ('present' | 'late' | 'absent' | 'excused')[]; // 10 buổi gần nhất, cũ nhất trước
@@ -329,6 +332,12 @@ export async function getStudentDetail(id: number): Promise<StudentDetail | null
   const row = base.rows[0];
   if (!row) return null;
 
+  const owed = await db.execute<{ n: number }>(sql`
+    SELECT COUNT(*)::int AS n FROM class_sessions cs
+    WHERE cs.class_id = ${row.class_id} AND cs.status <> 'cancelled'
+      AND cs.starts_at >= (${row.start_date}::timestamp AT TIME ZONE 'Asia/Ho_Chi_Minh')
+  `);
+  const sessionsOwed = owed.rows[0]?.n ?? 0;
   const marks = await db.execute<{ mark: 'present' | 'late' | 'absent' | 'excused' }>(sql`
     SELECT mark FROM attendance WHERE student_id = ${id} ORDER BY session_date DESC LIMIT 10
   `);
@@ -366,6 +375,8 @@ export async function getStudentDetail(id: number): Promise<StudentDetail | null
     discount: row.discount,
     paid: row.paid,
     debt: Math.max(0, row.fee - row.paid),
+    sessionsOwed,
+    sessionsPaid: sessionsCovered(row.fee, row.paid, sessionsOwed),
     tuition: row.tuition,
     attendanceRate: row.att_total > 0 ? Math.round(((row.att_total - row.att_absent) / row.att_total) * 100) : 100,
     recentMarks: marks.rows.map((m) => m.mark).reverse(),
