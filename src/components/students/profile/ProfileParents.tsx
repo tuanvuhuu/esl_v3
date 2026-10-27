@@ -1,5 +1,6 @@
 'use client';
 
+import { ZaloLink } from '@/components/ui/ZaloLink';
 import { Phone, Plus, Star, Unlink } from 'lucide-react';
 import { useActionState, useState, useTransition, startTransition, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
@@ -86,6 +87,7 @@ export function ProfileParents({
                 <Phone className="size-4" aria-hidden />
                 Gọi {p.phone}
               </a>
+              <ZaloLink phone={p.phone} name={p.fullName} />
               {canManage && (
                 <div className="flex flex-wrap gap-2">
                   {!p.isPrimary && (

@@ -1,5 +1,6 @@
 'use client';
 
+import { ZaloLink } from '@/components/ui/ZaloLink';
 import { CalendarPlus, Check, Plus, X } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -165,7 +166,12 @@ export function LeavesView({
         return r.parentName ? (
           <div className="min-w-0">
             <span className="block text-base text-ink">{r.parentName}</span>
-            {r.parentPhone && <a href={`tel:${r.parentPhone}`} className="text-sm font-normal text-link underline underline-offset-2">{r.parentPhone}</a>}
+            {r.parentPhone && (
+              <span className="flex flex-wrap items-center gap-2">
+                <a href={`tel:${r.parentPhone}`} className="text-sm font-normal text-link underline underline-offset-2">{r.parentPhone}</a>
+                <ZaloLink phone={r.parentPhone} name={r.parentName} variant="link" />
+              </span>
+            )}
           </div>
         ) : (
           <span className="text-sm text-muted">Giáo vụ ghi</span>
@@ -198,6 +204,8 @@ export function LeavesView({
               <>
                 {' · '}
                 <a href={`tel:${r.parentPhone}`} className="text-link underline underline-offset-2">{r.parentPhone}</a>
+                {' '}
+                <ZaloLink phone={r.parentPhone} name={r.parentName} variant="link" />
               </>
             )}
           </>

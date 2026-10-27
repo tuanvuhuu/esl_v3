@@ -1,5 +1,6 @@
 // Nội dung hồ sơ học sinh. Dùng chung cho trang riêng (điện thoại, đường dẫn trực tiếp) và ngăn kéo (máy tính).
 // Không có Sửa hay Xoá trong hồ sơ (docs/DESIGN.md mục 6). Chân hồ sơ chỉ có Nhắc học phí.
+import { ZaloLink } from '@/components/ui/ZaloLink';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { ArrowLeft, X } from 'lucide-react';
@@ -200,7 +201,10 @@ export function StudentProfile({
                 <b className="block truncate text-base text-ink">{primary.fullName}</b>
                 <small className="text-sm text-muted">{PARENT_RELATION_LABELS[primary.relation]}</small>
               </div>
-              <a href={`tel:${primary.phone}`} className={`${BTN_BASE} ${BTN_GHOST} shrink-0`}>{primary.phone}</a>
+              <div className="flex shrink-0 items-center gap-2">
+                <a href={`tel:${primary.phone}`} className={`${BTN_BASE} ${BTN_GHOST}`}>{primary.phone}</a>
+                <ZaloLink phone={primary.phone} name={primary.fullName} />
+              </div>
             </div>
           ) : (
             <p className="text-sm text-muted">Chưa có phụ huynh.</p>

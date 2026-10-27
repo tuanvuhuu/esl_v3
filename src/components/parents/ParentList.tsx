@@ -24,6 +24,7 @@ import { Btn, BTN_BASE, BTN_GHOST } from '@/components/ui/Btn';
 import { Pagination, TextInput } from '@/components/ui/controls';
 import { ChildEditor } from './ChildEditor';
 import { InlineText } from './InlineText';
+import { ZaloLink } from '@/components/ui/ZaloLink';
 import { ParentAssignForm } from './ParentAssignForm';
 import { ParentForm } from './ParentForm';
 
@@ -38,7 +39,7 @@ function buildColumns(childColumns: number): GridColumn<ParentRow>[] {
   return [
     { key: 'fullName', label: 'Họ tên', width: 'minmax(140px,1.3fr)', sortable: true },
     { key: 'email', label: 'Email', width: 'minmax(150px,1.3fr)', sortable: true },
-    { key: 'phone', label: 'Số điện thoại', width: '112px', sortable: true },
+    { key: 'phone', label: 'Số điện thoại', width: '176px', sortable: true },
     ...Array.from({ length: childColumns }, (_, i) => ({ key: `child${i}`, label: `Học sinh ${i + 1}`, width: 'minmax(116px,1fr)', sortable: false })),
     { key: 'note', label: 'Ghi chú', width: 'minmax(120px,1fr)', sortable: true },
     { key: 'actions', label: 'Thao tác', width: '64px', align: 'end', srOnly: true },
@@ -218,19 +219,25 @@ export function ParentList(props: { parents: ParentRow[]; students?: StudentChoi
         );
       case 'phone':
         return canManage ? (
-          <InlineText
-            value={row.phone}
-            label="số điện thoại"
-            placeholder="Thêm số điện thoại"
-            inputType="tel"
-            canEdit
-            className="text-base text-ink"
-            onSave={(next) => updateParentFieldAction(row.id, 'phone', next)}
-          />
+          <span className="flex min-w-0 items-center gap-2">
+            <InlineText
+              value={row.phone}
+              label="số điện thoại"
+              placeholder="Thêm số điện thoại"
+              inputType="tel"
+              canEdit
+              className="text-base text-ink"
+              onSave={(next) => updateParentFieldAction(row.id, 'phone', next)}
+            />
+            <ZaloLink phone={row.phone} name={row.fullName} variant="link" />
+          </span>
         ) : (
-          <a href={`tel:${row.phone}`} className="text-base text-link underline underline-offset-2">
-            {row.phone}
-          </a>
+          <span className="flex flex-wrap items-center gap-2">
+            <a href={`tel:${row.phone}`} className="text-base text-link underline underline-offset-2">
+              {row.phone}
+            </a>
+            <ZaloLink phone={row.phone} name={row.fullName} variant="link" />
+          </span>
         );
       case 'note':
         return (
@@ -424,10 +431,13 @@ function ParentCard({
     <Card>
       <div className="min-w-0">
         <b className="block break-words text-base text-ink">{row.fullName}</b>
-        <a href={`tel:${row.phone}`} className="mt-0.5 inline-flex items-center gap-1.5 text-base text-link underline underline-offset-2">
-          <Phone className="size-3.5" aria-hidden />
-          {row.phone}
-        </a>
+        <div className="mt-0.5 flex flex-wrap items-center gap-2">
+          <a href={`tel:${row.phone}`} className="inline-flex items-center gap-1.5 text-base text-link underline underline-offset-2">
+            <Phone className="size-3.5" aria-hidden />
+            {row.phone}
+          </a>
+          <ZaloLink phone={row.phone} name={row.fullName} variant="link" />
+        </div>
         {row.email && <small className="block break-words text-sm text-muted">{row.email}</small>}
         {row.telegramLinked && <small className="block text-xs text-muted">Đã kết nối Telegram</small>}
       </div>
