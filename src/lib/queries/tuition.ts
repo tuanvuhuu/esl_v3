@@ -4,7 +4,7 @@ import { db } from '@/db/client';
 import type { CampusScope } from '@/lib/campus';
 import { campusCond } from '@/lib/queries/campuses';
 import { centerSettings, tuitionPayments } from '@/db/schema';
-import { balanceOf, debtOf, dueDateFor, isOverdue, tuitionState, type TuitionState } from '@/lib/tuition';
+import { balanceOf, debtOf, dueDateFor, isOverdue, sessionsCovered, tuitionState, type TuitionState } from '@/lib/tuition';
 import { parseStudentCode, studentCode } from '@/lib/student-code';
 import { normalizeSearch } from '@/lib/text';
 import { NET_FEE_SQL } from '@/lib/tuition-fee';
@@ -19,6 +19,8 @@ export type InvoiceRow = {
   baseFee: number; // học phí gốc (riêng hoặc của lớp), trần của miễn giảm
   discount: number; // miễn giảm cố định (VND)
   paid: number;
+  sessionsOwed: number; // số buổi học từ ngày bắt đầu học đến hết khoá (không tính buổi huỷ)
+  sessionsPaid: number; // số buổi đã đóng, theo số tiền đã thu
   debt: number; // còn nợ
   balance: number; // thừa (dương) hoặc thiếu (âm) so với phải nộp
   state: TuitionState;
@@ -42,11 +44,14 @@ export async function listInvoices(todayKey: string, q: string, filter: InvoiceF
   // Ngày đến hạn và danh sách đọc cùng lúc
   const [dueDay, result] = await Promise.all([getDueDay(), db.execute<{
     id: number; full_name: string; search_key: string; status: InvoiceRow['status']; start_date: string; class_name: string;
-    fee: number; base_fee: number; discount: number; paid: number; last_paid: string | null;
+    fee: number; base_fee: number; discount: number; paid: number; owed: number; last_paid: string | null;
   }>(sql`
     SELECT s.id, s.full_name, s.search_key, s.status, s.start_date::text AS start_date, c.name AS class_name, ${NET_FEE_SQL} AS fee,
       COALESCE(s.tuition_fee, c.fee) AS base_fee, COALESCE(s.tuition_discount, 0)::int AS discount,
       COALESCE(p.paid, 0)::int AS paid,
+      (SELECT COUNT(*)::int FROM class_sessions cs
+        WHERE cs.class_id = s.class_id AND cs.status <> 'cancelled'
+          AND cs.starts_at >= (s.start_date::timestamp AT TIME ZONE 'Asia/Ho_Chi_Minh')) AS owed,
       to_char(p.last_paid AT TIME ZONE 'Asia/Ho_Chi_Minh', 'YYYY-MM-DD') AS last_paid
     FROM students s
     JOIN classes c ON c.id = s.class_id
@@ -73,6 +78,8 @@ export async function listInvoices(todayKey: string, q: string, filter: InvoiceF
       baseFee: r.base_fee,
       discount: r.discount,
       paid: r.paid,
+      sessionsOwed: r.owed,
+      sessionsPaid: sessionsCovered(r.fee, r.paid, r.owed),
       debt,
       balance: balanceOf(r.fee, r.paid),
       state: tuitionState(r.fee, r.paid),

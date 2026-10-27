@@ -854,3 +854,12 @@ Mỗi lỗi gặp phải được ghi ở đây, theo mẫu dưới đây. Trư�
 - Cách sửa: Khôi phục bằng nhập lại file SILA (đúng giá trị theo file). Xoá 4 liên kết phụ huynh và 4 sự kiện chuyển lớp do lần nhập sai tạo ra. Nhập lại file mẫu với 4 mã trùng bỏ trống, 4 học sinh được tạo mới (HS-24221 đến HS-24224).
 - Quy tắc phòng ngừa: Trước khi nhập nhiều file cùng lúc, kiểm tra Mã HS trùng giữa các file, và so tên, ngày sinh của cặp trùng mã. Mã trùng mà tên khác thì không nhập. Trình xem trước nên cảnh báo khi một mã trong file khớp học sinh có họ tên khác hẳn.
 - Đã áp dụng ở: dữ liệu (các học sinh trên, dữ liệu bị ghi đè đã khôi phục); cần thêm cảnh báo trong `src/lib/import/plan.ts` (chưa làm).
+
+## E-093 · Bảng học phí: tiêu đề lệch một cột so với dữ liệu khi có cột Chọn ẩn
+- Ngày: 2026-10-27
+- Khu vực: `src/components/ui/datagrid.tsx` (ô tiêu đề cột `srOnly`), dùng ở `src/components/tuition/TuitionView.tsx` và các bảng có cột Thao tác ẩn
+- Triệu chứng: Màn Học phí (quyền ghi thu): tiêu đề "Phải nộp" nằm trên cột học sinh, "Đã nộp" nằm trên cột Miễn giảm, "Thừa/thiếu" nằm trên cột Số buổi. Đọc số theo tiêu đề thì sai cột.
+- Nguyên nhân: Ô tiêu đề `srOnly` là `<span class="sr-only">`, có `position: absolute` nên ra khỏi luồng lưới CSS và không chiếm ô nào. Cột Chọn ẩn đứng đầu làm mọi tiêu đề sau nó lệch một ô. Cột Thao tác ẩn đứng cuối không gây lệch nhưng cũng không có ô tiêu đề.
+- Cách sửa: Ô tiêu đề ẩn là một `span` nằm trong luồng lưới, chữ đặt trong `sr-only` bên trong. Kiểm chứng bằng đo vị trí: tiêu đề và ô dữ liệu có cùng toạ độ x ở cả 10 cột.
+- Quy tắc phòng ngừa: Trong `DataGrid`, không đặt `sr-only` trực tiếp làm ô của hàng tiêu đề; mọi con của hàng tiêu đề phải nằm trong luồng lưới. Sau khi thêm hoặc bỏ cột, đo x của tiêu đề và ô dữ liệu cùng hàng để so khớp.
+- Đã áp dụng ở: `src/components/ui/datagrid.tsx`.

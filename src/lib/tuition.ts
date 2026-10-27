@@ -34,6 +34,15 @@ export function proratedFee(fee: number, totalSessions: number, remainingSession
   return Math.round((fee * remainingSessions) / totalSessions / 1000) * 1000;
 }
 
+// Số buổi đã đóng: số tiền đã thu chia theo giá một buổi (học phí thực thu ÷ số buổi còn lại), làm tròn xuống.
+// Đóng đủ thì bằng số buổi còn lại. Không vượt số buổi còn lại.
+export function sessionsCovered(fee: number, paid: number, sessionsOwed: number): number {
+  if (sessionsOwed <= 0) return 0;
+  if (fee <= 0 || paid >= fee) return sessionsOwed;
+  if (paid <= 0) return 0;
+  return Math.min(sessionsOwed, Math.floor((paid * sessionsOwed) / fee));
+}
+
 export function isOverdue(fee: number, paid: number, dueDate: string, todayKey: string): boolean {
   return debtOf(fee, paid) > 0 && dueDate < todayKey;
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { debtOf, dueDateFor, isOverdue, tuitionState } from '@/lib/tuition';
+import { debtOf, dueDateFor, isOverdue, sessionsCovered, tuitionState } from '@/lib/tuition';
 
 describe('tuitionState', () => {
   it('đã đóng khi thu đủ hoặc hơn học phí', () => {
@@ -16,6 +16,25 @@ describe('debtOf', () => {
   it('không âm khi đã thu thừa', () => {
     expect(debtOf(12_000_000, 4_000_000)).toBe(8_000_000);
     expect(debtOf(12_000_000, 15_000_000)).toBe(0);
+  });
+});
+
+describe('sessionsCovered', () => {
+  it('số buổi đóng tăng theo số tiền thu', () => {
+    // 12 buổi, học phí 4.800.000 ₫: mỗi buổi 400.000 ₫
+    expect(sessionsCovered(4_800_000, 0, 12)).toBe(0);
+    expect(sessionsCovered(4_800_000, 1_200_000, 12)).toBe(3);
+    expect(sessionsCovered(4_800_000, 1_100_000, 12)).toBe(2);
+    expect(sessionsCovered(4_800_000, 4_800_000, 12)).toBe(12);
+  });
+  it('đóng thừa không vượt số buổi còn lại', () => {
+    expect(sessionsCovered(4_800_000, 6_000_000, 12)).toBe(12);
+  });
+  it('học phí bằng 0 thì coi như đã đóng đủ buổi', () => {
+    expect(sessionsCovered(0, 0, 8)).toBe(8);
+  });
+  it('không có buổi còn lại thì bằng 0', () => {
+    expect(sessionsCovered(4_800_000, 4_800_000, 0)).toBe(0);
   });
 });
 

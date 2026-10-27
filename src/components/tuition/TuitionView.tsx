@@ -30,6 +30,7 @@ const COLUMNS: GridColumn<InvoiceRow>[] = [
   { key: 'fee', label: 'Phải nộp', width: 'minmax(110px,1fr)' },
   { key: 'discount', label: 'Miễn giảm', width: 'minmax(130px,1fr)' },
   { key: 'paid', label: 'Đã nộp', width: 'minmax(110px,1fr)' },
+  { key: 'sessions', label: 'Số buổi đã đóng', width: 'minmax(130px,1fr)', sortValue: (r) => r.sessionsPaid },
   { key: 'balance', label: 'Thừa/thiếu', width: 'minmax(130px,1fr)', sortValue: (r) => r.balance },
   { key: 'due', label: 'Hạn đóng', width: 'minmax(120px,1fr)', sortValue: (r) => r.dueDate },
   { key: 'status', label: 'Trạng thái', width: 'minmax(110px,1fr)', sortValue: (r) => r.state },
@@ -133,6 +134,8 @@ export function TuitionView({
         return <DiscountInput key={`${r.id}-${r.discount}`} row={r} canManage={canManage} onSave={saveDiscount} />;
       case 'paid':
         return <span className="text-base text-ink">{formatVND(r.paid)}</span>;
+      case 'sessions':
+        return <SessionsPaid row={r} />;
       case 'balance':
         return <BalanceText balance={r.balance} />;
       case 'due':
@@ -187,6 +190,7 @@ export function TuitionView({
         </div>
         <div><small className="block text-xs text-muted">Đã nộp</small><b className="text-sm text-ink">{formatVND(r.paid)}</b></div>
         <div><small className="block text-xs text-muted">Thừa/thiếu</small><BalanceText balance={r.balance} /></div>
+        <div className="col-span-2"><small className="block text-xs text-muted">Số buổi đã đóng</small><SessionsPaid row={r} /></div>
       </div>
       <small className="text-sm text-ink-2">Hạn đóng {dateKeyLabel(r.dueDate)}</small>
       {canManage && r.debt > 0 && (
@@ -295,6 +299,12 @@ function TotalsStrip({ totals }: { totals: InvoiceTotals }) {
       ))}
     </dl>
   );
+}
+
+// Số buổi đã đóng trên tổng số buổi còn lại của học sinh; tăng theo số tiền thu
+function SessionsPaid({ row }: { row: InvoiceRow }) {
+  if (row.sessionsOwed === 0) return <span className="text-base text-muted">Hết buổi</span>;
+  return <span className="text-base text-ink tabular-nums">{row.sessionsPaid}/{row.sessionsOwed} buổi</span>;
 }
 
 // Thừa hay thiếu của một học sinh, có dấu chữ để không chỉ dựa vào màu

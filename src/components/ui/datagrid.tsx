@@ -172,9 +172,10 @@ export function DataGrid<T>({
           <div role="row" style={{ gridTemplateColumns: template, minWidth: rowMin }} className={`sticky top-0 z-10 grid items-center gap-x-3 border-b border-line bg-surface py-2 text-xs font-normal text-muted ${stickyEnd ? 'pl-4' : 'px-4'}`}>
             {columns.map((c) => {
               if (c.srOnly) {
+                // Ô giữ chỗ trong lưới: chữ chỉ đọc được bằng trình đọc màn hình. sr-only tự nó nằm ngoài luồng lưới, làm lệch các tiêu đề sau nó.
                 return (
-                  <span key={c.key} role="columnheader" className="sr-only">
-                    {c.label}
+                  <span key={c.key} role="columnheader" className="min-w-0">
+                    <span className="sr-only">{c.label}</span>
                   </span>
                 );
               }
