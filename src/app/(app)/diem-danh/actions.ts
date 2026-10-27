@@ -61,6 +61,13 @@ export async function saveAttendanceAction(sessionId: number, entries: { student
     if (outside.length > 0) return { ok: false, message: 'Có học sinh không thuộc lớp này hoặc đã nghỉ học.' };
 
     const rows = parsed.data.map((e) => ({ studentId: e.studentId, classId: session.classId, sessionDate: dateKey, mark: e.mark }));
+    // Học sinh có phép không được tính buổi đã học: nhớ ai đang có phép trước khi lưu để cộng lại đúng số
+    const rosterIds = new Set(enrolled.map((s) => s.id));
+    const before = await db
+      .select({ studentId: attendance.studentId, mark: attendance.mark })
+      .from(attendance)
+      .where(and(eq(attendance.sessionDate, dateKey), inArray(attendance.studentId, parsed.data.map((e) => e.studentId))));
+    const wasExcused = new Set(before.filter((b) => b.mark === 'excused').map((b) => b.studentId));
     await db.transaction(async (tx) => {
       await tx
         .insert(attendance)
@@ -75,6 +82,29 @@ export async function saveAttendanceAction(sessionId: number, entries: { student
           .update(students)
           .set({ sessionsDone: sql`${students.sessionsDone} + 1`, updatedAt: new Date() })
           .where(and(eq(students.classId, session.classId), inArray(students.status, ['active', 'trial'])));
+        // Lần đầu lưu: cả lớp vừa được cộng một buổi; bớt lại những ai đang có phép
+        const excused = await tx
+          .select({ studentId: attendance.studentId })
+          .from(attendance)
+          .where(and(eq(attendance.sessionDate, dateKey), eq(attendance.mark, 'excused'), inArray(attendance.studentId, [...rosterIds])));
+        if (excused.length > 0) {
+          await tx
+            .update(students)
+            .set({ sessionsDone: sql`${students.sessionsDone} - 1`, updatedAt: new Date() })
+            .where(inArray(students.id, excused.map((e) => e.studentId)));
+        }
+      } else {
+        // Buổi đã học: đổi sang hoặc khỏi trạng thái có phép thì cộng hoặc bớt đúng một buổi
+        for (const e of parsed.data) {
+          if (!rosterIds.has(e.studentId)) continue;
+          const delta = (wasExcused.has(e.studentId) ? 1 : 0) - (e.mark === 'excused' ? 1 : 0);
+          if (delta !== 0) {
+            await tx
+              .update(students)
+              .set({ sessionsDone: sql`${students.sessionsDone} + ${delta}`, updatedAt: new Date() })
+              .where(eq(students.id, e.studentId));
+          }
+        }
       }
     });
 
