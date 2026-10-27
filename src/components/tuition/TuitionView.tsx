@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useActionState, useEffect, useRef, useState, useTransition, startTransition, type FormEvent } from 'react';
-import { loadPaymentsAction, recordPaymentAction, refundSurplusAction, remindTuitionAction, setTuitionDiscountAction, voidPaymentAction } from '@/app/(app)/hoc-phi/actions';
+import { loadPaymentsAction, recordPaymentAction, recordPaymentsBulkAction, refundSurplusAction, remindTuitionAction, setTuitionDiscountAction, voidPaymentAction } from '@/app/(app)/hoc-phi/actions';
 import type { InvoiceFilter, InvoiceRow, InvoiceTotals, PaymentRow } from '@/lib/queries/tuition';
 import { formatVND } from '@/lib/money';
 import { dateKeyLabel } from '@/lib/datetime';
@@ -37,6 +37,9 @@ const COLUMNS: GridColumn<InvoiceRow>[] = [
   { key: 'actions', label: 'Thao tác', width: '150px', align: 'end', srOnly: true },
 ];
 
+// Cột chọn dòng để ghi thu nhiều học sinh cùng lúc (chỉ hiện với người có quyền thu)
+const SELECT_COL: GridColumn<InvoiceRow> = { key: 'select', label: 'Chọn', width: '44px', srOnly: true };
+
 const FILTERS: { key: InvoiceFilter; label: string }[] = [
   { key: 'all', label: 'Tất cả' },
   { key: 'paid', label: 'Đã đóng' },
@@ -66,6 +69,20 @@ export function TuitionView({
   const router = useRouter();
   const { message, notify } = useToast();
   const [paying, setPaying] = useState<InvoiceRow | null>(null);
+  // Học sinh được chọn để ghi thu hàng loạt (chỉ tính những người còn nợ đang hiện)
+  const [picked, setPicked] = useState<Set<number>>(new Set());
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const pickable = rows.filter((r) => r.debt > 0);
+  const pickedRows = canManage ? pickable.filter((r) => picked.has(r.id)) : [];
+  const pickedDebt = pickedRows.reduce((sum, r) => sum + r.debt, 0);
+  function togglePick(id: number) {
+    setPicked((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
   const [refunding, setRefunding] = useState<InvoiceRow | null>(null);
   const [pending, startRemind] = useTransition();
   const [search, setSearch] = useState(q);
@@ -99,6 +116,10 @@ export function TuitionView({
 
   const cell = (r: InvoiceRow, key: string) => {
     switch (key) {
+      case 'select':
+        return r.debt > 0 ? (
+          <input type="checkbox" checked={picked.has(r.id)} onChange={() => togglePick(r.id)} aria-label={`Chọn ${r.fullName} để ghi thu`} className="size-4 accent-[var(--primary-deep)]" />
+        ) : null;
       case 'fullName':
         return (
           <div className="min-w-0">
@@ -142,6 +163,12 @@ export function TuitionView({
 
   const card = (r: InvoiceRow) => (
     <Card>
+      {canManage && r.debt > 0 && (
+        <label className="mb-2 flex items-center gap-2 text-sm text-ink-2">
+          <input type="checkbox" checked={picked.has(r.id)} onChange={() => togglePick(r.id)} className="size-4 accent-[var(--primary-deep)]" />
+          Chọn để ghi thu
+        </label>
+      )}
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <Link href={`/hoc-sinh/${r.id}`} className="text-base font-normal text-link underline underline-offset-2">{r.fullName}</Link>
@@ -208,9 +235,25 @@ export function TuitionView({
 
       <TotalsStrip totals={totals} />
 
+      {canManage && pickable.length > 0 && (
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          {pickedRows.length === 0 ? (
+            <Btn onClick={() => setPicked(new Set(pickable.map((r) => r.id)))}>Chọn tất cả còn nợ ({pickable.length})</Btn>
+          ) : (
+            <>
+              <div role="status" className="min-w-0 flex-1 rounded-[var(--radius-ctl)] bg-primary-soft px-3 py-2 text-sm text-ink">
+                <b>Đã chọn {pickedRows.length} học sinh</b> <span className="text-ink-2">· còn nợ {formatVND(pickedDebt)}</span>
+              </div>
+              <Btn onClick={() => setPicked(new Set())}>Bỏ chọn</Btn>
+              <Btn variant="primary" onClick={() => setBulkOpen(true)}>Ghi thu cho {pickedRows.length} học sinh</Btn>
+            </>
+          )}
+        </div>
+      )}
+
       <DataGrid
         label="Hoá đơn học phí"
-        columns={COLUMNS}
+        columns={canManage ? [SELECT_COL, ...COLUMNS] : COLUMNS}
         rows={rows}
         rowKey={(r) => r.id}
         cell={cell}
@@ -220,6 +263,13 @@ export function TuitionView({
       />
 
       {paying && <PaymentDialog row={paying} canManage={canManage} onClose={() => setPaying(null)} onDone={(m) => { setPaying(null); notify(m); router.refresh(); }} />}
+      {bulkOpen && pickedRows.length > 0 && (
+        <BulkPaymentDialog
+          rows={pickedRows}
+          onClose={() => setBulkOpen(false)}
+          onDone={(m) => { setBulkOpen(false); setPicked(new Set()); notify(m); router.refresh(); }}
+        />
+      )}
       {refunding && <RefundDialog row={refunding} onClose={() => setRefunding(null)} onDone={(m) => { setRefunding(null); notify(m); router.refresh(); }} />}
       <Toast message={message} />
     </section>
@@ -478,6 +528,67 @@ function RefundDialog({ row, onClose, onDone }: { row: InvoiceRow; onClose: () =
         <FormFooter className="col-span-full">
           <button type="button" onClick={onClose} className={FORM_BTN_CANCEL}>Huỷ</button>
           <button type="submit" disabled={pending} className={FORM_BTN_SUBMIT}>{pending ? 'Đang hoàn…' : 'Hoàn tiền'}</button>
+        </FormFooter>
+      </form>
+    </Modal>
+  );
+}
+
+// Ghi thu cho nhiều học sinh đã chọn: mỗi người mặc định thu đủ số còn nợ, sửa được từng số tiền; bấm xác nhận mới ghi.
+function BulkPaymentDialog({ rows, onClose, onDone }: { rows: InvoiceRow[]; onClose: () => void; onDone: (message: string) => void }) {
+  const [amounts, setAmounts] = useState<Record<number, string>>(() => Object.fromEntries(rows.map((r) => [r.id, String(r.debt)])));
+  const [note, setNote] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [pending, start] = useTransition();
+
+  const plan = rows.map((r) => ({ row: r, amount: Number(amounts[r.id] || 0) }));
+  const badIds = new Set(plan.filter((p) => p.amount < 1 || p.amount > p.row.debt).map((p) => p.row.id));
+  const total = plan.reduce((sum, p) => sum + p.amount, 0);
+
+  function submit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (badIds.size > 0) {
+      setError('Số tiền của từng học sinh phải từ 1 đến số còn nợ.');
+      return;
+    }
+    setError(null);
+    start(async () => {
+      const r = await recordPaymentsBulkAction({ items: plan.map((p) => ({ studentId: p.row.id, amount: p.amount })), note });
+      if (r.ok) onDone(r.message ?? 'Đã ghi thu');
+      else setError(r.message ?? 'Không ghi thu được');
+    });
+  }
+
+  return (
+    <Modal open title={`Ghi thu cho ${rows.length} học sinh`} subtitle="Mỗi người mặc định thu đủ số còn nợ. Sửa được số tiền từng người." onClose={onClose} labelledBy="bulk-payment-title">
+      <form onSubmit={submit} noValidate className="flex flex-col gap-3.5 pb-2">
+        {error && <Alert>{error}</Alert>}
+        <ul className="flex max-h-[50vh] flex-col divide-y divide-line overflow-y-auto">
+          {rows.map((r) => (
+            <li key={r.id} className="flex flex-wrap items-center justify-between gap-3 py-2.5">
+              <div className="min-w-0">
+                <b className="block truncate text-base font-normal text-ink">{r.fullName}</b>
+                <small className="block truncate text-xs text-muted">{r.code} · còn nợ {formatVND(r.debt)}</small>
+              </div>
+              <input
+                aria-label={`Số tiền thu ${r.fullName} (VND)`}
+                type="text"
+                inputMode="numeric"
+                autoComplete="off"
+                value={amounts[r.id] ? Number(amounts[r.id]).toLocaleString('vi-VN') : ''}
+                onChange={(e) => setAmounts((prev) => ({ ...prev, [r.id]: e.target.value.replace(/\D/g, '').replace(/^0+(?=\d)/, '').slice(0, 12) }))}
+                className={`${inputClass(badIds.has(r.id) ? 'sai' : undefined)} h-9 w-36 text-right tabular-nums`}
+              />
+            </li>
+          ))}
+        </ul>
+        <p className="text-sm text-ink-2">Tổng thu: <b className="text-ink">{formatVND(total)}</b> từ {rows.length} học sinh. Bấm xác nhận là ghi ngay.</p>
+        <Field label="Ghi chú chung" hint="VD: đóng tiền mặt tại lớp">
+          <input value={note} onChange={(e) => setNote(e.target.value)} maxLength={200} autoComplete="off" className={inputClass()} />
+        </Field>
+        <FormFooter>
+          <button type="button" onClick={onClose} className={FORM_BTN_CANCEL}>Huỷ</button>
+          <button type="submit" disabled={pending || badIds.size > 0} className={FORM_BTN_SUBMIT}>{pending ? 'Đang ghi…' : `Xác nhận đã nộp (${rows.length})`}</button>
         </FormFooter>
       </form>
     </Modal>

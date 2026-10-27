@@ -76,6 +76,55 @@ export async function recordPaymentAction(studentId: number, _prev: ActionResult
   }
 }
 
+// Ghi thu cho nhiều học sinh cùng lúc. Kiểm tra hết trước: chỉ cần một dòng sai thì không ghi dòng nào.
+const bulkPaymentSchema = z.object({
+  items: z
+    .array(z.object({ studentId: z.number().int().positive(), amount: z.number().int().min(1, 'Số tiền phải lớn hơn 0') }))
+    .min(1, 'Chưa chọn học sinh nào')
+    .max(200, 'Tối đa 200 học sinh mỗi lần'),
+  note: z.string().trim().max(200, 'Ghi chú tối đa 200 ký tự').default(''),
+});
+
+export async function recordPaymentsBulkAction(input: { items: { studentId: number; amount: number }[]; note: string }): Promise<ActionResult> {
+  try {
+    await requirePermission('tuition.manage');
+    const parsed = bulkPaymentSchema.safeParse(input);
+    if (!parsed.success) return { ok: false, message: parsed.error.issues[0]?.message ?? 'Dữ liệu không hợp lệ.' };
+    const ids = parsed.data.items.map((i) => i.studentId);
+    if (new Set(ids).size !== ids.length) return { ok: false, message: 'Có học sinh được chọn hai lần.' };
+
+    const problems: string[] = [];
+    const plan: { studentId: number; name: string; amount: number; debt: number }[] = [];
+    for (const item of parsed.data.items) {
+      await requireStudentAccess(item.studentId);
+      const balance = await studentBalance(item.studentId);
+      if (!balance) problems.push(`học sinh #${item.studentId} không còn tồn tại`);
+      else if (balance.debt <= 0) problems.push(`${balance.name} đã đóng đủ học phí`);
+      else if (item.amount > balance.debt) problems.push(`${balance.name} còn nợ ${formatVND(balance.debt)}, không thu ${formatVND(item.amount)}`);
+      else plan.push({ studentId: item.studentId, name: balance.name, amount: item.amount, debt: balance.debt });
+    }
+    if (problems.length > 0) return { ok: false, message: `Chưa ghi thu. Sửa các dòng sau: ${problems.join('; ')}.` };
+
+    const paidAt = new Date();
+    await db.transaction(async (tx) => {
+      for (const p of plan) {
+        await tx.insert(tuitionPayments).values({ studentId: p.studentId, amount: p.amount, note: parsed.data.note, paidAt });
+      }
+    });
+    for (const p of plan) {
+      await writeAudit({ action: 'payment', entity: 'student', entityId: p.studentId, summary: `Thu ${formatVND(p.amount)} học phí ${p.name} (ghi thu nhiều học sinh), còn nợ ${formatVND(p.debt - p.amount)}` });
+    }
+    revalidatePath('/hoc-phi');
+    revalidatePath('/hoc-sinh');
+    revalidatePath('/bao-cao');
+    revalidatePath('/tong-quan');
+    const total = plan.reduce((sum, p) => sum + p.amount, 0);
+    return { ok: true, message: `Đã ghi thu cho ${plan.length} học sinh, tổng ${formatVND(total)}.` };
+  } catch (error) {
+    return errorResult(error);
+  }
+}
+
 // Nhắc đóng học phí. Ghi vào nhật ký. Chưa gửi SMS hay email vì chưa có kênh gửi.
 export async function remindTuitionAction(studentId: number): Promise<ActionResult> {
   try {
