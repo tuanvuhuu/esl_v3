@@ -302,6 +302,13 @@
       "when": 1792987427798,
       "tag": "0042_tuition_ledger_kind",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1793070128479,
+      "tag": "0043_attendance_excused",
+      "breakpoints": true
     }
   ]
 }

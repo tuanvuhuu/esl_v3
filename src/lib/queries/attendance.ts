@@ -4,7 +4,7 @@ import { db } from '@/db/client';
 import { attendance, students } from '@/db/schema';
 import { makeupStudentsOfSession } from '@/lib/makeup';
 
-export type Mark = 'present' | 'late' | 'absent';
+export type Mark = 'present' | 'late' | 'absent' | 'excused';
 export type RosterRow = {
   id: number;
   fullName: string;

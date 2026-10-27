@@ -130,7 +130,7 @@ export function InlineText({
       type="button"
       onClick={start}
       aria-label={`Sửa ${label}`}
-      className={`group -mx-1 flex max-w-full min-w-0 rounded-[var(--radius-ctl)] px-1 text-left hover:bg-stone ${wrap ? 'min-h-[var(--ctl-h)] items-start py-1' : 'h-[var(--ctl-h)] items-center'} ${isEmpty ? '' : className}`}
+      className={`group -mx-1 flex h-[var(--ctl-h)] max-w-full min-w-0 items-center rounded-[var(--radius-ctl)] px-1 text-left hover:bg-stone ${isEmpty ? '' : className}`}
     >
       {isEmpty ? (
         <span className="min-w-0 truncate text-sm text-muted opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">{placeholder}</span>

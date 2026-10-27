@@ -139,7 +139,7 @@ const BASE_CTE = sql`
   ),
   att AS (
     SELECT student_id,
-      COUNT(*)::int AS total,
+      COUNT(*) FILTER (WHERE mark <> 'excused')::int AS total,
       COUNT(*) FILTER (WHERE mark = 'absent')::int AS absent
     FROM attendance GROUP BY student_id
   ),
@@ -302,7 +302,7 @@ export type StudentDetail = {
   debt: number;
   tuition: StudentRow['tuition'];
   attendanceRate: number;
-  recentMarks: ('present' | 'late' | 'absent')[]; // 10 buổi gần nhất, cũ nhất trước
+  recentMarks: ('present' | 'late' | 'absent' | 'excused')[]; // 10 buổi gần nhất, cũ nhất trước
   payments: { id: number; amount: number; paidAt: string; note: string }[];
   parents: { id: number; fullName: string; phone: string; relation: ParentRelation; isPrimary: boolean }[];
 };
@@ -329,7 +329,7 @@ export async function getStudentDetail(id: number): Promise<StudentDetail | null
   const row = base.rows[0];
   if (!row) return null;
 
-  const marks = await db.execute<{ mark: 'present' | 'late' | 'absent' }>(sql`
+  const marks = await db.execute<{ mark: 'present' | 'late' | 'absent' | 'excused' }>(sql`
     SELECT mark FROM attendance WHERE student_id = ${id} ORDER BY session_date DESC LIMIT 10
   `);
   const payments = await db.execute<{ id: number; amount: number; paid_at: string; note: string }>(sql`

@@ -1,0 +1,1 @@
+ALTER TYPE "public"."attendance_mark" ADD VALUE 'excused';

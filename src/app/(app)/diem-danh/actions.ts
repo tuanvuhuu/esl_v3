@@ -13,8 +13,8 @@ import { notifyAttendance } from '@/lib/telegram/notify';
 import { z } from 'zod';
 import { type ActionResult } from '@/lib/validation/student';
 
-const MARKS = ['present', 'late', 'absent'] as const;
-const MARK_LABEL = { present: 'có mặt', late: 'trễ', absent: 'vắng' } as const;
+const MARKS = ['present', 'late', 'absent', 'excused'] as const;
+const MARK_LABEL = { present: 'có mặt', late: 'trễ', absent: 'vắng', excused: 'có phép' } as const;
 
 const entriesSchema = z
   .array(z.object({ studentId: z.number().int().positive(), mark: z.enum(MARKS) }))
@@ -83,7 +83,7 @@ export async function saveAttendanceAction(sessionId: number, entries: { student
       action: 'attendance',
       entity: 'session',
       entityId: session.id,
-      summary: `Điểm danh buổi ${session.sessionNo}: ${count('present')} ${MARK_LABEL.present}, ${count('late')} ${MARK_LABEL.late}, ${count('absent')} ${MARK_LABEL.absent}`,
+      summary: `Điểm danh buổi ${session.sessionNo}: ${count('present')} ${MARK_LABEL.present}, ${count('late')} ${MARK_LABEL.late}, ${count('absent')} ${MARK_LABEL.absent}, ${count('excused')} ${MARK_LABEL.excused}`,
     });
     revalidatePath('/diem-danh');
     revalidatePath('/lich-hoc');

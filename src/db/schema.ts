@@ -25,7 +25,8 @@ import { sql } from 'drizzle-orm';
 
 export const studentStatusEnum = pgEnum('student_status', ['active', 'trial', 'paused', 'finished']);
 export const genderEnum = pgEnum('gender', ['male', 'female']);
-export const attendanceMarkEnum = pgEnum('attendance_mark', ['present', 'late', 'absent']);
+// excused: vắng có phép (đơn nghỉ được duyệt hoặc giáo viên chọn). Không tính là vắng, không trừ chuyên cần.
+export const attendanceMarkEnum = pgEnum('attendance_mark', ['present', 'late', 'absent', 'excused']);
 export const teacherStatusEnum = pgEnum('teacher_status', ['active', 'leave']);
 // Vai trò nhân sự giảng dạy: giáo viên (chủ nhiệm), giáo viên nước ngoài, trợ giảng
 export const staffRoleEnum = pgEnum('staff_role', ['teacher', 'foreign', 'assistant']);

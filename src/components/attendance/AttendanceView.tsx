@@ -20,8 +20,9 @@ const MARK_META: Record<Mark, { label: string; on: string; tone: Tone; dot: stri
   present: { label: 'Có mặt', on: 'bg-mint text-mint-ink', tone: 'mint', dot: 'bg-accent' },
   late: { label: 'Trễ', on: 'bg-butter text-butter-ink', tone: 'butter', dot: 'bg-primary-deep' },
   absent: { label: 'Vắng', on: 'bg-blush text-blush-ink', tone: 'blush', dot: 'bg-blush-ink' },
+  excused: { label: 'Có phép', on: 'bg-lav text-lav-ink', tone: 'lav', dot: 'bg-lav-ink' },
 };
-const MARKS: Mark[] = ['present', 'late', 'absent'];
+const MARKS: Mark[] = ['present', 'late', 'absent', 'excused'];
 
 // Trạng thái buổi cho người điểm danh
 function sessionStatus(s: SessionRow): { label: string; tone: Tone; dot: string } {
@@ -56,7 +57,7 @@ export function AttendanceView({
   const [pending, startTransition] = useTransition();
   const [marks, setMarks] = useState<Record<number, Mark | null>>(() => Object.fromEntries(roster.map((r) => [r.id, r.mark])));
 
-  const counts = MARKS.reduce<Record<Mark, number>>((acc, m) => ({ ...acc, [m]: Object.values(marks).filter((v) => v === m).length }), { present: 0, late: 0, absent: 0 });
+  const counts = MARKS.reduce<Record<Mark, number>>((acc, m) => ({ ...acc, [m]: Object.values(marks).filter((v) => v === m).length }), { present: 0, late: 0, absent: 0, excused: 0 });
   const marked = Object.values(marks).filter((v) => v !== null).length;
   const unmarked = roster.length - marked;
   const canMark = canRecord && !!session && session.status !== 'cancelled' && session.isPast;
@@ -167,11 +168,13 @@ export function AttendanceView({
                   <span className="h-full bg-accent" style={{ width: pct(counts.present, roster.length) } as CSSProperties} />
                   <span className="h-full bg-primary-deep" style={{ width: pct(counts.late, roster.length) } as CSSProperties} />
                   <span className="h-full bg-blush-ink" style={{ width: pct(counts.absent, roster.length) } as CSSProperties} />
+                  <span className="h-full bg-lav-ink" style={{ width: pct(counts.excused, roster.length) } as CSSProperties} />
                 </div>
                 <div className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 text-sm text-ink-2">
                   <Legend dot="bg-accent" label="Có mặt" value={counts.present} />
                   <Legend dot="bg-primary-deep" label="Trễ" value={counts.late} />
                   <Legend dot="bg-blush-ink" label="Vắng" value={counts.absent} />
+                  <Legend dot="bg-lav-ink" label="Có phép" value={counts.excused} />
                   <Legend dot="bg-stone-ink" label="Chưa điểm danh" value={unmarked} />
                   <span className="ml-auto text-muted">Đã điểm danh {marked}/{roster.length}</span>
                 </div>
@@ -206,7 +209,7 @@ export function AttendanceView({
                         </div>
                       </div>
                       {/* Nền khung xám, nút chưa chọn nền trắng có viền: nhìn rõ là ba nút bấm */}
-                      <div role="group" aria-label={`Điểm danh ${r.fullName}`} className="grid grid-cols-3 gap-1 rounded-[var(--radius-ctl)] bg-stone p-1">
+                      <div role="group" aria-label={`Điểm danh ${r.fullName}`} className="grid grid-cols-4 gap-1 rounded-[var(--radius-ctl)] bg-stone p-1">
                         {MARKS.map((m) => {
                           const on = mark === m;
                           return (

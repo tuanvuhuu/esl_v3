@@ -331,8 +331,8 @@ export async function applyLeaveDecision(
     // Ghi vắng vào sổ điểm danh ngày của buổi (theo giờ Việt Nam)
     await db.execute(sql`
       INSERT INTO attendance (student_id, class_id, session_date, mark, created_at, updated_at)
-      VALUES (${leave.student_id}, ${leave.class_id}, ${vnDateKey(new Date(leave.starts_at))}::date, 'absent', now(), now())
-      ON CONFLICT (student_id, session_date) DO UPDATE SET mark = 'absent', updated_at = now()`);
+      VALUES (${leave.student_id}, ${leave.class_id}, ${vnDateKey(new Date(leave.starts_at))}::date, 'excused', now(), now())
+      ON CONFLICT (student_id, session_date) DO UPDATE SET mark = 'excused', updated_at = now()`);
   }
 
   const parentText = approve

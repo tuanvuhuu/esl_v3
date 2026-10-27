@@ -28,7 +28,7 @@ async function classParentChats(classId: number): Promise<{ studentId: number; s
 
 // ---------- Điểm danh: báo vắng, trễ, sửa lại có mặt; cảnh báo vắng liên tiếp ----------
 
-export async function notifyAttendance(sessionId: number, entries: { studentId: number; mark: 'present' | 'late' | 'absent' }[]): Promise<void> {
+export async function notifyAttendance(sessionId: number, entries: { studentId: number; mark: 'present' | 'late' | 'absent' | 'excused' }[]): Promise<void> {
   const [session] = (
     await db.execute<{ starts_at: Date; class_id: number; class_name: string }>(sql`
       SELECT cs.starts_at, c.id AS class_id, c.name AS class_name FROM class_sessions cs JOIN classes c ON c.id = cs.class_id WHERE cs.id = ${sessionId}`)

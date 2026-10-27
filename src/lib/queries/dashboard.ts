@@ -22,7 +22,7 @@ export async function getDashboardStats(todayKey: string, scope: CampusScope): P
       (SELECT COUNT(*)::int FROM students s JOIN classes c ON c.id = s.class_id WHERE s.status = 'active' AND ${campus}) AS active,
       (SELECT COUNT(*)::int FROM students s JOIN classes c ON c.id = s.class_id WHERE s.status = 'trial' AND ${campus}) AS trial,
       (SELECT COUNT(*)::int FROM students s JOIN classes c ON c.id = s.class_id WHERE s.status = 'paused' AND ${campus}) AS paused,
-      (SELECT COUNT(*)::int FROM attendance a JOIN classes c ON c.id = a.class_id WHERE a.session_date >= ${since} AND ${campus}) AS total,
+      (SELECT COUNT(*)::int FROM attendance a JOIN classes c ON c.id = a.class_id WHERE a.session_date >= ${since} AND a.mark <> 'excused' AND ${campus}) AS total,
       (SELECT COUNT(*)::int FROM attendance a JOIN classes c ON c.id = a.class_id
         WHERE a.session_date >= ${since} AND a.mark = 'absent' AND ${campus}) AS absent,
       (SELECT COUNT(*)::int FROM students s JOIN classes c ON c.id = s.class_id

@@ -339,7 +339,7 @@ async function attendanceText(parentId: number): Promise<string> {
       const absentCount = rows.rows.filter((r) => r.mark === 'absent').length;
       lines.push(`${kid.full_name} (10 buổi gần nhất: ${presentCount} có mặt, ${lateCount} trễ, ${absentCount} vắng):`);
       for (const r of rows.rows) {
-        const statusLabel = r.mark === 'present' ? 'Có mặt' : r.mark === 'late' ? 'Đi trễ' : 'Vắng mặt';
+        const statusLabel = r.mark === 'present' ? 'Có mặt' : r.mark === 'late' ? 'Đi trễ' : r.mark === 'excused' ? 'Có phép' : 'Vắng mặt';
         lines.push(`  • Ngày ${r.session_date}: ${statusLabel}`);
       }
     }

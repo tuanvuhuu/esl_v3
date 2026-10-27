@@ -1,7 +1,7 @@
 'use client';
 
 import { startTransition, useActionState, useEffect, useState, type FormEvent } from 'react';
-import { createStudentAction, tuitionPreviewAction, updateStudentAction, type StudentFormValues, type TuitionPreview } from '@/app/(app)/hoc-sinh/actions';
+import { checkStudentCodeAction, createStudentAction, suggestStudentCodeAction, tuitionPreviewAction, updateStudentAction, type StudentFormValues, type TuitionPreview } from '@/app/(app)/hoc-sinh/actions';
 import { dateKeyLabel } from '@/lib/datetime';
 import { formatVND } from '@/lib/money';
 import { todayIsoVN, type ActionResult } from '@/lib/validation/student';
@@ -128,6 +128,26 @@ export function StudentForm({
   }, INITIAL);
 
   const errors = state.fieldErrors ?? {};
+
+  // Mã HS khi thêm mới: gợi ý mã tiếp theo, rời ô thì kiểm tra mã đã có học sinh chưa
+  const [code, setCode] = useState('');
+  const [codeTaken, setCodeTaken] = useState<string | null>(null);
+  useEffect(() => {
+    if (mode !== 'create') return;
+    let alive = true;
+    void suggestStudentCodeAction().then((next) => { if (alive) setCode(next); });
+    return () => { alive = false; };
+  }, [mode]);
+  async function checkCode() {
+    const value = code.trim();
+    if (!value) {
+      setCodeTaken(null);
+      return;
+    }
+    const r = await checkStudentCodeAction(value);
+    if (!r.ok) setCodeTaken(r.message);
+    else setCodeTaken(r.taken ? `Mã ${value.toUpperCase()} đã có học sinh khác. Gợi ý: ${r.suggestion}` : null);
+  }
   const usingExistingParent = parentId !== '';
 
   // Gọi action thủ công: React không tự reset ô nhập sau khi lỗi, người dùng không mất dữ liệu đã gõ (E-028)
@@ -150,6 +170,19 @@ export function StudentForm({
       <Field label="Họ và tên *" error={errors.fullName} wide>
         <input name="fullName" defaultValue={values.fullName} placeholder="VD: Nguyễn Minh Anh" autoComplete="off" className={inputClass(errors.fullName)} />
       </Field>
+      {mode === 'create' && (
+        <Field label="Mã HS" error={errors.code ?? codeTaken ?? undefined} hint="Để trống thì hệ thống tự cấp mã tiếp theo.">
+          <input
+            name="code"
+            value={code}
+            onChange={(e) => { setCode(e.target.value); setCodeTaken(null); }}
+            onBlur={() => void checkCode()}
+            placeholder="HS-00001"
+            autoComplete="off"
+            className={inputClass(errors.code ?? codeTaken ?? undefined)}
+          />
+        </Field>
+      )}
 
       <Field label="Ngày sinh" error={errors.dob} hint="Để trống nếu chưa biết">
         <input name="dob" type="date" defaultValue={values.dob} className={inputClass(errors.dob)} />

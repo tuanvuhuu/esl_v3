@@ -1,6 +1,6 @@
 'use server';
 
-import { and, eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { db } from '@/db/client';
 import { classes, learningEvents, parents, studentParents, students } from '@/db/schema';
@@ -8,6 +8,7 @@ import { classes, learningEvents, parents, studentParents, students } from '@/db
 import { ForbiddenError, requirePermission, writeAudit } from '@/lib/authz';
 import { requireClassAccess, requireStudentAccess } from '@/lib/campus-access';
 import { sessionCountsFrom } from '@/lib/queries/classes';
+import { parseStudentCode, studentCode } from '@/lib/student-code';
 import { normalizeSearch } from '@/lib/text';
 import { proratedFee } from '@/lib/tuition';
 import { fieldErrorsFrom, isRealIsoDate, PARENT_RELATIONS, studentFormSchema, type ActionResult } from '@/lib/validation/student';
@@ -80,6 +81,26 @@ function forbiddenOr(error: unknown): ActionResult {
   return { ok: false, message: 'Không lưu được. Thử lại sau ít phút.' };
 }
 
+// Mã HS gợi ý: mã lớn nhất hiện có cộng 1 (mã HS chính là số id của học sinh)
+export async function suggestStudentCodeAction(): Promise<string> {
+  await requirePermission('students.edit');
+  const [row] = (await db.execute<{ next: number }>(sql`select (coalesce(max(id), 0) + 1)::int as next from students`)).rows;
+  return studentCode(row.next);
+}
+
+// Kiểm tra mã HS người dùng gõ: đã có học sinh chưa, và mã gợi ý tiếp theo
+export async function checkStudentCodeAction(code: string): Promise<{ ok: true; taken: boolean; suggestion: string } | { ok: false; message: string }> {
+  try {
+    await requirePermission('students.edit');
+    const id = parseStudentCode(code);
+    if (id === null || id > 2147483647) return { ok: false, message: 'Mã HS dạng HS-00001.' };
+    const [row] = await db.select({ id: students.id }).from(students).where(eq(students.id, id)).limit(1);
+    return { ok: true, taken: !!row, suggestion: await suggestStudentCodeAction() };
+  } catch (error) {
+    return { ok: false, message: error instanceof ForbiddenError ? error.message : 'Không kiểm tra được mã. Thử lại sau.' };
+  }
+}
+
 export async function createStudentAction(_prev: ActionResult, formData: FormData): Promise<ActionResult> {
   try {
     await requirePermission('students.edit');
@@ -88,6 +109,18 @@ export async function createStudentAction(_prev: ActionResult, formData: FormDat
       return { ok: false, message: 'Vui lòng kiểm tra lại các ô được đánh dấu.', fieldErrors: fieldErrorsFrom(parsed.error) };
     }
     const v = parsed.data;
+    // Mã HS tự nhập: phải đúng dạng và chưa có học sinh nào; nếu đã có thì báo kèm mã gợi ý
+    const codeId = v.code ? parseStudentCode(v.code) : null;
+    if (v.code && (codeId === null || codeId > 2147483647)) {
+      return { ok: false, message: 'Mã HS dạng HS-00001.', fieldErrors: { code: 'Mã HS dạng HS-00001' } };
+    }
+    if (codeId !== null) {
+      const [taken] = await db.select({ id: students.id }).from(students).where(eq(students.id, codeId)).limit(1);
+      if (taken) {
+        const suggestion = await suggestStudentCodeAction();
+        return { ok: false, message: `Mã ${studentCode(codeId)} đã có học sinh khác.`, fieldErrors: { code: `Mã đã có. Gợi ý: ${suggestion}` } };
+      }
+    }
     await requireClassAccess(v.classId);
     const tuitionFee = await ownFee(v.classId, v.tuitionFee);
     const bad = await discountError(v.classId, v.tuitionFee, v.tuitionDiscount);
@@ -96,6 +129,7 @@ export async function createStudentAction(_prev: ActionResult, formData: FormDat
       const [student] = await tx
         .insert(students)
         .values({
+          ...(codeId !== null ? { id: codeId } : {}),
           fullName: v.fullName,
           searchKey: normalizeSearch(v.fullName),
           gender: v.gender,
@@ -113,6 +147,8 @@ export async function createStudentAction(_prev: ActionResult, formData: FormDat
       await attachParent(tx, student.id, parentId, v.parentRelation, true);
       return student.id;
     });
+    // Mã tự nhập đặt id tay: đặt lại bộ đếm để học sinh tạo sau không trùng mã
+    if (codeId !== null) await db.execute(sql`select setval(pg_get_serial_sequence('students', 'id'), (select max(id) from students))`);
     await writeAudit({ action: 'create', entity: 'student', entityId: id, summary: `Thêm học sinh ${v.fullName}` });
     revalidatePath('/hoc-sinh');
     revalidatePath('/phu-huynh');

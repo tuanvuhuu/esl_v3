@@ -54,11 +54,11 @@ test('đơn nghỉ: duyệt ghi vắng có phép, từ chối có xác nhận, g
     await expect(page.getByRole('heading', { name: 'Đơn nghỉ', level: 1 })).toBeVisible();
     await expect(page.getByRole('button', { name: /^Chờ duyệt/ })).toContainText('2');
 
-    // Duyệt đơn của An: ghi vắng vào điểm danh ngày của buổi
+    // Duyệt đơn của An: ghi vắng có phép vào điểm danh ngày của buổi
     await page.getByRole('button', { name: `Duyệt đơn của ${KIDS[0]}` }).click();
     await expectToast(page, `Đã duyệt đơn nghỉ của ${KIDS[0]}`);
     const [mark] = (await db.query<{ mark: string }>(`select mark from attendance where student_id = $1 and session_date = '2027-04-07'`, [kids[0].id])).rows;
-    expect(mark.mark).toBe('absent');
+    expect(mark.mark).toBe('excused');
 
     // Từ chối đơn của Bình: có hộp xác nhận
     await page.getByRole('button', { name: `Từ chối đơn của ${KIDS[1]}` }).click();

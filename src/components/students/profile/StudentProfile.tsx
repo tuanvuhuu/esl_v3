@@ -41,6 +41,7 @@ const MARK_META = {
   present: { label: 'Có mặt', className: 'bg-accent' },
   late: { label: 'Trễ', className: 'bg-[#E0B84A]' },
   absent: { label: 'Vắng', className: 'bg-blush-ink' },
+  excused: { label: 'Có phép', className: 'bg-lav-ink' },
 } as const;
 
 export const PROFILE_TABS = [

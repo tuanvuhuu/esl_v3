@@ -240,7 +240,7 @@ export function ParentList(props: { parents: ParentRow[]; students?: StudentChoi
             placeholder="Thêm ghi chú"
             multiline
             canEdit={canManage}
-            className="text-sm text-ink-2"
+            className="text-xs leading-tight text-ink-2"
             wrap
             onSave={(next) => updateParentFieldAction(row.id, 'note', next)}
           />

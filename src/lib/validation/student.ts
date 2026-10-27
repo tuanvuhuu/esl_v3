@@ -31,6 +31,8 @@ export const studentFormSchema = z.object({
     .trim()
     .min(2, 'Họ và tên cần ít nhất 2 ký tự')
     .max(120, 'Họ và tên tối đa 120 ký tự'),
+  // Mã HS tự nhập khi thêm mới (để trống thì hệ thống cấp mã tiếp theo)
+  code: z.string().trim().max(12, 'Mã HS tối đa 12 ký tự').optional(),
   gender: z.enum(GENDERS, { error: 'Vui lòng chọn giới tính' }),
   // Ngày sinh không bắt buộc (P40): ô trống lưu null
   dob: z.preprocess(
