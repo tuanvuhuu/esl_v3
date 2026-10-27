@@ -4,6 +4,9 @@
 // - Chưa đóng: chưa thu khoản nào.
 // - Hạn đóng: ngày dueDay của tháng sau tháng khai giảng. Quá hạn khi còn nợ và đã qua hạn.
 
+// Học phí một buổi (VND). Form lớp đặt học phí lớp bằng số này nhân tổng số buổi; người nhập vẫn sửa được.
+export const TUITION_PER_SESSION = 250_000;
+
 export type TuitionState = 'paid' | 'partial' | 'unpaid';
 
 export function tuitionState(fee: number, paid: number): TuitionState {

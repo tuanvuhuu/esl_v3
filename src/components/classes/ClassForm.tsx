@@ -3,6 +3,7 @@
 import { startTransition, useActionState, useEffect, useRef, useState, type FormEvent } from 'react';
 import { createClassAction, previewScheduleAction, rescheduleClassAction, updateClassAction, type ClassCoreValues, type SchedulePreview } from '@/app/(app)/lop-hoc/actions';
 import { dateKeyLabel, vnDateKey, vnTimeLabel, weekdayLabel, weekdayOfKey } from '@/lib/datetime';
+import { TUITION_PER_SESSION } from '@/lib/tuition';
 import { MAX_SLOTS_PER_DAY, WEEKDAY_CODES, WEEKDAY_CODE_LABELS, type WeekdayCode } from '@/lib/validation/class';
 import type { StaffRole } from '@/lib/validation/teacher';
 import type { ActionResult } from '@/lib/validation/student';
@@ -77,6 +78,15 @@ export function ClassForm({
   const [assistantId, setAssistantId] = useState(values.assistantId);
   const [foreignTeacherId, setForeignTeacherId] = useState(values.foreignTeacherId);
   const [levelId, setLevelId] = useState(values.levelId ?? '');
+  // Học phí lớp = 250.000 × số buổi, tự đổi khi đổi số buổi cho đến khi người nhập tự gõ học phí
+  const [sessionsText, setSessionsText] = useState(String(values.sessionsTotal ?? 24));
+  const [fee, setFee] = useState(values.fee > 0 ? values.fee : TUITION_PER_SESSION * (values.sessionsTotal ?? 24));
+  const [feeEdited, setFeeEdited] = useState(values.fee > 0);
+  function changeSessions(text: string) {
+    setSessionsText(text);
+    const n = Number(text);
+    if (!feeEdited && Number.isInteger(n) && n >= 1) setFee(TUITION_PER_SESSION * n);
+  }
   // Mỗi vị trí chỉ hiện người đúng vai trò và dạy ở cơ sở đang chọn
   const optionsOf = (role: StaffRole, campus: string) => teachers.filter((t) => t.staffRole === role && t.campusIds.includes(Number(campus)));
   const teacherOptions = optionsOf('teacher', campusId);
@@ -282,8 +292,27 @@ export function ClassForm({
         <input name="room" defaultValue={values.room} placeholder="VD: P.201" autoComplete="off" className={inputClass(errors.room)} />
       </Field>
       <SectionTitle>Học phí và sĩ số</SectionTitle>
-      <Field label="Học phí (VND) *" error={errors.fee} hint="Học phí cả khoá, gõ số, app tự thêm dấu chấm">
-        <MoneyInput name="fee" defaultValue={values.fee} className={inputClass(errors.fee)} />
+      <Field label="Học phí (VND) *" error={errors.fee} hint={isCreate ? `Tự tính ${TUITION_PER_SESSION.toLocaleString('vi-VN')} × số buổi, sửa được` : 'Học phí cả khoá, gõ số, app tự thêm dấu chấm'}>
+        <MoneyInput
+          name="fee"
+          value={fee}
+          onChange={(next) => {
+            setFee(next);
+            setFeeEdited(true);
+          }}
+          className={inputClass(errors.fee)}
+        />
+        {mode === 'edit' && values.sessionsTotal !== undefined && (
+          <Btn
+            variant="ghost"
+            onClick={() => {
+              setFee(TUITION_PER_SESSION * (values.sessionsTotal ?? 0));
+              setFeeEdited(true);
+            }}
+          >
+            Đặt {TUITION_PER_SESSION.toLocaleString('vi-VN')} × {values.sessionsTotal} buổi
+          </Btn>
+        )}
       </Field>
       {mode === 'edit' && (
         <label className="col-span-full flex items-start gap-2 text-sm text-ink-2">
@@ -347,7 +376,7 @@ export function ClassForm({
             <input name="startDate" type="date" defaultValue={isReschedule ? (values.nextDate ?? defaultStartDate) : defaultStartDate} className={inputClass(errors.startDate)} />
           </Field>
           <Field label={isReschedule ? 'Tổng số buổi của khoá *' : 'Số buổi *'} error={errors.sessionsTotal} hint={isReschedule && kept > 0 ? `Tính cả ${kept} buổi đã học` : undefined}>
-            <input name="sessionsTotal" type="number" inputMode="numeric" min={1} max={200} step={1} defaultValue={values.sessionsTotal ?? 24} className={inputClass(errors.sessionsTotal)} />
+            <input name="sessionsTotal" type="number" inputMode="numeric" min={1} max={200} step={1} value={sessionsText} onChange={(e) => changeSessions(e.target.value)} className={inputClass(errors.sessionsTotal)} />
           </Field>
           <PreviewBox preview={preview} />
         </>
@@ -376,10 +405,9 @@ function SectionTitle({ children }: { children: string }) {
   return <h3 className="col-span-full mt-2 border-b border-line pb-1.5 text-md font-extrabold text-ink first:mt-0">{children}</h3>;
 }
 
-// Ô tiền: hiện "6.000.000", gửi số nguyên 6000000 qua ô ẩn cùng tên
-function MoneyInput({ name, defaultValue, className }: { name: string; defaultValue: number; className: string }) {
-  const [digits, setDigits] = useState(defaultValue ? String(defaultValue) : '');
-  const shown = digits ? Number(digits).toLocaleString('vi-VN') : '';
+// Ô tiền: hiện "6.000.000", gửi số nguyên 6000000 qua ô ẩn cùng tên. Giá trị do form giữ, để đổi được từ bên ngoài.
+function MoneyInput({ name, value, onChange, className }: { name: string; value: number; onChange: (next: number) => void; className: string }) {
+  const shown = value ? value.toLocaleString('vi-VN') : '';
   return (
     <>
       <input
@@ -388,10 +416,10 @@ function MoneyInput({ name, defaultValue, className }: { name: string; defaultVa
         autoComplete="off"
         value={shown}
         placeholder="VD: 6.000.000"
-        onChange={(e) => setDigits(e.target.value.replace(/\D/g, '').replace(/^0+(?=\d)/, '').slice(0, 12))}
+        onChange={(e) => onChange(Number(e.target.value.replace(/\D/g, '').slice(0, 12)) || 0)}
         className={`${className} tabular-nums`}
       />
-      <input type="hidden" name={name} value={digits || '0'} />
+      <input type="hidden" name={name} value={value || '0'} />
     </>
   );
 }
