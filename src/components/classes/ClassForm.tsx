@@ -315,13 +315,23 @@ export function ClassForm({
         )}
       </Field>
       {mode === 'edit' && (
-        <label className="col-span-full flex items-start gap-2 text-sm text-ink-2">
-          <input type="checkbox" name="keepOldFee" defaultChecked className="mt-1 size-4 accent-[var(--primary-deep)]" />
-          <span>
-            Nếu đổi học phí: học sinh đang học giữ học phí cũ
-            {values.affectedStudents !== undefined && <> ({values.affectedStudents} học sinh chưa có học phí riêng)</>}. Học sinh vào sau thì theo học phí mới.
-          </span>
-        </label>
+        <fieldset className="col-span-full flex flex-col gap-2 text-sm text-ink-2">
+          <legend className="mb-1 text-sm text-ink-2">Nếu đổi học phí, học sinh đang học</legend>
+          <label className="flex items-start gap-2">
+            <input type="radio" name="feeMode" value="keep" defaultChecked className="mt-1 size-4 accent-[var(--primary-deep)]" />
+            <span>
+              Giữ học phí cũ
+              {values.affectedStudents !== undefined && <> ({values.affectedStudents} học sinh chưa có học phí riêng)</>}. Học sinh vào sau thì theo học phí mới.
+            </span>
+          </label>
+          <label className="flex items-start gap-2">
+            <input type="radio" name="feeMode" value="sync" className="mt-1 size-4 accent-[var(--primary-deep)]" />
+            <span>
+              Đồng bộ theo học phí mới
+              {values.studentCount !== undefined && <> cho {values.studentCount} học sinh đang học</>}. Số buổi đã đóng của mỗi học sinh tính lại theo học phí mới.
+            </span>
+          </label>
+        </fieldset>
       )}
       <Field label="Sĩ số tối đa *" error={errors.capacity}>
         <input name="capacity" type="number" inputMode="numeric" min={1} max={100} step={1} defaultValue={values.capacity} className={inputClass(errors.capacity)} />

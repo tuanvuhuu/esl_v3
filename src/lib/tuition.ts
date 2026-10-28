@@ -46,6 +46,12 @@ export function sessionsCovered(fee: number, paid: number, sessionsOwed: number)
   return Math.min(sessionsOwed, Math.floor((paid * sessionsOwed) / fee));
 }
 
+// Học phí riêng của học sinh khi đồng bộ theo học phí lớp mới: vào đủ khoá thì null (theo lớp),
+// vào giữa khoá thì chia theo số buổi còn lại như lúc nhập.
+export function syncedTuitionFee(classFee: number, totalSessions: number, owedSessions: number): number | null {
+  return owedSessions >= totalSessions ? null : proratedFee(classFee, totalSessions, owedSessions);
+}
+
 export function isOverdue(fee: number, paid: number, dueDate: string, todayKey: string): boolean {
   return debtOf(fee, paid) > 0 && dueDate < todayKey;
 }

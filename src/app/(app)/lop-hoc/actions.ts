@@ -13,6 +13,7 @@ import { getCurrentAccount } from '@/lib/session';
 import { sendCourseSurvey } from '@/lib/telegram/survey';
 import { addDaysKey, dateKeyLabel, todayKeyVN, vnDateKey, vnTimeLabel } from '@/lib/datetime';
 import { describeSchedule, encodeDayTimes, generateSessions, joinWeekdays, resolveDayTimes } from '@/lib/schedule';
+import { syncedTuitionFee } from '@/lib/tuition';
 import { checkDayTimes, classCoreSchema, classCreateSchema, classRescheduleSchema, MAX_SLOTS_PER_DAY, slotField, WEEKDAY_CODES, type DayTimesInput, type WeekdayCode } from '@/lib/validation/class';
 import { fieldErrorsFrom, type ActionResult } from '@/lib/validation/student';
 import type { StaffRole } from '@/lib/validation/teacher';
@@ -102,6 +103,7 @@ export type ClassCoreValues = {
   nextDate?: string;
   // Form sửa: số học sinh đang học chưa có học phí riêng (sẽ giữ học phí cũ nếu đổi học phí lớp)
   affectedStudents?: number;
+  studentCount?: number; // số học sinh đang học (đồng bộ học phí thì áp cho tất cả)
 };
 
 // Tạo lớp và sinh toàn bộ buổi học trong một transaction
@@ -298,14 +300,16 @@ export async function updateClassAction(id: number, _prev: ActionResult, formDat
           }
         : {};
 
-    // Đổi học phí lớp: học sinh đang học (chưa có học phí riêng) giữ học phí cũ nếu người nhập chọn ô đó,
-    // để đổi giá lớp không làm lệch số tiền đã thu của họ. Học sinh mới vào sau thì theo học phí mới.
-    const keepOld = formData.get('keepOldFee') === 'on';
+    // Đổi học phí lớp, học sinh đang học chọn một trong hai cách:
+    // "keep": học sinh chưa có học phí riêng giữ học phí cũ, học sinh vào sau thì theo học phí mới;
+    // "sync": mọi học sinh đang học theo học phí mới (vào giữa khoá thì chia theo số buổi còn lại).
+    const feeMode = formData.get('feeMode') === 'sync' ? 'sync' : 'keep';
     const feeChanged = v.fee !== current.fee;
     let keptOld = 0;
+    let synced = 0;
     let movedSessions = 0;
     await db.transaction(async (tx) => {
-      if (feeChanged && keepOld) {
+      if (feeChanged && feeMode === 'keep') {
         const kept = await tx
           .update(students)
           .set({ tuitionFee: current.fee, updatedAt: new Date() })
@@ -336,6 +340,22 @@ export async function updateClassAction(id: number, _prev: ActionResult, formDat
           .set({ teacherId: v.teacherId, room: v.room, updatedAt: new Date() })
           .where(and(eq(classSessions.classId, id), eq(classSessions.status, 'planned')));
       }
+      if (feeChanged && feeMode === 'sync') {
+        // Buổi tính học phí: mọi buổi không huỷ của lớp. Học sinh được tính từ ngày bắt đầu học của mình.
+        const sessions = (await tx.select({ startsAt: classSessions.startsAt, status: classSessions.status }).from(classSessions).where(eq(classSessions.classId, id))).filter((s) => s.status !== 'cancelled');
+        const roster = await tx
+          .select({ id: students.id, startDate: students.startDate, tuitionFee: students.tuitionFee })
+          .from(students)
+          .where(and(eq(students.classId, id), inArray(students.status, ['active', 'trial', 'paused'])));
+        for (const s of roster) {
+          const from = new Date(`${s.startDate}T00:00:00+07:00`).getTime();
+          const owed = sessions.filter((x) => x.startsAt.getTime() >= from).length;
+          const next = syncedTuitionFee(v.fee, sessions.length, owed);
+          if (next === s.tuitionFee) continue;
+          await tx.update(students).set({ tuitionFee: next, updatedAt: new Date() }).where(eq(students.id, s.id));
+          synced += 1;
+        }
+      }
       // Đổi giờ một ca thì dời các buổi chưa học và chưa bắt đầu của ca đó (cùng ngày trong tuần, cùng giờ bắt đầu cũ)
       // sang giờ mới, giữ nguyên ngày. Buổi đã được sửa giờ riêng ở màn Lịch học không khớp ca nào nên giữ nguyên.
       if (changedSlots.length > 0) {
@@ -360,13 +380,13 @@ export async function updateClassAction(id: number, _prev: ActionResult, formDat
     });
 
     const timeNote = changedSlots.length > 0 ? `, đổi giờ ${changedSlots.map((t) => `${t.code} ${t.start}–${t.end}`).join(', ')} (${movedSessions} buổi sắp tới)` : '';
-    const feeNote = feeChanged ? `, học phí ${current.fee} → ${v.fee}${keepOld ? ` (${keptOld} học sinh giữ học phí cũ)` : ''}` : '';
+    const feeNote = feeChanged ? `, học phí ${current.fee} → ${v.fee}${feeMode === 'keep' ? ` (${keptOld} học sinh giữ học phí cũ)` : ` (đồng bộ ${synced} học sinh)`}` : '';
     await writeAudit({ action: 'update', entity: 'class', entityId: id, summary: `Sửa lớp ${v.name}${timeNote}${feeNote}` });
     revalidatePath('/lop-hoc');
     revalidatePath(`/lop-hoc/${id}`);
     revalidatePath('/lich-hoc');
     revalidatePath('/giao-vien');
-    const feeMsg = feeChanged && keepOld ? `, ${keptOld} học sinh giữ học phí cũ` : '';
+    const feeMsg = !feeChanged ? '' : feeMode === 'keep' ? `, ${keptOld} học sinh giữ học phí cũ` : `, đồng bộ học phí cho ${synced} học sinh`;
     return { ok: true, message: (movedSessions > 0 ? `Đã lưu lớp ${v.name}, dời giờ ${movedSessions} buổi sắp tới` : `Đã lưu lớp ${v.name}`) + feeMsg };
   } catch (error) {
     return errorResult(error);
@@ -477,6 +497,10 @@ export async function loadClassForm(id: number): Promise<{ ok: true; values: Cla
       .select({ n: sql<number>`COUNT(*)::int` })
       .from(students)
       .where(and(eq(students.classId, id), isNull(students.tuitionFee), inArray(students.status, ['active', 'trial', 'paused'])));
+    const [roster] = await db
+      .select({ n: sql<number>`COUNT(*)::int` })
+      .from(students)
+      .where(and(eq(students.classId, id), inArray(students.status, ['active', 'trial', 'paused'])));
     return {
       ok: true,
       values: {
@@ -495,6 +519,7 @@ export async function loadClassForm(id: number): Promise<{ ok: true; values: Cla
         keptSessions: kept,
         nextDate,
         affectedStudents: affected?.n ?? 0,
+        studentCount: roster?.n ?? 0,
       },
     };
   } catch (error) {

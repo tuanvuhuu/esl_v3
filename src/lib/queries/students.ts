@@ -53,6 +53,8 @@ export type StudentRow = {
   fee: number;
   paid: number;
   debt: number;
+  sessionsOwed: number; // số buổi từ ngày bắt đầu học đến hết khoá (không tính buổi huỷ), cùng cách tính với Học phí
+  sessionsPaid: number; // số buổi đã đóng, theo số tiền đã thu
   discount: number; // miễn giảm cố định (VND), 0 nếu không có
   tuition: 'paid' | 'partial' | 'unpaid';
   attendanceRate: number; // phần trăm, không tính buổi vắng
@@ -164,6 +166,9 @@ const BASE_CTE = sql`
         WHEN COALESCE(paid.paid, 0) > 0 THEN 'partial'
         ELSE 'unpaid'
       END AS tuition,
+      (SELECT COUNT(*)::int FROM class_sessions cs
+        WHERE cs.class_id = s.class_id AND cs.status <> 'cancelled'
+          AND cs.starts_at >= (s.start_date::timestamp AT TIME ZONE 'Asia/Ho_Chi_Minh')) AS owed,
       CONCAT('HS-', LPAD(s.id::text, 5, '0')) AS code
     FROM students s
     JOIN classes c ON c.id = s.class_id
@@ -192,6 +197,7 @@ type RawRow = {
   parent_name: string | null;
   parent_phone: string | null;
   tuition: StudentRow['tuition'];
+  owed: number;
   code: string;
   total_count: number;
 };
@@ -243,6 +249,8 @@ export async function listStudents(
     discount: r.discount,
     paid: r.paid,
     debt: Math.max(0, r.fee - r.paid),
+    sessionsOwed: r.owed,
+    sessionsPaid: sessionsCovered(r.fee, r.paid, r.owed),
     tuition: r.tuition,
     attendanceRate: r.att_total > 0 ? Math.round(((r.att_total - r.att_absent) / r.att_total) * 100) : 100,
     parentName: r.parent_name,
