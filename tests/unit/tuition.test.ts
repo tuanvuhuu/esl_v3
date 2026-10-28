@@ -1,15 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { debtOf, dueDateFor, isOverdue, sessionsCovered, syncedTuitionFee, tuitionState } from '@/lib/tuition';
-
-describe('syncedTuitionFee', () => {
-  it('học sinh vào đủ khoá thì theo học phí lớp (null)', () => {
-    expect(syncedTuitionFee(6_000_000, 24, 24)).toBeNull();
-  });
-  it('học sinh vào giữa khoá thì chia theo số buổi còn lại', () => {
-    expect(syncedTuitionFee(6_000_000, 24, 12)).toBe(3_000_000);
-    expect(syncedTuitionFee(6_000_000, 24, 0)).toBe(0);
-  });
-});
+import { debtOf, dueDateFor, isOverdue, sessionsCovered, tuitionState } from '@/lib/tuition';
 
 describe('tuitionState', () => {
   it('đã đóng khi thu đủ hoặc hơn học phí', () => {

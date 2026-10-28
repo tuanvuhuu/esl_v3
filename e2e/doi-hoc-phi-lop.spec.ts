@@ -37,7 +37,7 @@ test('đổi học phí lớp: học sinh đang học giữ học phí cũ, họ
     const form = page.getByRole('dialog').last();
     const fee = form.getByLabel('Học phí (VND) *');
     await fee.fill('6000000');
-    await expect(form.getByLabel(/Giữ học phí cũ/)).toBeChecked();
+    await expect(form.getByLabel(/Nếu đổi học phí: học sinh đang học giữ học phí cũ/)).toBeChecked();
     await form.getByRole('button', { name: 'Lưu thay đổi' }).click();
     await expectToast(page, /1 học sinh giữ học phí cũ/);
 
