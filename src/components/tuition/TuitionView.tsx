@@ -331,7 +331,8 @@ function PaymentDialog({ row, canManage, onClose, onDone }: { row: InvoiceRow; c
   const [voidError, setVoidError] = useState<string | null>(null);
   const [voiding, startVoid] = useTransition();
   const [qr, setQr] = useState<{ payload: string; bankLine: string } | null>(null);
-  const [amount, setAmount] = useState(row.debt > 0 ? String(row.debt) : '');
+  // Học phí của số buổi đăng ký; mặc định bằng số đang nợ. Phụ huynh trả = học phí − giảm trừ.
+  const [fee, setFee] = useState(row.debt > 0 ? String(row.debt) : '');
   const [discount, setDiscount] = useState('');
   const [state, formAction, pending] = useActionState<ActionResult, FormData>(async (prev, formData) => {
     const result = await recordPaymentAction(Number(row.id), prev, formData);
@@ -340,10 +341,12 @@ function PaymentDialog({ row, canManage, onClose, onDone }: { row: InvoiceRow; c
   }, { ok: false });
   const errors = state.fieldErrors ?? {};
 
-  // Xem trước: số buổi đã mua sau khi thu (tiền lẻ chưa đủ một buổi được giữ lại cho lần sau)
-  const added = Number(amount || 0) + Number(discount || 0);
-  const ownDiscount = row.discount - (row.credit - row.paid);
-  const boughtAfter = Math.floor(Math.max(0, row.credit + ownDiscount + added) / TUITION_PER_SESSION);
+  // Xem trước: số buổi được cộng theo học phí, tiền phụ huynh trả, số buổi sau khi thu
+  const feeValue = Number(fee || 0);
+  const discountValue = Number(discount || 0);
+  const pay = feeValue - discountValue;
+  const addedSessions = Math.floor(feeValue / TUITION_PER_SESSION);
+  const boughtAfter = Math.floor(Math.max(0, row.credit + feeValue) / TUITION_PER_SESSION);
   const leftAfter = boughtAfter - row.sessionsDone;
 
   useEffect(() => {
@@ -385,22 +388,25 @@ function PaymentDialog({ row, canManage, onClose, onDone }: { row: InvoiceRow; c
           {state.message && !state.ok && (
             <Alert className="col-span-full">{state.message}</Alert>
           )}
-          <Field label="Số tiền thu (VND)" error={errors.amount} hint={`${PRICE} một buổi, không giới hạn số tiền`}>
-            <MoneyField name="amount" value={amount} onChange={setAmount} invalid={errors.amount} label="Số tiền thu (VND)" />
+          <Field label="Học phí (VND)" error={errors.fee} hint={feeValue > 0 ? `${addedSessions} buổi × ${PRICE}` : `${PRICE} một buổi, đăng ký bao nhiêu cũng được`}>
+            <MoneyField name="fee" value={fee} onChange={setFee} invalid={errors.fee} label="Học phí (VND)" />
           </Field>
-          <Field label="Giảm trừ (VND)" error={errors.discount} hint="Cộng vào số buổi, không tính là doanh thu">
+          <Field label="Giảm trừ (VND)" error={errors.discount} hint="Trừ vào số tiền phụ huynh trả, không đổi số buổi">
             <MoneyField name="discount" value={discount} onChange={setDiscount} invalid={errors.discount} label="Giảm trừ (VND)" />
           </Field>
           <Field label="Ghi chú" error={errors.note}>
             <input name="note" placeholder="VD: Đóng tiền mặt, đăng ký khoá tiếp" autoComplete="off" className={inputClass(errors.note)} />
           </Field>
           <p role="status" className="col-span-full rounded-[var(--radius-ctl)] bg-primary-soft px-3 py-2 text-sm text-ink">
+            Phụ huynh trả <b className={pay < 0 ? 'text-blush-ink' : ''}>{formatVND(Math.max(0, pay))}</b>
+            {discountValue > 0 ? ` (học phí ${formatVND(feeValue)} − giảm trừ ${formatVND(discountValue)})` : ''}. Cộng <b>{addedSessions} buổi</b>.
+            <br />
             Sau khi thu: <b>đã mua {boughtAfter} buổi</b>, đã học {row.sessionsDone},{' '}
             {leftAfter >= 0 ? <b>còn {leftAfter} buổi</b> : <b className="text-blush-ink">còn nợ {-leftAfter} buổi</b>}.
           </p>
           <FormFooter className="col-span-full">
             <button type="button" onClick={onClose} className={FORM_BTN_CANCEL}>Huỷ</button>
-            <button type="submit" disabled={pending || added <= 0} className={FORM_BTN_SUBMIT}>{pending ? 'Đang ghi…' : 'Ghi nhận thu'}</button>
+            <button type="submit" disabled={pending || feeValue <= 0 || pay < 0} className={FORM_BTN_SUBMIT}>{pending ? 'Đang ghi…' : 'Ghi nhận thu'}</button>
           </FormFooter>
         </form>
 

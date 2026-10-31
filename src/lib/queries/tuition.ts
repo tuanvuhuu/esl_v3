@@ -17,12 +17,12 @@ export type InvoiceRow = {
   status: 'active' | 'trial' | 'paused' | 'finished';
   className: string;
   paid: number; // tiền đã nộp (doanh thu)
-  discount: number; // giảm trừ: ghi cùng khoản thu cộng giảm trừ cố định cũ của học sinh
-  sessionsBought: number; // số buổi đã mua = (đã nộp + giảm trừ) ÷ giá một buổi
+  discount: number; // giảm trừ ghi cùng các khoản thu
+  sessionsBought: number; // số buổi đã mua = học phí đã đăng ký (tiền thu + giảm trừ) ÷ giá một buổi
   sessionsDone: number; // số buổi đã học (không tính có phép)
   sessionsLeft: number; // còn lại = đã mua − đã học; âm là học quá số đã mua
-  fee: number; // phải nộp = giá trị buổi đã học − giảm trừ cố định của học sinh
-  credit: number; // đã nộp quy đổi = tiền thu + giảm trừ ghi cùng khoản thu
+  fee: number; // phải nộp = giá trị buổi đã học
+  credit: number; // học phí đã đăng ký = tiền thu + giảm trừ
   debt: number; // còn nợ
   balance: number; // tiền trước (dương) hoặc nợ (âm)
   state: TuitionState;
@@ -45,10 +45,10 @@ export async function listInvoices(todayKey: string, q: string, filter: InvoiceF
   // Ngày đến hạn và danh sách đọc cùng lúc
   const [dueDay, result] = await Promise.all([getDueDay(), db.execute<{
     id: number; full_name: string; search_key: string; status: InvoiceRow['status']; start_date: string; class_name: string;
-    fee: number; own_discount: number; sessions_done: number; paid: number; pay_discount: number; last_paid: string | null;
+    fee: number; sessions_done: number; paid: number; pay_discount: number; last_paid: string | null;
   }>(sql`
     SELECT s.id, s.full_name, s.search_key, s.status, s.start_date::text AS start_date, c.name AS class_name, ${NET_FEE_SQL}::int AS fee,
-      COALESCE(s.tuition_discount, 0)::int AS own_discount, s.sessions_done,
+      s.sessions_done,
       COALESCE(p.paid, 0)::int AS paid, COALESCE(p.discount, 0)::int AS pay_discount,
       to_char(p.last_paid AT TIME ZONE 'Asia/Ho_Chi_Minh', 'YYYY-MM-DD') AS last_paid
     FROM students s
@@ -65,7 +65,7 @@ export async function listInvoices(todayKey: string, q: string, filter: InvoiceF
   const codeId = parseStudentCode(q);
   const all: InvoiceRow[] = result.rows.map((r) => {
     const credit = r.paid + r.pay_discount;
-    const bought = sessionsBought(credit + r.own_discount);
+    const bought = sessionsBought(credit);
     const dueDate = dueDateFor(r.start_date, dueDay);
     return {
       id: r.id,
@@ -74,7 +74,7 @@ export async function listInvoices(todayKey: string, q: string, filter: InvoiceF
       status: r.status,
       className: r.class_name,
       paid: r.paid,
-      discount: r.pay_discount + r.own_discount,
+      discount: r.pay_discount,
       sessionsBought: bought,
       sessionsDone: r.sessions_done,
       sessionsLeft: bought - r.sessions_done,

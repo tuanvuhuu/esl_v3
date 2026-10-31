@@ -30,20 +30,19 @@ describe('học phí theo buổi', () => {
     expect(sessionsBought(2_600_000)).toBe(10);
     expect(sessionsBought(-250_000)).toBe(0);
   });
-  it('giảm trừ cộng vào số buổi', () => {
-    // nộp 2.250.000, giảm trừ 250.000 → 10 buổi
+  it('học phí 6.000.000, giảm trừ 6.000.000: vẫn 24 buổi (sổ lưu tiền trả 0 + giảm trừ 6.000.000)', () => {
+    expect(sessionsBought(0 + 6_000_000)).toBe(24);
+  });
+  it('học phí 2.500.000, giảm trừ 250.000: 10 buổi, phụ huynh trả 2.250.000', () => {
     expect(sessionsBought(2_250_000 + 250_000)).toBe(10);
   });
-  it('phải nộp = buổi đã học × 250.000 − giảm trừ cố định', () => {
-    expect(netFee(8, 0)).toBe(2_000_000);
-    expect(netFee(8, 500_000)).toBe(1_500_000);
-    expect(netFee(0, 500_000)).toBe(-500_000);
+  it('phải nộp = buổi đã học × 250.000', () => {
+    expect(netFee(8)).toBe(2_000_000);
   });
   it('trạng thái: chưa nộp, nợ buổi, đã đủ', () => {
     expect(tuitionState(0, 0)).toBe('unpaid');
-    expect(tuitionState(netFee(12, 0), 2_500_000)).toBe('partial');
-    expect(tuitionState(netFee(8, 0), 2_500_000)).toBe('paid');
-    expect(tuitionState(netFee(0, 500_000), 0)).toBe('paid');
+    expect(tuitionState(netFee(12), 2_500_000)).toBe('partial');
+    expect(tuitionState(netFee(8), 2_500_000)).toBe('paid');
   });
 });
 

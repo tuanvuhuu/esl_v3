@@ -223,9 +223,8 @@ export async function isAccountLinked(accountId: number): Promise<boolean> {
 // ---------- Trả lời lệnh của phụ huynh ----------
 
 async function childrenOf(parentId: number) {
-  const result = await db.execute<{ id: number; full_name: string; class_id: number; class_name: string; fee: number; paid: number; sessions_done: number; own_discount: number }>(sql`
+  const result = await db.execute<{ id: number; full_name: string; class_id: number; class_name: string; fee: number; paid: number; sessions_done: number }>(sql`
     SELECT s.id, s.full_name, c.id AS class_id, c.name AS class_name, ${NET_FEE_SQL}::int AS fee, s.sessions_done,
-      COALESCE(s.tuition_discount, 0)::int AS own_discount,
       COALESCE((SELECT SUM(p.amount + p.discount) FROM tuition_payments p WHERE p.student_id = s.id), 0)::int AS paid
     FROM student_parents sp JOIN students s ON s.id = sp.student_id JOIN classes c ON c.id = s.class_id
     WHERE sp.parent_id = ${parentId} AND s.status IN ('active', 'trial', 'paused')
@@ -261,7 +260,7 @@ async function tuitionText(parentId: number): Promise<string> {
     .map((k) => {
       // Học phí theo buổi: đã mua (đã nộp + giảm trừ) ÷ giá một buổi, trừ dần theo buổi đã học
       const debt = Math.max(0, k.fee - k.paid);
-      const bought = sessionsBought(k.paid + k.own_discount);
+      const bought = sessionsBought(k.paid);
       const left = bought - k.sessions_done;
       const head = `${k.full_name}: đã mua ${bought} buổi, đã học ${k.sessions_done} buổi`;
       return left < 0 || debt > 0 ? `${head}, đang nợ ${-left} buổi (${formatVND(debt)}).` : `${head}, còn ${left} buổi.`;

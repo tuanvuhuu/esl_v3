@@ -1,7 +1,8 @@
 // Quy tắc học phí theo buổi. Hàm thuần, có unit test.
 // - Mỗi buổi giá TUITION_PER_SESSION. Không có học phí theo lớp hay theo khoá.
-// - Tiền đã nộp cộng giảm trừ quy ra số buổi đã mua. Nộp bao nhiêu lần cũng được, không giới hạn số tiền.
-// - "Phải nộp" (fee) là giá trị các buổi đã học trừ giảm trừ cố định của học sinh; có thể âm khi giảm trừ lớn hơn.
+// - Mỗi lần thu nhập học phí của số buổi đăng ký và giảm trừ; phụ huynh trả = học phí − giảm trừ.
+//   Số buổi đã mua = tổng học phí đã đăng ký ÷ giá một buổi. Nộp bao nhiêu lần cũng được, không giới hạn số tiền.
+// - "Phải nộp" (fee) là giá trị các buổi đã học.
 // - Đã đóng: không nợ. Còn nợ: đã nộp nhưng học quá số đã mua. Chưa đóng: chưa nộp khoản nào.
 // - Hạn đóng: ngày dueDay của tháng sau tháng bắt đầu học. Quá hạn khi còn nợ và đã qua hạn.
 
@@ -20,7 +21,7 @@ export function debtOf(fee: number, paid: number): number {
   return Math.max(0, fee - paid);
 }
 
-// Số buổi đã mua: tổng đã nộp (kể cả giảm trừ) chia giá một buổi, làm tròn xuống. Tiền lẻ chưa đủ một buổi được giữ lại.
+// Số buổi đã mua: tổng học phí đã đăng ký (tiền thu + giảm trừ) chia giá một buổi, làm tròn xuống. Tiền lẻ chưa đủ một buổi được giữ lại.
 export function sessionsBought(credit: number): number {
   return credit > 0 ? Math.floor(credit / TUITION_PER_SESSION) : 0;
 }

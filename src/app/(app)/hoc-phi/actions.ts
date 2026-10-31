@@ -17,8 +17,9 @@ import { netFee } from '@/lib/tuition-fee';
 import { z } from 'zod';
 import { fieldErrorsFrom, type ActionResult } from '@/lib/validation/student';
 
-// Học phí theo buổi (src/lib/tuition.ts): nộp bao nhiêu cũng được, không giới hạn số lần.
-// Giảm trừ ghi cùng khoản thu, cộng vào số buổi đã mua nhưng không tính là doanh thu.
+// Học phí theo buổi (src/lib/tuition.ts): đăng ký bao nhiêu cũng được, không giới hạn số lần.
+// Mỗi lần thu nhập học phí của số buổi đăng ký và giảm trừ; phụ huynh trả (doanh thu) = học phí − giảm trừ.
+// Sổ thu lưu amount = tiền phụ huynh trả, discount = giảm trừ, nên amount + discount = học phí quy ra buổi.
 const money = (label: string) =>
   z.coerce
     .number({ error: `${label} phải là số` })
@@ -28,11 +29,12 @@ const money = (label: string) =>
 
 const paymentSchema = z
   .object({
-    amount: money('Số tiền'),
+    fee: money('Học phí'),
     discount: money('Giảm trừ').default(0),
     note: z.string().trim().max(200, 'Ghi chú tối đa 200 ký tự').default(''),
   })
-  .refine((v) => v.amount + v.discount > 0, { message: 'Nhập số tiền thu hoặc giảm trừ', path: ['amount'] });
+  .refine((v) => v.fee > 0, { message: 'Nhập học phí của số buổi đăng ký', path: ['fee'] })
+  .refine((v) => v.discount <= v.fee, { message: 'Giảm trừ không được lớn hơn học phí', path: ['discount'] });
 
 function errorResult(error: unknown): ActionResult {
   if (error instanceof ForbiddenError) return { ok: false, message: error.message };
@@ -45,14 +47,14 @@ type Balance = { name: string; fee: number; credit: number; debt: number; bought
 // Tình trạng học phí theo buổi của một học sinh
 async function studentBalance(studentId: number): Promise<Balance | null> {
   const [row] = await db
-    .select({ name: students.fullName, done: students.sessionsDone, discount: students.tuitionDiscount })
+    .select({ name: students.fullName, done: students.sessionsDone })
     .from(students)
     .where(eq(students.id, studentId))
     .limit(1);
   if (!row) return null;
   const credit = await creditOf(studentId);
-  const fee = netFee(row.done, row.discount);
-  const bought = sessionsBought(credit + row.discount);
+  const fee = netFee(row.done);
+  const bought = sessionsBought(credit);
   return { name: row.name, fee, credit, debt: debtOf(fee, credit), bought, done: row.done, left: bought - row.done };
 }
 
@@ -69,7 +71,7 @@ function revalidateTuition(studentId?: number) {
   revalidatePath('/tong-quan');
 }
 
-// Ghi một khoản thu vào sổ, có thể kèm giảm trừ. Số buổi đã mua tự tăng theo.
+// Ghi một khoản thu: học phí của số buổi đăng ký, giảm trừ, phụ huynh trả phần còn lại. Số buổi đã mua tự tăng theo học phí.
 export async function recordPaymentAction(studentId: number, _prev: ActionResult, formData: FormData): Promise<ActionResult> {
   try {
     await requirePermission('tuition.manage');
@@ -82,12 +84,13 @@ export async function recordPaymentAction(studentId: number, _prev: ActionResult
     const before = await studentBalance(studentId);
     if (!before) return { ok: false, message: 'Không tìm thấy học sinh này. Có thể đã bị xoá.' };
 
-    await db.insert(tuitionPayments).values({ studentId, amount: v.amount, discount: v.discount, note: v.note, paidAt: new Date() });
+    const cash = v.fee - v.discount;
+    await db.insert(tuitionPayments).values({ studentId, amount: cash, discount: v.discount, note: v.note, paidAt: new Date() });
     const after = (await studentBalance(studentId)) ?? before;
-    const disc = v.discount > 0 ? `, giảm trừ ${formatVND(v.discount)}` : '';
-    await writeAudit({ action: 'payment', entity: 'student', entityId: studentId, summary: `Thu ${formatVND(v.amount)}${disc} học phí ${after.name}: ${sessionsLine(after)}` });
+    const disc = v.discount > 0 ? ` (học phí ${formatVND(v.fee)}, giảm trừ ${formatVND(v.discount)})` : '';
+    await writeAudit({ action: 'payment', entity: 'student', entityId: studentId, summary: `Thu ${formatVND(cash)}${disc} học phí ${after.name}: ${sessionsLine(after)}` });
     revalidateTuition(studentId);
-    return { ok: true, message: `Đã thu ${formatVND(v.amount)}${disc}. ${after.name} ${sessionsLine(after)}.` };
+    return { ok: true, message: `Đã thu ${formatVND(cash)}${disc}. ${after.name} ${sessionsLine(after)}.` };
   } catch (error) {
     return errorResult(error);
   }

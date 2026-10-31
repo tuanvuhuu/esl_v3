@@ -55,7 +55,7 @@ export type StudentRow = {
   debt: number;
   sessionsBought: number; // số buổi đã mua = (đã nộp + giảm trừ) ÷ giá một buổi, cùng cách tính với Học phí
   sessionsLeft: number; // còn lại = đã mua − đã học; âm là học quá số đã mua
-  discount: number; // giảm trừ (VND): cố định của học sinh cộng giảm trừ ghi cùng khoản thu
+  discount: number; // giảm trừ (VND) ghi cùng các khoản thu
   tuition: 'paid' | 'partial' | 'unpaid';
   attendanceRate: number; // phần trăm, không tính buổi vắng
   parentName: string | null;
@@ -157,8 +157,7 @@ const BASE_CTE = sql`
     SELECT
       s.id, s.full_name, s.search_key, s.gender, s.status, s.class_id, s.sessions_done,
       c.name AS class_name, c.campus_id, c.sessions_total, ${NET_FEE_SQL}::int AS fee,
-      COALESCE(s.tuition_discount, 0)::int AS own_discount,
-      (COALESCE(s.tuition_discount, 0) + COALESCE(paid.pay_discount, 0))::int AS discount,
+      COALESCE(paid.pay_discount, 0)::int AS discount,
       t.name AS teacher_name,
       COALESCE(paid.paid, 0) AS paid,
       COALESCE(paid.cash, 0) AS cash,
@@ -194,7 +193,6 @@ type RawRow = {
   sessions_total: number;
   fee: number;
   discount: number;
-  own_discount: number;
   paid: number;
   att_total: number;
   att_absent: number;
@@ -252,8 +250,8 @@ export async function listStudents(
     discount: r.discount,
     paid: r.paid,
     debt: Math.max(0, r.fee - r.paid),
-    sessionsBought: sessionsBought(r.paid + r.own_discount),
-    sessionsLeft: sessionsBought(r.paid + r.own_discount) - r.sessions_done,
+    sessionsBought: sessionsBought(r.paid),
+    sessionsLeft: sessionsBought(r.paid) - r.sessions_done,
     tuition: r.tuition,
     attendanceRate: r.att_total > 0 ? Math.round(((r.att_total - r.att_absent) / r.att_total) * 100) : 100,
     parentName: r.parent_name,
@@ -309,7 +307,7 @@ export type StudentDetail = {
   sessionsDone: number;
   sessionsTotal: number;
   fee: number; // học phí thực thu (đã trừ giảm trừ)
-  discount: number; // giảm trừ cố định (VND), 0 nếu không có
+  discount: number; // giảm trừ (VND) ghi cùng các khoản thu
   paid: number;
   debt: number;
   cash: number; // tiền đã thu (không tính giảm trừ)
@@ -329,13 +327,13 @@ export async function getStudentDetail(id: number): Promise<StudentDetail | null
   const base = await db.execute<{
     id: number; full_name: string; gender: 'male' | 'female'; dob: string | null; start_date: string; note: string;
     status: StudentRow['status']; class_id: number; class_name: string; course: string; schedule: string;
-    room: string; teacher_name: string; sessions_done: number; sessions_total: number; fee: number; discount: number; own_discount: number; paid: number; cash: number;
+    room: string; teacher_name: string; sessions_done: number; sessions_total: number; fee: number; discount: number; paid: number; cash: number;
     att_total: number; att_absent: number; tuition: StudentRow['tuition'];
   }>(sql`
     ${BASE_CTE}
     SELECT b.id, b.full_name, b.gender, s.dob::text AS dob, s.start_date::text AS start_date, s.note,
       b.status, b.class_id, b.class_name, c.course, c.schedule, c.room, b.teacher_name,
-      b.sessions_done, b.sessions_total, b.fee, b.discount, b.own_discount, b.paid, b.cash, b.att_total, b.att_absent, b.tuition
+      b.sessions_done, b.sessions_total, b.fee, b.discount, b.paid, b.cash, b.att_total, b.att_absent, b.tuition
     FROM base b
     JOIN students s ON s.id = b.id
     JOIN classes c ON c.id = b.class_id
@@ -382,8 +380,8 @@ export async function getStudentDetail(id: number): Promise<StudentDetail | null
     paid: row.paid,
     debt: Math.max(0, row.fee - row.paid),
     cash: row.cash,
-    sessionsBought: sessionsBought(row.paid + row.own_discount),
-    sessionsLeft: sessionsBought(row.paid + row.own_discount) - row.sessions_done,
+    sessionsBought: sessionsBought(row.paid),
+    sessionsLeft: sessionsBought(row.paid) - row.sessions_done,
     tuition: row.tuition,
     attendanceRate: row.att_total > 0 ? Math.round(((row.att_total - row.att_absent) / row.att_total) * 100) : 100,
     recentMarks: marks.rows.map((m) => m.mark).reverse(),
