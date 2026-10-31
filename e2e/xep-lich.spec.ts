@@ -57,7 +57,7 @@ test('tạo lớp: giờ 24 giờ, xem trước lịch; giáo viên chủ nhiệ
     await d.getByRole('button', { name: 'Tạo lớp' }).click();
     await expectToast(page, `Đã tạo lớp ${B} với 3 buổi học`);
 
-    // Thêm buổi học bù cho lớp A ở màn Lịch học: trùng phòng thì báo, đổi giờ thì thêm được, số buổi đánh lại theo ngày
+    // Thêm buổi học bù cho lớp A ở màn Lịch học: trùng phòng chỉ cảnh báo (không chặn), số buổi đánh lại theo ngày
     await page.goto('/lich-hoc?w=2027-03-01&to=2027-03-07');
     await page.getByRole('button', { name: 'Thêm buổi' }).click();
     const add = page.getByRole('dialog', { name: 'Thêm buổi học' });
@@ -68,9 +68,9 @@ test('tạo lớp: giờ 24 giờ, xem trước lịch; giáo viên chủ nhiệ
     await add.locator('input[name="startTime"]').fill('1300');
     await expect(add.locator('input[name="endTime"]')).toHaveValue('14:30');
     await add.locator('input[name="date"]').fill('2027-03-02');
-    await expect(add.getByText(/Trùng lịch:/)).toBeVisible();
+    await expect(add.getByText(/Trùng: .*Vẫn lưu được/)).toBeVisible();
     await add.locator('input[name="date"]').fill('2027-03-04');
-    await expect(add.getByText('Không trùng lịch giáo viên, phòng và lớp.')).toBeVisible();
+    await expect(add.getByText('Không trùng phòng và lớp.')).toBeVisible();
     await add.getByRole('button', { name: 'Thêm buổi' }).click();
     await expectToast(page, `Đã thêm buổi cho lớp ${A} ngày 04/03/2027 13:00`);
     const rows = (await db.query<{ session_no: number; topic: string }>('select session_no, topic from class_sessions where class_id = $1 order by starts_at', [a.id])).rows;

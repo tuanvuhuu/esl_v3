@@ -136,7 +136,7 @@ export function AddSessionDialog({
         </Field>
         {check && timesOk && (
           <div className="col-span-full">
-            {check.length > 0 ? <Alert inline>Trùng lịch: {check.join('; ')}.</Alert> : <Alert inline tone="ok">Không trùng lịch giáo viên, phòng và lớp.</Alert>}
+            {check.length > 0 ? <Alert inline>Trùng: {check.join('; ')}. Vẫn lưu được.</Alert> : <Alert inline tone="ok">Không trùng phòng và lớp.</Alert>}
           </div>
         )}
         <FormFooter className="col-span-full">

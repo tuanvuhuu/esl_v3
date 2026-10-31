@@ -131,14 +131,6 @@ export async function createClassAction(_prev: ActionResult, formData: FormData)
     }
 
     // Không xếp trùng giờ với lớp khác của cùng giáo viên, hoặc cùng phòng trong cơ sở
-    const conflicts = await findScheduleConflicts({ slots: generated, teacherId: v.teacherId, room: v.room, campusId: v.campusId });
-    if (conflicts.length > 0) {
-      return {
-        ok: false,
-        message: `Lịch bị trùng ${conflicts.length} buổi: ${summarizeConflicts(conflicts).join('; ')}. Đổi giờ, ngày, giáo viên hoặc phòng rồi tạo lại.`,
-        fieldErrors: conflicts.some((c) => c.kind === 'teacher') ? { teacherId: 'Giáo viên bận ở một số buổi' } : { room: 'Phòng đã có lớp ở một số buổi' },
-      };
-    }
 
     const classId = await db.transaction(async (tx) => {
       const [created] = await tx
@@ -408,10 +400,6 @@ export async function rescheduleClassAction(id: number, _prev: ActionResult, for
       return { ok: false, message: 'Buổi đầu của lịch mới đã qua giờ. Chọn ngày bắt đầu muộn hơn.', fieldErrors: { startDate: 'Buổi đầu đã qua giờ' } };
     }
 
-    const conflicts = await findScheduleConflicts({ slots: generated, teacherId: current.teacherId, room: current.room, campusId: current.campusId, excludeClassId: id });
-    if (conflicts.length > 0) {
-      return { ok: false, message: `Lịch bị trùng ${conflicts.length} buổi: ${summarizeConflicts(conflicts).join('; ')}. Đổi giờ hoặc ngày rồi xếp lại.` };
-    }
 
     const result = await db.transaction(async (tx) => {
       const pending = and(eq(classSessions.classId, id), eq(classSessions.status, 'planned'), gt(classSessions.startsAt, new Date()));

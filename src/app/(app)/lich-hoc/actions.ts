@@ -45,16 +45,6 @@ async function loadSession(id: number) {
   return row ?? null;
 }
 
-// Trùng giờ với lớp khác của cùng giáo viên hoặc cùng phòng: báo rõ trùng với lớp nào, lúc nào
-function conflictResult(conflicts: Awaited<ReturnType<typeof findScheduleConflicts>>): ActionResult {
-  const teacher = conflicts.some((c) => c.kind === 'teacher');
-  return {
-    ok: false,
-    message: `Trùng lịch: ${summarizeConflicts(conflicts).join('; ')}. Đổi giờ, ngày, giáo viên hoặc phòng.`,
-    fieldErrors: teacher ? { teacherId: 'Giáo viên đang bận giờ này' } : { room: 'Phòng đã có lớp giờ này' },
-  };
-}
-
 // Kiểm trùng ngay khi đang nhập (thêm hoặc sửa buổi), không ghi gì
 export async function checkSessionAction(input: { classId: number; date: string; startTime: string; endTime: string; teacherId: number; room: string; sessionId?: number | null }): Promise<{ ok: true; conflicts: string[] } | { ok: false; message: string }> {
   try {
@@ -106,8 +96,6 @@ export async function createSessionAction(classId: number, _prev: ActionResult, 
       .where(and(eq(classSessions.classId, classId), ne(classSessions.status, 'cancelled'), sql`${classSessions.startsAt} < ${endsAt}`, sql`${classSessions.endsAt} > ${startsAt}`))
       .limit(1);
     if (same) return { ok: false, message: 'Lớp đã có buổi học trong giờ này.', fieldErrors: { startTime: 'Lớp đã có buổi học trong giờ này' } };
-    const conflicts = await findScheduleConflicts({ slots: [{ startsAt, endsAt }], teacherId: v.teacherId, room: v.room, campusId: cls.campusId });
-    if (conflicts.length > 0) return conflictResult(conflicts);
 
     const id = await db.transaction(async (tx) => {
       const [row] = await tx
@@ -164,8 +152,6 @@ export async function updateSessionAction(id: number, _prev: ActionResult, formD
       .limit(1);
     if (clash) return { ok: false, message: 'Lớp đã có buổi học vào thời điểm này.', fieldErrors: { startTime: 'Lớp đã có buổi học lúc này' } };
 
-    const conflicts = await findScheduleConflicts({ slots: [{ startsAt, endsAt }], teacherId: v.teacherId, room: v.room, campusId: cls?.campusId ?? 0, excludeSessionId: id });
-    if (conflicts.length > 0) return conflictResult(conflicts);
 
     await db
       .update(classSessions)
@@ -258,8 +244,6 @@ export async function moveSessionAction(id: number, date: string, startTime: str
       .limit(1);
     if (clash) return { ok: false, message: 'Lớp đã có buổi học vào thời điểm này.' };
 
-    const conflicts = await findScheduleConflicts({ slots: [{ startsAt, endsAt }], teacherId: session.teacherId, room: session.room, campusId: row.campusId, excludeSessionId: id });
-    if (conflicts.length > 0) return conflictResult(conflicts);
 
     await db.transaction(async (tx) => {
       await tx.update(classSessions).set({ startsAt, endsAt, updatedAt: new Date() }).where(eq(classSessions.id, id));

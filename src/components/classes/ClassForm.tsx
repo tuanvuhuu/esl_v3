@@ -397,10 +397,10 @@ function PreviewBox({ preview }: { preview: SchedulePreview | null }) {
       </ul>
       {preview.conflictCount > 0 ? (
         <Alert inline>
-          Trùng lịch {preview.conflictCount} buổi: {preview.conflicts.join('; ')}. Đổi giờ, ngày hoặc phòng trước khi lưu.
+          Trùng phòng {preview.conflictCount} buổi: {preview.conflicts.join('; ')}. Vẫn lưu được, kiểm lại nếu cần.
         </Alert>
       ) : (
-        <Alert inline tone="ok">Không trùng phòng. Giáo viên chủ nhiệm được nhận lớp trùng giờ.</Alert>
+        <Alert inline tone="ok">Không trùng phòng.</Alert>
       )}
     </section>
   );

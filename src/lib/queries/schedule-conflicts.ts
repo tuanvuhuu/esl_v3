@@ -1,4 +1,4 @@
-// Tìm buổi học trùng phòng (xếp lịch dễ và không trùng). Chỉ chạy trên server.
+// Tìm buổi học trùng phòng để cảnh báo khi xếp lịch (không chặn lưu). Chỉ chạy trên server.
 // Giáo viên chủ nhiệm được nhận nhiều lớp trùng giờ (người dạy trực tiếp có thể là trợ giảng, giáo viên nước ngoài),
 // nên trùng giờ của giáo viên không còn chặn; teacherId giữ trong tham số để gọi cũ không phải đổi.
 // Trùng khi khoảng giờ giao nhau (bắt đầu trước khi buổi kia kết thúc và kết thúc sau khi buổi kia bắt đầu).
