@@ -78,15 +78,11 @@ export function ClassForm({
   const [assistantId, setAssistantId] = useState(values.assistantId);
   const [foreignTeacherId, setForeignTeacherId] = useState(values.foreignTeacherId);
   const [levelId, setLevelId] = useState(values.levelId ?? '');
-  // Học phí lớp = 250.000 × số buổi, tự đổi khi đổi số buổi cho đến khi người nhập tự gõ học phí
+  // Học phí tính theo buổi khi ghi thu (250.000 ₫ một buổi), không nhập ở lớp. Cột học phí lớp chỉ còn để tham khảo:
+  // tạo lớp thì lưu 250.000 × số buổi, sửa lớp thì giữ nguyên.
   const [sessionsText, setSessionsText] = useState(String(values.sessionsTotal ?? 24));
-  const [fee, setFee] = useState(values.fee > 0 ? values.fee : TUITION_PER_SESSION * (values.sessionsTotal ?? 24));
-  const [feeEdited, setFeeEdited] = useState(values.fee > 0);
-  function changeSessions(text: string) {
-    setSessionsText(text);
-    const n = Number(text);
-    if (!feeEdited && Number.isInteger(n) && n >= 1) setFee(TUITION_PER_SESSION * n);
-  }
+  const fee = mode === 'create' ? TUITION_PER_SESSION * (Number(sessionsText) || 0) : values.fee;
+  const changeSessions = (text: string) => setSessionsText(text);
   // Mỗi vị trí chỉ hiện người đúng vai trò và dạy ở cơ sở đang chọn
   const optionsOf = (role: StaffRole, campus: string) => teachers.filter((t) => t.staffRole === role && t.campusIds.includes(Number(campus)));
   const teacherOptions = optionsOf('teacher', campusId);
@@ -291,38 +287,8 @@ export function ClassForm({
       <Field label="Phòng" error={errors.room}>
         <input name="room" defaultValue={values.room} placeholder="VD: P.201" autoComplete="off" className={inputClass(errors.room)} />
       </Field>
-      <SectionTitle>Học phí và sĩ số</SectionTitle>
-      <Field label="Học phí (VND) *" error={errors.fee} hint={isCreate ? `Tự tính ${TUITION_PER_SESSION.toLocaleString('vi-VN')} × số buổi, sửa được` : 'Học phí cả khoá, gõ số, app tự thêm dấu chấm'}>
-        <MoneyInput
-          name="fee"
-          value={fee}
-          onChange={(next) => {
-            setFee(next);
-            setFeeEdited(true);
-          }}
-          className={inputClass(errors.fee)}
-        />
-        {mode === 'edit' && values.sessionsTotal !== undefined && (
-          <Btn
-            variant="ghost"
-            onClick={() => {
-              setFee(TUITION_PER_SESSION * (values.sessionsTotal ?? 0));
-              setFeeEdited(true);
-            }}
-          >
-            Đặt {TUITION_PER_SESSION.toLocaleString('vi-VN')} × {values.sessionsTotal} buổi
-          </Btn>
-        )}
-      </Field>
-      {mode === 'edit' && (
-        <label className="col-span-full flex items-start gap-2 text-sm text-ink-2">
-          <input type="checkbox" name="keepOldFee" defaultChecked className="mt-1 size-4 accent-[var(--primary-deep)]" />
-          <span>
-            Nếu đổi học phí: học sinh đang học giữ học phí cũ
-            {values.affectedStudents !== undefined && <> ({values.affectedStudents} học sinh chưa có học phí riêng)</>}. Học sinh vào sau thì theo học phí mới.
-          </span>
-        </label>
-      )}
+      <SectionTitle>Sĩ số</SectionTitle>
+      <input type="hidden" name="fee" value={fee} />
       <Field label="Sĩ số tối đa *" error={errors.capacity}>
         <input name="capacity" type="number" inputMode="numeric" min={1} max={100} step={1} defaultValue={values.capacity} className={inputClass(errors.capacity)} />
       </Field>
@@ -405,25 +371,6 @@ function SectionTitle({ children }: { children: string }) {
   return <h3 className="col-span-full mt-2 border-b border-line pb-1.5 text-md font-extrabold text-ink first:mt-0">{children}</h3>;
 }
 
-// Ô tiền: hiện "6.000.000", gửi số nguyên 6000000 qua ô ẩn cùng tên. Giá trị do form giữ, để đổi được từ bên ngoài.
-function MoneyInput({ name, value, onChange, className }: { name: string; value: number; onChange: (next: number) => void; className: string }) {
-  const shown = value ? value.toLocaleString('vi-VN') : '';
-  return (
-    <>
-      <input
-        type="text"
-        inputMode="numeric"
-        autoComplete="off"
-        value={shown}
-        placeholder="VD: 6.000.000"
-        onChange={(e) => onChange(Number(e.target.value.replace(/\D/g, '').slice(0, 12)) || 0)}
-        className={`${className} tabular-nums`}
-      />
-      <input type="hidden" name={name} value={value || '0'} />
-    </>
-  );
-}
-
 // "T5 22/10/2026 08:00"
 function whenLabel(d: Date): string {
   const key = vnDateKey(d);
@@ -450,10 +397,10 @@ function PreviewBox({ preview }: { preview: SchedulePreview | null }) {
       </ul>
       {preview.conflictCount > 0 ? (
         <Alert inline>
-          Trùng lịch {preview.conflictCount} buổi: {preview.conflicts.join('; ')}. Đổi giờ, ngày, giáo viên hoặc phòng trước khi lưu.
+          Trùng lịch {preview.conflictCount} buổi: {preview.conflicts.join('; ')}. Đổi giờ, ngày hoặc phòng trước khi lưu.
         </Alert>
       ) : (
-        <Alert inline tone="ok">Không trùng lịch giáo viên và phòng.</Alert>
+        <Alert inline tone="ok">Không trùng phòng. Giáo viên chủ nhiệm được nhận lớp trùng giờ.</Alert>
       )}
     </section>
   );

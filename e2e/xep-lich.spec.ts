@@ -24,7 +24,6 @@ async function fillClass(page: Page, name: string, start: string, room: string) 
   await d.getByRole('button', { name: 'Giáo viên chủ nhiệm *' }).click();
   await page.getByRole('option').filter({ hasNotText: 'Chọn giáo viên' }).first().click();
   await d.locator('input[name="room"]').fill(room);
-  await d.getByLabel('Học phí (VND) *').fill('4500000');
   await d.locator('label:has(input[value="T3"])').click();
   await d.getByLabel('Giờ bắt đầu Thứ 3', { exact: true }).fill(start);
   await d.locator('input[name="startDate"]').fill('2027-03-02');
@@ -32,36 +31,29 @@ async function fillClass(page: Page, name: string, start: string, room: string) 
   return d;
 }
 
-test('tạo lớp: giờ 24 giờ, học phí có dấu chấm, xem trước lịch; trùng giáo viên thì chặn; thêm buổi học bù', async ({ page }) => {
+test('tạo lớp: giờ 24 giờ, xem trước lịch; giáo viên chủ nhiệm nhận lớp trùng giờ được; thêm buổi học bù', async ({ page }) => {
   loadEnvLocal();
   const db = new Client({ connectionString: process.env.DATABASE_URL });
   await db.connect();
   try {
     await login(page);
 
-    // Lớp A: gõ "1000" thành 10:00, giờ kết thúc dời theo giữ độ dài ca; học phí hiện 4.500.000
+    // Lớp A: gõ "1000" thành 10:00, giờ kết thúc dời theo giữ độ dài ca; học phí lớp lưu 250.000 × 3 buổi
     let d = await fillClass(page, A, '1000', 'XL-P1');
     await expect(d.getByLabel('Giờ bắt đầu Thứ 3', { exact: true })).toHaveValue('10:00');
     await expect(d.getByLabel('Giờ kết thúc Thứ 3', { exact: true })).toHaveValue('11:30');
     await expect(d.getByText('1 giờ 30 phút')).toBeVisible();
-    await expect(d.getByLabel('Học phí (VND) *')).toHaveValue('4.500.000');
     const preview = d.getByRole('region', { name: 'Xem trước lịch' });
     await expect(preview).toContainText('3 buổi · từ T3 02/03/2027 10:00 đến T3 16/03/2027 10:00');
-    await expect(preview.getByText('Không trùng lịch giáo viên và phòng.')).toBeVisible();
+    await expect(preview.getByText(/Không trùng phòng/)).toBeVisible();
     await d.getByRole('button', { name: 'Tạo lớp' }).click();
     await expectToast(page, `Đã tạo lớp ${A} với 3 buổi học`);
     const [a] = (await db.query<{ id: number; fee: number }>('select id, fee from classes where name = $1', [A])).rows;
-    expect(Number(a.fee)).toBe(4_500_000);
+    expect(Number(a.fee)).toBe(750_000);
 
-    // Lớp B cùng giáo viên, giờ chồng lên lớp A: xem trước báo trùng, bấm tạo thì bị chặn
+    // Lớp B cùng giáo viên chủ nhiệm, giờ chồng lên lớp A, phòng khác: không chặn, tạo được
     d = await fillClass(page, B, '1100', 'XL-P2');
-    await expect(d.getByRole('region', { name: 'Xem trước lịch' })).toContainText(`đang dạy lớp ${A} 10:00–11:30 các ngày T3 02/03, T3 09/03, T3 16/03`);
-    await d.getByRole('button', { name: 'Tạo lớp' }).click();
-    await expect(d.getByRole('alert').first()).toContainText('Lịch bị trùng 3 buổi');
-    expect((await db.query('select 1 from classes where name = $1', [B])).rowCount).toBe(0);
-    // Đổi sang 14:00 thì tạo được
-    await d.getByLabel('Giờ bắt đầu Thứ 3', { exact: true }).fill('14:00');
-    await expect(d.getByRole('region', { name: 'Xem trước lịch' }).getByText('Không trùng lịch giáo viên và phòng.')).toBeVisible();
+    await expect(d.getByRole('region', { name: 'Xem trước lịch' }).getByText(/Không trùng phòng/)).toBeVisible();
     await d.getByRole('button', { name: 'Tạo lớp' }).click();
     await expectToast(page, `Đã tạo lớp ${B} với 3 buổi học`);
 

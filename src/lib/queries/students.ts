@@ -8,7 +8,7 @@ import type { CampusScope } from '@/lib/campus';
 import { campusCond } from '@/lib/queries/campuses';
 import { parseStudentCode, studentCode } from '@/lib/student-code';
 import { normalizeSearch } from '@/lib/text';
-import { sessionsCovered } from '@/lib/tuition';
+import { sessionsBought } from '@/lib/tuition';
 import { NET_FEE_SQL } from '@/lib/tuition-fee';
 
 // Học phí và lớp chọn nhiều: danh sách rỗng nghĩa là không lọc
@@ -53,9 +53,9 @@ export type StudentRow = {
   fee: number;
   paid: number;
   debt: number;
-  sessionsOwed: number; // số buổi từ ngày bắt đầu học đến hết khoá (không tính buổi huỷ), cùng cách tính với Học phí
-  sessionsPaid: number; // số buổi đã đóng, theo số tiền đã thu
-  discount: number; // miễn giảm cố định (VND), 0 nếu không có
+  sessionsBought: number; // số buổi đã mua = (đã nộp + giảm trừ) ÷ giá một buổi, cùng cách tính với Học phí
+  sessionsLeft: number; // còn lại = đã mua − đã học; âm là học quá số đã mua
+  discount: number; // giảm trừ (VND): cố định của học sinh cộng giảm trừ ghi cùng khoản thu
   tuition: 'paid' | 'partial' | 'unpaid';
   attendanceRate: number; // phần trăm, không tính buổi vắng
   parentName: string | null;
@@ -137,7 +137,9 @@ function orderClause(sort?: StudentSort) {
 
 const BASE_CTE = sql`
   WITH paid AS (
-    SELECT student_id, COALESCE(SUM(amount), 0)::int AS paid
+    -- cash: tiền đã thu; paid: đã nộp quy đổi (tiền thu + giảm trừ ghi cùng khoản thu)
+    SELECT student_id, COALESCE(SUM(amount), 0)::int AS cash, COALESCE(SUM(discount), 0)::int AS pay_discount,
+      COALESCE(SUM(amount + discount), 0)::int AS paid
     FROM tuition_payments GROUP BY student_id
   ),
   att AS (
@@ -154,21 +156,22 @@ const BASE_CTE = sql`
   base AS (
     SELECT
       s.id, s.full_name, s.search_key, s.gender, s.status, s.class_id, s.sessions_done,
-      c.name AS class_name, c.campus_id, c.sessions_total, ${NET_FEE_SQL} AS fee, COALESCE(s.tuition_discount, 0) AS discount,
+      c.name AS class_name, c.campus_id, c.sessions_total, ${NET_FEE_SQL}::int AS fee,
+      COALESCE(s.tuition_discount, 0)::int AS own_discount,
+      (COALESCE(s.tuition_discount, 0) + COALESCE(paid.pay_discount, 0))::int AS discount,
       t.name AS teacher_name,
       COALESCE(paid.paid, 0) AS paid,
+      COALESCE(paid.cash, 0) AS cash,
       COALESCE(att.total, 0) AS att_total,
       COALESCE(att.absent, 0) AS att_absent,
       pp.full_name AS parent_name,
       pp.phone AS parent_phone,
+      -- Cùng quy tắc với tuitionState (src/lib/tuition.ts)
       CASE
+        WHEN COALESCE(paid.paid, 0) <= 0 AND ${NET_FEE_SQL} >= 0 THEN 'unpaid'
         WHEN COALESCE(paid.paid, 0) >= ${NET_FEE_SQL} THEN 'paid'
-        WHEN COALESCE(paid.paid, 0) > 0 THEN 'partial'
-        ELSE 'unpaid'
+        ELSE 'partial'
       END AS tuition,
-      (SELECT COUNT(*)::int FROM class_sessions cs
-        WHERE cs.class_id = s.class_id AND cs.status <> 'cancelled'
-          AND cs.starts_at >= (s.start_date::timestamp AT TIME ZONE 'Asia/Ho_Chi_Minh')) AS owed,
       CONCAT('HS-', LPAD(s.id::text, 5, '0')) AS code
     FROM students s
     JOIN classes c ON c.id = s.class_id
@@ -191,13 +194,13 @@ type RawRow = {
   sessions_total: number;
   fee: number;
   discount: number;
+  own_discount: number;
   paid: number;
   att_total: number;
   att_absent: number;
   parent_name: string | null;
   parent_phone: string | null;
   tuition: StudentRow['tuition'];
-  owed: number;
   code: string;
   total_count: number;
 };
@@ -249,8 +252,8 @@ export async function listStudents(
     discount: r.discount,
     paid: r.paid,
     debt: Math.max(0, r.fee - r.paid),
-    sessionsOwed: r.owed,
-    sessionsPaid: sessionsCovered(r.fee, r.paid, r.owed),
+    sessionsBought: sessionsBought(r.paid + r.own_discount),
+    sessionsLeft: sessionsBought(r.paid + r.own_discount) - r.sessions_done,
     tuition: r.tuition,
     attendanceRate: r.att_total > 0 ? Math.round(((r.att_total - r.att_absent) / r.att_total) * 100) : 100,
     parentName: r.parent_name,
@@ -309,12 +312,13 @@ export type StudentDetail = {
   discount: number; // giảm trừ cố định (VND), 0 nếu không có
   paid: number;
   debt: number;
-  sessionsOwed: number; // số buổi từ ngày bắt đầu học đến hết khoá (không tính buổi huỷ)
-  sessionsPaid: number; // số buổi đã đóng, theo số tiền đã thu
+  cash: number; // tiền đã thu (không tính giảm trừ)
+  sessionsBought: number; // số buổi đã mua
+  sessionsLeft: number; // còn lại = đã mua − đã học; âm là học quá số đã mua
   tuition: StudentRow['tuition'];
   attendanceRate: number;
   recentMarks: ('present' | 'late' | 'absent' | 'excused')[]; // 10 buổi gần nhất, cũ nhất trước
-  payments: { id: number; amount: number; paidAt: string; note: string }[];
+  payments: { id: number; amount: number; discount: number; paidAt: string; note: string }[];
   parents: { id: number; fullName: string; phone: string; relation: ParentRelation; isPrimary: boolean }[];
 };
 
@@ -325,13 +329,13 @@ export async function getStudentDetail(id: number): Promise<StudentDetail | null
   const base = await db.execute<{
     id: number; full_name: string; gender: 'male' | 'female'; dob: string | null; start_date: string; note: string;
     status: StudentRow['status']; class_id: number; class_name: string; course: string; schedule: string;
-    room: string; teacher_name: string; sessions_done: number; sessions_total: number; fee: number; discount: number; paid: number;
+    room: string; teacher_name: string; sessions_done: number; sessions_total: number; fee: number; discount: number; own_discount: number; paid: number; cash: number;
     att_total: number; att_absent: number; tuition: StudentRow['tuition'];
   }>(sql`
     ${BASE_CTE}
     SELECT b.id, b.full_name, b.gender, s.dob::text AS dob, s.start_date::text AS start_date, s.note,
       b.status, b.class_id, b.class_name, c.course, c.schedule, c.room, b.teacher_name,
-      b.sessions_done, b.sessions_total, b.fee, b.discount, b.paid, b.att_total, b.att_absent, b.tuition
+      b.sessions_done, b.sessions_total, b.fee, b.discount, b.own_discount, b.paid, b.cash, b.att_total, b.att_absent, b.tuition
     FROM base b
     JOIN students s ON s.id = b.id
     JOIN classes c ON c.id = b.class_id
@@ -340,17 +344,11 @@ export async function getStudentDetail(id: number): Promise<StudentDetail | null
   const row = base.rows[0];
   if (!row) return null;
 
-  const owed = await db.execute<{ n: number }>(sql`
-    SELECT COUNT(*)::int AS n FROM class_sessions cs
-    WHERE cs.class_id = ${row.class_id} AND cs.status <> 'cancelled'
-      AND cs.starts_at >= (${row.start_date}::timestamp AT TIME ZONE 'Asia/Ho_Chi_Minh')
-  `);
-  const sessionsOwed = owed.rows[0]?.n ?? 0;
   const marks = await db.execute<{ mark: 'present' | 'late' | 'absent' | 'excused' }>(sql`
     SELECT mark FROM attendance WHERE student_id = ${id} ORDER BY session_date DESC LIMIT 10
   `);
-  const payments = await db.execute<{ id: number; amount: number; paid_at: string; note: string }>(sql`
-    SELECT id, amount, to_char(paid_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'YYYY-MM-DD') AS paid_at, note
+  const payments = await db.execute<{ id: number; amount: number; discount: number; paid_at: string; note: string }>(sql`
+    SELECT id, amount, discount, to_char(paid_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'YYYY-MM-DD') AS paid_at, note
     FROM tuition_payments WHERE student_id = ${id} ORDER BY paid_at DESC, id DESC
   `);
   const parents = await db.execute<{ id: number; full_name: string; phone: string; relation: ParentRelation; is_primary: boolean }>(sql`
@@ -383,12 +381,13 @@ export async function getStudentDetail(id: number): Promise<StudentDetail | null
     discount: row.discount,
     paid: row.paid,
     debt: Math.max(0, row.fee - row.paid),
-    sessionsOwed,
-    sessionsPaid: sessionsCovered(row.fee, row.paid, sessionsOwed),
+    cash: row.cash,
+    sessionsBought: sessionsBought(row.paid + row.own_discount),
+    sessionsLeft: sessionsBought(row.paid + row.own_discount) - row.sessions_done,
     tuition: row.tuition,
     attendanceRate: row.att_total > 0 ? Math.round(((row.att_total - row.att_absent) / row.att_total) * 100) : 100,
     recentMarks: marks.rows.map((m) => m.mark).reverse(),
-    payments: payments.rows.map((p) => ({ id: p.id, amount: p.amount, paidAt: p.paid_at, note: p.note })),
+    payments: payments.rows.map((p) => ({ id: p.id, amount: p.amount, discount: p.discount, paidAt: p.paid_at, note: p.note })),
     parents: parents.rows.map((p) => ({ id: p.id, fullName: p.full_name, phone: p.phone, relation: p.relation, isPrimary: p.is_primary })),
   };
 }

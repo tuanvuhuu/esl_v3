@@ -12,6 +12,7 @@ import { adminChats, chatOf, parentChatsOfStudent, sendOnce, staffChatsOfClass, 
 import { CRON_JOBS, dueJobs, isoWeekKey, tuitionPhase, type CronJob } from './prefs';
 import { dailyReportText } from './service';
 import { NET_FEE_SQL } from '@/lib/tuition-fee';
+import { TUITION_PER_SESSION } from '@/lib/tuition';
 
 export type CronTaskResult = Record<CronJob, number> & { jobs: CronJob[] };
 
@@ -145,7 +146,7 @@ async function remindTuition(now: Date): Promise<SendResult[]> {
   if (!phase || (phase === 'before' && !settings.notifySmsBeforeDue)) return [];
   const rows = await db.execute<{ student_id: number; student_name: string; fee: number; paid: number }>(sql`
     SELECT s.id AS student_id, s.full_name AS student_name, ${NET_FEE_SQL} AS fee,
-      COALESCE((SELECT SUM(p.amount) FROM tuition_payments p WHERE p.student_id = s.id), 0)::int AS paid
+      COALESCE((SELECT SUM(p.amount + p.discount) FROM tuition_payments p WHERE p.student_id = s.id), 0)::int AS paid
     FROM students s JOIN classes c ON c.id = s.class_id
     WHERE s.status = 'active'`);
   const out: SendResult[] = [];
@@ -154,8 +155,8 @@ async function remindTuition(now: Date): Promise<SendResult[]> {
     if (debt <= 0) continue;
     const text =
       phase === 'before'
-        ? `💳 NHẮC HỌC PHÍ\nHọc phí của em ${r.student_name} còn thiếu ${formatVND(debt)} (đã đóng ${formatVND(r.paid)} / ${formatVND(r.fee)}).\nHạn đóng: ${dateKeyLabel(dueKey)}.\n\nQuý phụ huynh đã đóng rồi thì bỏ qua tin này. Gõ /hocphi để xem lại bất cứ lúc nào.\n\n— ESL Center`
-        : `💳 HỌC PHÍ QUÁ HẠN\nHọc phí của em ${r.student_name} còn thiếu ${formatVND(debt)}, đã quá hạn ${dateKeyLabel(dueKey)}.\n\nQuý phụ huynh liên hệ văn phòng nếu cần hỗ trợ.\n\n— ESL Center`;
+        ? `💳 NHẮC HỌC PHÍ\nEm ${r.student_name} đã học quá số buổi đã đóng, còn thiếu ${formatVND(debt)} (${Math.ceil(debt / TUITION_PER_SESSION)} buổi × ${formatVND(TUITION_PER_SESSION)}).\nHạn đóng: ${dateKeyLabel(dueKey)}.\n\nQuý phụ huynh đã đóng rồi thì bỏ qua tin này. Gõ /hocphi để xem lại bất cứ lúc nào.\n\n— ESL Center`
+        : `💳 HỌC PHÍ QUÁ HẠN\nEm ${r.student_name} còn thiếu ${formatVND(debt)} (${Math.ceil(debt / TUITION_PER_SESSION)} buổi đã học chưa đóng), đã quá hạn ${dateKeyLabel(dueKey)}.\n\nQuý phụ huynh liên hệ văn phòng nếu cần hỗ trợ.\n\n— ESL Center`;
     // Có tài khoản nhận học phí thì gửi kèm ảnh mã VietQR khoản còn thiếu (37.13)
     const chats = await parentChatsOfStudent(r.student_id);
     if (chats.length === 0) continue;

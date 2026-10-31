@@ -4,25 +4,27 @@ import { db } from '@/db/client';
 import type { CampusScope } from '@/lib/campus';
 import { campusCond } from '@/lib/queries/campuses';
 import { centerSettings, tuitionPayments } from '@/db/schema';
-import { balanceOf, debtOf, dueDateFor, isOverdue, sessionsCovered, tuitionState, type TuitionState } from '@/lib/tuition';
+import { balanceOf, debtOf, dueDateFor, isOverdue, sessionsBought, tuitionState, type TuitionState } from '@/lib/tuition';
 import { parseStudentCode, studentCode } from '@/lib/student-code';
 import { normalizeSearch } from '@/lib/text';
 import { NET_FEE_SQL } from '@/lib/tuition-fee';
 
+// Học phí theo buổi của một học sinh (xem src/lib/tuition.ts)
 export type InvoiceRow = {
   id: number;
   code: string;
   fullName: string;
   status: 'active' | 'trial' | 'paused' | 'finished';
   className: string;
-  fee: number; // phải nộp (đã trừ miễn giảm)
-  baseFee: number; // học phí gốc (riêng hoặc của lớp), trần của miễn giảm
-  discount: number; // miễn giảm cố định (VND)
-  paid: number;
-  sessionsOwed: number; // số buổi học từ ngày bắt đầu học đến hết khoá (không tính buổi huỷ)
-  sessionsPaid: number; // số buổi đã đóng, theo số tiền đã thu
+  paid: number; // tiền đã nộp (doanh thu)
+  discount: number; // giảm trừ: ghi cùng khoản thu cộng giảm trừ cố định cũ của học sinh
+  sessionsBought: number; // số buổi đã mua = (đã nộp + giảm trừ) ÷ giá một buổi
+  sessionsDone: number; // số buổi đã học (không tính có phép)
+  sessionsLeft: number; // còn lại = đã mua − đã học; âm là học quá số đã mua
+  fee: number; // phải nộp = giá trị buổi đã học − giảm trừ cố định của học sinh
+  credit: number; // đã nộp quy đổi = tiền thu + giảm trừ ghi cùng khoản thu
   debt: number; // còn nợ
-  balance: number; // thừa (dương) hoặc thiếu (âm) so với phải nộp
+  balance: number; // tiền trước (dương) hoặc nợ (âm)
   state: TuitionState;
   dueDate: string; // YYYY-MM-DD
   overdue: boolean;
@@ -36,27 +38,23 @@ export async function getDueDay(): Promise<number> {
   return row?.dueDay ?? 10;
 }
 
-// Hoá đơn học phí của mọi học sinh: học phí lớp, số đã thu, còn nợ, hạn đóng, quá hạn.
 // Học phí của học sinh trong cơ sở đang xem (scope null: mọi cơ sở). Số đếm và tổng nợ tính trên cơ sở đó.
-export type InvoiceTotals = { due: number; discount: number; paid: number; balance: number };
+export type InvoiceTotals = { paid: number; discount: number; sessionsBought: number; balance: number };
 
 export async function listInvoices(todayKey: string, q: string, filter: InvoiceFilter, scope: CampusScope): Promise<{ rows: InvoiceRow[]; counts: Record<InvoiceFilter, number>; totalDebt: number; totals: InvoiceTotals }> {
   // Ngày đến hạn và danh sách đọc cùng lúc
   const [dueDay, result] = await Promise.all([getDueDay(), db.execute<{
     id: number; full_name: string; search_key: string; status: InvoiceRow['status']; start_date: string; class_name: string;
-    fee: number; base_fee: number; discount: number; paid: number; owed: number; last_paid: string | null;
+    fee: number; own_discount: number; sessions_done: number; paid: number; pay_discount: number; last_paid: string | null;
   }>(sql`
-    SELECT s.id, s.full_name, s.search_key, s.status, s.start_date::text AS start_date, c.name AS class_name, ${NET_FEE_SQL} AS fee,
-      COALESCE(s.tuition_fee, c.fee) AS base_fee, COALESCE(s.tuition_discount, 0)::int AS discount,
-      COALESCE(p.paid, 0)::int AS paid,
-      (SELECT COUNT(*)::int FROM class_sessions cs
-        WHERE cs.class_id = s.class_id AND cs.status <> 'cancelled'
-          AND cs.starts_at >= (s.start_date::timestamp AT TIME ZONE 'Asia/Ho_Chi_Minh')) AS owed,
+    SELECT s.id, s.full_name, s.search_key, s.status, s.start_date::text AS start_date, c.name AS class_name, ${NET_FEE_SQL}::int AS fee,
+      COALESCE(s.tuition_discount, 0)::int AS own_discount, s.sessions_done,
+      COALESCE(p.paid, 0)::int AS paid, COALESCE(p.discount, 0)::int AS pay_discount,
       to_char(p.last_paid AT TIME ZONE 'Asia/Ho_Chi_Minh', 'YYYY-MM-DD') AS last_paid
     FROM students s
     JOIN classes c ON c.id = s.class_id
     LEFT JOIN (
-      SELECT student_id, SUM(amount)::int AS paid, MAX(paid_at) AS last_paid
+      SELECT student_id, SUM(amount)::int AS paid, SUM(discount)::int AS discount, MAX(paid_at) AS last_paid
       FROM tuition_payments GROUP BY student_id
     ) p ON p.student_id = s.id
     WHERE ${campusCond(scope, sql`c.campus_id`)}
@@ -66,7 +64,8 @@ export async function listInvoices(todayKey: string, q: string, filter: InvoiceF
   const needle = normalizeSearch(q);
   const codeId = parseStudentCode(q);
   const all: InvoiceRow[] = result.rows.map((r) => {
-    const debt = debtOf(r.fee, r.paid);
+    const credit = r.paid + r.pay_discount;
+    const bought = sessionsBought(credit + r.own_discount);
     const dueDate = dueDateFor(r.start_date, dueDay);
     return {
       id: r.id,
@@ -74,17 +73,18 @@ export async function listInvoices(todayKey: string, q: string, filter: InvoiceF
       fullName: r.full_name,
       status: r.status,
       className: r.class_name,
-      fee: r.fee,
-      baseFee: r.base_fee,
-      discount: r.discount,
       paid: r.paid,
-      sessionsOwed: r.owed,
-      sessionsPaid: sessionsCovered(r.fee, r.paid, r.owed),
-      debt,
-      balance: balanceOf(r.fee, r.paid),
-      state: tuitionState(r.fee, r.paid),
+      discount: r.pay_discount + r.own_discount,
+      sessionsBought: bought,
+      sessionsDone: r.sessions_done,
+      sessionsLeft: bought - r.sessions_done,
+      fee: r.fee,
+      credit,
+      debt: debtOf(r.fee, credit),
+      balance: balanceOf(r.fee, credit),
+      state: tuitionState(r.fee, credit),
       dueDate,
-      overdue: isOverdue(r.fee, r.paid, dueDate, todayKey),
+      overdue: isOverdue(r.fee, credit, dueDate, todayKey),
       lastPaidDate: r.last_paid,
     };
   });
@@ -104,24 +104,25 @@ export async function listInvoices(todayKey: string, q: string, filter: InvoiceF
     });
 
   const totals: InvoiceTotals = {
-    due: all.reduce((sum, r) => sum + r.fee, 0),
-    discount: all.reduce((sum, r) => sum + r.discount, 0),
     paid: all.reduce((sum, r) => sum + r.paid, 0),
+    discount: all.reduce((sum, r) => sum + r.discount, 0),
+    sessionsBought: all.reduce((sum, r) => sum + r.sessionsBought, 0),
     balance: all.reduce((sum, r) => sum + r.balance, 0),
   };
   return { rows, counts, totalDebt: all.reduce((sum, r) => sum + r.debt, 0), totals };
 }
 
 // kind: payment (khoản thu), refund (hoàn số dư), void (dòng huỷ một khoản thu). voided: khoản thu đã bị huỷ.
-export type PaymentRow = { id: number; amount: number; paidDate: string; note: string; kind: 'payment' | 'refund' | 'void'; voided: boolean };
+// discount: giảm trừ ghi cùng khoản thu.
+export type PaymentRow = { id: number; amount: number; discount: number; paidDate: string; note: string; kind: 'payment' | 'refund' | 'void'; voided: boolean };
 
 export async function listPaymentsOfStudent(studentId: number): Promise<PaymentRow[]> {
-  const result = await db.execute<{ id: number; amount: number; paid_date: string; note: string; kind: PaymentRow['kind']; voided: boolean }>(sql`
-    SELECT p.id, p.amount, to_char(p.paid_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'YYYY-MM-DD') AS paid_date, p.note, p.kind,
+  const result = await db.execute<{ id: number; amount: number; discount: number; paid_date: string; note: string; kind: PaymentRow['kind']; voided: boolean }>(sql`
+    SELECT p.id, p.amount, p.discount, to_char(p.paid_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'YYYY-MM-DD') AS paid_date, p.note, p.kind,
       EXISTS (SELECT 1 FROM tuition_payments v WHERE v.ref_id = p.id AND v.kind = 'void') AS voided
     FROM tuition_payments p WHERE p.student_id = ${studentId} ORDER BY p.paid_at DESC, p.id DESC
   `);
-  return result.rows.map((r) => ({ id: r.id, amount: r.amount, paidDate: r.paid_date, note: r.note, kind: r.kind, voided: r.voided }));
+  return result.rows.map((r) => ({ id: r.id, amount: r.amount, discount: r.discount, paidDate: r.paid_date, note: r.note, kind: r.kind, voided: r.voided }));
 }
 
 export type RevenueReport = {
@@ -165,10 +166,19 @@ export async function getRevenueReport(month: string, monthsBack: string[], scop
   };
 }
 
-// Tổng số tiền đã thu của học sinh, dùng để kiểm tra không thu quá số còn nợ
+// Tổng tiền đã thu của học sinh (không tính giảm trừ)
 export async function paidOf(studentId: number): Promise<number> {
   const [row] = await db
     .select({ total: sql<number>`COALESCE(SUM(${tuitionPayments.amount}), 0)::int` })
+    .from(tuitionPayments)
+    .where(eq(tuitionPayments.studentId, studentId));
+  return Number(row?.total ?? 0);
+}
+
+// Đã nộp quy đổi: tiền thu cộng giảm trừ ghi cùng khoản thu
+export async function creditOf(studentId: number): Promise<number> {
+  const [row] = await db
+    .select({ total: sql<number>`COALESCE(SUM(${tuitionPayments.amount} + ${tuitionPayments.discount}), 0)::int` })
     .from(tuitionPayments)
     .where(eq(tuitionPayments.studentId, studentId));
   return Number(row?.total ?? 0);

@@ -117,17 +117,22 @@ export function StudentProfile({
           <ProgressBar value={student.sessionsDone} max={student.sessionsTotal} className="mt-4" />
           <div className="mt-2 flex justify-between text-sm text-muted">
             <span>Bắt đầu {dateKeyLabel(student.startDate)}</span>
-            <span>Đã đóng {student.sessionsPaid}/{student.sessionsOwed} buổi</span>
+            <span>{student.sessionsLeft >= 0 ? `Còn ${student.sessionsLeft} buổi đã đóng` : `Nợ ${-student.sessionsLeft} buổi`}</span>
           </div>
         </Panel>
 
         <Panel title="Học phí">
           <dl className="flex flex-col gap-2.5 text-base">
-            <Row label={student.discount > 0 ? 'Học phí khoá (sau giảm trừ)' : 'Học phí khoá'} value={formatVND(student.fee)} />
-            {student.discount > 0 && <Row label="Giảm trừ" value={`− ${formatVND(student.discount)}`} />}
-            <Row label="Đã đóng" value={formatVND(student.paid)} />
-            <Row label="Số buổi đã đóng" value={`${student.sessionsPaid}/${student.sessionsOwed} buổi`} />
-            <Row label="Còn thiếu" value={formatVND(student.debt)} tone={student.debt > 0 ? 'text-blush-ink' : 'text-muted'} />
+            <Row label="Đã nộp" value={formatVND(student.cash)} />
+            {student.discount > 0 && <Row label="Giảm trừ" value={formatVND(student.discount)} />}
+            <Row label="Buổi đã mua" value={`${student.sessionsBought} buổi`} />
+            <Row label="Đã học" value={`${student.sessionsDone} buổi`} />
+            <Row
+              label="Còn lại"
+              value={student.sessionsLeft >= 0 ? `${student.sessionsLeft} buổi` : `Nợ ${-student.sessionsLeft} buổi`}
+              tone={student.sessionsLeft < 0 ? 'text-blush-ink' : undefined}
+            />
+            <Row label="Đang nợ" value={formatVND(student.debt)} tone={student.debt > 0 ? 'text-blush-ink' : 'text-muted'} />
           </dl>
           <div className="mt-4 border-t border-line pt-3">
             <h3 className="mb-2 text-xs font-normal uppercase tracking-wider text-muted">Lịch sử thu</h3>
@@ -137,7 +142,7 @@ export function StudentProfile({
               <ul className="flex flex-col gap-2">
                 {student.payments.map((p) => (
                   <li key={p.id} className="flex items-center justify-between gap-3 text-sm">
-                    <span className="text-muted">{dateKeyLabel(p.paidAt)}{p.note ? ` · ${p.note}` : ''}</span>
+                    <span className="text-muted">{dateKeyLabel(p.paidAt)}{p.discount > 0 ? ` · giảm trừ ${formatVND(p.discount)}` : ''}{p.note ? ` · ${p.note}` : ''}</span>
                     <b className="text-ink">{formatVND(p.amount)}</b>
                   </li>
                 ))}

@@ -251,6 +251,8 @@ export const tuitionPayments = pgTable(
       .references(() => students.id, { onDelete: 'cascade' }),
     // Sổ thu chỉ thêm, không xoá. payment: khoản thu (số dương). refund: hoàn tiền thừa, void: huỷ khoản thu ref_id (cả hai số âm).
     amount: integer('amount').notNull(),
+    // Giảm trừ ghi cùng khoản thu (VND): cộng vào giá trị quy ra buổi, không tính là doanh thu. Dòng huỷ ghi số âm.
+    discount: integer('discount').notNull().default(0),
     kind: varchar('kind', { length: 10 }).notNull().default('payment'),
     refId: integer('ref_id'),
     paidAt: timestamp('paid_at', { withTimezone: true }).notNull().defaultNow(),

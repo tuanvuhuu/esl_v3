@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { debtOf, dueDateFor, isOverdue, sessionsCovered, tuitionState } from '@/lib/tuition';
+import { debtOf, dueDateFor, isOverdue, sessionsBought, tuitionState, TUITION_PER_SESSION } from '@/lib/tuition';
+import { netFee } from '@/lib/tuition-fee';
 
 describe('tuitionState', () => {
   it('đã đóng khi thu đủ hoặc hơn học phí', () => {
@@ -19,22 +20,30 @@ describe('debtOf', () => {
   });
 });
 
-describe('sessionsCovered', () => {
-  it('số buổi đóng tăng theo số tiền thu', () => {
-    // 12 buổi, học phí 4.800.000 ₫: mỗi buổi 400.000 ₫
-    expect(sessionsCovered(4_800_000, 0, 12)).toBe(0);
-    expect(sessionsCovered(4_800_000, 1_200_000, 12)).toBe(3);
-    expect(sessionsCovered(4_800_000, 1_100_000, 12)).toBe(2);
-    expect(sessionsCovered(4_800_000, 4_800_000, 12)).toBe(12);
+describe('học phí theo buổi', () => {
+  it('giá một buổi là 250.000 ₫', () => {
+    expect(TUITION_PER_SESSION).toBe(250_000);
   });
-  it('đóng thừa không vượt số buổi còn lại', () => {
-    expect(sessionsCovered(4_800_000, 6_000_000, 12)).toBe(12);
+  it('số buổi đã mua = đã nộp ÷ 250.000, làm tròn xuống', () => {
+    expect(sessionsBought(0)).toBe(0);
+    expect(sessionsBought(2_500_000)).toBe(10);
+    expect(sessionsBought(2_600_000)).toBe(10);
+    expect(sessionsBought(-250_000)).toBe(0);
   });
-  it('học phí bằng 0 thì coi như đã đóng đủ buổi', () => {
-    expect(sessionsCovered(0, 0, 8)).toBe(8);
+  it('giảm trừ cộng vào số buổi', () => {
+    // nộp 2.250.000, giảm trừ 250.000 → 10 buổi
+    expect(sessionsBought(2_250_000 + 250_000)).toBe(10);
   });
-  it('không có buổi còn lại thì bằng 0', () => {
-    expect(sessionsCovered(4_800_000, 4_800_000, 0)).toBe(0);
+  it('phải nộp = buổi đã học × 250.000 − giảm trừ cố định', () => {
+    expect(netFee(8, 0)).toBe(2_000_000);
+    expect(netFee(8, 500_000)).toBe(1_500_000);
+    expect(netFee(0, 500_000)).toBe(-500_000);
+  });
+  it('trạng thái: chưa nộp, nợ buổi, đã đủ', () => {
+    expect(tuitionState(0, 0)).toBe('unpaid');
+    expect(tuitionState(netFee(12, 0), 2_500_000)).toBe('partial');
+    expect(tuitionState(netFee(8, 0), 2_500_000)).toBe('paid');
+    expect(tuitionState(netFee(0, 500_000), 0)).toBe('paid');
   });
 });
 

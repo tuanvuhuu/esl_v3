@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { describeSchedule, encodeDayTimes, generateSessions, resolveDayTimes } from '@/lib/schedule';
 import { checkDayTimes, classCreateSchema } from '@/lib/validation/class';
 import { fieldErrorsFrom } from '@/lib/validation/student';
-import { proratedFee } from '@/lib/tuition';
 import { parseStudentCode, studentCode } from '@/lib/student-code';
 
 const vnTime = (d: Date) => new Date(d.getTime() + 7 * 3_600_000).toISOString().slice(11, 16);
@@ -104,19 +103,6 @@ describe('một ngày học nhiều ca', () => {
     });
     expect(encodeDayTimes(v.dayTimes)).toBe('T7 08:00-09:30,T7 14:00-15:30');
     expect([v.startTime, v.endTime]).toEqual(['08:00', '09:30']);
-  });
-});
-
-describe('học phí theo số buổi còn lại', () => {
-  it('chia học phí lớp theo buổi, làm tròn đến 1.000đ', () => {
-    expect(proratedFee(3_000_000, 24, 17)).toBe(2_125_000);
-    expect(proratedFee(2_500_000, 24, 17)).toBe(1_771_000); // 1.770.833 → 1.771.000
-  });
-  it('học đủ khoá thì đóng đủ, hết buổi thì 0, kết quả luôn là số nguyên', () => {
-    expect(proratedFee(2_500_000, 24, 24)).toBe(2_500_000);
-    expect(proratedFee(2_500_000, 24, 0)).toBe(0);
-    expect(proratedFee(2_500_000, 0, 0)).toBe(2_500_000);
-    expect(Number.isInteger(proratedFee(1_234_567, 7, 3))).toBe(true);
   });
 });
 

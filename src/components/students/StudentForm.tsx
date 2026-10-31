@@ -4,11 +4,11 @@ import { startTransition, useActionState, useEffect, useState, type FormEvent } 
 import { checkStudentCodeAction, createStudentAction, suggestStudentCodeAction, tuitionPreviewAction, updateStudentAction, type StudentFormValues, type TuitionPreview } from '@/app/(app)/hoc-sinh/actions';
 import { dateKeyLabel } from '@/lib/datetime';
 import { formatVND } from '@/lib/money';
+import { TUITION_PER_SESSION } from '@/lib/tuition';
 import { todayIsoVN, type ActionResult } from '@/lib/validation/student';
 import { Field, FORM_BTN_CANCEL, FORM_BTN_SUBMIT, inputClass, textareaClass, FormFooter } from '@/components/ui/Field';
 import { SelectPanel } from '@/components/ui/SelectPanel';
 import { Alert } from '@/components/ui/primitives';
-import { Btn } from '@/components/ui/Btn';
 
 // campusId: lớp thuộc cơ sở nào. Form học sinh chọn cơ sở trước, rồi chỉ hiện lớp của cơ sở đó.
 export type ClassOption = { id: number; name: string; course: string; teacherName: string; fee: number; campusId: number };
@@ -81,11 +81,8 @@ export function StudentForm({
   const selectedClass = classes.find((c) => c.id === classId);
   const campusClasses = classes.filter((c) => c.campusId === campusId);
 
-  // Ngày bắt đầu học của học sinh (khác ngày khai giảng của lớp) và học phí theo số buổi còn lại.
-  // Thêm mới: ô học phí tự lấy số gợi ý cho đến khi người nhập tự sửa. Sửa: giữ số đã lưu, chỉ hiện gợi ý.
+  // Ngày bắt đầu học của học sinh (khác ngày khai giảng của lớp). Học phí tính theo buổi khi ghi thu, không nhập ở đây.
   const [startDate, setStartDate] = useState(values.startDate);
-  const [fee, setFee] = useState(values.tuitionFee === null ? '' : String(values.tuitionFee));
-  const [feeEdited, setFeeEdited] = useState(mode === 'edit');
   // Thêm mới: lớp chưa khai giảng thì ngày bắt đầu học tự lấy ngày buổi đầu của lớp, cho đến khi người nhập tự chọn ngày
   const [startEdited, setStartEdited] = useState(mode === 'edit');
   const [preview, setPreview] = useState<TuitionPreview | null>(null);
@@ -103,12 +100,11 @@ export function StudentForm({
           return;
         }
       }
-      if (r.ok && !feeEdited) setFee(String(r.preview.suggested));
     });
     return () => {
       stale = true;
     };
-    // feeEdited đổi không cần tính lại; chỉ tính khi đổi lớp hoặc ngày bắt đầu học
+    // Chỉ tính khi đổi lớp hoặc ngày bắt đầu học
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [classId, startDate]);
   const shownPreview = preview && classId && startDate ? preview : null;
@@ -252,55 +248,10 @@ export function StudentForm({
         <div className="col-span-full rounded-[var(--radius-ctl)] bg-lav px-3 py-2.5 text-sm leading-relaxed text-lav-ink" data-testid="class-info">
           <b className="text-ink">{selectedClass.course}</b>
           <br />
-          {selectedClass.teacherName} · Học phí lớp <b className="text-ink">{formatVND(selectedClass.fee)}</b>
+          {selectedClass.teacherName} · Học phí <b className="text-ink">{formatVND(TUITION_PER_SESSION)}</b> một buổi
           {shownPreview && <> · {shownPreview.total} buổi{shownPreview.firstKey ? ` · Khai giảng ${dateKeyLabel(shownPreview.firstKey)}` : ''}</>}
         </div>
       )}
-
-      <Field label="Học phí của học sinh (VND)" error={errors.tuitionFee} hint="Gõ số, app tự thêm dấu chấm. Để trống là đóng đủ học phí lớp.">
-        {/* Hiện "2.250.000"; máy chủ bỏ dấu chấm khi lưu */}
-        <input
-          name="tuitionFee"
-          type="text"
-          inputMode="numeric"
-          autoComplete="off"
-          value={fee === '' ? '' : Number(fee).toLocaleString('vi-VN')}
-          onChange={(e) => {
-            setFee(e.target.value.replace(/\D/g, '').replace(/^0+(?=\d)/, '').slice(0, 12));
-            setFeeEdited(true);
-          }}
-          className={`${inputClass(errors.tuitionFee)} tabular-nums`}
-        />
-      </Field>
-
-      {shownPreview && shownPreview.remaining < shownPreview.total && (
-        <div className="flex min-w-0 flex-col gap-2 self-end rounded-[var(--radius-ctl)] bg-butter px-3 py-2.5 text-sm leading-relaxed text-butter-ink min-[768px]:col-span-2 min-[768px]:flex-row min-[768px]:items-center" data-testid="fee-suggestion">
-          <span className="min-w-0 flex-1">
-            Từ {dateKeyLabel(startDate)} còn <b>{shownPreview.remaining}/{shownPreview.total} buổi</b>: {formatVND(shownPreview.fee)} ÷ {shownPreview.total} × {shownPreview.remaining} ≈{' '}
-            <b>{formatVND(shownPreview.suggested)}</b>
-          </span>
-          {fee !== String(shownPreview.suggested) && (
-            <Btn variant="ghost" type="button" onClick={() => { setFee(String(shownPreview.suggested)); setFeeEdited(true); }}>
-              Dùng số này
-            </Btn>
-          )}
-        </div>
-      )}
-
-      <Field label="Giảm trừ (VND)" error={errors.tuitionDiscount} hint="Số tiền cố định trừ vào học phí (không tính theo phần trăm). Để trống là không giảm.">
-        <input
-          name="tuitionDiscount"
-          type="text"
-          inputMode="numeric"
-          autoComplete="off"
-          defaultValue={values.tuitionDiscount ? values.tuitionDiscount.toLocaleString('vi-VN') : ''}
-          onChange={(e) => {
-            const digits = e.target.value.replace(/\D/g, '').replace(/^0+(?=\d)/, '').slice(0, 12);
-            e.target.value = digits === '' ? '' : Number(digits).toLocaleString('vi-VN');
-          }}
-          className={`${inputClass(errors.tuitionDiscount)} tabular-nums`}
-        />
-      </Field>
 
       <FormSection>Phụ huynh</FormSection>
       <Field label="Phụ huynh *" error={errors.parentId} wide hint="Chọn người đã có trong danh sách, hoặc để 'Thêm phụ huynh mới' và nhập bên dưới.">

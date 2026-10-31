@@ -170,9 +170,9 @@ export function StudentList({
         return (
           <>
             <Pill tone={TUITION_META[row.tuition].tone}>{TUITION_META[row.tuition].label}</Pill>
-            <small className="mt-1.5 block truncate text-xs text-ink-2">Đóng {row.sessionsPaid}/{row.sessionsOwed} buổi</small>
+            <small className="mt-1.5 block truncate text-xs text-ink-2">{row.sessionsLeft >= 0 ? `Còn ${row.sessionsLeft}/${row.sessionsBought} buổi đã đóng` : `Nợ ${-row.sessionsLeft} buổi`}</small>
             {row.debt > 0 && <small className="block truncate text-xs text-muted">Thiếu {formatVND(row.debt)}</small>}
-            {row.discount > 0 && <small className="block truncate text-xs text-muted">Miễn giảm {formatVND(row.discount)}</small>}
+            {row.discount > 0 && <small className="block truncate text-xs text-muted">Giảm trừ {formatVND(row.discount)}</small>}
           </>
         );
       case 'status':
@@ -322,9 +322,9 @@ function StudentCard({ row, viewHref, canEdit, canDelete, onEdit, onDelete }: { 
         </div>
         <div className="flex flex-col items-end gap-1">
           <Pill tone={TUITION_META[row.tuition].tone}>{TUITION_META[row.tuition].label}</Pill>
-          <small className="text-xs text-ink-2">Đóng {row.sessionsPaid}/{row.sessionsOwed} buổi</small>
+          <small className="text-xs text-ink-2">{row.sessionsLeft >= 0 ? `Còn ${row.sessionsLeft}/${row.sessionsBought} buổi đã đóng` : `Nợ ${-row.sessionsLeft} buổi`}</small>
           {row.debt > 0 && <small className="text-xs text-muted">Thiếu {formatVNDShort(row.debt)}</small>}
-          {row.discount > 0 && <small className="text-xs text-muted">Miễn giảm {formatVNDShort(row.discount)}</small>}
+          {row.discount > 0 && <small className="text-xs text-muted">Giảm trừ {formatVNDShort(row.discount)}</small>}
         </div>
       </div>
 

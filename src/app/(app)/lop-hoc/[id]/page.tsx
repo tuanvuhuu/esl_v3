@@ -12,6 +12,7 @@ import { NoAccess } from '@/components/ui/NoAccess';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { EmptyState, Pill, ProgressBar, type Tone } from '@/components/ui/primitives';
 import { formatVND } from '@/lib/money';
+import { TUITION_PER_SESSION } from '@/lib/tuition';
 import { dateKeyLabel, vnDateTimeLabel } from '@/lib/datetime';
 import { hasPermission } from '@/lib/permissions';
 import { getCampusContext } from '@/lib/campus-context';
@@ -122,7 +123,7 @@ async function ClassData({ params }: { params: Promise<{ id: string }> }) {
               <dt className="text-muted">Phòng</dt>
               <dd className="text-ink">{cls.room || '—'}</dd>
               <dt className="text-muted">Học phí</dt>
-              <dd className="font-bold text-ink">{formatVND(cls.fee)}</dd>
+              <dd className="font-bold text-ink">{formatVND(TUITION_PER_SESSION)} / buổi</dd>
               <dt className="text-muted">Buổi đã huỷ</dt>
               <dd className="text-ink">{cls.cancelledCount}</dd>
             </dl>

@@ -3,7 +3,6 @@
 import { CalendarClock, Eye, Pencil, Plus, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import type { ClassRow } from '@/lib/queries/classes';
-import { formatVND } from '@/lib/money';
 import { vnDateTimeLabel } from '@/lib/datetime';
 import { BTN_BASE, BTN_GHOST, Btn } from '@/components/ui/Btn';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -87,7 +86,7 @@ export function ClassList({
                 <span className="font-bold text-ink">{row.schedule}</span>
                 <span className="truncate text-ink-2">
                   <span className="text-muted">GV chủ nhiệm </span>
-                  {row.teacherName}{row.room ? ` · ${row.room}` : ''} · {formatVND(row.fee)}
+                  {row.teacherName}{row.room ? ` · ${row.room}` : ''}
                 </span>
                 <span className="truncate text-ink-2">
                   <span className="text-muted">Trợ giảng </span>

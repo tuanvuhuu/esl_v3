@@ -10,7 +10,6 @@ import { requireClassAccess, requireStudentAccess } from '@/lib/campus-access';
 import { sessionCountsFrom } from '@/lib/queries/classes';
 import { parseStudentCode, studentCode } from '@/lib/student-code';
 import { normalizeSearch } from '@/lib/text';
-import { proratedFee } from '@/lib/tuition';
 import { fieldErrorsFrom, isRealIsoDate, PARENT_RELATIONS, studentFormSchema, type ActionResult } from '@/lib/validation/student';
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -39,27 +38,9 @@ async function attachParent(tx: Tx, studentId: number, parentId: number, relatio
   }
 }
 
-// Học phí riêng chỉ lưu khi khác học phí lớp; bằng học phí lớp thì để trống để đi theo lớp khi lớp đổi học phí
-async function ownFee(classId: number, tuitionFee: number | null): Promise<number | null> {
-  if (tuitionFee === null) return null;
-  const [cls] = await db.select({ fee: classes.fee }).from(classes).where(eq(classes.id, classId)).limit(1);
-  return cls && cls.fee === tuitionFee ? null : tuitionFee;
-}
+export type TuitionPreview = { fee: number; total: number; remaining: number; firstKey: string | null };
 
-// Giảm trừ không được lớn hơn học phí gốc (học phí riêng, hoặc học phí lớp khi để trống)
-async function discountError(classId: number, tuitionFee: number | null, discount: number): Promise<ActionResult | null> {
-  if (discount <= 0) return null;
-  const [cls] = await db.select({ fee: classes.fee }).from(classes).where(eq(classes.id, classId)).limit(1);
-  const base = tuitionFee ?? cls?.fee ?? 0;
-  if (discount > base) {
-    return { ok: false, message: 'Giảm trừ lớn hơn học phí của học sinh.', fieldErrors: { tuitionDiscount: 'Không được lớn hơn học phí' } };
-  }
-  return null;
-}
-
-export type TuitionPreview = { fee: number; total: number; remaining: number; suggested: number; firstKey: string | null };
-
-// Gợi ý học phí khi học sinh vào lớp từ ngày startDate: số buổi còn lại (không tính buổi huỷ) và học phí tương ứng
+// Thông tin lớp khi học sinh vào lớp từ ngày startDate: tổng buổi, số buổi còn lại (không tính buổi huỷ), ngày khai giảng
 export async function tuitionPreviewAction(classId: number, startDate: string): Promise<{ ok: true; preview: TuitionPreview } | { ok: false; message: string }> {
   try {
     await requirePermission('students.edit');
@@ -67,7 +48,7 @@ export async function tuitionPreviewAction(classId: number, startDate: string): 
     await requireClassAccess(classId);
     const counts = await sessionCountsFrom(classId, startDate);
     if (!counts) return { ok: false, message: 'Lớp học không tồn tại.' };
-    return { ok: true, preview: { ...counts, suggested: proratedFee(counts.fee, counts.total, counts.remaining) } };
+    return { ok: true, preview: counts };
   } catch (error) {
     if (error instanceof ForbiddenError) return { ok: false, message: error.message };
     console.error('Lỗi tính học phí theo buổi:', error);
@@ -122,9 +103,6 @@ export async function createStudentAction(_prev: ActionResult, formData: FormDat
       }
     }
     await requireClassAccess(v.classId);
-    const tuitionFee = await ownFee(v.classId, v.tuitionFee);
-    const bad = await discountError(v.classId, v.tuitionFee, v.tuitionDiscount);
-    if (bad) return bad;
     const id = await db.transaction(async (tx) => {
       const [student] = await tx
         .insert(students)
@@ -137,8 +115,6 @@ export async function createStudentAction(_prev: ActionResult, formData: FormDat
           classId: v.classId,
           status: v.status,
           startDate: v.startDate,
-          tuitionFee,
-          tuitionDiscount: v.tuitionDiscount,
           note: v.note,
         })
         .returning({ id: students.id });
@@ -180,9 +156,6 @@ export async function updateStudentAction(id: number, _prev: ActionResult, formD
     if (!newClass) return { ok: false, message: 'Lớp học không tồn tại.', fieldErrors: { classId: 'Lớp học không tồn tại' } };
 
     const classChanged = before.classId !== v.classId;
-    const tuitionFee = await ownFee(v.classId, v.tuitionFee);
-    const bad = await discountError(v.classId, v.tuitionFee, v.tuitionDiscount);
-    if (bad) return bad;
     await db.transaction(async (tx) => {
       await tx
         .update(students)
@@ -194,8 +167,6 @@ export async function updateStudentAction(id: number, _prev: ActionResult, formD
           classId: v.classId,
           status: v.status,
           startDate: v.startDate,
-          tuitionFee,
-          tuitionDiscount: v.tuitionDiscount,
           note: v.note,
           updatedAt: new Date(),
         })

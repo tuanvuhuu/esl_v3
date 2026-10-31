@@ -20,5 +20,6 @@ export async function tuitionQr(studentId: number, name: string, amount: number)
   const payload = vietQrPayload({ bin: s.bankBin, account: s.bankAccount, amount, note });
   const png = await QRCode.toBuffer(payload, { type: 'png', margin: 2, width: 480, errorCorrectionLevel: 'M' });
   const owner = s.bankAccountName ? ` · ${s.bankAccountName}` : '';
-  return { png: new Uint8Array(png), payload, note, bankLine: `${bankName(s.bankBin)} ${s.bankAccount}${owner} · ${formatVND(amount)} · nội dung: ${note}` };
+  const money = amount > 0 ? formatVND(amount) : 'phụ huynh tự nhập số tiền';
+  return { png: new Uint8Array(png), payload, note, bankLine: `${bankName(s.bankBin)} ${s.bankAccount}${owner} · ${money} · nội dung: ${note}` };
 }

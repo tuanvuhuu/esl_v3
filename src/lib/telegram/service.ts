@@ -29,6 +29,7 @@ import {
   normalizePhone,
 } from './commands';
 import { NET_FEE_SQL } from '@/lib/tuition-fee';
+import { sessionsBought } from '@/lib/tuition';
 
 export type LinkTarget = { parentId: number } | { accountId: number };
 
@@ -222,9 +223,10 @@ export async function isAccountLinked(accountId: number): Promise<boolean> {
 // ---------- Trả lời lệnh của phụ huynh ----------
 
 async function childrenOf(parentId: number) {
-  const result = await db.execute<{ id: number; full_name: string; class_id: number; class_name: string; fee: number; paid: number }>(sql`
-    SELECT s.id, s.full_name, c.id AS class_id, c.name AS class_name, ${NET_FEE_SQL} AS fee,
-      COALESCE((SELECT SUM(p.amount) FROM tuition_payments p WHERE p.student_id = s.id), 0)::int AS paid
+  const result = await db.execute<{ id: number; full_name: string; class_id: number; class_name: string; fee: number; paid: number; sessions_done: number; own_discount: number }>(sql`
+    SELECT s.id, s.full_name, c.id AS class_id, c.name AS class_name, ${NET_FEE_SQL}::int AS fee, s.sessions_done,
+      COALESCE(s.tuition_discount, 0)::int AS own_discount,
+      COALESCE((SELECT SUM(p.amount + p.discount) FROM tuition_payments p WHERE p.student_id = s.id), 0)::int AS paid
     FROM student_parents sp JOIN students s ON s.id = sp.student_id JOIN classes c ON c.id = s.class_id
     WHERE sp.parent_id = ${parentId} AND s.status IN ('active', 'trial', 'paused')
     ORDER BY s.full_name`);
@@ -257,8 +259,12 @@ async function tuitionText(parentId: number): Promise<string> {
   if (kids.length === 0) return 'Chưa có học sinh nào gắn với phụ huynh này.';
   return kids
     .map((k) => {
+      // Học phí theo buổi: đã mua (đã nộp + giảm trừ) ÷ giá một buổi, trừ dần theo buổi đã học
       const debt = Math.max(0, k.fee - k.paid);
-      return debt > 0 ? `${k.full_name}: còn thiếu ${formatVND(debt)} (đã đóng ${formatVND(k.paid)} / ${formatVND(k.fee)})` : `${k.full_name}: đã đóng đủ ${formatVND(k.fee)}`;
+      const bought = sessionsBought(k.paid + k.own_discount);
+      const left = bought - k.sessions_done;
+      const head = `${k.full_name}: đã mua ${bought} buổi, đã học ${k.sessions_done} buổi`;
+      return left < 0 || debt > 0 ? `${head}, đang nợ ${-left} buổi (${formatVND(debt)}).` : `${head}, còn ${left} buổi.`;
     })
     .join('\n');
 }
@@ -428,7 +434,7 @@ export async function dailyReportText(accountId: number, now: Date = new Date())
     FROM students s
     JOIN classes c ON c.id = s.class_id
     WHERE s.status = 'active'
-      AND (${NET_FEE_SQL} - COALESCE((SELECT SUM(amount) FROM tuition_payments WHERE student_id = s.id), 0)) > 0`)).rows;
+      AND (${NET_FEE_SQL} - COALESCE((SELECT SUM(amount + discount) FROM tuition_payments WHERE student_id = s.id), 0)) > 0`)).rows;
 
   return [
     `📊 BÁO CÁO NGÀY ${dateKeyLabel(today)} (ESL Center)`,

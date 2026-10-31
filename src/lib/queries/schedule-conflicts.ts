@@ -1,7 +1,9 @@
-// Tìm buổi học trùng giờ với giáo viên hoặc phòng (xếp lịch dễ và không trùng). Chỉ chạy trên server.
+// Tìm buổi học trùng phòng (xếp lịch dễ và không trùng). Chỉ chạy trên server.
+// Giáo viên chủ nhiệm được nhận nhiều lớp trùng giờ (người dạy trực tiếp có thể là trợ giảng, giáo viên nước ngoài),
+// nên trùng giờ của giáo viên không còn chặn; teacherId giữ trong tham số để gọi cũ không phải đổi.
 // Trùng khi khoảng giờ giao nhau (bắt đầu trước khi buổi kia kết thúc và kết thúc sau khi buổi kia bắt đầu).
 // Buổi đã huỷ không tính. Phòng chỉ so trong cùng cơ sở, không phân biệt hoa thường.
-import { and, eq, gt, lt, ne, or, sql } from 'drizzle-orm';
+import { and, eq, gt, lt, ne, sql } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { classes, classSessions, teachers } from '@/db/schema';
 import { vnDateKey, vnTimeLabel, weekdayLabel, weekdayOfKey, dateKeyLabel } from '@/lib/datetime';
@@ -24,15 +26,12 @@ export async function findScheduleConflicts(input: {
   excludeClassId?: number | null;
   excludeSessionId?: number | null;
 }): Promise<ScheduleConflict[]> {
-  const { slots, teacherId } = input;
+  const { slots } = input;
   const room = input.room.trim().toLowerCase();
-  if (slots.length === 0 || (!teacherId && !room)) return [];
+  if (slots.length === 0 || !room) return [];
   const from = new Date(Math.min(...slots.map((s) => s.startsAt.getTime())));
   const to = new Date(Math.max(...slots.map((s) => s.endsAt.getTime())));
 
-  const who = [];
-  if (teacherId) who.push(eq(classSessions.teacherId, teacherId));
-  if (room) who.push(and(sql`lower(${classSessions.room}) = ${room}`, eq(classes.campusId, input.campusId)));
 
   const rows = await db
     .select({
@@ -53,7 +52,8 @@ export async function findScheduleConflicts(input: {
         ne(classSessions.status, 'cancelled'),
         lt(classSessions.startsAt, to),
         gt(classSessions.endsAt, from),
-        or(...who),
+        sql`lower(${classSessions.room}) = ${room}`,
+        eq(classes.campusId, input.campusId),
         input.excludeClassId ? ne(classSessions.classId, input.excludeClassId) : undefined,
         input.excludeSessionId ? ne(classSessions.id, input.excludeSessionId) : undefined,
       ),
@@ -64,8 +64,7 @@ export async function findScheduleConflicts(input: {
     for (const r of rows) {
       if (!(r.startsAt < s.endsAt && r.endsAt > s.startsAt)) continue;
       const base = { startsAt: s.startsAt, endsAt: s.endsAt, otherClass: r.className, otherStartsAt: r.startsAt, otherEndsAt: r.endsAt };
-      if (teacherId && r.teacherId === teacherId) out.push({ ...base, kind: 'teacher', who: r.teacherName });
-      else if (room && r.room.trim().toLowerCase() === room) out.push({ ...base, kind: 'room', who: r.room });
+      if (r.room.trim().toLowerCase() === room) out.push({ ...base, kind: 'room', who: r.room });
     }
   }
   return out.sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime());
