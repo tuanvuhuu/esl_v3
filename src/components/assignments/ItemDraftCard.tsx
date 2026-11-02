@@ -1,6 +1,26 @@
 'use client';
 
-import { ArrowDownIcon, ArrowUpIcon, EyeClosedIcon, EyeIcon, ImageIcon, PaperclipIcon, PlusIcon, TrashIcon, XIcon } from '@primer/octicons-react';
+import {
+  ArrowDownIcon,
+  ArrowSwitchIcon,
+  ArrowUpIcon,
+  BookIcon,
+  BroadcastIcon,
+  EyeClosedIcon,
+  EyeIcon,
+  ImageIcon,
+  LinkIcon,
+  ListOrderedIcon,
+  NoteIcon,
+  PaperclipIcon,
+  PencilIcon,
+  PlusIcon,
+  SyncIcon,
+  TasklistIcon,
+  TrashIcon,
+  XIcon,
+  type Icon,
+} from '@primer/octicons-react';
 import { useState, useTransition } from 'react';
 import { uploadAsStaff } from '@/lib/upload-client';
 import {
@@ -24,17 +44,17 @@ import { criteriaTotal, MAX_OPTIONS, MAX_PAIRS, newKey, type Draft } from './ite
 import { ItemMiniPreview } from './ItemMiniPreview';
 import { AUDIO_ACCEPT, IMAGE_ACCEPT } from '@/lib/upload-types';
 
-const EXERCISE_TYPES: { type: ItemType; icon: string; title: string; hint: string; defaultSkill: Skill }[] = [
-  { type: 'picture_choice', icon: '🖼️', title: 'Nghe chọn tranh', hint: '3+ · Nghe', defaultSkill: 'listening' },
-  { type: 'match', icon: '🔗', title: 'Ghép đôi', hint: '5+ · Từ vựng', defaultSkill: 'reading' },
-  { type: 'order', icon: '🧩', title: 'Sắp xếp câu', hint: '7+ · Ngữ pháp', defaultSkill: 'writing' },
-  { type: 'gap_fill', icon: '✏️', title: 'Điền chỗ trống', hint: '7+ · Đọc viết', defaultSkill: 'reading' },
-  { type: 'speak_repeat', icon: '🔁', title: 'Nghe nhắc lại', hint: '3+ · Nói', defaultSkill: 'speaking' },
-  { type: 'speak_read', icon: '📖', title: 'Đọc to', hint: '6+ · Nói', defaultSkill: 'speaking' },
-  { type: 'speak_picture', icon: '🗣️', title: 'Nói về tranh', hint: '8+ · Nói', defaultSkill: 'speaking' },
-  { type: 'choice', icon: '☑️', title: 'Trắc nghiệm chữ', hint: 'Mọi lứa tuổi', defaultSkill: 'reading' },
-  { type: 'text', icon: '📝', title: 'Trả lời viết', hint: 'Giáo viên chấm', defaultSkill: 'writing' },
-  { type: 'file', icon: '📎', title: 'Nộp tệp', hint: 'Giáo viên chấm', defaultSkill: 'writing' },
+const EXERCISE_TYPES: { type: ItemType; icon: Icon; title: string; hint: string; defaultSkill: Skill }[] = [
+  { type: 'picture_choice', icon: ImageIcon, title: 'Nghe chọn tranh', hint: '3+ · Nghe', defaultSkill: 'listening' },
+  { type: 'match', icon: LinkIcon, title: 'Ghép đôi', hint: '5+ · Từ vựng', defaultSkill: 'reading' },
+  { type: 'order', icon: ListOrderedIcon, title: 'Sắp xếp câu', hint: '7+ · Ngữ pháp', defaultSkill: 'writing' },
+  { type: 'gap_fill', icon: PencilIcon, title: 'Điền chỗ trống', hint: '7+ · Đọc viết', defaultSkill: 'reading' },
+  { type: 'speak_repeat', icon: SyncIcon, title: 'Nghe nhắc lại', hint: '3+ · Nói', defaultSkill: 'speaking' },
+  { type: 'speak_read', icon: BookIcon, title: 'Đọc to', hint: '6+ · Nói', defaultSkill: 'speaking' },
+  { type: 'speak_picture', icon: BroadcastIcon, title: 'Nói về tranh', hint: '8+ · Nói', defaultSkill: 'speaking' },
+  { type: 'choice', icon: TasklistIcon, title: 'Trắc nghiệm chữ', hint: 'Mọi lứa tuổi', defaultSkill: 'reading' },
+  { type: 'text', icon: NoteIcon, title: 'Trả lời viết', hint: 'Giáo viên chấm', defaultSkill: 'writing' },
+  { type: 'file', icon: PaperclipIcon, title: 'Nộp tệp', hint: 'Giáo viên chấm', defaultSkill: 'writing' },
 ];
 
 export function ItemDraftCard({
@@ -179,24 +199,32 @@ export function ItemDraftCard({
 
   const n = index + 1;
   const hasCriteria = d.criteria.length > 0;
+  const pointDisplay = hasCriteria ? criteriaTotal(d) : Number(d.points) || 0;
 
   return (
-    <section aria-label={`Câu ${n}`} className="flex flex-col gap-4 rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-4 shadow-[var(--shadow-resting-small,0_1px_2px_rgba(0,0,0,0.04))]">
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--borderColor-muted)] pb-3">
-        <div className="flex items-center gap-2">
-          <b className="text-base text-[var(--fgColor-default)]">Câu {n}</b>
+    <section
+      aria-label={`Câu ${n}`}
+      className="overflow-hidden rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)]"
+    >
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)] px-4 py-2.5">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center rounded-[var(--borderRadius-medium)] bg-[var(--primary-soft)] px-2 py-0.5 font-mono text-xs font-medium text-[var(--primary-deep)]">
+            #{n}
+          </span>
+          <b className="text-sm font-semibold text-[var(--fgColor-default)]">Câu {n}</b>
           <Pill tone="butter">
             {EXERCISE_TYPES.find((t) => t.type === d.itemType)?.title ?? d.itemType}
           </Pill>
+          <Pill tone="stone">{pointDisplay} điểm</Pill>
         </div>
         <div className="flex items-center gap-1.5">
           <button
             type="button"
             onClick={() => setShowPreview(!showPreview)}
-            className={`flex h-8 items-center gap-1.5 rounded-[var(--borderRadius-medium)] border px-2.5 text-xs font-semibold transition-colors max-[767px]:h-9 ${
+            className={`flex h-8 items-center gap-1.5 rounded-[var(--borderRadius-medium)] border px-2.5 text-xs font-medium transition-colors max-[767px]:h-9 ${
               showPreview
-                ? 'border-[var(--fgColor-accent)] bg-[var(--bgColor-accent-muted,var(--color-primary-soft))] text-[var(--fgColor-default)]'
-                : 'border-[var(--borderColor-default)] bg-[var(--bgColor-default)] text-[var(--fgColor-muted)] hover:bg-[var(--bgColor-muted)]'
+                ? 'border-[var(--primary)] bg-[var(--primary-soft)] text-[var(--primary-deep)]'
+                : 'border-[var(--borderColor-default)] bg-[var(--bgColor-default)] text-[var(--fgColor-muted)] hover:bg-[var(--bgColor-muted)] hover:text-[var(--fgColor-default)]'
             }`}
           >
             {showPreview ? <EyeClosedIcon size={14} aria-hidden /> : <EyeIcon size={14} aria-hidden />}
@@ -218,42 +246,45 @@ export function ItemDraftCard({
         </div>
       </div>
 
-      {showPreview && (
-        <div className="max-w-xs self-center">
-          <ItemMiniPreview draft={d} />
-        </div>
-      )}
+      <div className="flex flex-col gap-4 p-4 max-[767px]:p-3.5">
+        {showPreview && (
+          <div className="max-w-xs self-center">
+            <ItemMiniPreview draft={d} />
+          </div>
+        )}
 
-      {/* 1. Chọn dạng câu hỏi */}
-      <div>
-        <p className="mb-2 block text-xs font-medium uppercase tracking-wider text-[var(--fgColor-muted)]">Dạng bài tập</p>
-        <div role="radiogroup" aria-label={`Loại của câu ${n}`} className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-          {EXERCISE_TYPES.map((et) => {
-            const active = d.itemType === et.type;
-            return (
-              <button
-                key={et.type}
-                type="button"
-                role="radio"
-                data-card="true"
-                aria-checked={active}
-                aria-label={et.title}
-                onClick={() => setItemType(et.type)}
-                className={`flex flex-col items-start rounded-xl border p-2.5 text-left transition-all ${
-                  active
-                    ? 'border-[var(--fgColor-accent)] bg-[var(--bgColor-accent-muted,var(--color-primary-soft))] ring-2 ring-[var(--fgColor-accent)]/20'
-                    : 'border-[var(--borderColor-default)] bg-[var(--bgColor-default)] hover:bg-[var(--bgColor-muted)]'
-                }`}
-              >
-                <span className="text-sm font-medium text-[var(--fgColor-default)]">
-                  {et.icon} {et.title}
-                </span>
-                <span className="text-xs text-[var(--fgColor-muted)]">{et.hint}</span>
-              </button>
-            );
-          })}
+        {/* 1. Chọn dạng câu hỏi */}
+        <div>
+          <p className="mb-2 block text-xs font-semibold uppercase tracking-wide text-[var(--fgColor-muted)]">Dạng bài tập</p>
+          <div role="radiogroup" aria-label={`Loại của câu ${n}`} className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+            {EXERCISE_TYPES.map((et) => {
+              const active = d.itemType === et.type;
+              const TypeIcon = et.icon;
+              return (
+                <button
+                  key={et.type}
+                  type="button"
+                  role="radio"
+                  data-card="true"
+                  aria-checked={active}
+                  aria-label={et.title}
+                  onClick={() => setItemType(et.type)}
+                  className={`flex flex-col items-start gap-1 rounded-[var(--borderRadius-medium)] border p-2.5 text-left transition-all ${
+                    active
+                      ? 'border-[var(--primary)] bg-[var(--primary-soft)] shadow-[inset_3px_0_0_var(--primary)]'
+                      : 'border-[var(--borderColor-default)] bg-[var(--bgColor-default)] hover:bg-[var(--bgColor-muted)]'
+                  }`}
+                >
+                  <span className={`inline-flex items-center gap-1.5 text-[13px] font-medium ${active ? 'text-[var(--primary-deep)]' : 'text-[var(--fgColor-default)]'}`}>
+                    <TypeIcon size={14} className={active ? 'text-[var(--primary)]' : 'text-[var(--fgColor-muted)]'} aria-hidden />
+                    <span>{et.title}</span>
+                  </span>
+                  <span className="text-xs text-[var(--fgColor-muted)]">{et.hint}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
 
       {/* 2. Cài đặt cơ bản: Kỹ năng & Điểm */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -367,7 +398,6 @@ export function ItemDraftCard({
                 </div>
                 <div className="flex min-w-0 flex-1 flex-col gap-1">
                   <TextInput
-                    size="small"
                     value={opt.label}
                     onChange={(e) => patchOption(opt.key, { label: e.target.value })}
                     placeholder={`Tên tranh / từ ${oi + 1}`}
@@ -426,7 +456,7 @@ export function ItemDraftCard({
                   block
                   className="!min-w-0 flex-1"
                 />
-                <span className="font-medium text-[var(--fgColor-muted)]">⇄</span>
+                <ArrowSwitchIcon size={14} className="shrink-0 text-[var(--fgColor-muted)]" aria-hidden />
                 <TextInput
                   value={p.rightLabel}
                   onChange={(e) => patchPair(p.key, { rightLabel: e.target.value })}
@@ -629,6 +659,7 @@ export function ItemDraftCard({
           </div>
         </fieldset>
       )}
+      </div>
     </section>
   );
 }

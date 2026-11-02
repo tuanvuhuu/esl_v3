@@ -1,5 +1,6 @@
 'use client';
 
+import { BellIcon, CheckCircleIcon } from '@primer/octicons-react';
 import { useTransition } from 'react';
 import { remindTuitionAction } from '@/app/(app)/hoc-phi/actions';
 import { Btn } from '@/components/ui/Btn';
@@ -14,6 +15,7 @@ export function TuitionRemindButton({ studentId, debt }: { studentId: number; de
       <Btn
         block
         variant="primary"
+        leadingVisual={pending ? undefined : debt > 0 ? BellIcon : CheckCircleIcon}
         loading={pending}
         disabled={pending || debt <= 0}
         onClick={() =>

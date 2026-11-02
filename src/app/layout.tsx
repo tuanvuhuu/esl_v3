@@ -22,6 +22,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="vi"
+      data-scroll-behavior="smooth"
       data-theme="light"
       data-color-mode="light"
       data-light-theme="light"

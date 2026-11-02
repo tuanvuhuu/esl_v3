@@ -2,7 +2,26 @@
 
 // Soạn nhanh (P36.3, kho từ P36.4): dán danh sách từ, chọn từ có sẵn hoặc dán câu → chọn dạng câu → xem lại → thêm vào bài.
 // Bản mẫu: docs/mockups/soan-nhanh.html. Máy tính: menu ⋯ trên từng câu. Điện thoại: thẻ có nút chữ, nút chính dính đáy (chân Modal).
-import { ArrowSwitchIcon, BookmarkIcon, CheckIcon, LibraryIcon, SyncIcon, TrashIcon } from '@primer/octicons-react';
+import {
+  ArrowRightIcon,
+  ArrowSwitchIcon,
+  BookIcon,
+  BookmarkIcon,
+  BroadcastIcon,
+  CheckIcon,
+  DashIcon,
+  ImageIcon,
+  LibraryIcon,
+  LinkIcon,
+  ListOrderedIcon,
+  NoteIcon,
+  PencilIcon,
+  PlusIcon,
+  SyncIcon,
+  TasklistIcon,
+  TrashIcon,
+  type Icon,
+} from '@primer/octicons-react';
 import { useEffect, useMemo, useState, useTransition, type KeyboardEvent } from 'react';
 import { lookupVocabAction, saveVocabWordsAction } from '@/app/(app)/bai-tap/vocab-actions';
 import { saveQuestionsAction } from '@/app/(app)/ngan-hang-cau-hoi/actions';
@@ -45,6 +64,16 @@ type Step = 1 | 2 | 3;
 const LEVEL_CODES = ['Pre-A1', 'A1', 'A2'] as const;
 const STEP_NAMES = ['Nguồn', 'Dạng câu', 'Xem lại'];
 const typeMeta = (id: QuickType) => QUICK_TYPES.find((t) => t.id === id)!;
+const QUICK_TYPE_ICONS: Record<QuickType, Icon> = {
+  picture: ImageIcon,
+  match: LinkIcon,
+  meaning: TasklistIcon,
+  repeat: SyncIcon,
+  order: ListOrderedIcon,
+  gap: PencilIcon,
+  read: BookIcon,
+  write: NoteIcon,
+};
 
 export function QuickCompose({ open, levelCode, onClose, onAdd }: { open: boolean; levelCode: string | null; onClose: () => void; onAdd: (items: ItemInput[]) => void }) {
   const [step, setStep] = useState<Step>(1);
@@ -186,16 +215,27 @@ export function QuickCompose({ open, levelCode, onClose, onAdd }: { open: boolea
     );
 
   return (
-    <Modal open={open} title="Soạn nhanh" subtitle={`Trình độ ${LEVEL_LABELS[level.code]}. Câu sinh ra được sửa tiếp trong màn soạn như câu tự soạn.`} onClose={onClose} labelledBy="quick-compose-title" footer={footer}>
+    <Modal
+      size="xl"
+      open={open}
+      title="Soạn nhanh"
+      subtitle={`Trình độ ${LEVEL_LABELS[level.code]}. Câu sinh ra được sửa tiếp trong màn soạn như câu tự soạn.`}
+      onClose={onClose}
+      labelledBy="quick-compose-title"
+      footer={footer}
+    >
       <div className="flex flex-col gap-4">
-        <ol aria-label="Các bước" className="flex flex-wrap items-center gap-2">
+        <ol
+          aria-label="Các bước"
+          className="flex flex-wrap items-center gap-2 rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] p-2"
+        >
           {STEP_NAMES.map((name, i) => {
             const n = (i + 1) as Step;
             const done = n < step;
             const current = n === step;
             return (
               <li key={name} className="flex items-center gap-2">
-                {i > 0 && <span aria-hidden className="h-0.5 w-5 rounded bg-[var(--borderColor-default)] max-[767px]:hidden" />}
+                {i > 0 && <span aria-hidden className="h-0.5 w-4 rounded bg-[var(--borderColor-default)] max-[767px]:hidden" />}
                 <button
                   type="button"
                   onClick={() => goTo(n)}
@@ -203,11 +243,19 @@ export function QuickCompose({ open, levelCode, onClose, onAdd }: { open: boolea
                   aria-current={current ? 'step' : undefined}
                   className={`inline-flex h-9 items-center gap-2 rounded-full border pl-1.5 pr-3.5 text-sm font-medium transition-colors max-[767px]:h-11 disabled:opacity-40 ${
                     current
-                      ? 'border-[var(--fgColor-accent)] bg-[var(--bgColor-accent-muted,var(--color-primary-soft))] text-[var(--fgColor-default)]'
+                      ? 'border-[var(--primary)] bg-[var(--primary-soft)] text-[var(--primary-deep)]'
                       : 'border-[var(--borderColor-default)] bg-[var(--bgColor-default)] text-[var(--fgColor-muted)] hover:bg-[var(--bgColor-muted)]'
                   }`}
                 >
-                  <span className={`grid size-6 place-items-center rounded-full text-sm font-medium ${done ? 'bg-accent text-white' : current ? 'bg-[var(--button-primary-bgColor-rest,var(--color-primary))] text-[var(--button-primary-fgColor-rest,var(--color-on-primary))]' : 'bg-[var(--bgColor-muted)] text-[var(--fgColor-muted)]'}`}>
+                  <span
+                    className={`grid size-6 place-items-center rounded-full font-mono text-[11px] font-normal tabular-nums ${
+                      done
+                        ? 'bg-accent text-white'
+                        : current
+                          ? 'bg-[var(--primary)] text-[var(--on-primary)]'
+                          : 'bg-[var(--bgColor-muted)] text-[var(--fgColor-muted)]'
+                    }`}
+                  >
                     {done ? <CheckIcon size={14} aria-hidden /> : n}
                   </span>
                   {name}
@@ -240,7 +288,7 @@ export function QuickCompose({ open, levelCode, onClose, onAdd }: { open: boolea
                       onChange={(e) => setRaw(e.target.value)}
                       rows={10}
                       spellCheck={false}
-                      placeholder={'cat - con mèo - 🐱\ndog - con chó\nfish'}
+                      placeholder={'cat - con mèo\ndog - con chó\nfish'}
                       aria-label="Danh sách từ"
                     />
                   </Field>
@@ -302,18 +350,32 @@ export function QuickCompose({ open, levelCode, onClose, onAdd }: { open: boolea
                     tabIndex={0}
                     onClick={() => toggleType(t.id)}
                     onKeyDown={onKey}
-                    className={`relative flex min-h-[132px] cursor-pointer flex-col gap-1.5 rounded-xl border p-3.5 text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[var(--fgColor-accent)] ${
+                    className={`relative flex min-h-[132px] cursor-pointer flex-col gap-1.5 rounded-[var(--borderRadius-large)] border p-3.5 text-left outline-none transition-all focus-visible:ring-2 focus-visible:ring-[var(--primary)] ${
                       can !== true
                         ? 'cursor-not-allowed border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]'
                         : on
-                          ? 'border-[var(--fgColor-accent)] bg-[var(--bgColor-accent-muted,var(--color-primary-soft))]'
+                          ? 'border-[var(--primary)] bg-[var(--primary-soft)] shadow-[inset_3px_0_0_var(--primary)]'
                           : 'border-[var(--borderColor-default)] bg-[var(--bgColor-default)] hover:bg-[var(--bgColor-muted)]'
                     }`}
                   >
                     <span aria-hidden className={`absolute right-3 top-3 grid size-5 place-items-center rounded-[var(--borderRadius-small)] border-2 ${on ? 'border-accent bg-accent text-white' : 'border-[var(--borderColor-default)]'}`}>
                       {on && <CheckIcon size={14} aria-hidden />}
                     </span>
-                    <span aria-hidden className={`text-[26px] leading-none ${can !== true ? 'opacity-50' : ''}`}>{t.icon}</span>
+                    <span
+                      aria-hidden
+                      className={`flex size-8 items-center justify-center rounded-lg border ${
+                        can !== true
+                          ? 'border-[var(--borderColor-default)] bg-[var(--bgColor-default)] text-[var(--fgColor-muted)] opacity-50'
+                          : on
+                          ? 'border-[var(--primary)]/25 bg-[var(--bgColor-default)] text-[var(--primary)]'
+                          : 'border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)] text-[var(--fgColor-default)]'
+                      }`}
+                    >
+                      {(() => {
+                        const TypeIcon = QUICK_TYPE_ICONS[t.id];
+                        return <TypeIcon size={16} aria-hidden />;
+                      })()}
+                    </span>
                     <b className={`pr-6 text-md ${can !== true ? 'text-[var(--fgColor-muted)]' : 'text-[var(--fgColor-default)]'}`}>{t.label}</b>
                     <span className={`text-sm ${can !== true ? 'text-blush-ink' : 'text-[var(--fgColor-muted)]'}`}>
                       {can !== true ? can : t.perWord ? 'Mỗi từ một câu' : t.id === 'match' ? `${level.pairs[0]}–${level.pairs[1]} cặp một câu` : `${maxCount(t.id, words, sentences, level)} câu hợp lệ`}
@@ -321,11 +383,11 @@ export function QuickCompose({ open, levelCode, onClose, onAdd }: { open: boolea
                     {can === true && (
                       <span className="mt-auto inline-flex items-center gap-1" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
                         <button type="button" aria-label={`Bớt một câu ${t.label}`} onClick={() => setCount(t.id, count - 1)} disabled={count === 0} className="grid size-8 place-items-center rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] font-semibold disabled:opacity-40 max-[767px]:size-9">
-                          −
+                          <DashIcon size={14} aria-hidden />
                         </button>
                         <span className="min-w-7 text-center font-medium tabular-nums" aria-live="polite">{count}</span>
                         <button type="button" aria-label={`Thêm một câu ${t.label}`} onClick={() => setCount(t.id, count + 1)} disabled={count >= maxCount(t.id, words, sentences, level)} className="grid size-8 place-items-center rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] font-semibold disabled:opacity-40 max-[767px]:size-9">
-                          +
+                          <PlusIcon size={14} aria-hidden />
                         </button>
                       </span>
                     )}
@@ -334,9 +396,12 @@ export function QuickCompose({ open, levelCode, onClose, onAdd }: { open: boolea
               })}
             </div>
 
-            <section aria-label="Độ khó theo trình độ" className="flex flex-col gap-2">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <h3 className="text-lg font-semibold text-[var(--fgColor-default)]">Độ khó theo trình độ</h3>
+            <section
+              aria-label="Độ khó theo trình độ"
+              className="overflow-hidden rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)]"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)] px-3.5 py-2.5">
+                <h3 className="m-0 text-xs font-semibold uppercase tracking-wide text-[var(--fgColor-muted)]">Độ khó theo trình độ</h3>
                 <SegmentedSwitch
                   label="Trình độ"
                   value={level.code}
@@ -344,7 +409,7 @@ export function QuickCompose({ open, levelCode, onClose, onAdd }: { open: boolea
                   options={LEVEL_CODES.map((c) => ({ value: c, label: LEVEL_LABELS[c] }))}
                 />
               </div>
-              <dl className="grid grid-cols-1 gap-x-4 min-[768px]:grid-cols-3">
+              <dl className="grid grid-cols-1 gap-x-4 p-3.5 min-[768px]:grid-cols-3">
                 {[
                   ['Chọn tranh', `${level.pictureOptions} lựa chọn`],
                   ['Ghép đôi', `${level.pairs[0]}–${level.pairs[1]} cặp`],
@@ -353,9 +418,9 @@ export function QuickCompose({ open, levelCode, onClose, onAdd }: { open: boolea
                   ['Nhắc lại, đọc to', `${level.speakSeconds} giây`],
                   ['Cỡ bài gợi ý', `${level.lessonSize[0]}–${level.lessonSize[1]} câu`],
                 ].map(([k, v]) => (
-                  <div key={k} className="flex justify-between gap-2 border-b border-[var(--borderColor-muted)] py-2 text-base">
+                  <div key={k} className="flex justify-between gap-2 border-b border-[var(--borderColor-muted)] py-2 text-sm">
                     <dt className="text-[var(--fgColor-muted)]">{k}</dt>
-                    <dd className="font-semibold text-[var(--fgColor-default)]">{v}</dd>
+                    <dd className="font-semibold tabular-nums text-[var(--fgColor-default)]">{v}</dd>
                   </div>
                 ))}
               </dl>
@@ -365,7 +430,7 @@ export function QuickCompose({ open, levelCode, onClose, onAdd }: { open: boolea
 
         {step === 3 && (
           <>
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-accent-muted,var(--color-primary-soft))] px-4 py-3">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] border-l-4 border-l-[var(--primary)] bg-[var(--bgColor-muted)] px-4 py-3">
               <dl className="flex flex-wrap gap-5">
                 {[
                   [items.length, 'câu'],
@@ -373,8 +438,8 @@ export function QuickCompose({ open, levelCode, onClose, onAdd }: { open: boolea
                   [new Set(items.map((x) => x.quickType)).size, 'dạng'],
                 ].map(([v, k]) => (
                   <div key={k} className="flex flex-col">
-                    <dd className="text-2xl font-semibold leading-tight text-[var(--fgColor-default)]">{v}</dd>
-                    <dt className="text-sm text-[var(--fgColor-muted)]">{k}</dt>
+                    <dd className="text-2xl font-semibold leading-tight tabular-nums text-[var(--fgColor-default)]">{v}</dd>
+                    <dt className="text-xs text-[var(--fgColor-muted)]">{k}</dt>
                   </div>
                 ))}
               </dl>
@@ -411,7 +476,13 @@ export function QuickCompose({ open, levelCode, onClose, onAdd }: { open: boolea
                         <b className="block text-md text-[var(--fgColor-default)]">{it.input.prompt}</b>
                         <span className="mt-1 flex flex-wrap items-center gap-1.5 text-sm text-[var(--fgColor-muted)]">
                           <Pill tone="stone">
-                            {meta.icon} {meta.label}
+                            <span className="inline-flex items-center gap-1">
+                              {(() => {
+                                const TypeIcon = QUICK_TYPE_ICONS[it.quickType];
+                                return <TypeIcon size={11} aria-hidden />;
+                              })()}
+                              <span>{meta.label}</span>
+                            </span>
                           </Pill>
                           {it.input.promptVi}
                         </span>
@@ -474,48 +545,57 @@ function ParsedWords({ words, levelCode }: { words: QuickWord[]; levelCode: stri
     });
   }
   return (
-    <section aria-label="Từ đã nhận" className="flex min-w-0 flex-col gap-2">
-      <div className="flex items-baseline justify-between gap-2">
-        <h3 className="text-lg font-semibold text-[var(--fgColor-default)]">{words.length} từ đã nhận</h3>
-        {missing > 0 && <span className="text-sm text-[var(--fgColor-muted)]">{missing} từ chưa có nghĩa</span>}
+    <section
+      aria-label="Từ đã nhận"
+      className="flex min-w-0 flex-col overflow-hidden rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)]"
+    >
+      <div className="flex items-baseline justify-between gap-2 border-b border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)] px-3.5 py-2.5">
+        <h3 className="m-0 text-sm font-semibold tabular-nums text-[var(--fgColor-default)]">{words.length} từ đã nhận</h3>
+        {missing > 0 && <span className="text-xs tabular-nums text-[var(--fgColor-muted)]">{missing} từ chưa có nghĩa</span>}
       </div>
-      {words.length === 0 ? (
-        <Notice>Chưa có từ nào. Dán mỗi dòng một từ, hoặc chọn từ có sẵn.</Notice>
-      ) : (
-        <>
-          <ul className="flex flex-col max-[767px]:hidden">
-            {words.map((w) => (
-              <li key={w.en} className="grid min-h-12 grid-cols-[40px_minmax(0,1fr)_minmax(0,1.2fr)_auto] items-center gap-2.5 border-b border-[var(--borderColor-muted)] px-1 py-1 last:border-b-0">
-                <span aria-hidden className={`grid size-10 place-items-center rounded-[var(--borderRadius-medium)] text-2xl ${w.emoji ? 'bg-[var(--bgColor-muted)]' : 'border border-dashed border-[var(--borderColor-default)] text-sm text-[var(--fgColor-muted)]'}`}>{w.emoji || '—'}</span>
-                <b className="truncate text-md text-[var(--fgColor-default)]">{w.en}</b>
-                <span className={`truncate text-md ${!w.vi ? 'italic text-[var(--fgColor-muted)]' : w.viFromBank ? 'text-[var(--fgColor-accent)]' : 'text-[var(--fgColor-muted)]'}`}>{w.vi || 'Chưa có nghĩa'}</span>
-                {!w.vi ? <Pill tone="butter">Cần nghĩa</Pill> : w.viFromBank || w.emojiFromBank ? <Pill tone="lav">Có sẵn</Pill> : <Pill tone="mint">Đủ</Pill>}
-              </li>
-            ))}
-          </ul>
-          <ul className="flex flex-wrap gap-1.5 min-[768px]:hidden">
-            {words.map((w) => (
-              <li key={w.en} className={`inline-flex h-[var(--chip-h-touch)] items-center gap-1.5 rounded-full pl-1.5 pr-3 text-base font-semibold ${w.vi ? 'bg-[var(--bgColor-muted)] text-[var(--fgColor-default)]' : 'bg-butter text-butter-ink'}`}>
-                <span aria-hidden className="text-xl">{w.emoji || '❔'}</span>
-                {w.en}
-              </li>
-            ))}
-          </ul>
-          <p className="text-sm text-[var(--fgColor-muted)]">Chữ nổi bật là nghĩa lấy từ kho từ. Từ chưa có nghĩa vẫn dùng được cho nghe nhắc lại và viết.</p>
-          {typed.length > 0 && (
-            <div className="flex flex-wrap items-center gap-2">
-              <Btn leadingVisual={BookmarkIcon} onClick={save} disabled={saving}>
-                {saving ? 'Đang lưu…' : `Lưu ${typed.length} từ vào kho chung`}
-              </Btn>
-              {saved && (
-                <Alert inline tone={saved.ok ? 'ok' : 'error'}>
-                  {saved.text}
-                </Alert>
-              )}
-            </div>
-          )}
-        </>
-      )}
+      <div className="flex flex-col gap-2.5 p-3.5">
+        {words.length === 0 ? (
+          <Notice>Chưa có từ nào. Dán mỗi dòng một từ, hoặc chọn từ có sẵn.</Notice>
+        ) : (
+          <>
+            <ul className="flex flex-col max-[767px]:hidden">
+              {words.map((w) => (
+                <li key={w.en} className="grid min-h-11 grid-cols-[36px_minmax(0,1fr)_minmax(0,1.2fr)_auto] items-center gap-2.5 border-b border-[var(--borderColor-muted)] px-1 py-1 last:border-b-0">
+                  <span aria-hidden className={`grid size-9 place-items-center rounded-[var(--borderRadius-medium)] text-xl ${w.emoji ? 'bg-[var(--bgColor-muted)]' : 'border border-dashed border-[var(--borderColor-default)] text-xs text-[var(--fgColor-muted)]'}`}>{w.emoji || '—'}</span>
+                  <b className="truncate text-sm text-[var(--fgColor-default)]">{w.en}</b>
+                  <span className={`truncate text-sm ${!w.vi ? 'italic text-[var(--fgColor-muted)]' : w.viFromBank ? 'text-[var(--primary-deep)]' : 'text-[var(--fgColor-muted)]'}`}>{w.vi || 'Chưa có nghĩa'}</span>
+                  {!w.vi ? <Pill tone="butter">Cần nghĩa</Pill> : w.viFromBank || w.emojiFromBank ? <Pill tone="lav">Có sẵn</Pill> : <Pill tone="mint">Đủ</Pill>}
+                </li>
+              ))}
+            </ul>
+            <ul className="flex flex-wrap gap-1.5 min-[768px]:hidden">
+              {words.map((w) => (
+                <li key={w.en} className={`inline-flex h-[var(--chip-h-touch)] items-center gap-1.5 rounded-full pl-2 pr-3 text-sm font-medium ${w.vi ? 'bg-[var(--bgColor-muted)] text-[var(--fgColor-default)]' : 'bg-butter text-butter-ink'}`}>
+                  {w.emoji ? (
+                    <span aria-hidden className="text-lg">{w.emoji}</span>
+                  ) : (
+                    <BookIcon size={14} className="opacity-70" aria-hidden />
+                  )}
+                  {w.en}
+                </li>
+              ))}
+            </ul>
+            <p className="text-xs text-[var(--fgColor-muted)]">Chữ nổi bật là nghĩa lấy từ kho từ. Từ chưa có nghĩa vẫn dùng được cho nghe nhắc lại và viết.</p>
+            {typed.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2">
+                <Btn leadingVisual={BookmarkIcon} onClick={save} disabled={saving}>
+                  {saving ? 'Đang lưu…' : `Lưu ${typed.length} từ vào kho chung`}
+                </Btn>
+                {saved && (
+                  <Alert inline tone={saved.ok ? 'ok' : 'error'}>
+                    {saved.text}
+                  </Alert>
+                )}
+              </div>
+            )}
+          </>
+        )}
+      </div>
     </section>
   );
 }
@@ -585,8 +665,10 @@ function MiniPreview({ item }: { item: GeneratedItem }) {
     return (
       <div className="flex flex-wrap gap-1.5">
         {(input.pairs ?? []).map((p) => (
-          <span key={p.leftLabel} className="inline-flex min-h-8 items-center rounded-[var(--borderRadius-medium)] border-2 border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-2 text-sm font-semibold text-[var(--fgColor-default)]">
-            {p.leftLabel} → {p.rightLabel}
+          <span key={p.leftLabel} className="inline-flex min-h-8 items-center gap-1 rounded-[var(--borderRadius-medium)] border-2 border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-2 text-sm font-semibold text-[var(--fgColor-default)]">
+            <span>{p.leftLabel}</span>
+            <ArrowRightIcon size={12} className="text-[var(--fgColor-muted)]" aria-hidden />
+            <span>{p.rightLabel}</span>
           </span>
         ))}
       </div>
@@ -603,7 +685,12 @@ function MiniPreview({ item }: { item: GeneratedItem }) {
       </div>
     );
   }
-  const icon = quickType === 'write' ? '✍️' : quickType === 'gap' ? '✏️' : '🎤';
+  const EndIcon = quickType === 'write' ? NoteIcon : quickType === 'gap' ? PencilIcon : BroadcastIcon;
   const text = quickType === 'write' ? 'Bài viết' : input.referenceText;
-  return <span className={`${box} border-accent bg-mint text-mint-ink`}>{`${icon} ${text}`}</span>;
+  return (
+    <span className={`${box} gap-1.5 border-accent bg-mint text-mint-ink`}>
+      <EndIcon size={14} aria-hidden />
+      <span>{text}</span>
+    </span>
+  );
 }

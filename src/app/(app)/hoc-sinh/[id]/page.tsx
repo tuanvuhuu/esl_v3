@@ -29,9 +29,15 @@ export default function StudentProfilePage({ params, searchParams }: { params: P
 
 function ProfileSkeleton() {
   return (
-    <section aria-busy="true" aria-label="Đang tải hồ sơ" className="flex flex-col gap-4">
-      <div className="h-10 w-40 animate-pulse rounded-lg bg-[var(--bgColor-muted)]" />
-      <div className="h-56 w-full animate-pulse rounded-xl bg-[var(--bgColor-muted)]" />
+    <section aria-busy="true" aria-label="Đang tải hồ sơ" className="flex flex-col gap-3.5">
+      <div className="h-8 w-36 animate-pulse rounded-[var(--borderRadius-medium)] bg-[var(--bgColor-muted)]" />
+      <div className="h-44 w-full animate-pulse rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]" />
+      <div className="h-9 w-72 animate-pulse rounded-[var(--borderRadius-medium)] bg-[var(--bgColor-muted)]" />
+      <div className="grid gap-3.5 min-[1200px]:grid-cols-2">
+        <div className="h-28 animate-pulse rounded-[var(--borderRadius-large)] bg-[var(--bgColor-muted)] min-[1200px]:col-span-2" />
+        <div className="h-40 animate-pulse rounded-[var(--borderRadius-large)] bg-[var(--bgColor-muted)]" />
+        <div className="h-40 animate-pulse rounded-[var(--borderRadius-large)] bg-[var(--bgColor-muted)]" />
+      </div>
     </section>
   );
 }

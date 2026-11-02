@@ -4,7 +4,7 @@
 import { BellIcon } from '@primer/octicons-react';
 import { IconButton } from '@primer/react';
 import clsx from 'clsx';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
@@ -14,7 +14,6 @@ import type { AttentionGroup } from '@/lib/queries/notifications';
 
 export function NotificationBell() {
   const pathname = usePathname();
-  const shouldReduceMotion = useReducedMotion();
   const rootRef = useRef<HTMLDivElement>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -111,9 +110,9 @@ export function NotificationBell() {
                 ref={panelRef}
                 role="dialog"
                 aria-label="Thông báo"
-                initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: -6, scale: 0.98 }}
+                initial={{ opacity: 0, y: -6, scale: 0.98 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -4, scale: 0.98 }}
+                exit={{ opacity: 0, y: -4, scale: 0.98 }}
                 transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
                 style={{ top: place.top, left: place.left, width: place.width }}
                 className="fixed z-50 flex max-h-[70vh] flex-col overflow-hidden rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] bg-[var(--overlay-bgColor)] shadow-[var(--shadow-floating-large,var(--lift))]"

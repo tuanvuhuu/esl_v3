@@ -226,37 +226,51 @@ export function AnswerDialog({
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-[var(--borderRadius-medium)] bg-[var(--bgColor-muted)] px-3.5 py-2.5 text-sm">
-        <b className="text-base text-[var(--fgColor-default)]">
+    <div className="flex flex-col gap-3.5">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] border-l-4 border-l-[var(--primary)] bg-[var(--bgColor-muted)] px-4 py-3 text-sm tabular-nums">
+        <b className="text-base font-semibold text-[var(--fgColor-default)]">
           Tổng {summary.total}/{summary.maxTotal} điểm
         </b>
-        <Pill tone={summary.status === 'graded' ? 'mint' : summary.status === 'submitted' ? 'butter' : 'blush'}>{SUBMISSION_LABELS[summary.status]}</Pill>
-        {summary.skills.map((s) => (
-          <span key={s.skill} className="text-[var(--fgColor-muted)]">
-            {SKILL_LABELS[s.skill]} <b className="font-normal text-[var(--fgColor-default)]">{s.raw}/{s.max}</b>
-          </span>
-        ))}
+        <Pill tone={summary.status === 'graded' ? 'mint' : summary.status === 'submitted' ? 'butter' : 'blush'}>
+          {SUBMISSION_LABELS[summary.status]}
+        </Pill>
+        <div className="flex flex-wrap items-center gap-1.5">
+          {summary.skills.map((s) => (
+            <span
+              key={s.skill}
+              className="inline-flex items-center gap-1 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-2 py-0.5 text-xs text-[var(--fgColor-muted)]"
+            >
+              {SKILL_LABELS[s.skill]} <b className="font-medium text-[var(--fgColor-default)]">{s.raw}/{s.max}</b>
+            </span>
+          ))}
+        </div>
       </div>
 
-      {error && (
-        <Alert>
-          {error}
-        </Alert>
-      )}
+      {error && <Alert>{error}</Alert>}
 
       {items.map((item) => {
         const d = drafts[item.id];
         const pts = summary.points[item.id];
         return (
-          <section key={item.id} aria-label={`Câu ${item.position}`} className="flex flex-col gap-2.5 rounded-xl border border-[var(--borderColor-default)] p-3.5">
-            <header className="flex flex-wrap items-center gap-2 text-sm">
-              <b className="text-base text-[var(--fgColor-default)]">Câu {item.position}</b>
-              <Pill tone="lav">{SKILL_LABELS[item.skill]}</Pill>
-              <span className="text-[var(--fgColor-muted)]">
+          <section
+            key={item.id}
+            aria-label={`Câu ${item.position}`}
+            className="overflow-hidden rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)]"
+          >
+            <header className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)] px-4 py-2.5 text-sm">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center rounded-[var(--borderRadius-medium)] bg-[var(--primary-soft)] px-2 py-0.5 font-mono text-xs font-medium text-[var(--primary-deep)]">
+                  #{item.position}
+                </span>
+                <b className="text-sm font-semibold text-[var(--fgColor-default)]">Câu {item.position}</b>
+                <Pill tone="lav">{SKILL_LABELS[item.skill]}</Pill>
+              </div>
+              <span className="text-xs tabular-nums text-[var(--fgColor-muted)]">
                 {ITEM_TYPE_LABELS[item.itemType]} · {item.points} điểm
               </span>
             </header>
+
+            <div className="flex flex-col gap-3 p-4 max-[767px]:p-3.5">
 
             {item.prompt && <p className="whitespace-pre-line text-base text-[var(--fgColor-default)]">{item.prompt}</p>}
             {item.passage && <Notice className="whitespace-pre-line">{item.passage}</Notice>}
@@ -365,7 +379,13 @@ export function AnswerDialog({
             )}
 
             {item.itemType !== 'choice' && hasCriteria(item) && (
-              <div className="flex flex-col gap-2.5">
+              <div className="flex flex-col gap-2.5 rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]/60 p-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-xs font-semibold uppercase tracking-wide text-[var(--fgColor-muted)]">Tiêu chí chấm điểm</span>
+                  <span className="rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-2 py-0.5 text-xs font-medium tabular-nums text-[var(--fgColor-default)]">
+                    Điểm câu: {pts === null || pts === undefined ? 'chưa chấm đủ các tiêu chí' : pts} / {item.points}
+                  </span>
+                </div>
                 <div className="grid grid-cols-1 gap-3 min-[768px]:grid-cols-2">
                   {item.criteria.map((c) => (
                     <Field key={c.id} label={`${c.name} (tối đa ${c.maxPoints})`}>
@@ -382,9 +402,6 @@ export function AnswerDialog({
                     </Field>
                   ))}
                 </div>
-                <small className="text-sm text-[var(--fgColor-muted)]">
-                  Điểm câu: {pts === null || pts === undefined ? 'chưa chấm đủ các tiêu chí' : pts} / {item.points}
-                </small>
               </div>
             )}
 
@@ -430,6 +447,7 @@ export function AnswerDialog({
                 onDone={onSecondMarked}
               />
             )}
+            </div>
           </section>
         );
       })}
@@ -489,19 +507,19 @@ function SecondMarkPanel({
   }
 
   return (
-    <div className="flex flex-col gap-2 rounded-[var(--borderRadius-medium)] bg-[var(--bgColor-muted)] px-3 py-2.5">
-      <div className="flex flex-wrap items-center gap-2 text-sm">
-        <b className="font-semibold text-[var(--fgColor-default)]">Chấm chéo</b>
+    <div className="flex flex-col gap-2 rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]/70 p-3">
+      <div className="flex flex-wrap items-center gap-2 text-sm tabular-nums">
+        <b className="text-xs font-semibold uppercase tracking-wide text-[var(--fgColor-muted)]">Chấm chéo</b>
         {mark && (
           <span className="text-[var(--fgColor-muted)]">
-            Chấm lại: <b className="font-normal text-[var(--fgColor-default)]">{mark.points}/{item.points}</b>
+            Chấm lại: <b className="font-medium text-[var(--fgColor-default)]">{mark.points}/{item.points}</b>
             {mark.graderName ? ` · ${mark.graderName}` : ''}
           </span>
         )}
         {gap && savedPoints !== null && (
           <>
             <span className="text-[var(--fgColor-muted)]">
-              Điểm lần đầu: <b className="font-normal text-[var(--fgColor-default)]">{savedPoints}/{item.points}</b>
+              Điểm lần đầu: <b className="font-medium text-[var(--fgColor-default)]">{savedPoints}/{item.points}</b>
             </span>
             <Pill tone={gap.flagged ? 'blush' : 'mint'}>{gap.flagged ? `Lệch ${gap.gap} điểm` : gap.gap === 0 ? 'Khớp' : `Lệch ${gap.gap} điểm, trong ngưỡng`}</Pill>
           </>

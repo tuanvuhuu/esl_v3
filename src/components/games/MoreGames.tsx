@@ -1,7 +1,7 @@
 'use client';
 
 // Bốn trò chơi tiếp theo (35.16): bingo nghe, Simon nói, đoán chữ, đua xe trả lời nhanh. Không trừ điểm khi sai, chỉ tính đúng.
-import { UnmuteIcon } from '@primer/octicons-react';
+import { CheckIcon, GoalIcon, HeartFillIcon, HeartIcon, RocketIcon, UnmuteIcon } from '@primer/octicons-react';
 import { useEffect, useEffectEvent, useMemo, useRef, useState } from 'react';
 import {
   bingoBoard,
@@ -72,7 +72,11 @@ export function BingoGame({ words, seed, onFinish }: GameProps) {
               }`}
             >
               <Picture w={c} size={board.size === 2 ? 'lg' : 'md'} />
-              {marked[k] && <span className="absolute top-1 right-1 text-xl" aria-hidden>✅</span>}
+              {marked[k] && (
+                <span className="absolute top-1.5 right-1.5 flex size-6 items-center justify-center rounded-full bg-[var(--accent)] text-white" aria-hidden>
+                  <CheckIcon size={14} aria-hidden />
+                </span>
+              )}
             </button>
           </li>
         ))}
@@ -229,8 +233,18 @@ export function HangmanGame({ words, seed, onFinish }: GameProps) {
         <Picture w={w} size="lg" />
         <div className="flex min-w-0 flex-col gap-1">
           {w.meaningVi && <b className="text-lg font-semibold text-[var(--fgColor-default)]">{w.meaningVi}</b>}
-          <span className="text-2xl tracking-tight" aria-label={`Còn ${HANGMAN_LIVES - state.wrong} bóng bay`}>
-            {Array.from({ length: HANGMAN_LIVES }, (_, k) => (k < HANGMAN_LIVES - state.wrong ? '🎈' : '💥')).join('')}
+          <span
+            className="inline-flex items-center gap-1"
+            role="img"
+            aria-label={`Còn ${HANGMAN_LIVES - state.wrong} bóng bay`}
+          >
+            {Array.from({ length: HANGMAN_LIVES }, (_, k) =>
+              k < HANGMAN_LIVES - state.wrong ? (
+                <HeartFillIcon key={k} size={18} className="text-[var(--primary)]" aria-hidden />
+              ) : (
+                <HeartIcon key={k} size={18} className="text-[var(--fgColor-muted)] opacity-35" aria-hidden />
+              ),
+            )}
           </span>
         </div>
       </div>
@@ -324,13 +338,15 @@ export function RaceGame({ words, seed, onFinish }: GameProps) {
         className="relative h-14 overflow-hidden rounded-xl border-2 border-dashed border-[var(--borderColor-default)] bg-[var(--bgColor-default)]"
         aria-label={`Xe đã đi ${score}/${qs.length} chặng`}
       >
-        <span className="absolute top-1/2 right-2 -translate-y-1/2 text-3xl" aria-hidden>🏁</span>
+        <span className="absolute top-1/2 right-2.5 flex size-8 -translate-y-1/2 items-center justify-center rounded-lg bg-[var(--bgColor-muted)] text-[var(--fgColor-muted)]" aria-hidden>
+          <GoalIcon size={18} aria-hidden />
+        </span>
         <span
-          className="absolute top-1/2 -translate-y-1/2 text-4xl transition-[left] duration-500"
-          style={{ left: `calc(${progress} * (100% - 5.5rem) + 0.25rem)` }}
+          className="absolute top-1/2 flex size-9 -translate-y-1/2 items-center justify-center rounded-xl bg-[var(--primary)] text-white shadow-xs transition-[left] duration-500"
+          style={{ left: `calc(${progress} * (100% - 5.5rem) + 0.5rem)` }}
           aria-hidden
         >
-          🏎️
+          <RocketIcon size={18} aria-hidden />
         </span>
       </div>
       <div className="h-2 overflow-hidden rounded-full bg-[var(--bgColor-muted)]" aria-label={`Còn ${left} giây`}>

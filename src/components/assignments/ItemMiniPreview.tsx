@@ -1,14 +1,14 @@
 'use client';
 
-import { UnmuteIcon } from '@primer/octicons-react';
+import { BroadcastIcon, CheckIcon, GlobeIcon, ImageIcon, UnmuteIcon } from '@primer/octicons-react';
 import { Pill } from '@/components/ui/primitives';
 import type { Draft } from './item-draft';
 
 export function ItemMiniPreview({ draft: d }: { draft: Draft }) {
   return (
-    <div className="flex flex-col gap-2 rounded-2xl border-4 border-[var(--fgColor-default)]/80 bg-[var(--bgColor-default)] p-3 text-[var(--fgColor-default)] shadow-md">
-      <div className="flex items-center justify-between border-b border-[var(--borderColor-muted)] pb-1.5 text-xs text-[var(--fgColor-muted)]">
-        <span className="font-medium text-[var(--fgColor-default)]">Xem trước học sinh</span>
+    <div className="flex flex-col gap-2.5 overflow-hidden rounded-2xl border-2 border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-3.5 text-[var(--fgColor-default)] shadow-[var(--shadow)]">
+      <div className="-mx-3.5 -mt-3.5 mb-0.5 flex items-center justify-between border-b border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)] px-3.5 py-2 text-xs text-[var(--fgColor-muted)]">
+        <span className="font-semibold uppercase tracking-wide text-[var(--fgColor-muted)]">Xem trước học sinh</span>
         <Pill tone="stone">Điện thoại</Pill>
       </div>
 
@@ -23,7 +23,12 @@ export function ItemMiniPreview({ draft: d }: { draft: Draft }) {
         </button>
         <div className="min-w-0">
           <div className="text-sm font-semibold leading-tight text-[var(--fgColor-default)]">{d.prompt || 'Chưa có câu hỏi'}</div>
-          {d.promptVi && <div className="text-xs text-[var(--fgColor-muted)]">🇻🇳 {d.promptVi}</div>}
+          {d.promptVi && (
+            <div className="mt-0.5 inline-flex items-center gap-1 text-xs text-[var(--fgColor-muted)]">
+              <GlobeIcon size={12} aria-hidden />
+              <span>{d.promptVi}</span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -47,12 +52,12 @@ export function ItemMiniPreview({ draft: d }: { draft: Draft }) {
                   className="max-h-14 max-w-full rounded object-contain"
                 />
               ) : (
-                <span className="text-2xl">🖼️</span>
+                <ImageIcon size={22} className="text-[var(--fgColor-muted)]" aria-hidden />
               )}
               <span className="mt-1 max-w-full truncate text-xs">{opt.label || `Tranh ${i + 1}`}</span>
               {opt.isCorrect && (
-                <span className="absolute right-1 top-1 flex size-4 items-center justify-center rounded-full bg-[var(--accent)] text-[10px] font-medium text-white">
-                  ✓
+                <span className="absolute right-1 top-1 flex size-4 items-center justify-center rounded-full bg-[var(--accent)] text-white">
+                  <CheckIcon size={10} aria-hidden />
                 </span>
               )}
             </div>
@@ -105,7 +110,7 @@ export function ItemMiniPreview({ draft: d }: { draft: Draft }) {
         <div className="flex flex-col items-center gap-2 py-2">
           {d.referenceText && <div className="text-center text-xs font-medium text-[var(--fgColor-default)]">“{d.referenceText}”</div>}
           <div className="flex size-14 items-center justify-center rounded-full bg-blush-ink text-white shadow-md">
-            <span className="text-lg">🎤</span>
+            <BroadcastIcon size={22} aria-hidden />
           </div>
           <span className="text-[11px] text-[var(--fgColor-muted)]">Bấm để nói ({d.maxSeconds || '15'}s)</span>
         </div>
@@ -125,7 +130,7 @@ export function ItemMiniPreview({ draft: d }: { draft: Draft }) {
             >
               <span>{String.fromCharCode(65 + i)}.</span>
               <span className="flex-1 truncate">{opt.label || `Lựa chọn ${i + 1}`}</span>
-              {opt.isCorrect && <span className="font-medium text-[var(--accent)]">✓</span>}
+              {opt.isCorrect && <CheckIcon size={12} className="text-[var(--accent)]" aria-hidden />}
             </div>
           ))}
         </div>

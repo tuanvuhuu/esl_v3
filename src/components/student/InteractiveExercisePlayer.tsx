@@ -1,6 +1,26 @@
 'use client';
 
-import { BroadcastIcon, CheckIcon, SyncIcon, UnmuteIcon, XIcon } from '@primer/octicons-react';
+import {
+  ArrowRightIcon,
+  BroadcastIcon,
+  CheckCircleFillIcon,
+  CheckIcon,
+  FlameIcon,
+  GlobeIcon,
+  HeartFillIcon,
+  ImageIcon,
+  RocketIcon,
+  SparklesFillIcon,
+  StarFillIcon,
+  StarIcon,
+  SunIcon,
+  SyncIcon,
+  TrophyIcon,
+  UnmuteIcon,
+  XIcon,
+  ZapIcon,
+  type Icon,
+} from '@primer/octicons-react';
 import { useEffect, useRef, useState, useTransition } from 'react';
 import type { StudentAssignmentView, StudentItem } from '@/lib/queries/student-portal';
 import { checkPracticeAnswerAction, childAgreeVoiceAction, submitMyAnswersAction, type StudentAnswerInput, type SubmitScore } from '@/app/(student)/cua-toi/actions';
@@ -117,30 +137,30 @@ export function InteractiveExercisePlayer({
 
   return (
     <div
-      className={`mx-auto flex min-h-[640px] w-full max-w-[420px] flex-col overflow-hidden rounded-3xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] shadow-[var(--shadow-floating-large,0_12px_28px_rgba(0,0,0,0.12))] ${
+      className={`tsukuba-rise mx-auto flex min-h-[640px] w-full max-w-[440px] flex-col overflow-hidden rounded-2xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] shadow-[var(--shadow-resting-medium,0_4px_12px_rgba(0,0,0,0.06))] ${
         view.youngLearner ? 'kid-touch' : ''
       }`}
     >
       {/* Top bar: Nút đóng, thanh tiến trình & số câu */}
-      <div className="flex items-center gap-3 px-5 pt-4 pb-2">
+      <div className="flex items-center gap-3 border-b border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)] px-4 py-3">
         <button
           type="button"
           onClick={onExit}
           aria-label="Thoát"
-          className="kid-skip flex size-9 items-center justify-center rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] text-[var(--fgColor-muted)] transition-colors hover:bg-[var(--bgColor-muted)] hover:text-[var(--fgColor-default)] active:scale-95"
+          className="kid-skip flex size-9 items-center justify-center rounded-lg border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] text-[var(--fgColor-muted)] transition-colors hover:bg-[var(--bgColor-muted)] hover:text-[var(--fgColor-default)] active:scale-95"
         >
-          <XIcon size={18} aria-hidden />
+          <XIcon size={16} aria-hidden />
         </button>
 
-        <div className="h-3 flex-1 overflow-hidden rounded-full bg-[var(--bgColor-neutral-muted,var(--bgColor-muted))]">
+        <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-[var(--borderColor-default)]/50">
           <div
-            className="h-full rounded-full bg-[var(--bgColor-success-emphasis)] transition-all duration-300"
+            className="h-full rounded-full bg-[var(--accent)] transition-all duration-300"
             style={{ width: `${Math.round(((currentIndex + 1) / total) * 100)}%` }}
           />
         </div>
 
         {view.mode === 'practice' && <Pill tone="mint">Luyện tập</Pill>}
-        <span className="text-xs font-semibold tabular-nums text-[var(--fgColor-muted)]">
+        <span className="rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-2 py-0.5 font-mono text-xs tabular-nums text-[var(--fgColor-muted)]">
           {currentIndex + 1}/{total}
         </span>
       </div>
@@ -289,12 +309,12 @@ function ExerciseItem({
           )}
 
           <div className="min-w-0 flex-1">
-            <h2 className="text-xl font-black leading-tight text-[var(--fgColor-default)]">
+            <h2 className="text-xl font-bold leading-tight text-[var(--fgColor-default)]">
               {item.prompt || 'Hãy trả lời câu hỏi sau:'}
             </h2>
             {item.promptVi && (
-              <div className="mt-0.5 flex items-center gap-1.5 text-xs font-semibold text-[var(--fgColor-muted)]">
-                <span>🇻🇳</span>
+              <div className="mt-0.5 flex items-center gap-1.5 text-xs font-medium text-[var(--fgColor-muted)]">
+                <GlobeIcon size={13} aria-hidden />
                 <span>{item.promptVi}</span>
               </div>
             )}
@@ -333,13 +353,16 @@ function ExerciseItem({
 
       {/* Kết quả kiểm câu ở chế độ luyện tập */}
       {practice && verdict === 'right' && (
-        <p role="status" className="mb-2 animate-bounce rounded-xl border border-[var(--borderColor-success-muted)] bg-mint p-3 text-center text-lg font-black text-mint-ink">
-          Đúng rồi! Giỏi quá 🎉
+        <p role="status" className="mb-2 flex items-center justify-center gap-2 rounded-xl border border-[var(--borderColor-success-muted)] bg-mint p-3 text-center text-base font-semibold text-mint-ink">
+          <CheckCircleFillIcon size={18} aria-hidden />
+          <span>
+            Đúng rồi! Giỏi quá<span className="sr-only">{' \u{1F389}'}</span>
+          </span>
         </p>
       )}
       {practice && verdict === 'wrong' && (
         <div role="status" className="mb-2 flex flex-col items-center gap-1 rounded-xl border border-[var(--borderColor-danger-muted)] bg-blush p-3 text-center">
-          <b className="text-lg font-black text-blush-ink">Chưa đúng, con thử lại nhé!</b>
+          <b className="text-base font-semibold text-blush-ink">Chưa đúng, con thử lại nhé!</b>
           <button
             type="button"
             data-link="true"
@@ -363,9 +386,23 @@ function ExerciseItem({
           data-card="true"
           onClick={needsCheck ? check : onNext}
           disabled={submitting || checking || (needsCheck && (!hasAnswer || verdict === 'wrong'))}
-          className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl border border-[var(--button-primary-borderColor-rest)] bg-[var(--button-primary-bgColor-rest)] text-lg font-black text-[var(--button-primary-fgColor-rest)] shadow-[0_4px_0_var(--borderColor-accent-emphasis)] transition-all active:translate-y-1 active:shadow-none disabled:opacity-50"
+          className="flex h-14 w-full items-center justify-center gap-2 rounded-xl border border-[var(--button-primary-borderColor-rest)] bg-[var(--button-primary-bgColor-rest)] text-lg font-semibold text-[var(--button-primary-fgColor-rest)] transition-all active:scale-[0.99] disabled:opacity-50"
         >
-          {needsCheck ? (checking ? 'Đang kiểm…' : 'Kiểm tra') : submitting ? 'Đang gửi…' : isLast ? 'Xong bài 🎉' : 'Tiếp tục ➔'}
+          {needsCheck ? (
+            checking ? 'Đang kiểm…' : 'Kiểm tra'
+          ) : submitting ? (
+            'Đang gửi…'
+          ) : isLast ? (
+            <>
+              <span>Xong bài</span>
+              <CheckCircleFillIcon size={18} aria-hidden />
+            </>
+          ) : (
+            <>
+              <span>Tiếp tục</span>
+              <ArrowRightIcon size={18} aria-hidden />
+            </>
+          )}
         </button>
       </div>
     </div>
@@ -416,8 +453,8 @@ function PictureChoiceQuestion({
                   {leadingEmoji(opt.label)}
                 </span>
               ) : (
-                <span className="text-5xl" aria-hidden>
-                  🖼️
+                <span className="flex size-16 items-center justify-center rounded-2xl bg-[var(--bgColor-muted)] text-[var(--fgColor-muted)]" aria-hidden>
+                  <ImageIcon size={32} aria-hidden />
                 </span>
               )}
               {opt.label && <span className="mt-2 max-w-full truncate text-base font-black">{stripLeadingEmoji(opt.label)}</span>}
@@ -552,7 +589,7 @@ function MatchQuestion({
       </div>
 
       <div className="text-center text-xs font-medium text-[var(--fgColor-muted)]">
-        Đã ghép: {paired.length}/{item.matchLeft.length} cặp {paired.length === item.matchLeft.length && '🎉 Giỏi quá!'}
+        Đã ghép: {paired.length}/{item.matchLeft.length} cặp {paired.length === item.matchLeft.length && '· Giỏi quá!'}
       </div>
     </div>
   );
@@ -612,7 +649,7 @@ function OrderQuestion({
   return (
     <div className="flex flex-col gap-4">
       {/* Khung ô câu đã xếp */}
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+      <DndContext id="exercise-player-dnd" sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
         <SortableContext items={placed.map((p) => p.id)} strategy={rectSortingStrategy}>
           <div
             className="flex min-h-16 flex-wrap items-center gap-2 rounded-xl border-2 border-dashed border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]/40 p-3"
@@ -750,8 +787,8 @@ function VoiceGate({ needsChild, referenceText }: { needsChild: boolean; referen
       )}
       {needsChild ? (
         <>
-          <span className="text-5xl" aria-hidden>
-            🎤
+          <span className="flex size-16 items-center justify-center rounded-2xl border border-[var(--primary)]/20 bg-[var(--primary-soft)] text-[var(--primary)]" aria-hidden>
+            <BroadcastIcon size={32} aria-hidden />
           </span>
           <p className="text-lg font-semibold leading-snug text-[var(--fgColor-default)]">
             Cô giáo muốn nghe giọng con để chấm bài nói. Con có đồng ý ghi âm không?
@@ -1100,6 +1137,17 @@ function TextOrFileQuestion({
 // ==========================================
 // Màn chúc mừng (P35.27): sao theo điểm phần tự chấm (1–3 sao, không phạt), mở số sticker bằng số sao.
 // Bài còn câu nói, viết thì báo cô giáo sẽ chấm tiếp.
+const CELEBRATION_ICONS: Icon[] = [
+  RocketIcon,
+  SparklesFillIcon,
+  StarFillIcon,
+  FlameIcon,
+  HeartFillIcon,
+  TrophyIcon,
+  SunIcon,
+  ZapIcon,
+];
+
 function CelebrationScreen({
   view,
   onExit,
@@ -1109,18 +1157,17 @@ function CelebrationScreen({
   onExit?: () => void;
   score: SubmitScore | null;
 }) {
-  const stickers = ['🦁', '🚀', '🌈', '🐙', '🎈', '🦄', '🍩', '🏰'];
   const stars = score ? starsFor(score.autoPoints, score.autoMax) : 3;
   const cheer = stars === 3 ? 'Tuyệt vời!' : stars === 2 ? 'Giỏi lắm!' : 'Cố lên nhé!';
 
   return (
-    <div className="relative mx-auto flex min-h-[640px] w-full max-w-[420px] flex-col items-center justify-between overflow-hidden rounded-3xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-6 text-center shadow-[var(--shadow-floating-large,0_12px_28px_rgba(0,0,0,0.12))]">
+    <div className="tsukuba-rise relative mx-auto flex min-h-[640px] w-full max-w-[440px] flex-col items-center justify-between overflow-hidden rounded-2xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-6 text-center shadow-[var(--shadow-resting-medium,0_4px_12px_rgba(0,0,0,0.06))]">
       {/* Pháo giấy Confetti */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         {[...Array(20)].map((_, i) => (
           <div
             key={i}
-            className="absolute size-2 animate-bounce rounded-xs opacity-80"
+            className="absolute size-2 animate-bounce rounded-xs opacity-70"
             style={{
               left: `${(i * 5) % 100}%`,
               top: `${(i * 7) % 60}%`,
@@ -1132,41 +1179,47 @@ function CelebrationScreen({
       </div>
 
       <div className="flex flex-col items-center gap-3 pt-6">
-        <span className="animate-pulse text-7xl">🦉</span>
-        <h1 className="text-3xl font-black text-[var(--fgColor-default)]">{cheer}</h1>
-        <div className="flex gap-1.5 text-4xl" role="img" aria-label={`${stars} trên 3 sao`}>
-          {[1, 2, 3].map((n) => (
-            <span key={n} className={n <= stars ? '' : 'opacity-30 grayscale'} aria-hidden>
-              ⭐
-            </span>
-          ))}
+        <span className="flex size-20 items-center justify-center rounded-3xl border border-[var(--primary)]/20 bg-[var(--primary-soft)] text-[var(--primary)]" aria-hidden>
+          <TrophyIcon size={40} aria-hidden />
+        </span>
+        <h1 className="text-3xl font-bold text-[var(--fgColor-default)]">{cheer}</h1>
+        <div className="flex items-center gap-2" role="img" aria-label={`${stars} trên 3 sao`}>
+          {[1, 2, 3].map((n) =>
+            n <= stars ? (
+              <StarFillIcon key={n} size={34} className="text-[var(--fgColor-attention,var(--primary))]" aria-hidden />
+            ) : (
+              <StarIcon key={n} size={34} className="text-[var(--fgColor-muted)] opacity-35" aria-hidden />
+            ),
+          )}
         </div>
-        <p className="text-sm font-semibold text-[var(--fgColor-muted)]">Con đã làm xong bài &quot;{view.title}&quot;.</p>
+        <p className="text-sm font-medium text-[var(--fgColor-muted)]">Con đã làm xong bài &quot;{view.title}&quot;.</p>
         {score && score.autoMax > 0 && (
-          <p className="text-base font-semibold text-[var(--fgColor-default)]">
+          <p className="text-base font-semibold tabular-nums text-[var(--fgColor-default)]">
             Đúng {Math.round(score.autoPoints * 10) / 10}/{score.autoMax} điểm phần tự chấm
           </p>
         )}
         {score?.pendingReview && (
-          <p className="text-sm font-semibold text-[var(--fgColor-muted)]">Cô giáo sẽ chấm phần nói và viết rồi gửi nhận xét cho con.</p>
+          <p className="text-sm text-[var(--fgColor-muted)]">Cô giáo sẽ chấm phần nói và viết rồi gửi nhận xét cho con.</p>
         )}
       </div>
 
       {/* Sticker mở khóa */}
-      <div className="w-full rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]/50 p-4 text-left">
-        <div className="mb-2 flex items-center justify-between">
-          <span className="text-xs font-medium uppercase tracking-wider text-[var(--fgColor-muted)]">Sticker của con</span>
+      <div className="w-full rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] p-4 text-left">
+        <div className="mb-2.5 flex items-center justify-between">
+          <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--fgColor-muted)]">Sticker của con</span>
           <Pill tone="butter">+{stars} sticker</Pill>
         </div>
         <div className="grid grid-cols-4 gap-2">
-          {stickers.map((stk, i) => (
+          {CELEBRATION_ICONS.map((StkIcon, i) => (
             <div
               key={i}
-              className={`flex aspect-square items-center justify-center rounded-xl text-2xl ${
-                i < stars ? 'bg-butter ring-2 ring-[var(--borderColor-accent-emphasis)]' : 'bg-[var(--bgColor-default)] opacity-30 grayscale'
+              className={`flex aspect-square items-center justify-center rounded-xl border ${
+                i < stars
+                  ? 'border-[var(--borderColor-attention-muted,var(--primary))] bg-butter text-butter-ink'
+                  : 'border-[var(--borderColor-default)] bg-[var(--bgColor-default)] text-[var(--fgColor-muted)] opacity-35'
               }`}
             >
-              {stk}
+              <StkIcon size={22} aria-hidden />
             </div>
           ))}
         </div>
@@ -1177,9 +1230,10 @@ function CelebrationScreen({
           type="button"
           data-card="true"
           onClick={onExit}
-          className="flex h-14 w-full items-center justify-center rounded-2xl border border-[var(--button-primary-borderColor-rest)] bg-[var(--button-primary-bgColor-rest)] text-lg font-black text-[var(--button-primary-fgColor-rest)] shadow-[0_4px_0_var(--borderColor-accent-emphasis)] transition-all active:translate-y-1"
+          className="flex h-14 w-full items-center justify-center gap-2 rounded-xl border border-[var(--button-primary-borderColor-rest)] bg-[var(--button-primary-bgColor-rest)] text-lg font-semibold text-[var(--button-primary-fgColor-rest)] transition-all active:scale-[0.99]"
         >
-          Về bài của tôi ➔
+          <span>Về bài của tôi</span>
+          <ArrowRightIcon size={18} aria-hidden />
         </button>
       </div>
     </div>

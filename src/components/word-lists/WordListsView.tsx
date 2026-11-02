@@ -88,7 +88,11 @@ export function WordListsView({ lists, classes, lessons, canManage }: { lists: W
       case 'link':
         return <span className="text-sm text-[var(--fgColor-muted)]">{linkText(r)}</span>;
       case 'count':
-        return <span className="text-base tabular-nums text-[var(--fgColor-default)]">{r.wordCount}</span>;
+        return (
+          <span className="inline-flex items-center rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)] px-2 py-0.5 font-mono text-xs tabular-nums text-[var(--fgColor-default)]">
+            {r.wordCount}
+          </span>
+        );
       case 'actions':
         return (
           <div className="flex justify-end">
@@ -101,11 +105,15 @@ export function WordListsView({ lists, classes, lessons, canManage }: { lists: W
   };
 
   const card = (r: WordListRow) => (
-    <Card>
+    <Card className="tsukuba-rise">
       <div className="min-w-0">
-        <b className="block break-words text-base text-[var(--fgColor-default)]">{r.name}</b>
-        <small className="block text-sm text-[var(--fgColor-muted)]">{linkText(r)} · {r.wordCount} từ</small>
-        {r.preview && <small className="mt-1 block text-sm text-[var(--fgColor-muted)]">{r.preview}</small>}
+        <b className="block break-words text-base font-semibold text-[var(--fgColor-default)]">{r.name}</b>
+        <small className="mt-0.5 block text-xs tabular-nums text-[var(--fgColor-muted)]">{linkText(r)} · {r.wordCount} từ</small>
+        {r.preview && (
+          <small className="mt-2 block truncate rounded-lg border border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)] px-2.5 py-1.5 text-xs text-[var(--fgColor-muted)]">
+            {r.preview}
+          </small>
+        )}
       </div>
       <Link href={`/tu-vung/${r.id}`} className={`${BTN_BASE} ${BTN_PRIMARY} w-full`}>
         <PlayIcon size={16} aria-hidden />
@@ -138,7 +146,9 @@ export function WordListsView({ lists, classes, lessons, canManage }: { lists: W
         title={
           <div className="flex items-baseline gap-2">
             <h1 className="m-0 text-base font-semibold text-[var(--fgColor-default)]">Danh sách từ</h1>
-            <span className="text-xs text-[var(--fgColor-muted)]">({lists.length})</span>
+            <span className="rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)] px-2 py-0.5 text-xs tabular-nums text-[var(--fgColor-muted)]">
+              {lists.length}
+            </span>
           </div>
         }
         actionComponent={
@@ -151,10 +161,10 @@ export function WordListsView({ lists, classes, lessons, canManage }: { lists: W
         empty={<EmptyPanel title="Chưa có danh sách từ" hint={canManage ? 'Bấm Thêm danh sách, gõ từ hoặc lấy từ kho từ vựng.' : 'Giáo viên tạo danh sách từ để dùng cho trò chơi.'} />}
       />
 
-      <Modal open={creating} title="Thêm danh sách từ" subtitle="Các trường có dấu * là bắt buộc." onClose={() => setCreating(false)} labelledBy="word-list-create-title">
+      <Modal open={creating} size="lg" title="Thêm danh sách từ" subtitle="Các trường có dấu * là bắt buộc." onClose={() => setCreating(false)} labelledBy="word-list-create-title">
         {creating && <WordListForm mode="create" classes={classes} lessons={lessons} onDone={done} onCancel={() => setCreating(false)} />}
       </Modal>
-      <Modal open={!!editing} title={editing ? `Sửa danh sách · ${editing.row.name}` : 'Sửa danh sách'} subtitle="Các trường có dấu * là bắt buộc." onClose={() => setEditing(null)} labelledBy="word-list-edit-title">
+      <Modal open={!!editing} size="lg" title={editing ? `Sửa danh sách · ${editing.row.name}` : 'Sửa danh sách'} subtitle="Các trường có dấu * là bắt buộc." onClose={() => setEditing(null)} labelledBy="word-list-edit-title">
         {editing && (
           <WordListForm
             mode="edit"

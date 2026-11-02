@@ -226,10 +226,24 @@ export function TeacherList({
 
       <Toast message={message} />
 
-      <Modal open={creating} title="Thêm giáo viên" subtitle="Các trường có dấu * là bắt buộc." onClose={() => setCreating(false)} labelledBy="teacher-create-title">
+      <Modal
+        open={creating}
+        size="md"
+        title="Thêm giáo viên"
+        subtitle="Khai báo chuyên môn, vai trò giảng dạy và cơ sở công tác. Các trường có dấu * là bắt buộc."
+        onClose={() => setCreating(false)}
+        labelledBy="teacher-create-title"
+      >
         <TeacherForm mode="create" campuses={campuses} defaultCampusId={defaultCampusId} onDone={onDone} onCancel={() => setCreating(false)} />
       </Modal>
-      <Modal open={!!editing} title="Sửa giáo viên" subtitle="Các trường có dấu * là bắt buộc." onClose={() => setEditing(null)} labelledBy="teacher-edit-title">
+      <Modal
+        open={!!editing}
+        size="md"
+        title="Sửa giáo viên"
+        subtitle="Cập nhật hồ sơ chuyên môn, trạng thái hoặc cơ sở giảng dạy. Các trường có dấu * là bắt buộc."
+        onClose={() => setEditing(null)}
+        labelledBy="teacher-edit-title"
+      >
         {editing && (
           <TeacherForm
             mode="edit"

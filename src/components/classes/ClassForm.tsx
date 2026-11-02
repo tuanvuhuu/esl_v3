@@ -1,5 +1,6 @@
 'use client';
 
+import { CalendarIcon, KebabHorizontalIcon } from '@primer/octicons-react';
 import { startTransition, useActionState, useEffect, useRef, useState, type FormEvent } from 'react';
 import {
   createClassAction,
@@ -10,12 +11,13 @@ import {
   type SchedulePreview,
 } from '@/app/(app)/lop-hoc/actions';
 import { dateKeyLabel, vnDateKey, vnTimeLabel, weekdayLabel, weekdayOfKey } from '@/lib/datetime';
+import { formatVND } from '@/lib/money';
 import { TUITION_PER_SESSION } from '@/lib/tuition';
 import { MAX_SLOTS_PER_DAY, WEEKDAY_CODES, WEEKDAY_CODE_LABELS, type WeekdayCode } from '@/lib/validation/class';
 import type { StaffRole } from '@/lib/validation/teacher';
 import type { ActionResult } from '@/lib/validation/student';
 import { ComboBox, DateInput, TextInput, TextInputNumber } from '@/components-ui';
-import { Field, FormFooter } from '@/components/ui/Field';
+import { Field, FormFooter, FormSection } from '@/components/ui/Field';
 import { Btn } from '@/components/ui/Btn';
 import { Alert } from '@/components/ui/primitives';
 import { Notice } from '@/components/ui/surfaces';
@@ -218,15 +220,16 @@ export function ClassForm({
   }, [hasSchedule, bump, days, times, campusId, teacherId]);
 
   return (
-    <form ref={formRef} onSubmit={submit} onChange={() => setBump((n) => n + 1)} noValidate className="grid grid-cols-1 gap-3.5 min-[768px]:grid-cols-2 min-[768px]:gap-x-4">
-      {state.message && !state.ok && (
-        <Alert className="col-span-full">{state.message}</Alert>
-      )}
+    <form ref={formRef} onSubmit={submit} onChange={() => setBump((n) => n + 1)} noValidate className="flex flex-col gap-3.5">
+      {state.message && !state.ok && <Alert>{state.message}</Alert>}
 
       {isReschedule && <input type="hidden" name="rescheduleClassId" value={classId} />}
+
       {!isReschedule && (
-        <>
-          <SectionTitle>Thông tin lớp</SectionTitle>
+        <FormSection
+          title="Thông tin lớp học"
+          description="Cơ sở đào tạo, mã lớp, khoá học, đội ngũ phụ trách, phòng học và sĩ số tối đa."
+        >
           <Field label="Cơ sở *" error={errors.campusId} hint="Mỗi lớp thuộc đúng một cơ sở">
             <ComboBox
               name="campusId"
@@ -242,6 +245,7 @@ export function ClassForm({
               block
             />
           </Field>
+
           <Field label="Mã lớp *" error={errors.name} hint="VD: IELTS-K15">
             <TextInput
               name="name"
@@ -253,6 +257,7 @@ export function ClassForm({
               onChange={() => setBump((n) => n + 1)}
             />
           </Field>
+
           <Field label="Khoá học *" error={errors.course}>
             <TextInput
               name="course"
@@ -265,6 +270,7 @@ export function ClassForm({
               onChange={() => setBump((n) => n + 1)}
             />
           </Field>
+
           <Field label="Trình độ CEFR" error={errors.levelId} hint="Khung tham chiếu Châu Âu (A1–C2), để trống nếu không áp dụng">
             <ComboBox
               name="levelId"
@@ -282,8 +288,12 @@ export function ClassForm({
               block
             />
           </Field>
-          <SectionTitle>Giáo viên và phòng</SectionTitle>
-          <Field label="Giáo viên chủ nhiệm *" error={errors.teacherId} hint={teacherOptions.length === 0 ? 'Cơ sở này chưa có giáo viên. Thêm ở màn Giáo viên.' : undefined}>
+
+          <Field
+            label="Giáo viên chủ nhiệm *"
+            error={errors.teacherId}
+            hint={teacherOptions.length === 0 ? 'Cơ sở này chưa có giáo viên. Thêm ở màn Giáo viên.' : undefined}
+          >
             <ComboBox
               name="teacherId"
               label="Giáo viên chủ nhiệm *"
@@ -297,7 +307,12 @@ export function ClassForm({
               block
             />
           </Field>
-          <Field label="Trợ giảng" error={errors.assistantId} hint={assistantOptions.length === 0 ? 'Cơ sở này chưa có trợ giảng. Thêm ở màn Giáo viên, chọn vai trò Trợ giảng.' : undefined}>
+
+          <Field
+            label="Trợ giảng"
+            error={errors.assistantId}
+            hint={assistantOptions.length === 0 ? 'Cơ sở này chưa có trợ giảng. Thêm ở màn Giáo viên, chọn vai trò Trợ giảng.' : undefined}
+          >
             <ComboBox
               name="assistantId"
               label="Trợ giảng"
@@ -311,7 +326,12 @@ export function ClassForm({
               block
             />
           </Field>
-          <Field label="Giáo viên nước ngoài" error={errors.foreignTeacherId} hint={foreignOptions.length === 0 ? 'Cơ sở này chưa có giáo viên nước ngoài. Thêm ở màn Giáo viên, chọn vai trò Giáo viên nước ngoài.' : undefined}>
+
+          <Field
+            label="Giáo viên nước ngoài"
+            error={errors.foreignTeacherId}
+            hint={foreignOptions.length === 0 ? 'Cơ sở này chưa có giáo viên nước ngoài. Thêm ở màn Giáo viên, chọn vai trò Giáo viên nước ngoài.' : undefined}
+          >
             <ComboBox
               name="foreignTeacherId"
               label="Giáo viên nước ngoài"
@@ -325,6 +345,7 @@ export function ClassForm({
               block
             />
           </Field>
+
           <Field label="Phòng" error={errors.room}>
             <TextInput
               name="room"
@@ -337,7 +358,7 @@ export function ClassForm({
               onChange={() => setBump((n) => n + 1)}
             />
           </Field>
-          <SectionTitle>Sĩ số</SectionTitle>
+
           <input type="hidden" name="fee" value={fee} />
           <Field label="Sĩ số tối đa *" error={errors.capacity}>
             <TextInputNumber
@@ -350,88 +371,136 @@ export function ClassForm({
               error={Boolean(errors.capacity)}
             />
           </Field>
-        </>
+        </FormSection>
       )}
 
-      {hasSchedule ? (
-        <>
-          {isReschedule ? (
-            <Notice className="col-span-full">
-              {kept > 0 ? `Giữ nguyên ${kept} buổi đã học hoặc đã bắt đầu. ` : ''}Các buổi chưa học được thay bằng lịch mới bên dưới. Đổi ngày khai giảng, số buổi, ngày học hoặc ca ở đây.
-            </Notice>
-          ) : (
-            <SectionTitle>Lịch học</SectionTitle>
+      <FormSection
+        title="Lịch học hàng tuần & Học phí"
+        description={
+          hasSchedule
+            ? 'Chọn thứ học trong tuần, khung giờ từng ca và ngày khai giảng để sinh buổi học.'
+            : 'Điều chỉnh khung giờ cho các buổi sắp tới của từng ca.'
+        }
+        grid={false}
+        action={
+          hasSchedule && daySlots.length > 1 ? (
+            <Btn variant="ghost" onClick={applyFirstTimeToAll}>
+              Dùng giờ ca đầu của {daySlots[0].code} cho mọi ngày học
+            </Btn>
+          ) : undefined
+        }
+      >
+        <div className="flex flex-col gap-3.5">
+          {!isReschedule && (
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)]/60 px-3 py-2 text-xs text-[var(--fgColor-muted)]">
+              <span>
+                Đơn giá học phí chuẩn:{' '}
+                <b className="font-semibold tabular-nums text-[var(--fgColor-default)]">{formatVND(TUITION_PER_SESSION)} / buổi</b>
+              </span>
+              {isCreate && (
+                <span className="tabular-nums">
+                  Dự kiến trọn khoá ({Number(sessionsText) || 0} buổi):{' '}
+                  <b className="font-semibold text-[var(--fgColor-default)]">
+                    {formatVND(TUITION_PER_SESSION * (Number(sessionsText) || 0))}
+                  </b>
+                </span>
+              )}
+            </div>
           )}
-          <fieldset className="col-span-full flex flex-col gap-2">
-            <legend className="mb-1.5 text-sm font-medium text-[var(--fgColor-default)]">Ngày học trong tuần *</legend>
-            <div className="flex flex-wrap gap-2">
-              {WEEKDAY_CODES.map((code) => (
-                <label key={code} className="cursor-pointer" title={WEEKDAY_CODE_LABELS[code]}>
-                  <input
-                    type="checkbox"
-                    name="weekdays"
-                    value={code}
-                    checked={days.includes(code)}
-                    onChange={(e) => toggleDay(code, e.target.checked)}
-                    className="peer sr-only"
+
+          {hasSchedule ? (
+            <>
+              {isReschedule && (
+                <Notice>
+                  {kept > 0 ? `Giữ nguyên ${kept} buổi đã học hoặc đã bắt đầu. ` : ''}Các buổi chưa học được thay bằng lịch mới bên dưới. Đổi ngày khai giảng, số buổi, ngày học hoặc ca ở đây.
+                </Notice>
+              )}
+
+              <fieldset className="m-0 flex flex-col gap-2 border-0 p-0">
+                <legend className="mb-1 text-[13px] font-medium text-[var(--fgColor-default)]">Ngày học trong tuần *</legend>
+                <div className="flex flex-wrap gap-2">
+                  {WEEKDAY_CODES.map((code) => (
+                    <label key={code} className="cursor-pointer" title={WEEKDAY_CODE_LABELS[code]}>
+                      <input
+                        type="checkbox"
+                        name="weekdays"
+                        value={code}
+                        checked={days.includes(code)}
+                        onChange={(e) => toggleDay(code, e.target.checked)}
+                        className="peer sr-only"
+                      />
+                      <span className="inline-flex h-[var(--ctl-h)] min-w-[2.75rem] items-center justify-center rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-3 text-sm font-semibold text-[var(--fgColor-muted)] transition-colors hover:border-[var(--borderColor-accent-emphasis)] max-[767px]:h-[var(--ctl-h-touch)] peer-checked:border-[var(--button-primary-borderColor-rest)] peer-checked:bg-[var(--button-primary-bgColor-rest)] peer-checked:text-[var(--button-primary-fgColor-rest)] peer-focus-visible:outline-2 peer-focus-visible:outline-[var(--focus-outlineColor)]">
+                        {code}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+                {errors.weekdays && <span className="text-xs font-medium text-blush-ink">{errors.weekdays}</span>}
+              </fieldset>
+
+              <DayTimeRows
+                days={daySlots}
+                errors={errors}
+                canEditSlots
+                onChange={changeTime}
+                onAddSlot={addSlot}
+                onRemoveSlot={removeSlot}
+                onMoveSlot={moveSlotTo}
+              />
+
+              <div className="grid grid-cols-1 gap-3.5 min-[768px]:grid-cols-2 min-[768px]:gap-x-4">
+                <Field
+                  label={isReschedule && kept > 0 ? 'Xếp lại từ ngày *' : 'Ngày khai giảng *'}
+                  error={errors.startDate}
+                  hint={
+                    isReschedule && kept > 0
+                      ? 'Buổi chưa học đầu tiên diễn ra vào ngày này hoặc ngày học gần nhất'
+                      : 'Buổi đầu tiên diễn ra vào ngày này hoặc ngày học gần nhất'
+                  }
+                >
+                  <DateInput
+                    name="startDate"
+                    defaultValue={isReschedule ? (values.nextDate ?? defaultStartDate) : defaultStartDate}
+                    aria-label={isReschedule && kept > 0 ? 'Xếp lại từ ngày *' : 'Ngày khai giảng *'}
+                    onIsoChange={() => setBump((n) => n + 1)}
+                    error={Boolean(errors.startDate)}
                   />
-                  <span className="inline-flex h-[var(--ctl-h)] min-w-[var(--ctl-h)] items-center justify-center rounded-full border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-3 text-sm font-semibold text-[var(--fgColor-muted)] transition-colors max-[767px]:h-[var(--ctl-h-touch)] peer-checked:border-[var(--button-primary-borderColor-rest)] peer-checked:bg-[var(--button-primary-bgColor-rest)] peer-checked:text-[var(--button-primary-fgColor-rest)] peer-focus-visible:outline-2 peer-focus-visible:outline-[var(--focus-outlineColor)]">
-                    {code}
-                  </span>
-                </label>
-              ))}
-            </div>
-            {errors.weekdays && <span className="text-sm font-medium text-blush-ink">{errors.weekdays}</span>}
-          </fieldset>
+                </Field>
+                <Field
+                  label={isReschedule ? 'Tổng số buổi của khoá *' : 'Số buổi *'}
+                  error={errors.sessionsTotal}
+                  hint={isReschedule && kept > 0 ? `Tính cả ${kept} buổi đã học` : undefined}
+                >
+                  <TextInputNumber
+                    name="sessionsTotal"
+                    value={sessionsText}
+                    min={1}
+                    max={200}
+                    thousandSeparator={false}
+                    aria-label={isReschedule ? 'Tổng số buổi của khoá *' : 'Số buổi *'}
+                    onTextChange={(raw) => {
+                      changeSessions(raw);
+                      setBump((n) => n + 1);
+                    }}
+                    error={Boolean(errors.sessionsTotal)}
+                  />
+                </Field>
+              </div>
 
-          {daySlots.length > 1 && (
-            <div className="col-span-full flex justify-end">
-              <Btn variant="ghost" onClick={applyFirstTimeToAll}>
-                Dùng giờ ca đầu của {daySlots[0].code} cho mọi ngày học
-              </Btn>
-            </div>
+              <PreviewBox preview={preview} />
+            </>
+          ) : (
+            <>
+              <Notice className={daySlots.length === 0 ? 'hidden' : ''}>
+                <b>Đổi giờ từng ca tại đây:</b> các buổi sắp tới của ca đó sẽ dời theo giờ mới. <b>Muốn thêm ca, đổi ngày học hoặc số buổi</b>, bấm <b>Xếp lại lịch</b> trong menu <KebabHorizontalIcon size={13} className="inline-block align-[-2px]" aria-hidden /> của lớp ở danh sách. Sửa hoặc huỷ một buổi riêng ở màn Lịch học.
+              </Notice>
+              <DayTimeRows days={daySlots} errors={errors} canEditSlots={false} onChange={changeTime} onAddSlot={addSlot} onRemoveSlot={removeSlot} />
+            </>
           )}
-          <DayTimeRows days={daySlots} errors={errors} canEditSlots onChange={changeTime} onAddSlot={addSlot} onRemoveSlot={removeSlot} onMoveSlot={moveSlotTo} />
-          <Field
-            label={isReschedule && kept > 0 ? 'Xếp lại từ ngày *' : 'Ngày khai giảng *'}
-            error={errors.startDate}
-            hint={isReschedule && kept > 0 ? 'Buổi chưa học đầu tiên diễn ra vào ngày này hoặc ngày học gần nhất' : 'Buổi đầu tiên diễn ra vào ngày này hoặc ngày học gần nhất'}
-          >
-            <DateInput
-              name="startDate"
-              defaultValue={isReschedule ? (values.nextDate ?? defaultStartDate) : defaultStartDate}
-              aria-label={isReschedule && kept > 0 ? 'Xếp lại từ ngày *' : 'Ngày khai giảng *'}
-              onIsoChange={() => setBump((n) => n + 1)}
-              error={Boolean(errors.startDate)}
-            />
-          </Field>
-          <Field label={isReschedule ? 'Tổng số buổi của khoá *' : 'Số buổi *'} error={errors.sessionsTotal} hint={isReschedule && kept > 0 ? `Tính cả ${kept} buổi đã học` : undefined}>
-            <TextInputNumber
-              name="sessionsTotal"
-              value={sessionsText}
-              min={1}
-              max={200}
-              thousandSeparator={false}
-              aria-label={isReschedule ? 'Tổng số buổi của khoá *' : 'Số buổi *'}
-              onTextChange={(raw) => {
-                changeSessions(raw);
-                setBump((n) => n + 1);
-              }}
-              error={Boolean(errors.sessionsTotal)}
-            />
-          </Field>
-          <PreviewBox preview={preview} />
-        </>
-      ) : (
-        <>
-          <Notice className={`col-span-full ${daySlots.length === 0 ? 'hidden' : ''}`}>
-            <b>Đổi giờ từng ca tại đây:</b> các buổi sắp tới của ca đó sẽ dời theo giờ mới. <b>Muốn thêm ca, đổi ngày học hoặc số buổi</b>, bấm <b>Xếp lại lịch</b> trong menu ⋯ của lớp ở danh sách. Sửa hoặc huỷ một buổi riêng ở màn Lịch học.
-          </Notice>
-          <DayTimeRows days={daySlots} errors={errors} canEditSlots={false} onChange={changeTime} onAddSlot={addSlot} onRemoveSlot={removeSlot} />
-        </>
-      )}
+        </div>
+      </FormSection>
 
-      <FormFooter className="col-span-full">
+      <FormFooter>
         <Btn onClick={onCancel}>Huỷ</Btn>
         <Btn type="submit" variant="primary" loading={pending} disabled={pending}>
           {pending ? 'Đang lưu…' : isCreate ? 'Tạo lớp' : isReschedule ? 'Xếp lại lịch' : 'Lưu thay đổi'}
@@ -439,11 +508,6 @@ export function ClassForm({
       </FormFooter>
     </form>
   );
-}
-
-// Tiêu đề nhóm trong form lớp: chia form dài thành bốn phần dễ dò
-function SectionTitle({ children }: { children: string }) {
-  return <h3 className="col-span-full mt-2 border-b border-[var(--borderColor-muted)] pb-1.5 text-sm font-semibold text-[var(--fgColor-default)] first:mt-0">{children}</h3>;
 }
 
 // "T5 22/10/2026 08:00"
@@ -455,19 +519,25 @@ function whenLabel(d: Date): string {
 // Khung xem trước lịch: số buổi, ngày đầu, ngày cuối, vài buổi đầu; buổi trùng hiện đỏ để sửa trước khi tạo
 function PreviewBox({ preview }: { preview: SchedulePreview | null }) {
   if (!preview) return null;
-  if (!preview.ok) return <Notice className="col-span-full">{preview.message}</Notice>;
+  if (!preview.ok) return <Notice>{preview.message}</Notice>;
   return (
     <section
       aria-label="Xem trước lịch"
-      className="col-span-full flex flex-col gap-2 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-accent-muted)] bg-[var(--bgColor-accent-muted)] p-3"
+      className="flex flex-col gap-2.5 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-accent-muted)] bg-[var(--bgColor-accent-muted)] p-3"
     >
-      <p className="text-sm text-[var(--fgColor-default)]">
-        <b className="font-medium">{preview.kept ? `${preview.total} buổi mới` : `${preview.total} buổi`}</b> · từ {whenLabel(preview.firstStartsAt)} đến {whenLabel(preview.lastStartsAt)}
-        {preview.kept ? ` · giữ ${preview.kept} buổi đã học` : ''}
-      </p>
-      <ul className="flex flex-wrap gap-1.5">
+      <div className="flex items-center gap-1.5 text-sm text-[var(--fgColor-default)]">
+        <CalendarIcon size={14} className="shrink-0 text-[var(--fgColor-accent)]" aria-hidden />
+        <p className="m-0 tabular-nums">
+          <b className="font-semibold">{preview.kept ? `${preview.total} buổi mới` : `${preview.total} buổi`}</b> · từ {whenLabel(preview.firstStartsAt)} đến {whenLabel(preview.lastStartsAt)}
+          {preview.kept ? ` · giữ ${preview.kept} buổi đã học` : ''}
+        </p>
+      </div>
+      <ul className="m-0 flex list-none flex-wrap gap-1.5 p-0">
         {preview.sample.map((s) => (
-          <li key={s.startsAt.toISOString()} className="rounded-full border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-2.5 py-0.5 text-xs text-[var(--fgColor-default)]">
+          <li
+            key={s.startsAt.toISOString()}
+            className="rounded-[var(--borderRadius-small)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-2 py-0.5 font-mono text-xs tabular-nums text-[var(--fgColor-default)]"
+          >
             {whenLabel(s.startsAt)}–{vnTimeLabel(s.endsAt)}
           </li>
         ))}

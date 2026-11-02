@@ -1,25 +1,46 @@
 'use client';
 
-import { ZaloLink } from '@/components/ui/ZaloLink';
-import { CalendarIcon, CheckIcon, PlusIcon, XIcon } from '@primer/octicons-react';
+import {
+  CalendarIcon,
+  CheckIcon,
+  ClockIcon,
+  EyeIcon,
+  LocationIcon,
+  PeopleIcon,
+  PersonIcon,
+  PlusIcon,
+  SyncIcon,
+  TrashIcon,
+  XIcon,
+} from '@primer/octicons-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useTransition } from 'react';
-import { bookMakeupAction, cancelMakeupAction, createLeaveAction, decideLeaveAction, leaveOptionsAction, makeupOptionsAction, type LeaveOptions } from '@/app/(app)/don-nghi/actions';
+import {
+  bookMakeupAction,
+  cancelMakeupAction,
+  createLeaveAction,
+  decideLeaveAction,
+  leaveOptionsAction,
+  makeupOptionsAction,
+  type LeaveOptions,
+} from '@/app/(app)/don-nghi/actions';
 import type { MakeupCandidate } from '@/lib/makeup';
 import { dateKeyLabel, vnDateKey, vnTimeLabel, weekdayLabel, weekdayOfKey } from '@/lib/datetime';
 import type { LeaveFilter, LeaveListRow, LeaveStatus } from '@/lib/queries/leaves';
+import { ActIcon } from '@/components/ui/ActIcon';
 import { Btn } from '@/components/ui/Btn';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Chip, ChipGroup } from '@/components/ui/controls';
 import { ComboBox, TextInput } from '@/components-ui';
 import { DataGrid, type GridColumn } from '@/components/ui/datagrid';
-import { Field, FormFooter } from '@/components/ui/Field';
+import { Field, FormFooter, FormSection } from '@/components/ui/Field';
 import { Modal } from '@/components/ui/Modal';
 import { PageCrumbs } from '@/components/shell/PageCrumbs';
 import { Alert, Pill, type Tone } from '@/components/ui/primitives';
-import { Card, EmptyPanel } from '@/components/ui/surfaces';
+import { Callout, Card, EmptyPanel } from '@/components/ui/surfaces';
 import { Toast, useToast } from '@/components/ui/Toast';
+import { ZaloLink } from '@/components/ui/ZaloLink';
 
 const STATUS_META: Record<LeaveStatus, { label: string; tone: Tone }> = {
   pending: { label: 'Chờ duyệt', tone: 'butter' },
@@ -42,7 +63,7 @@ const COLUMNS: GridColumn<LeaveListRow>[] = [
   { key: 'reason', label: 'Lý do', width: 'minmax(140px,1.4fr)' },
   { key: 'parent', label: 'Người gửi', width: 'minmax(130px,1fr)' },
   { key: 'status', label: 'Trạng thái', width: 'minmax(130px,1fr)', sortValue: (r) => r.status },
-  { key: 'actions', label: 'Thao tác', width: '164px', align: 'end', srOnly: true },
+  { key: 'actions', label: 'Thao tác', width: '196px', align: 'end', srOnly: true },
 ];
 
 // "T3 27/10 16:15–17:30"
@@ -51,7 +72,7 @@ function sessionLabel(startsAt: Date, endsAt: Date): string {
   return `${weekdayLabel(weekdayOfKey(key))} ${dateKeyLabel(key).slice(0, 5)} ${vnTimeLabel(startsAt)}–${vnTimeLabel(endsAt)}`;
 }
 
-// Màn Đơn nghỉ: duyệt, từ chối đơn phụ huynh gửi qua bot; ghi đơn hộ khi phụ huynh gọi điện. Web là bảng, điện thoại là thẻ.
+// Màn Đơn nghỉ: duyệt, từ chối đơn phụ huynh gửi qua bot; ghi đơn hộ khi phụ huynh gọi điện. Web là bảng (giữ nguyên DataGrid overflowY === 0), điện thoại là thẻ.
 export function LeavesView({
   rows,
   counts,
@@ -74,12 +95,14 @@ export function LeavesView({
   const [adding, setAdding] = useState(false);
   const [makeupFor, setMakeupFor] = useState<LeaveListRow | null>(null);
   const [toUnbook, setToUnbook] = useState<LeaveListRow | null>(null);
+  const [detailFor, setDetailFor] = useState<LeaveListRow | null>(null);
 
   function unbook(row: LeaveListRow) {
     startTransition(async () => {
       const r = await cancelMakeupAction(row.id);
       notify(r.message ?? (r.ok ? 'Đã bỏ' : 'Không bỏ được'));
       setToUnbook(null);
+      setDetailFor(null);
       router.refresh();
     });
   }
@@ -99,6 +122,7 @@ export function LeavesView({
       const r = await decideLeaveAction(row.id, approve);
       notify(r.message ?? (r.ok ? 'Đã lưu' : 'Không lưu được'));
       setToDeny(null);
+      setDetailFor(null);
       router.refresh();
     });
   }
@@ -112,14 +136,37 @@ export function LeavesView({
     if (!canMakeup(r)) return null;
     const m = makeups[r.id];
     return m ? (
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
-        <span className="text-[var(--fgColor-muted)]">Học bù: lớp {m.className} · {sessionLabel(new Date(m.startsAt), new Date(m.endsAt))}</span>
-        <button type="button" data-link="true" onClick={() => setMakeupFor(r)} className="text-[var(--fgColor-accent)] underline underline-offset-2">Đổi</button>
-        <button type="button" data-link="true" onClick={() => setToUnbook(r)} className="text-blush-ink underline underline-offset-2">Bỏ</button>
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+        <span className="tabular-nums text-[var(--fgColor-muted)]">
+          Học bù: lớp {m.className} · {sessionLabel(new Date(m.startsAt), new Date(m.endsAt))}
+        </span>
+        <button
+          type="button"
+          data-link="true"
+          onClick={() => setMakeupFor(r)}
+          className="inline-flex items-center gap-1 text-[var(--fgColor-accent)] underline underline-offset-2"
+        >
+          <SyncIcon size={12} aria-hidden />
+          Đổi
+        </button>
+        <button
+          type="button"
+          data-link="true"
+          onClick={() => setToUnbook(r)}
+          className="inline-flex items-center gap-1 text-blush-ink underline underline-offset-2"
+        >
+          <TrashIcon size={12} aria-hidden />
+          Bỏ
+        </button>
       </div>
     ) : (
-      <button type="button" data-link="true" onClick={() => setMakeupFor(r)} className="inline-flex items-center gap-1.5 self-start text-sm text-[var(--fgColor-accent)] underline underline-offset-2">
-        <CalendarIcon size={16} aria-hidden />
+      <button
+        type="button"
+        data-link="true"
+        onClick={() => setMakeupFor(r)}
+        className="inline-flex items-center gap-1 self-start text-xs font-medium text-[var(--fgColor-accent)] underline underline-offset-2"
+      >
+        <CalendarIcon size={13} aria-hidden />
         Xếp học bù
       </button>
     );
@@ -138,10 +185,24 @@ export function LeavesView({
 
   const decideButtons = (r: LeaveListRow, block = false) => (
     <>
-      <Btn variant="primary" block={block} leadingVisual={CheckIcon} onClick={() => decide(r, true)} disabled={pending} aria-label={`Duyệt đơn của ${r.studentName}`}>
+      <Btn
+        variant="primary"
+        block={block}
+        leadingVisual={CheckIcon}
+        onClick={() => decide(r, true)}
+        disabled={pending}
+        aria-label={`Duyệt đơn của ${r.studentName}`}
+      >
         Duyệt
       </Btn>
-      <Btn variant="danger" block={block} leadingVisual={XIcon} onClick={() => setToDeny(r)} disabled={pending} aria-label={`Từ chối đơn của ${r.studentName}`}>
+      <Btn
+        variant="danger"
+        block={block}
+        leadingVisual={XIcon}
+        onClick={() => setToDeny(r)}
+        disabled={pending}
+        aria-label={`Từ chối đơn của ${r.studentName}`}
+      >
         Từ chối
       </Btn>
     </>
@@ -152,21 +213,48 @@ export function LeavesView({
       case 'student':
         return (
           <div className="flex min-w-0 items-baseline gap-1.5" title={`${r.studentName} · ${r.className}`}>
-            <Link href={`/hoc-sinh/${r.studentId}`} data-link="true" className="truncate text-sm font-normal text-[var(--fgColor-accent)] hover:underline">{r.studentName}</Link>
-            <small className="truncate text-xs text-[var(--fgColor-muted)]">{r.className}</small>
+            <Link
+              href={`/hoc-sinh/${r.studentId}`}
+              data-link="true"
+              className="truncate text-sm font-medium text-[var(--fgColor-accent)] hover:underline"
+            >
+              {r.studentName}
+            </Link>
+            <small className="shrink-0 rounded-[var(--borderRadius-small)] bg-[var(--bgColor-neutral-muted)] px-1.5 py-0.5 font-mono text-[11px] text-[var(--fgColor-muted)]">
+              {r.className}
+            </small>
           </div>
         );
       case 'session':
-        return <span className="text-sm tabular-nums text-[var(--fgColor-default)]">{sessionLabel(r.startsAt, r.endsAt)}</span>;
+        return (
+          <button
+            type="button"
+            data-link="true"
+            onClick={() => setDetailFor(r)}
+            className="text-left font-mono text-xs tabular-nums text-[var(--fgColor-default)] hover:text-[var(--fgColor-link)] hover:underline"
+          >
+            {sessionLabel(r.startsAt, r.endsAt)}
+          </button>
+        );
       case 'reason':
-        return <span className="block truncate text-sm text-[var(--fgColor-muted)]" title={r.reason ?? ''}>{r.reason}</span>;
+        return (
+          <span className="block truncate text-sm text-[var(--fgColor-muted)]" title={r.reason ?? ''}>
+            {r.reason || <span className="opacity-60">—</span>}
+          </span>
+        );
       case 'parent':
         return r.parentName ? (
           <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
             <span className="truncate text-sm text-[var(--fgColor-default)]">{r.parentName}</span>
             {r.parentPhone && (
               <span className="inline-flex items-center gap-1.5">
-                <a href={`tel:${r.parentPhone}`} data-link="true" className="text-xs font-normal text-[var(--fgColor-accent)] hover:underline">{r.parentPhone}</a>
+                <a
+                  href={`tel:${r.parentPhone}`}
+                  data-link="true"
+                  className="font-mono text-xs font-normal tabular-nums text-[var(--fgColor-accent)] hover:underline"
+                >
+                  {r.parentPhone}
+                </a>
                 <ZaloLink phone={r.parentPhone} name={r.parentName} variant="link" />
               </span>
             )}
@@ -177,7 +265,17 @@ export function LeavesView({
       case 'status':
         return statusCell(r);
       case 'actions':
-        return <div className="flex justify-end gap-1.5">{canDecide(r) && decideButtons(r)}</div>;
+        return (
+          <div className="flex items-center justify-end gap-1.5">
+            {canDecide(r) && decideButtons(r)}
+            <ActIcon
+              quiet
+              label={`Xem chi tiết đơn của ${r.studentName}`}
+              icon={EyeIcon}
+              onClick={() => setDetailFor(r)}
+            />
+          </div>
+        );
       default:
         return null;
     }
@@ -187,22 +285,38 @@ export function LeavesView({
     <Card>
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <Link href={`/hoc-sinh/${r.studentId}`} data-link="true" className="text-base font-normal text-[var(--fgColor-accent)] underline underline-offset-2">{r.studentName}</Link>
-          <small className="block text-xs text-[var(--fgColor-muted)]">{r.className} · {sessionLabel(r.startsAt, r.endsAt)}</small>
+          <Link
+            href={`/hoc-sinh/${r.studentId}`}
+            data-link="true"
+            className="text-base font-medium text-[var(--fgColor-accent)] underline underline-offset-2"
+          >
+            {r.studentName}
+          </Link>
+          <small className="mt-0.5 block font-mono text-xs tabular-nums text-[var(--fgColor-muted)]">
+            {r.className} · {sessionLabel(r.startsAt, r.endsAt)}
+          </small>
         </div>
-        {statusCell(r, false)}
+        <div className="flex items-center gap-1">
+          {statusCell(r, false)}
+          <ActIcon quiet label={`Xem chi tiết đơn của ${r.studentName}`} icon={EyeIcon} onClick={() => setDetailFor(r)} />
+        </div>
       </div>
-      {r.reason && <p className="text-base text-[var(--fgColor-muted)]">Lý do: {r.reason}</p>}
+      {r.reason && <p className="m-0 text-sm text-[var(--fgColor-muted)]">Lý do: {r.reason}</p>}
       {makeupLine(r)}
-      <small className="text-sm text-[var(--fgColor-muted)]">
+      <small className="text-xs text-[var(--fgColor-muted)]">
         {r.parentName ? (
           <>
             Gửi bởi {r.parentName}
             {r.parentPhone && (
               <>
                 {' · '}
-                <a href={`tel:${r.parentPhone}`} data-link="true" className="text-[var(--fgColor-accent)] underline underline-offset-2">{r.parentPhone}</a>
-                {' '}
+                <a
+                  href={`tel:${r.parentPhone}`}
+                  data-link="true"
+                  className="font-mono tabular-nums text-[var(--fgColor-accent)] underline underline-offset-2"
+                >
+                  {r.parentPhone}
+                </a>{' '}
                 <ZaloLink phone={r.parentPhone} name={r.parentName} variant="link" />
               </>
             )}
@@ -243,6 +357,7 @@ export function LeavesView({
               label="Lớp"
               auto
               variant="bar"
+              icon={<PeopleIcon size={14} className="text-[var(--fgColor-muted)]" aria-hidden />}
               value={classId ? String(classId) : ''}
               onChange={(v) => go({ cls: v ? Number(v) : null })}
               options={[{ value: '', label: 'Tất cả lớp' }, ...classes.map((c) => ({ value: String(c.id), label: c.name }))]}
@@ -255,10 +370,41 @@ export function LeavesView({
         empty={<EmptyPanel title={filter === 'pending' ? 'Không có đơn nào chờ duyệt.' : 'Không có đơn phù hợp với bộ lọc này.'} />}
       />
 
+      {detailFor && (
+        <LeaveDetailDialog
+          row={detailFor}
+          makeup={makeups[detailFor.id]}
+          pending={pending}
+          canDecide={canDecide(detailFor)}
+          canMakeup={canMakeup(detailFor)}
+          onClose={() => setDetailFor(null)}
+          onApprove={() => decide(detailFor, true)}
+          onDeny={() => {
+            const target = detailFor;
+            setDetailFor(null);
+            setToDeny(target);
+          }}
+          onOpenMakeup={() => {
+            const target = detailFor;
+            setDetailFor(null);
+            setMakeupFor(target);
+          }}
+          onUnbookMakeup={() => {
+            const target = detailFor;
+            setDetailFor(null);
+            setToUnbook(target);
+          }}
+        />
+      )}
+
       <ConfirmDialog
         open={!!toDeny}
         title="Từ chối đơn nghỉ?"
-        text={toDeny ? `Đơn của ${toDeny.studentName} buổi ${sessionLabel(toDeny.startsAt, toDeny.endsAt)}. Phụ huynh nhận tin báo đơn chưa được duyệt, Thầy/Cô nhớ liên hệ lại.` : ''}
+        text={
+          toDeny
+            ? `Đơn của ${toDeny.studentName} buổi ${sessionLabel(toDeny.startsAt, toDeny.endsAt)}. Phụ huynh nhận tin báo đơn chưa được duyệt, Thầy/Cô nhớ liên hệ lại.`
+            : ''
+        }
         confirmLabel="Từ chối đơn"
         pending={pending}
         onConfirm={() => toDeny && decide(toDeny, false)}
@@ -276,6 +422,7 @@ export function LeavesView({
           }}
         />
       )}
+
       <ConfirmDialog
         open={!!toUnbook}
         title="Bỏ buổi học bù?"
@@ -303,8 +450,151 @@ export function LeavesView({
   );
 }
 
+// Hộp thoại Chi tiết & Duyệt đơn nghỉ chuẩn 01. TSUKUBA
+function LeaveDetailDialog({
+  row,
+  makeup,
+  pending,
+  canDecide,
+  canMakeup,
+  onClose,
+  onApprove,
+  onDeny,
+  onOpenMakeup,
+  onUnbookMakeup,
+}: {
+  row: LeaveListRow;
+  makeup?: { className: string; startsAt: Date; endsAt: Date };
+  pending: boolean;
+  canDecide: boolean;
+  canMakeup: boolean;
+  onClose: () => void;
+  onApprove: () => void;
+  onDeny: () => void;
+  onOpenMakeup: () => void;
+  onUnbookMakeup: () => void;
+}) {
+  return (
+    <Modal
+      open
+      size="md"
+      title={`Đơn xin nghỉ · ${row.studentName}`}
+      subtitle={`Lớp ${row.className} · ${sessionLabel(row.startsAt, row.endsAt)}`}
+      onClose={onClose}
+      labelledBy="leave-detail-title"
+    >
+      <div className="flex flex-col gap-3.5">
+        <div className="overflow-hidden rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]/60 p-3.5">
+          <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2 border-b border-[var(--borderColor-muted)] pb-2.5">
+            <Pill tone={row.status === 'pending' && row.past ? 'stone' : STATUS_META[row.status].tone}>
+              {row.status === 'pending' && row.past ? 'Quá hạn duyệt' : STATUS_META[row.status].label}
+            </Pill>
+            <span className="font-mono text-xs tabular-nums text-[var(--fgColor-muted)]">
+              {sessionLabel(row.startsAt, row.endsAt)}
+            </span>
+          </div>
+
+          <dl className="m-0 grid grid-cols-[6.75rem_minmax(0,1fr)] gap-x-4 gap-y-1.5 text-sm">
+            <dt className="text-xs text-[var(--fgColor-muted)]">Học sinh</dt>
+            <dd className="m-0 font-semibold text-[var(--fgColor-default)]">
+              <Link href={`/hoc-sinh/${row.studentId}`} data-link="true" className="text-[var(--fgColor-link)] hover:underline">
+                {row.studentName}
+              </Link>
+            </dd>
+
+            <dt className="text-xs text-[var(--fgColor-muted)]">Lớp học</dt>
+            <dd className="m-0 font-mono text-xs text-[var(--fgColor-default)]">{row.className}</dd>
+
+            <dt className="text-xs text-[var(--fgColor-muted)]">Người gửi</dt>
+            <dd className="m-0 text-[var(--fgColor-default)]">
+              {row.parentName ? (
+                <span className="inline-flex flex-wrap items-center gap-2">
+                  <span>{row.parentName}</span>
+                  {row.parentPhone && (
+                    <>
+                      <a
+                        href={`tel:${row.parentPhone}`}
+                        data-link="true"
+                        className="font-mono text-xs tabular-nums text-[var(--fgColor-accent)] hover:underline"
+                      >
+                        {row.parentPhone}
+                      </a>
+                      <ZaloLink phone={row.parentPhone} name={row.parentName} variant="link" />
+                    </>
+                  )}
+                </span>
+              ) : (
+                <span className="text-[var(--fgColor-muted)]">Giáo vụ ghi nhận</span>
+              )}
+            </dd>
+
+            <dt className="text-xs text-[var(--fgColor-muted)]">Lý do nghỉ</dt>
+            <dd className="m-0 text-[var(--fgColor-default)]">{row.reason || 'Không ghi lý do'}</dd>
+
+            {row.decidedBy && (
+              <>
+                <dt className="text-xs text-[var(--fgColor-muted)]">Xử lý bởi</dt>
+                <dd className="m-0 text-[var(--fgColor-default)]">{row.decidedBy}</dd>
+              </>
+            )}
+          </dl>
+        </div>
+
+        {canMakeup && (
+          <FormSection title="Lịch học bù" grid={false}>
+            {makeup ? (
+              <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                <div>
+                  <b className="font-semibold text-[var(--fgColor-default)]">Lớp {makeup.className}</b>
+                  <span className="ml-2 font-mono text-xs tabular-nums text-[var(--fgColor-muted)]">
+                    {sessionLabel(new Date(makeup.startsAt), new Date(makeup.endsAt))}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Btn variant="ghost" leadingVisual={SyncIcon} onClick={onOpenMakeup}>
+                    Đổi buổi bù
+                  </Btn>
+                  <Btn variant="danger" leadingVisual={TrashIcon} onClick={onUnbookMakeup}>
+                    Bỏ học bù
+                  </Btn>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                <span className="text-[var(--fgColor-muted)]">Chưa xếp buổi học bù cho đơn nghỉ này.</span>
+                <Btn variant="primary" leadingVisual={CalendarIcon} onClick={onOpenMakeup}>
+                  Xếp học bù
+                </Btn>
+              </div>
+            )}
+          </FormSection>
+        )}
+
+        <FormFooter>
+          <Btn onClick={onClose}>Đóng</Btn>
+          {canDecide && (
+            <>
+              <Btn variant="danger" leadingVisual={XIcon} onClick={onDeny} disabled={pending}>
+                Từ chối
+              </Btn>
+              <Btn variant="primary" leadingVisual={CheckIcon} loading={pending} onClick={onApprove} disabled={pending}>
+                Duyệt đơn
+              </Btn>
+            </>
+          )}
+        </FormFooter>
+      </div>
+    </Modal>
+  );
+}
+
 // Ghi đơn nghỉ hộ phụ huynh: chọn lớp, học sinh, buổi sắp tới, lý do. Đơn được duyệt ngay.
-function AddLeaveDialog({ classes, defaultClassId, onClose, onDone }: {
+function AddLeaveDialog({
+  classes,
+  defaultClassId,
+  onClose,
+  onDone,
+}: {
   classes: { id: number; name: string }[];
   defaultClassId: number | null;
   onClose: () => void;
@@ -351,67 +641,95 @@ function AddLeaveDialog({ classes, defaultClassId, onClose, onDone }: {
 
   const errors = error.fieldErrors ?? {};
   return (
-    <Modal open title="Ghi đơn nghỉ" subtitle="Khi phụ huynh gọi điện hoặc nhắn ngoài bot. Đơn được duyệt ngay và ghi vắng có phép." onClose={onClose} labelledBy="add-leave-title">
+    <Modal
+      open
+      size="md"
+      title="Ghi đơn nghỉ"
+      subtitle="Khi phụ huynh gọi điện hoặc nhắn ngoài bot. Đơn được duyệt ngay và ghi nhận vắng có phép."
+      onClose={onClose}
+      labelledBy="add-leave-title"
+    >
       <form
         onSubmit={(e) => {
           e.preventDefault();
           submit();
         }}
         noValidate
-        className="grid grid-cols-1 gap-3.5 min-[768px]:grid-cols-2 min-[768px]:gap-x-4"
+        className="flex flex-col gap-3.5"
       >
-        {(error.message || loadError) && <Alert className="col-span-full">{error.message ?? loadError}</Alert>}
-        <Field label="Lớp *">
-          <ComboBox
-            label="Lớp của học sinh"
-            block
-            value={classId}
-            onChange={(next) => {
-              if (next) chooseClass(next);
-            }}
-            options={classes.map((c) => ({ value: String(c.id), label: c.name }))}
-          />
-        </Field>
-        <Field label="Học sinh *" error={errors.studentId} hint={options && options.students.length === 0 ? 'Lớp chưa có học sinh đang học' : undefined}>
-          <ComboBox
-            label="Học sinh nghỉ"
-            block
-            value={studentId}
-            onChange={(val) => {
-              if (val) setStudentId(val);
-            }}
-            disabled={!options || options.students.length === 0}
-            options={(options?.students ?? []).map((s) => ({ value: String(s.id), label: s.name }))}
-            error={Boolean(errors.studentId)}
-          />
-        </Field>
-        <Field label="Buổi nghỉ *" error={errors.sessionId} hint={options && options.sessions.length === 0 ? 'Lớp không còn buổi sắp tới' : undefined}>
-          <ComboBox
-            label="Buổi nghỉ"
-            block
-            value={sessionId}
-            onChange={(val) => {
-              if (val) setSessionId(val);
-            }}
-            disabled={!options || options.sessions.length === 0}
-            options={(options?.sessions ?? []).map((s) => ({ value: String(s.id), label: sessionLabel(new Date(s.startsAt), new Date(s.endsAt)) }))}
-            error={Boolean(errors.sessionId)}
-          />
-        </Field>
-        <Field label="Lý do">
-          <TextInput
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            maxLength={200}
-            placeholder="VD: Ốm, phụ huynh gọi điện báo"
-            autoComplete="off"
-            aria-label="Lý do"
-            block
-          />
-        </Field>
-        <FormFooter className="col-span-full">
+        {(error.message || loadError) && <Alert>{error.message ?? loadError}</Alert>}
+
+        <Callout tone="info">
+          Đơn ghi trực tiếp bởi giáo vụ/giáo viên được duyệt tự động và đồng bộ sang trạng thái <b>Có phép</b> ở màn Điểm danh.
+        </Callout>
+
+        <FormSection title="Thông tin đơn xin nghỉ" description="Chọn lớp, học sinh và buổi học sắp tới cần xin phép.">
+          <Field label="Lớp *">
+            <ComboBox
+              label="Lớp của học sinh"
+              block
+              value={classId}
+              onChange={(next) => {
+                if (next) chooseClass(next);
+              }}
+              options={classes.map((c) => ({ value: String(c.id), label: c.name }))}
+            />
+          </Field>
+          <Field
+            label="Học sinh *"
+            error={errors.studentId}
+            hint={options && options.students.length === 0 ? 'Lớp chưa có học sinh đang học' : undefined}
+          >
+            <ComboBox
+              label="Học sinh nghỉ"
+              block
+              value={studentId}
+              onChange={(val) => {
+                if (val) setStudentId(val);
+              }}
+              disabled={!options || options.students.length === 0}
+              options={(options?.students ?? []).map((s) => ({ value: String(s.id), label: s.name }))}
+              error={Boolean(errors.studentId)}
+            />
+          </Field>
+          <Field
+            label="Buổi nghỉ *"
+            error={errors.sessionId}
+            hint={options && options.sessions.length === 0 ? 'Lớp không còn buổi sắp tới' : undefined}
+          >
+            <ComboBox
+              label="Buổi nghỉ"
+              block
+              value={sessionId}
+              onChange={(val) => {
+                if (val) setSessionId(val);
+              }}
+              disabled={!options || options.sessions.length === 0}
+              options={(options?.sessions ?? []).map((s) => ({
+                value: String(s.id),
+                label: sessionLabel(new Date(s.startsAt), new Date(s.endsAt)),
+              }))}
+              error={Boolean(errors.sessionId)}
+            />
+          </Field>
+          <Field label="Lý do">
+            <TextInput
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              maxLength={200}
+              placeholder="VD: Ốm, phụ huynh gọi điện báo"
+              autoComplete="off"
+              aria-label="Lý do"
+              block
+            />
+          </Field>
+        </FormSection>
+
+        <FormFooter>
           <Btn onClick={onClose}>Huỷ</Btn>
-          <Btn type="submit" variant="primary" disabled={saving || !studentId || !sessionId}>{saving ? 'Đang ghi…' : 'Ghi đơn nghỉ'}</Btn>
+          <Btn type="submit" variant="primary" loading={saving} disabled={saving || !studentId || !sessionId}>
+            {saving ? 'Đang ghi…' : 'Ghi đơn nghỉ'}
+          </Btn>
         </FormFooter>
       </form>
     </Modal>
@@ -419,7 +737,15 @@ function AddLeaveDialog({ classes, defaultClassId, onClose, onDone }: {
 }
 
 // Chọn buổi học bù: buổi sắp tới của lớp khác cùng trình độ, cùng cơ sở, còn chỗ, không trùng giờ lớp của học sinh
-function MakeupDialog({ row, onClose, onDone }: { row: LeaveListRow; onClose: () => void; onDone: (message: string) => void }) {
+function MakeupDialog({
+  row,
+  onClose,
+  onDone,
+}: {
+  row: LeaveListRow;
+  onClose: () => void;
+  onDone: (message: string) => void;
+}) {
   const [list, setList] = useState<MakeupCandidate[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, startSaving] = useTransition();
@@ -445,24 +771,78 @@ function MakeupDialog({ row, onClose, onDone }: { row: LeaveListRow; onClose: ()
   }
 
   return (
-    <Modal open title={`Xếp học bù · ${row.studentName}`} subtitle={`Nghỉ buổi ${sessionLabel(row.startsAt, row.endsAt)} lớp ${row.className}. Chọn một buổi của lớp cùng trình độ.`} onClose={onClose} labelledBy="makeup-title">
-      <div className="flex flex-col gap-3 pb-2">
+    <Modal
+      open
+      size="md"
+      title={`Xếp học bù · ${row.studentName}`}
+      subtitle={`Nghỉ buổi ${sessionLabel(row.startsAt, row.endsAt)} lớp ${row.className}. Chọn một buổi của lớp cùng trình độ.`}
+      onClose={onClose}
+      labelledBy="makeup-title"
+    >
+      <div className="flex flex-col gap-3.5">
+        {/* Tsukuba .kv summary box */}
+        <div className="rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]/60 p-3.5">
+          <dl className="m-0 grid grid-cols-[6rem_minmax(0,1fr)] gap-x-4 gap-y-1 text-sm">
+            <dt className="text-xs text-[var(--fgColor-muted)]">Học sinh</dt>
+            <dd className="m-0 font-semibold text-[var(--fgColor-default)]">{row.studentName}</dd>
+            <dt className="text-xs text-[var(--fgColor-muted)]">Buổi nghỉ</dt>
+            <dd className="m-0 font-mono text-xs tabular-nums text-[var(--fgColor-default)]">
+              Lớp {row.className} · {sessionLabel(row.startsAt, row.endsAt)}
+            </dd>
+          </dl>
+        </div>
+
         {error && <Alert>{error}</Alert>}
-        {!list && !error && <p className="text-sm text-[var(--fgColor-muted)]">Đang tìm buổi phù hợp…</p>}
-        {list && list.length === 0 && <p className="text-sm text-[var(--fgColor-muted)]">Không có buổi phù hợp trong 21 ngày tới (lớp cùng trình độ, cùng cơ sở, còn chỗ, không trùng giờ lớp của em).</p>}
-        {list && list.length > 0 && (
-          <ul className="flex flex-col divide-y divide-[var(--borderColor-muted)]">
-            {list.map((c) => (
-              <li key={c.sessionId} className="flex items-center justify-between gap-3 py-2.5">
-                <div className="min-w-0">
-                  <b className="block text-base text-[var(--fgColor-default)]">{sessionLabel(new Date(c.startsAt), new Date(c.endsAt))} · lớp {c.className}</b>
-                  <small className="block text-sm text-[var(--fgColor-muted)]">{c.teacherName}{c.room ? ` · ${c.room}` : ''} · còn {c.seatsLeft} chỗ</small>
-                </div>
-                <Btn variant="primary" onClick={() => choose(c)} disabled={saving}>Chọn</Btn>
-              </li>
-            ))}
-          </ul>
-        )}
+
+        <FormSection
+          title="Buổi học bù phù hợp (21 ngày tới)"
+          description="Lọc các lớp cùng trình độ, cùng cơ sở, còn chỗ trống và không trùng lịch chính."
+          grid={false}
+        >
+          {!list && !error && <p className="m-0 text-sm text-[var(--fgColor-muted)]">Đang tìm buổi phù hợp…</p>}
+          {list && list.length === 0 && (
+            <p className="m-0 text-sm text-[var(--fgColor-muted)]">
+              Không có buổi phù hợp trong 21 ngày tới (lớp cùng trình độ, cùng cơ sở, còn chỗ, không trùng giờ lớp của em).
+            </p>
+          )}
+          {list && list.length > 0 && (
+            <ul className="m-0 flex list-none flex-col gap-2 p-0">
+              {list.map((c) => (
+                <li
+                  key={c.sessionId}
+                  className="flex items-center justify-between gap-3 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-3 py-2.5 transition-colors hover:border-[var(--borderColor-accent-emphasis)] hover:bg-[var(--bgColor-accent-muted)]"
+                >
+                  <div className="min-w-0">
+                    <b className="flex flex-wrap items-center gap-1.5 text-sm font-semibold tabular-nums text-[var(--fgColor-default)]">
+                      <ClockIcon size={13} className="shrink-0 text-[var(--fgColor-muted)]" aria-hidden />
+                      {sessionLabel(new Date(c.startsAt), new Date(c.endsAt))} · lớp {c.className}
+                    </b>
+                    <small className="mt-0.5 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-xs text-[var(--fgColor-muted)]">
+                      <span className="inline-flex items-center gap-1">
+                        <PersonIcon size={12} aria-hidden />
+                        {c.teacherName}
+                      </span>
+                      {c.room && (
+                        <span className="inline-flex items-center gap-1 font-mono">
+                          <LocationIcon size={12} aria-hidden />
+                          {c.room}
+                        </span>
+                      )}
+                      <span className="inline-flex items-center gap-1 font-mono tabular-nums text-mint-ink">
+                        <PeopleIcon size={12} aria-hidden />
+                        còn {c.seatsLeft} chỗ
+                      </span>
+                    </small>
+                  </div>
+                  <Btn variant="primary" leadingVisual={CheckIcon} onClick={() => choose(c)} disabled={saving}>
+                    Chọn
+                  </Btn>
+                </li>
+              ))}
+            </ul>
+          )}
+        </FormSection>
+
         <FormFooter>
           <Btn onClick={onClose}>Đóng</Btn>
         </FormFooter>

@@ -1,6 +1,6 @@
 'use client';
 
-// Trường nhập liệu dùng chung cho form, xuất kèm toàn bộ control từ `@/components-ui`
+// Trường nhập liệu & phân nhóm form dùng chung (chuẩn dự án 01. TSUKUBA), xuất kèm toàn bộ control từ `@/components-ui`
 // (ComboBox, SelectBox, DateInput, DateTimeInput, TimeInput24h, MonthYearPicker, TextInputNumber, TextAreaAutoHeight, PasswordToggleInput).
 import clsx from 'clsx';
 import type { ReactNode } from 'react';
@@ -60,14 +60,56 @@ export function Field({
         wide && 'min-[768px]:col-span-full',
       )}
     >
-      <span className="text-sm font-medium text-[var(--fgColor-default)]">{label}</span>
+      <span className="text-[13px] font-medium text-[var(--fgColor-default)]">{label}</span>
       {children}
       {error ? (
-        <span className="text-sm font-medium text-blush-ink">{error}</span>
+        <span className="text-xs font-medium text-blush-ink">{error}</span>
       ) : hint ? (
-        <span className="text-xs text-[var(--fgColor-muted)]">{hint}</span>
+        <span className="text-xs leading-snug text-[var(--fgColor-muted)]">{hint}</span>
       ) : null}
     </div>
+  );
+}
+
+// Khối gom nhóm các trường trong form (Modal / Page) theo phong cách Section của 01. TSUKUBA
+export function FormSection({
+  title,
+  description,
+  action,
+  children,
+  className = '',
+  grid = true,
+}: {
+  title: ReactNode;
+  description?: ReactNode;
+  action?: ReactNode;
+  children: ReactNode;
+  className?: string;
+  grid?: boolean;
+}) {
+  return (
+    <section
+      className={clsx(
+        'overflow-hidden rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)]',
+        className,
+      )}
+    >
+      <header className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)] px-3.5 py-2">
+        <div className="min-w-0">
+          <h3 className="m-0 text-xs font-semibold uppercase tracking-wide text-[var(--fgColor-muted)]">{title}</h3>
+          {description && <p className="m-0 mt-0.5 text-xs text-[var(--fgColor-muted)]">{description}</p>}
+        </div>
+        {action && <div className="flex items-center gap-2">{action}</div>}
+      </header>
+      <div
+        className={clsx(
+          'p-3.5',
+          grid && 'grid grid-cols-1 gap-3.5 min-[768px]:grid-cols-2 min-[768px]:gap-x-4',
+        )}
+      >
+        {children}
+      </div>
+    </section>
   );
 }
 
@@ -108,7 +150,7 @@ export function FileInput({
       aria-label={label}
       disabled={disabled}
       onChange={(e) => onFile(e.target.files?.[0])}
-      className="h-[var(--ctl-h)] max-w-full text-sm text-[var(--fgColor-muted)] file:mr-3 file:h-full file:rounded-[var(--borderRadius-medium)] file:border file:border-[var(--borderColor-default)] file:bg-[var(--bgColor-default)] file:px-3 file:text-sm file:font-semibold file:text-[var(--fgColor-default)] hover:file:bg-[var(--bgColor-muted)] max-[767px]:h-[var(--ctl-h-touch)]"
+      className="h-[var(--ctl-h)] max-w-full text-sm text-[var(--fgColor-muted)] file:mr-3 file:h-full file:rounded-[var(--borderRadius-medium)] file:border file:border-[var(--borderColor-default)] file:bg-[var(--bgColor-default)] file:px-3 file:text-sm file:font-medium file:text-[var(--fgColor-default)] hover:file:bg-[var(--bgColor-muted)] max-[767px]:h-[var(--ctl-h-touch)]"
     />
   );
 }

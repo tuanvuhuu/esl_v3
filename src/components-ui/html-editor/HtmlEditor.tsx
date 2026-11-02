@@ -13,13 +13,19 @@ import React, { useEffect, useRef } from "react";
 
 import {
   BoldIcon,
+  CircleSlashIcon,
+  FocusCenterIcon,
   HeadingIcon,
   ImageIcon,
   ItalicIcon,
   LinkIcon,
   ListOrderedIcon,
   ListUnorderedIcon,
+  MoveToEndIcon,
+  MoveToStartIcon,
+  RowsIcon,
   TrashIcon,
+  TypographyIcon,
 } from "@primer/octicons-react";
 import { IconButton } from "@primer/react";
 
@@ -28,58 +34,13 @@ import EditorImage from "./EditorImage";
 import styles from './html-editor.module.css';
 import clsx from 'clsx';
 
-// Underline icon (không có sẵn)
-const UnderlineIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-    <path d="M4.5 2.5v7a3.5 3.5 0 007 0v-7h1v7a4.5 4.5 0 11-9 0v-7h1z" />
-    <path d="M1.5 14.5h13v1h-13z" />
-  </svg>
-);
-
-// Các icon căn lề ảnh (octicons không có sẵn)
-const AlignLeftIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-    <rect x="1" y="3" width="14" height="1.6" />
-    <rect x="1" y="7.2" width="9" height="1.6" />
-    <rect x="1" y="11.4" width="12" height="1.6" />
-  </svg>
-);
-const AlignCenterIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-    <rect x="1" y="3" width="14" height="1.6" />
-    <rect x="3.5" y="7.2" width="9" height="1.6" />
-    <rect x="2" y="11.4" width="12" height="1.6" />
-  </svg>
-);
-const AlignRightIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-    <rect x="1" y="3" width="14" height="1.6" />
-    <rect x="6" y="7.2" width="9" height="1.6" />
-    <rect x="3" y="11.4" width="12" height="1.6" />
-  </svg>
-);
-const AlignJustifyIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-    <rect x="1" y="3" width="14" height="1.6" />
-    <rect x="1" y="7.2" width="14" height="1.6" />
-    <rect x="1" y="11.4" width="14" height="1.6" />
-  </svg>
-);
-// Icon "bỏ căn lề" — giống Align Left nhưng có gạch chéo đè lên để thể hiện huỷ căn lề
-const UnAlignIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-    <rect x="1" y="3" width="14" height="1.6" />
-    <rect x="1" y="7.2" width="9" height="1.6" />
-    <rect x="1" y="11.4" width="12" height="1.6" />
-    <path
-      d="M2 14L14 2"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      fill="none"
-    />
-  </svg>
-);
+// Tái xuất tên biểu tượng từ @primer/octicons-react cho thanh công cụ căn lề và gạch chân
+const UnderlineIcon = TypographyIcon;
+const AlignLeftIcon = MoveToStartIcon;
+const AlignCenterIcon = FocusCenterIcon;
+const AlignRightIcon = MoveToEndIcon;
+const AlignJustifyIcon = RowsIcon;
+const UnAlignIcon = CircleSlashIcon;
 
 const IMAGE_SIZES = [
   { label: "25%", value: "25%" },

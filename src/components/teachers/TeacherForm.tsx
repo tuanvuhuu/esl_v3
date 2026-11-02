@@ -6,7 +6,7 @@ import { STAFF_ROLES, STAFF_ROLE_LABELS, TEACHER_STATUSES, TEACHER_STATUS_LABELS
 import type { ActionResult } from '@/lib/validation/student';
 import { ComboBox, SelectBox, TextInput, TextInputNumber } from '@/components-ui';
 import { Btn } from '@/components/ui/Btn';
-import { Field, FormFooter } from '@/components/ui/Field';
+import { Field, FormFooter, FormSection } from '@/components/ui/Field';
 import { Alert } from '@/components/ui/primitives';
 
 export type CampusChoice = { id: number; name: string };
@@ -51,86 +51,95 @@ export function TeacherForm({
   }
 
   return (
-    <form onSubmit={submit} noValidate className="grid grid-cols-1 gap-3.5 min-[768px]:grid-cols-2 min-[768px]:gap-x-4">
+    <form onSubmit={submit} noValidate className="flex flex-col gap-3.5">
       {state.message && !state.ok && (
-        <Alert className="col-span-full">{state.message}</Alert>
+        <Alert>{state.message}</Alert>
       )}
 
-      <Field label="Họ và tên *" error={errors.name} wide>
-        <TextInput
-          block
-          name="name"
-          defaultValue={values.name}
-          placeholder="VD: Cô Thu Hà"
-          autoComplete="off"
-          validationStatus={errors.name ? 'error' : undefined}
-        />
-      </Field>
-      <Field label="Môn dạy *" error={errors.subject}>
-        <TextInput
-          block
-          name="subject"
-          defaultValue={values.subject}
-          placeholder="VD: IELTS"
-          autoComplete="off"
-          validationStatus={errors.subject ? 'error' : undefined}
-        />
-      </Field>
-      <Field label="Số điện thoại *" error={errors.phone}>
-        <TextInput
-          block
-          name="phone"
-          type="tel"
-          inputMode="tel"
-          defaultValue={values.phone}
-          placeholder="09xx xxx xxx"
-          autoComplete="off"
-          validationStatus={errors.phone ? 'error' : undefined}
-        />
-      </Field>
-      <Field label="Số năm kinh nghiệm" error={errors.years}>
-        <TextInputNumber
-          name="years"
-          min={0}
-          max={60}
-          thousandSeparator={false}
-          defaultValue={values.years}
-          error={Boolean(errors.years)}
-        />
-      </Field>
-      <Field label="Vai trò *" error={errors.staffRole} hint="Trợ giảng và giáo viên nước ngoài chỉ được chọn cho đúng vị trí của lớp">
-        <SelectBox
-          name="staffRole"
-          label="Vai trò *"
-          defaultValue={values.staffRole}
-          options={STAFF_ROLES.map((r) => ({ value: r, label: STAFF_ROLE_LABELS[r] }))}
-          error={Boolean(errors.staffRole)}
-          block
-        />
-      </Field>
-      <Field label="Trạng thái" error={errors.status}>
-        <SelectBox
-          name="status"
-          label="Trạng thái"
-          defaultValue={values.status}
-          options={TEACHER_STATUSES.map((s) => ({ value: s, label: TEACHER_STATUS_LABELS[s] }))}
-          error={Boolean(errors.status)}
-          block
-        />
-      </Field>
-      <Field label="Cơ sở dạy *" error={errors.campusIds} wide hint="Có thể dạy ở một hoặc nhiều cơ sở">
-        <ComboBox
-          name="campusIds"
-          label="Cơ sở dạy *"
-          multiple
-          defaultValues={values.campusIds.length > 0 ? values.campusIds : [String(defaultCampusId)]}
-          options={campuses.map((c) => ({ value: String(c.id), label: c.name }))}
-          error={Boolean(errors.campusIds)}
-          block
-        />
-      </Field>
+      <FormSection title="Hồ sơ giảng viên" description="Họ tên, số điện thoại liên lạc và chuyên môn chính.">
+        <Field label="Họ và tên *" error={errors.name} wide>
+          <TextInput
+            block
+            name="name"
+            aria-label="Họ và tên *"
+            defaultValue={values.name}
+            placeholder="VD: Cô Thu Hà"
+            autoComplete="off"
+            validationStatus={errors.name ? 'error' : undefined}
+          />
+        </Field>
+        <Field label="Số điện thoại *" error={errors.phone}>
+          <TextInput
+            block
+            name="phone"
+            aria-label="Số điện thoại *"
+            type="tel"
+            inputMode="tel"
+            defaultValue={values.phone}
+            placeholder="09xx xxx xxx"
+            autoComplete="off"
+            validationStatus={errors.phone ? 'error' : undefined}
+          />
+        </Field>
+        <Field label="Môn dạy *" error={errors.subject}>
+          <TextInput
+            block
+            name="subject"
+            aria-label="Môn dạy *"
+            defaultValue={values.subject}
+            placeholder="VD: IELTS"
+            autoComplete="off"
+            validationStatus={errors.subject ? 'error' : undefined}
+          />
+        </Field>
+        <Field label="Số năm kinh nghiệm" error={errors.years} wide>
+          <TextInputNumber
+            name="years"
+            aria-label="Số năm kinh nghiệm"
+            min={0}
+            max={60}
+            thousandSeparator={false}
+            defaultValue={values.years}
+            error={Boolean(errors.years)}
+          />
+        </Field>
+      </FormSection>
 
-      <FormFooter className="col-span-full">
+      <FormSection title="Phân công & cơ sở" description="Trợ giảng và giáo viên nước ngoài được chọn theo đúng vị trí của lớp.">
+        <Field label="Vai trò *" error={errors.staffRole}>
+          <SelectBox
+            name="staffRole"
+            label="Vai trò *"
+            defaultValue={values.staffRole}
+            options={STAFF_ROLES.map((r) => ({ value: r, label: STAFF_ROLE_LABELS[r] }))}
+            error={Boolean(errors.staffRole)}
+            block
+          />
+        </Field>
+        <Field label="Trạng thái" error={errors.status}>
+          <SelectBox
+            name="status"
+            label="Trạng thái"
+            defaultValue={values.status}
+            options={TEACHER_STATUSES.map((s) => ({ value: s, label: TEACHER_STATUS_LABELS[s] }))}
+            error={Boolean(errors.status)}
+            block
+          />
+        </Field>
+        <Field label="Cơ sở dạy *" error={errors.campusIds} wide hint="Có thể dạy ở một hoặc nhiều cơ sở.">
+          <ComboBox
+            name="campusIds"
+            label="Cơ sở dạy *"
+            multiple
+            defaultValues={values.campusIds.length > 0 ? values.campusIds : [String(defaultCampusId)]}
+            options={campuses.map((c) => ({ value: String(c.id), label: c.name }))}
+            error={Boolean(errors.campusIds)}
+            block
+          />
+        </Field>
+      </FormSection>
+
+      <FormFooter>
         <Btn onClick={onCancel}>Huỷ</Btn>
         <Btn type="submit" variant="primary" loading={pending} disabled={pending}>
           {pending ? 'Đang lưu…' : mode === 'edit' ? 'Lưu thay đổi' : 'Lưu giáo viên'}

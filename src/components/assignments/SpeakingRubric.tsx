@@ -28,70 +28,82 @@ export function SpeakingRubric({
   const setScore = (k: keyof Rubric['scores'], v: number) => onChange({ ...rubric, scores: { ...rubric.scores, [k]: v } });
 
   return (
-    <div className="flex flex-col gap-2.5 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] px-3 py-2.5" role="group" aria-label={`Tiêu chí câu ${position}`}>
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <b className="text-sm font-semibold text-[var(--fgColor-default)]">{scale === 'stars' ? 'Chấm sao (học sinh đến 8 tuổi)' : 'Chấm điểm 0–5 (học sinh từ 9 tuổi)'}</b>
-        <small className="text-sm text-[var(--fgColor-muted)]">{points === null ? 'Chấm đủ các tiêu chí để tính điểm câu' : `Quy ra ${points}/${itemPoints} điểm`}</small>
+    <div
+      className="overflow-hidden rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)]"
+      role="group"
+      aria-label={`Tiêu chí câu ${position}`}
+    >
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)] px-3.5 py-2">
+        <b className="text-xs font-semibold uppercase tracking-wide text-[var(--fgColor-muted)]">
+          {scale === 'stars' ? 'Chấm sao (học sinh đến 8 tuổi)' : 'Chấm điểm 0–5 (học sinh từ 9 tuổi)'}
+        </b>
+        <small className="rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-2 py-0.5 text-xs font-medium tabular-nums text-[var(--fgColor-default)]">
+          {points === null ? 'Chấm đủ các tiêu chí để tính điểm câu' : `Quy ra ${points}/${itemPoints} điểm`}
+        </small>
       </div>
-      <ul className="flex flex-col gap-2">
-        {SCALE_CRITERIA[scale].map((k) => {
-          const value = rubric.scores[k];
-          const levels = Array.from({ length: max - min + 1 }, (_, i) => min + i);
-          return (
-            <li key={k} className="flex flex-wrap items-center justify-between gap-2">
-              <span className="text-sm text-[var(--fgColor-default)]">{SPEAKING_CRITERIA[k]}</span>
-              <div className="flex gap-1" role="group" aria-label={`${SPEAKING_CRITERIA[k]} câu ${position}`}>
-                {levels.map((n) =>
-                  scale === 'stars' ? (
-                    <button
-                      key={n}
-                      type="button"
-                      disabled={!canManage}
-                      aria-pressed={value === n}
-                      aria-label={`${SPEAKING_CRITERIA[k]} ${n} sao`}
-                      onClick={() => setScore(k, n)}
-                      className="grid size-[var(--icon-h)] place-items-center rounded-[var(--borderRadius-medium)] max-[767px]:size-[var(--icon-h-touch)] disabled:opacity-40"
-                    >
-                      {value !== undefined && n <= value ? (
-                        <StarFillIcon size={22} className="text-[var(--fgColor-attention,var(--color-primary-deep))]" aria-hidden />
-                      ) : (
-                        <StarIcon size={22} className="text-[var(--fgColor-muted)] opacity-50" aria-hidden />
-                      )}
-                    </button>
-                  ) : (
-                    <button
-                      key={n}
-                      type="button"
-                      disabled={!canManage}
-                      aria-pressed={value === n}
-                      aria-label={`${SPEAKING_CRITERIA[k]} ${n} điểm`}
-                      onClick={() => setScore(k, n)}
-                      className={`grid size-[var(--icon-h)] place-items-center rounded-[var(--borderRadius-medium)] border text-sm font-medium tabular-nums max-[767px]:size-[var(--icon-h-touch)] disabled:opacity-40 ${
-                        value === n
-                          ? 'border-[var(--button-primary-borderColor-rest,transparent)] bg-[var(--button-primary-bgColor-rest,var(--color-primary))] text-[var(--button-primary-fgColor-rest,var(--color-on-primary))]'
-                          : 'border-[var(--borderColor-default)] bg-[var(--bgColor-default)] text-[var(--fgColor-muted)] hover:bg-[var(--bgColor-muted)]'
-                      }`}
-                    >
-                      {n}
-                    </button>
-                  ),
-                )}
-              </div>
-            </li>
-          );
-        })}
-      </ul>
-      <Field label="Điều con làm tốt *" hint="Bắt buộc. Khen một điều cụ thể trước khi nêu lỗi.">
-        <TextAreaAutoHeight
-          value={rubric.praise}
-          onChange={(e) => onChange({ ...rubric, praise: e.target.value })}
-          rows={2}
-          maxLength={300}
-          disabled={!canManage}
-          placeholder="VD: Con nói to, rõ và đủ câu."
-          aria-label={`Điều con làm tốt câu ${position}`}
-        />
-      </Field>
+      <div className="flex flex-col gap-3 p-3.5">
+        <ul className="flex flex-col divide-y divide-[var(--borderColor-muted)]">
+          {SCALE_CRITERIA[scale].map((k) => {
+            const value = rubric.scores[k];
+            const levels = Array.from({ length: max - min + 1 }, (_, i) => min + i);
+            return (
+              <li key={k} className="flex flex-wrap items-center justify-between gap-2 py-2 first:pt-0 last:pb-0">
+                <span className="inline-flex items-center rounded-[var(--borderRadius-medium)] bg-[var(--bgColor-muted)] px-2.5 py-1 text-xs font-medium text-[var(--fgColor-default)]">
+                  {SPEAKING_CRITERIA[k]}
+                </span>
+                <div className="flex gap-1" role="group" aria-label={`${SPEAKING_CRITERIA[k]} câu ${position}`}>
+                  {levels.map((n) =>
+                    scale === 'stars' ? (
+                      <button
+                        key={n}
+                        type="button"
+                        disabled={!canManage}
+                        aria-pressed={value === n}
+                        aria-label={`${SPEAKING_CRITERIA[k]} ${n} sao`}
+                        onClick={() => setScore(k, n)}
+                        className="grid size-[var(--icon-h)] place-items-center rounded-[var(--borderRadius-medium)] transition-colors hover:bg-[var(--bgColor-muted)] max-[767px]:size-[var(--icon-h-touch)] disabled:opacity-40"
+                      >
+                        {value !== undefined && n <= value ? (
+                          <StarFillIcon size={20} className="text-[var(--fgColor-attention,var(--color-primary-deep))]" aria-hidden />
+                        ) : (
+                          <StarIcon size={20} className="text-[var(--fgColor-muted)] opacity-50" aria-hidden />
+                        )}
+                      </button>
+                    ) : (
+                      <button
+                        key={n}
+                        type="button"
+                        disabled={!canManage}
+                        aria-pressed={value === n}
+                        aria-label={`${SPEAKING_CRITERIA[k]} ${n} điểm`}
+                        onClick={() => setScore(k, n)}
+                        className={`grid size-[var(--icon-h)] place-items-center rounded-[var(--borderRadius-medium)] border text-sm font-medium tabular-nums transition-colors max-[767px]:size-[var(--icon-h-touch)] disabled:opacity-40 ${
+                          value === n
+                            ? 'border-[var(--primary)] bg-[var(--primary)] text-[var(--on-primary)]'
+                            : 'border-[var(--borderColor-default)] bg-[var(--bgColor-default)] text-[var(--fgColor-muted)] hover:bg-[var(--bgColor-muted)]'
+                        }`}
+                      >
+                        {n}
+                      </button>
+                    ),
+                  )}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+        <Field label="Điều con làm tốt *" hint="Bắt buộc. Khen một điều cụ thể trước khi nêu lỗi.">
+          <TextAreaAutoHeight
+            value={rubric.praise}
+            onChange={(e) => onChange({ ...rubric, praise: e.target.value })}
+            rows={2}
+            maxLength={300}
+            disabled={!canManage}
+            placeholder="VD: Con nói to, rõ và đủ câu."
+            aria-label={`Điều con làm tốt câu ${position}`}
+          />
+        </Field>
+      </div>
     </div>
   );
 }

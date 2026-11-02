@@ -2,7 +2,24 @@
 
 // Trò chơi từ vựng (35.15, 35.16): chọn một trong tám trò từ một danh sách từ, chơi, xem sao cuối lượt.
 // Thiết kế cho điện thoại trước (khung hẹp giữa màn, nút lớn). Âm thanh: tệp của từ nếu có, không thì giọng đọc có sẵn của máy.
-import { ArrowLeftIcon, CheckIcon, SyncIcon, UnmuteIcon, XIcon } from '@primer/octicons-react';
+import {
+  ArrowLeftIcon,
+  CheckIcon,
+  GoalIcon,
+  LightBulbIcon,
+  ListOrderedIcon,
+  MegaphoneIcon,
+  RocketIcon,
+  StackIcon,
+  StarFillIcon,
+  StarIcon,
+  SyncIcon,
+  TypographyIcon,
+  UnmuteIcon,
+  XIcon,
+  ZapIcon,
+  type Icon,
+} from '@primer/octicons-react';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import {
@@ -25,6 +42,17 @@ import {
 import { BingoGame, HangmanGame, RaceGame, SimonGame } from './MoreGames';
 import { recordGamePlayAction } from '@/app/(student)/cua-toi/game-actions';
 import { BIG, BIG_BASE, Picture, say, type GameProps } from './shared';
+
+const GAME_ICONS: Record<GameKind, Icon> = {
+  memory: StackIcon,
+  whack: ZapIcon,
+  spell: TypographyIcon,
+  sentence: ListOrderedIcon,
+  bingo: GoalIcon,
+  simon: MegaphoneIcon,
+  hangman: LightBulbIcon,
+  race: RocketIcon,
+};
 
 // recordListId: học sinh chơi thì ghi lượt chơi để cộng sao (35.17); giáo viên chơi thử thì bỏ trống, không ghi.
 export function GameHub({
@@ -57,7 +85,7 @@ export function GameHub({
   };
 
   return (
-    <section className="mx-auto flex w-full max-w-[480px] flex-col gap-4 py-2">
+    <section className="mx-auto flex w-full max-w-[480px] flex-col gap-4 py-1">
       <div className="flex items-center justify-between gap-2 text-sm">
         {game ? (
           <button
@@ -80,48 +108,63 @@ export function GameHub({
             <ArrowLeftIcon size={16} aria-hidden /> {backLabel}
           </Link>
         )}
-        <span className="truncate text-[var(--fgColor-muted)]">{title}</span>
+        <span className="truncate text-xs font-medium text-[var(--fgColor-muted)]">{title}</span>
       </div>
 
       {!game && (
         <>
-          <h1 className="text-2xl font-semibold text-[var(--fgColor-default)]">Chọn trò chơi</h1>
+          <h1 className="m-0 text-xl font-semibold tracking-tight text-[var(--fgColor-default)]">Chọn trò chơi</h1>
           {games.length === 0 && <p className="text-base text-[var(--fgColor-muted)]">Danh sách cần ít nhất 2 từ để chơi.</p>}
           <ul className="grid grid-cols-2 gap-3">
-            {games.map((g) => (
-              <li key={g}>
-                <button
-                  type="button"
-                  data-card="true"
-                  onClick={() => {
-                    setGame(g);
-                    setResult(null);
-                  }}
-                  className="flex h-full w-full flex-col items-start gap-1 rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-3.5 text-left shadow-[var(--shadow-resting-small,0_1px_2px_rgba(0,0,0,0.04))] transition-all hover:border-[var(--borderColor-accent-emphasis)] active:scale-95"
-                >
-                  <span className="text-3xl" aria-hidden>{GAME_LABELS[g].emoji}</span>
-                  <b className="text-lg font-semibold text-[var(--fgColor-default)]">{GAME_LABELS[g].name}</b>
-                  <small className="text-sm text-[var(--fgColor-muted)]">{GAME_LABELS[g].hint}</small>
-                </button>
-              </li>
-            ))}
+            {games.map((g) => {
+              const GameIcon = GAME_ICONS[g];
+              return (
+                <li key={g}>
+                  <button
+                    type="button"
+                    data-card="true"
+                    onClick={() => {
+                      setGame(g);
+                      setResult(null);
+                    }}
+                    className="flex h-full w-full flex-col items-start gap-2 rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-3.5 text-left transition-all hover:-translate-y-0.5 hover:border-[var(--primary)] hover:shadow-xs active:scale-[0.98]"
+                  >
+                    <span className="flex size-9 items-center justify-center rounded-lg border border-[var(--primary)]/20 bg-[var(--primary-soft)] text-[var(--primary)]">
+                      <GameIcon size={18} aria-hidden />
+                    </span>
+                    <b className="text-base font-semibold text-[var(--fgColor-default)]">{GAME_LABELS[g].name}</b>
+                    <small className="text-xs leading-relaxed text-[var(--fgColor-muted)]">{GAME_LABELS[g].hint}</small>
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         </>
       )}
 
       {game && result && (
         <div
-          className="flex flex-col items-center gap-3 rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-6 text-center shadow-[var(--shadow-resting-small,0_1px_2px_rgba(0,0,0,0.04))]"
+          className="tsukuba-rise flex flex-col items-center gap-3 rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-6 text-center"
           role="status"
           aria-label="Kết quả"
         >
-          <span className="text-5xl" aria-label={`${gameStars(result.correct, result.total)} sao`}>
-            {'⭐'.repeat(gameStars(result.correct, result.total))}
+          <span
+            className="inline-flex items-center gap-2"
+            role="img"
+            aria-label={`${gameStars(result.correct, result.total)} sao`}
+          >
+            {[1, 2, 3].map((n) =>
+              n <= gameStars(result.correct, result.total) ? (
+                <StarFillIcon key={n} size={36} className="text-[var(--fgColor-attention,var(--primary))]" aria-hidden />
+              ) : (
+                <StarIcon key={n} size={36} className="text-[var(--fgColor-muted)] opacity-30" aria-hidden />
+              ),
+            )}
           </span>
           <b className="text-2xl font-semibold text-[var(--fgColor-default)]">
             {gameStars(result.correct, result.total) === 3 ? 'Giỏi quá!' : 'Cố lên nhé!'}
           </b>
-          <p className="text-base text-[var(--fgColor-muted)]">Đúng {result.correct}/{result.total}</p>
+          <p className="text-base tabular-nums text-[var(--fgColor-muted)]">Đúng {result.correct}/{result.total}</p>
           {saved && <p className="text-sm font-medium text-[var(--fgColor-default)]">Đã cất sao vào bộ sưu tập của con</p>}
           <div className="grid w-full grid-cols-2 gap-2">
             <button type="button" data-card="true" onClick={replay} className={BIG}>

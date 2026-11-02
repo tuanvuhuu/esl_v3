@@ -68,13 +68,20 @@ export function LessonsView({
   const cell = (l: LessonRow, key: string) => {
     switch (key) {
       case 'title':
-        return <span className="min-w-0 text-sm font-medium text-[var(--fgColor-default)] [overflow-wrap:anywhere]">{l.title}</span>;
+        return (
+          <div className="min-w-0">
+            <span className="block min-w-0 text-sm font-medium text-[var(--fgColor-default)] [overflow-wrap:anywhere]">{l.title}</span>
+            {l.objectives && (
+              <span className="mt-0.5 block truncate text-xs text-[var(--fgColor-muted)]">{l.objectives}</span>
+            )}
+          </div>
+        );
       case 'campus':
         return <span className="text-sm text-[var(--fgColor-muted)]">{campusText(l)}</span>;
       case 'materials':
-        return <span className="text-sm text-[var(--fgColor-default)]">{l.materials.length} tài liệu</span>;
+        return <span className="text-sm tabular-nums text-[var(--fgColor-default)]">{l.materials.length} tài liệu</span>;
       case 'assignments':
-        return <span className="text-sm text-[var(--fgColor-default)]">{l.assignmentCount} bài</span>;
+        return <span className="text-sm tabular-nums text-[var(--fgColor-default)]">{l.assignmentCount} bài</span>;
       case 'action':
         return <RowMenu label={`Thao tác với bài giảng ${l.title}`} items={menuItems(l)} />;
       default:
@@ -98,7 +105,9 @@ export function LessonsView({
         title={
           <div className="flex items-baseline gap-2">
             <h1 className="m-0 text-base font-semibold text-[var(--fgColor-default)]">Bài giảng</h1>
-            <span className="text-xs text-[var(--fgColor-muted)]">({lessons.length})</span>
+            <span className="rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)] px-2 py-0.5 text-xs tabular-nums text-[var(--fgColor-muted)]">
+              {lessons.length}
+            </span>
           </div>
         }
         actionComponent={
@@ -115,11 +124,13 @@ export function LessonsView({
           />
         }
         card={(l) => (
-          <Card>
-            <b className="text-base font-normal text-[var(--fgColor-default)] [overflow-wrap:anywhere]">{l.title}</b>
-            <small className="block text-sm text-[var(--fgColor-muted)]">
-              {campusText(l)} · {l.materials.length} tài liệu · {l.assignmentCount} bài tập
-            </small>
+          <Card className="tsukuba-rise">
+            <div className="min-w-0">
+              <b className="block text-base font-semibold text-[var(--fgColor-default)] [overflow-wrap:anywhere]">{l.title}</b>
+              <small className="mt-0.5 block text-xs tabular-nums text-[var(--fgColor-muted)]">
+                {campusText(l)} · {l.materials.length} tài liệu · {l.assignmentCount} bài tập
+              </small>
+            </div>
             <div className="grid grid-cols-3 gap-2">
               <Btn block leadingVisual={PaperclipIcon} onClick={() => setMaterialsId(l.id)}>
                 Tài liệu
@@ -139,6 +150,7 @@ export function LessonsView({
 
       <Modal
         open={editing !== null}
+        size="lg"
         title={editing === 'new' ? 'Thêm bài giảng' : 'Sửa bài giảng'}
         subtitle="Các trường có dấu * là bắt buộc."
         onClose={() => setEditing(null)}
@@ -161,6 +173,7 @@ export function LessonsView({
 
       <Modal
         open={materialsLesson !== null}
+        size="lg"
         title={materialsLesson ? `Tài liệu: ${materialsLesson.title}` : 'Tài liệu'}
         subtitle={materialsLesson ? `Cơ sở: ${campusText(materialsLesson)}` : undefined}
         onClose={() => setMaterialsId(null)}

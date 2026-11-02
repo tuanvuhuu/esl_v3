@@ -4,7 +4,7 @@
 import { ChevronDownIcon, HomeIcon, SearchIcon } from '@primer/octicons-react';
 import { TextInput } from '@primer/react';
 import clsx from 'clsx';
-import { motion, useReducedMotion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
@@ -43,7 +43,6 @@ export function Sidebar({
   onNavigate: () => void;
 }) {
   const pathname = usePathname();
-  const shouldReduceMotion = useReducedMotion();
   const [storedCollapsed, setStoredCollapsed] = useLocalStorage(COLLAPSE_KEY, '[]');
   const [query, setQuery] = useState('');
   const collapsed = new Set(parseIdList(storedCollapsed));
@@ -104,7 +103,7 @@ export function Sidebar({
           >
             {homeActive && (
               <motion.span
-                layoutId={shouldReduceMotion ? undefined : 'tsukuba-sidebar-active-bar'}
+                layoutId="tsukuba-sidebar-active-bar"
                 transition={{ type: 'spring', stiffness: 480, damping: 36 }}
                 className="pointer-events-none absolute -left-1.5 top-1.5 bottom-1.5 w-[3px] rounded-full bg-[var(--primary)]"
                 aria-hidden
@@ -167,7 +166,7 @@ export function Sidebar({
                       >
                         {active && (
                           <motion.span
-                            layoutId={shouldReduceMotion ? undefined : 'tsukuba-sidebar-active-bar'}
+                            layoutId="tsukuba-sidebar-active-bar"
                             transition={{ type: 'spring', stiffness: 480, damping: 36 }}
                             className="pointer-events-none absolute -left-[9.5px] top-1.5 bottom-1.5 w-[3px] rounded-full bg-[var(--primary)]"
                             aria-hidden

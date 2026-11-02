@@ -92,7 +92,7 @@ export function KaraokeText({ text, audioFileId, wordTimings, disabled }: { text
   return (
     <div className="flex w-full flex-col items-center gap-3">
       <p
-        className="rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]/60 p-3 text-center text-xl font-semibold leading-relaxed text-[var(--fgColor-default)]"
+        className="w-full rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]/70 p-3.5 text-center text-xl font-semibold leading-relaxed text-[var(--fgColor-default)]"
         aria-label="Câu đọc theo"
       >
         {words.map((w, i) => {
@@ -102,11 +102,11 @@ export function KaraokeText({ text, audioFileId, wordTimings, disabled }: { text
               <span
                 data-state={st}
                 aria-current={st === 'active' ? 'true' : undefined}
-                className={`rounded-lg px-0.5 transition-colors ${
+                className={`rounded-md px-1 py-0.5 transition-colors ${
                   st === 'active'
-                    ? 'bg-[var(--button-primary-bgColor-rest)] text-[var(--button-primary-fgColor-rest)]'
+                    ? 'bg-[var(--primary)] text-[var(--on-primary,#fff)]'
                     : st === 'read'
-                    ? 'text-[var(--fgColor-success)]'
+                    ? 'text-[var(--accent)]'
                     : ''
                 }`}
               >
@@ -121,12 +121,12 @@ export function KaraokeText({ text, audioFileId, wordTimings, disabled }: { text
         data-card="true"
         onClick={play}
         disabled={disabled || state === 'playing'}
-        className="inline-flex min-h-11 items-center gap-2 rounded-full border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-4 text-base font-semibold text-[var(--fgColor-default)] shadow-[var(--shadow-resting-small,0_1px_2px_rgba(0,0,0,0.04))] transition-colors hover:bg-[var(--bgColor-muted)] active:scale-95 disabled:opacity-40"
+        className="inline-flex min-h-11 items-center gap-2 rounded-full border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-4 text-base font-semibold text-[var(--fgColor-default)] transition-colors hover:border-[var(--primary)] hover:bg-[var(--primary-soft)] active:scale-95 disabled:opacity-40"
       >
         <UnmuteIcon size={20} aria-hidden /> {state === 'done' ? 'Nghe lại mẫu' : 'Nghe mẫu và đọc theo'}
       </button>
       {state === 'done' && (
-        <p className="text-base font-medium text-[var(--fgColor-default)]" role="status">
+        <p className="text-sm font-medium text-[var(--fgColor-default)]" role="status">
           Giờ con bấm micro để đọc theo nhé!
         </p>
       )}

@@ -9,7 +9,7 @@ import { blankDraft, draftToInput, snippet, toDraft, type Draft } from '@/compon
 import { Btn } from '@/components/ui/Btn';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { DataGrid, type GridColumn } from '@/components/ui/datagrid';
-import { Field, FormFooter } from '@/components/ui/Field';
+import { Field, FormFooter, FormSection } from '@/components/ui/Field';
 import { Modal } from '@/components/ui/Modal';
 import { PageCrumbs } from '@/components/shell/PageCrumbs';
 import { RowMenu, type RowMenuItem } from '@/components/ui/RowMenu';
@@ -102,9 +102,13 @@ export function QuestionBankView({ questions }: { questions: BankQuestion[] }) {
       case 'type':
         return <span className="text-sm text-[var(--fgColor-muted)]">{ITEM_TYPE_LABELS[q.itemType]}</span>;
       case 'points':
-        return <span className="text-base text-[var(--fgColor-default)]">{q.points}</span>;
+        return <span className="font-mono text-sm tabular-nums text-[var(--fgColor-default)]">{q.points}</span>;
       case 'usage':
-        return <span className={`text-sm ${q.usageCount > 0 ? 'text-[var(--fgColor-default)]' : 'text-[var(--fgColor-muted)]'}`}>{usageText(q)}</span>;
+        return (
+          <span className={`text-sm tabular-nums ${q.usageCount > 0 ? 'font-medium text-[var(--fgColor-default)]' : 'text-[var(--fgColor-muted)]'}`}>
+            {usageText(q)}
+          </span>
+        );
       case 'action':
         return <RowMenu label={`Thao tác với câu ${q.id}`} items={menuItems(q)} />;
       default:
@@ -127,7 +131,9 @@ export function QuestionBankView({ questions }: { questions: BankQuestion[] }) {
         title={
           <div className="flex items-baseline gap-2">
             <h1 className="m-0 text-base font-semibold text-[var(--fgColor-default)]">Ngân hàng câu hỏi</h1>
-            <span className="text-xs text-[var(--fgColor-muted)]">({shown.length} câu)</span>
+            <span className="rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)] px-2 py-0.5 text-xs tabular-nums text-[var(--fgColor-muted)]">
+              {shown.length} câu
+            </span>
           </div>
         }
         actionComponent={
@@ -153,9 +159,9 @@ export function QuestionBankView({ questions }: { questions: BankQuestion[] }) {
           )
         }
         card={(q) => (
-          <Card>
-            <b className="text-base font-normal text-[var(--fgColor-default)] [overflow-wrap:anywhere]">{snippet(q.prompt, q.audioName)}</b>
-            <div className="flex flex-wrap items-center gap-2 text-sm text-[var(--fgColor-muted)]">
+          <Card className="tsukuba-rise">
+            <b className="text-base font-semibold text-[var(--fgColor-default)] [overflow-wrap:anywhere]">{snippet(q.prompt, q.audioName)}</b>
+            <div className="flex flex-wrap items-center gap-2 text-xs tabular-nums text-[var(--fgColor-muted)]">
               <Pill tone="lav">{SKILL_LABELS[q.skill]}</Pill>
               <span>
                 {ITEM_TYPE_LABELS[q.itemType]} · {q.points} điểm · {usageText(q).toLowerCase()}
@@ -177,6 +183,7 @@ export function QuestionBankView({ questions }: { questions: BankQuestion[] }) {
 
       <Modal
         open={editor !== null}
+        size="xl"
         title={editor?.id ? 'Sửa câu hỏi trong ngân hàng' : 'Thêm câu hỏi vào ngân hàng'}
         subtitle="Câu dùng chung toàn trung tâm. Bài đã chép câu này không đổi."
         onClose={() => setEditor(null)}
@@ -189,14 +196,18 @@ export function QuestionBankView({ questions }: { questions: BankQuestion[] }) {
                 {error}
               </Alert>
             )}
-            <div className="grid grid-cols-1 gap-3 min-[768px]:grid-cols-2">
+            <FormSection
+              title="Phân loại ngân hàng"
+              description="Gắn trình độ và chủ đề để lọc nhanh khi tạo đề"
+              grid
+            >
               <Field label="Trình độ">
                 <SelectBox label="Trình độ của câu" block value={meta.level} onChange={(v) => setMeta((m) => ({ ...m, level: v }))} options={LEVEL_FIELD_OPTIONS} />
               </Field>
               <Field label="Chủ đề">
                 <ComboBox label="Chủ đề của câu" block value={meta.topic} onChange={(v) => setMeta((m) => ({ ...m, topic: v }))} options={topicFieldOptions(questions)} />
               </Field>
-            </div>
+            </FormSection>
             <ItemDraftCard
               draft={editor}
               index={0}

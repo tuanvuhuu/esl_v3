@@ -5,7 +5,7 @@ import { createParentAction, updateParentAction, type ParentFormValues } from '@
 import type { ActionResult } from '@/lib/validation/student';
 import { ComboBox, SelectBox, TextAreaAutoHeight, TextInput } from '@/components-ui';
 import { Btn } from '@/components/ui/Btn';
-import { Field, FormFooter } from '@/components/ui/Field';
+import { Field, FormFooter, FormSection } from '@/components/ui/Field';
 import { Alert } from '@/components/ui/primitives';
 import { PARENT_RELATION_LABELS } from '@/lib/parent-labels';
 import type { StudentChoice } from '@/lib/queries/parents';
@@ -46,45 +46,53 @@ export function ParentForm({
   }
 
   return (
-    <form onSubmit={submit} noValidate className="grid grid-cols-1 gap-3.5 min-[768px]:grid-cols-2 min-[768px]:gap-x-4">
+    <form onSubmit={submit} noValidate className="flex flex-col gap-3.5">
       {state.message && !state.ok && (
-        <Alert className="col-span-full">{state.message}</Alert>
+        <Alert>{state.message}</Alert>
       )}
-      <Field label="Họ và tên *" error={errors.fullName}>
-        <TextInput
-          block
-          name="fullName"
-          defaultValue={values.fullName}
-          placeholder="VD: Nguyễn Văn Hùng"
-          autoComplete="off"
-          validationStatus={errors.fullName ? 'error' : undefined}
-        />
-      </Field>
-      <Field label="Số điện thoại *" error={errors.phone}>
-        <TextInput
-          block
-          name="phone"
-          type="tel"
-          inputMode="tel"
-          defaultValue={values.phone}
-          placeholder="09xx xxx xxx"
-          autoComplete="off"
-          validationStatus={errors.phone ? 'error' : undefined}
-        />
-      </Field>
-      <Field label="Email" error={errors.email}>
-        <TextInput
-          block
-          name="email"
-          type="email"
-          defaultValue={values.email}
-          autoComplete="off"
-          validationStatus={errors.email ? 'error' : undefined}
-        />
-      </Field>
+
+      <FormSection title="Thông tin liên hệ" description="Số điện thoại dùng để đối chiếu tự động khi phụ huynh kết nối Telegram.">
+        <Field label="Họ và tên *" error={errors.fullName}>
+          <TextInput
+            block
+            name="fullName"
+            aria-label="Họ và tên *"
+            defaultValue={values.fullName}
+            placeholder="VD: Nguyễn Văn Hùng"
+            autoComplete="off"
+            validationStatus={errors.fullName ? 'error' : undefined}
+          />
+        </Field>
+        <Field label="Số điện thoại *" error={errors.phone}>
+          <TextInput
+            block
+            name="phone"
+            aria-label="Số điện thoại *"
+            type="tel"
+            inputMode="tel"
+            defaultValue={values.phone}
+            placeholder="09xx xxx xxx"
+            autoComplete="off"
+            validationStatus={errors.phone ? 'error' : undefined}
+          />
+        </Field>
+        <Field label="Email" error={errors.email} wide>
+          <TextInput
+            block
+            name="email"
+            aria-label="Email"
+            type="email"
+            defaultValue={values.email}
+            placeholder="VD: phuhuynh@example.com"
+            autoComplete="off"
+            validationStatus={errors.email ? 'error' : undefined}
+          />
+        </Field>
+      </FormSection>
+
       {mode === 'create' && students.length > 0 && (
-        <>
-          <Field label="Con học ở trung tâm" error={errors.studentIds} hint="Không bắt buộc. Gõ để tìm, chọn được nhiều con.">
+        <FormSection title="Liên kết học sinh" description="Không bắt buộc. Có thể gán ngay hoặc bổ sung sau từ danh sách.">
+          <Field label="Con học ở trung tâm" error={errors.studentIds} wide hint="Gõ để tìm, chọn được nhiều học sinh.">
             <ComboBox
               name="studentIds"
               label="Con học ở trung tâm"
@@ -96,7 +104,7 @@ export function ParentForm({
               block
             />
           </Field>
-          <Field label="Quan hệ với con" error={errors.relation}>
+          <Field label="Quan hệ với con" error={errors.relation} wide>
             <SelectBox
               name="relation"
               label="Quan hệ với con"
@@ -106,18 +114,23 @@ export function ParentForm({
               block
             />
           </Field>
-        </>
+        </FormSection>
       )}
-      <Field label="Ghi chú" error={errors.note} wide>
-        <TextAreaAutoHeight
-          name="note"
-          defaultValue={values.note}
-          rows={3}
-          placeholder="Giờ liên hệ thuận tiện, lưu ý…"
-          error={Boolean(errors.note)}
-        />
-      </Field>
-      <FormFooter className="col-span-full">
+
+      <FormSection title="Ghi chú" grid={false}>
+        <Field label="Ghi chú" error={errors.note}>
+          <TextAreaAutoHeight
+            name="note"
+            aria-label="Ghi chú"
+            defaultValue={values.note}
+            rows={3}
+            placeholder="Giờ liên hệ thuận tiện, lưu ý…"
+            error={Boolean(errors.note)}
+          />
+        </Field>
+      </FormSection>
+
+      <FormFooter>
         <Btn onClick={onCancel}>Huỷ</Btn>
         <Btn type="submit" variant="primary" loading={pending} disabled={pending}>
           {pending ? 'Đang lưu…' : mode === 'edit' ? 'Lưu thay đổi' : 'Lưu phụ huynh'}

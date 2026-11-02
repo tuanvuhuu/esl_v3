@@ -1,19 +1,19 @@
-import { Suspense } from 'react';
 import { sql } from 'drizzle-orm';
-import { db } from '@/db/client';
+import { Suspense } from 'react';
 import { LevelSettings } from '@/components/levels/LevelSettings';
 import { FileCleanup } from '@/components/settings/FileCleanup';
 import { SettingsForm } from '@/components/settings/SettingsForm';
 import { TelegramSettings, type IntegrationStatus } from '@/components/settings/TelegramSettings';
+import { NoAccess } from '@/components/ui/NoAccess';
+import { db } from '@/db/client';
 import { blobDriver } from '@/lib/blob-store';
 import { isUnrestricted } from '@/lib/campus-access';
-import { botToken, getMe, getWebhookInfo, webhookSecret } from '@/lib/telegram/api';
-import { NoAccess } from '@/components/ui/NoAccess';
 import { hasPermission } from '@/lib/permissions';
 import { listOrphanFiles } from '@/lib/queries/files';
 import { listLevels } from '@/lib/queries/levels';
 import { getCenterSettings } from '@/lib/queries/settings';
 import { getCurrentPermissions } from '@/lib/session';
+import { botToken, getMe, getWebhookInfo, webhookSecret } from '@/lib/telegram/api';
 
 // Cài đặt trung tâm. Dữ liệu đọc trong Suspense (cacheComponents đang bật).
 export default function SettingsPage() {
@@ -28,7 +28,10 @@ function SettingsSkeleton() {
   return (
     <section aria-busy="true" aria-label="Đang tải cài đặt" className="flex flex-col gap-4">
       <div className="h-9 w-40 animate-pulse rounded-[var(--borderRadius-medium)] bg-[var(--bgColor-muted)]" />
-      <div className="h-[420px] w-full animate-pulse rounded-xl bg-[var(--bgColor-muted)]" />
+      <div className="grid grid-cols-1 gap-4 min-[1200px]:grid-cols-2">
+        <div className="h-[260px] animate-pulse rounded-[var(--borderRadius-large)] bg-[var(--bgColor-muted)]" />
+        <div className="h-[260px] animate-pulse rounded-[var(--borderRadius-large)] bg-[var(--bgColor-muted)]" />
+      </div>
     </section>
   );
 }
@@ -42,11 +45,13 @@ async function SettingsData() {
   const megabytes = (orphans.reduce((sum, f) => sum + f.sizeBytes, 0) / (1024 * 1024)).toFixed(1);
   const canManage = hasPermission(granted, 'settings.manage');
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-5">
       <SettingsForm settings={settings} canManage={canManage} />
       <LevelSettings levels={levels} canManage={canManage} />
-      <FileCleanup count={orphans.length} megabytes={megabytes} canManage={canManage} />
-      <TelegramSettings status={await integrationStatus()} canSetup={await isUnrestricted()} />
+      <div className="grid grid-cols-1 gap-4 min-[1200px]:grid-cols-2 min-[1200px]:items-start">
+        <FileCleanup count={orphans.length} megabytes={megabytes} canManage={canManage} />
+        <TelegramSettings status={await integrationStatus()} canSetup={await isUnrestricted()} />
+      </div>
     </div>
   );
 }

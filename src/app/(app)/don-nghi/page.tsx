@@ -27,10 +27,10 @@ export default function LeavesPage({ searchParams }: { searchParams: Promise<Sea
 
 function LeavesSkeleton() {
   return (
-    <section aria-busy="true" aria-label="Đang tải đơn nghỉ" className="flex flex-col gap-4">
-      <div className="h-9 w-40 animate-pulse rounded-md bg-[var(--bgColor-muted)]" />
+    <section aria-busy="true" aria-label="Đang tải đơn nghỉ" className="flex flex-col gap-3">
+      <div className="h-5 w-32 animate-pulse rounded bg-[var(--bgColor-muted)]" />
       <div className="h-[var(--ctl-h)] w-full animate-pulse rounded-[var(--borderRadius-medium)] bg-[var(--bgColor-muted)]" />
-      <div className="h-[360px] w-full animate-pulse rounded-xl bg-[var(--bgColor-muted)]" />
+      <div className="h-[380px] w-full animate-pulse rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)]" />
     </section>
   );
 }

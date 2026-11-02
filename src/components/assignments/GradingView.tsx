@@ -14,7 +14,7 @@ import { Btn } from '@/components/ui/Btn';
 import { DataGrid, type GridColumn } from '@/components/ui/datagrid';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Avatar } from '@/components/ui/primitives';
-import { Card, EmptyPanel, Notice } from '@/components/ui/surfaces';
+import { Card, EmptyPanel, Notice, StatCards } from '@/components/ui/surfaces';
 import { Toast, useToast } from '@/components/ui/Toast';
 import { ItemsEditor } from './ItemsEditor';
 import { SubmissionPill } from './SubmissionPill';
@@ -47,6 +47,14 @@ export function GradingView({
     (acc, s) => ({ ...acc, [s]: rows.filter((r) => drafts[r.studentId]?.status === s).length }),
     { not_submitted: 0, submitted: 0, graded: 0 },
   );
+  const scoredList = rows
+    .map((r) => drafts[r.studentId])
+    .filter((d) => d?.status === 'graded' && d.score.trim() !== '' && Number.isFinite(Number(d.score)))
+    .map((d) => Number(d.score));
+  const avgScore =
+    scoredList.length > 0
+      ? `${(scoredList.reduce((a, b) => a + b, 0) / scoredList.length).toFixed(1).replace(/\.0$/, '')}/${assignment.maxScore}`
+      : '—';
 
   function patch(studentId: number, next: Partial<Draft>) {
     setDrafts((prev) => ({ ...prev, [studentId]: { ...prev[studentId], ...next } }));
@@ -175,6 +183,16 @@ export function GradingView({
 
       {assignment.description && <Notice className="mb-2.5 whitespace-pre-line">{assignment.description}</Notice>}
 
+      <div className="mb-3">
+        <StatCards
+          items={[
+            { label: 'Đã nộp', value: `${counts.submitted + counts.graded}/${rows.length}`, sub: `${counts.not_submitted} chưa nộp` },
+            { label: 'Đã chấm', value: `${counts.graded}/${rows.length}`, sub: `${counts.submitted} chờ chấm` },
+            { label: 'Điểm TB', value: avgScore, sub: `Thang điểm ${assignment.maxScore}` },
+          ]}
+        />
+      </div>
+
       {/* Máy tính bảng và máy tính: bảng nhập nhanh kèm thống kê gọn trên thanh công cụ DataGrid */}
       <DataGrid
         label="Chấm điểm bài tập"
@@ -186,7 +204,7 @@ export function GradingView({
         searchEnable
         paging={{ enable: false }}
         title={
-          <div className="flex flex-wrap gap-3 text-xs text-[var(--fgColor-muted)]">
+          <div className="flex flex-wrap gap-3 text-xs tabular-nums text-[var(--fgColor-muted)]">
             <span>Chưa nộp <b className="font-semibold text-[var(--fgColor-default)]">{counts.not_submitted}</b></span>
             <span>Đã nộp <b className="font-semibold text-[var(--fgColor-default)]">{counts.submitted}</b></span>
             <span>Đã chấm <b className="font-semibold text-[var(--fgColor-default)]">{counts.graded}</b></span>

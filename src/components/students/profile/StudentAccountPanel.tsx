@@ -1,11 +1,12 @@
 'use client';
 
+import { KeyIcon, PersonAddIcon } from '@primer/octicons-react';
 import { useState, useTransition } from 'react';
 import { createStudentAccountAction, resetStudentPasswordAction, type IssuedPassword } from '@/app/(app)/hoc-sinh/account-actions';
 import { Btn } from '@/components/ui/Btn';
 import { Modal } from '@/components/ui/Modal';
 import { Toast, useToast } from '@/components/ui/Toast';
-import { Alert } from '@/components/ui/primitives';
+import { Alert, Pill } from '@/components/ui/primitives';
 import { Panel } from '@/components/ui/surfaces';
 import { FormFooter } from '@/components/ui/Field';
 
@@ -36,37 +37,55 @@ export function StudentAccountPanel({
   }
 
   return (
-    <Panel title="Tài khoản học sinh" className="flex flex-col gap-3">
-      {hasAccount ? (
-        <p className="text-sm text-[var(--fgColor-muted)]">
-          Học sinh đăng nhập bằng mã <b className="font-semibold text-[var(--fgColor-default)]">{code}</b> và mật khẩu, rồi làm bài ở khu học sinh.
-        </p>
-      ) : (
-        <p className="text-sm text-[var(--fgColor-muted)]">
-          Học sinh chưa có tài khoản. Tạo tài khoản để học sinh vào khu học sinh bằng mã {code} và làm bài trực tuyến.
-        </p>
-      )}
-      {error && (
-        <Alert inline className="mt-2">
-          {error}
-        </Alert>
-      )}
-      <div className="mt-3">
-        {hasAccount ? (
-          <Btn variant="ghost" loading={pending} onClick={() => run('reset')} disabled={!canManage || pending}>
-            {pending ? 'Đang đặt lại…' : 'Đặt lại mật khẩu'}
-          </Btn>
-        ) : (
-          <Btn variant="primary" loading={pending} onClick={() => run('create')} disabled={!canManage || pending}>
-            {pending ? 'Đang tạo…' : 'Tạo tài khoản học sinh'}
-          </Btn>
-        )}
+    <Panel
+      title="Tài khoản học sinh"
+      action={<Pill tone={hasAccount ? 'mint' : 'stone'}>{hasAccount ? 'Đã kích hoạt' : 'Chưa tạo'}</Pill>}
+      className="tsukuba-rise"
+    >
+      <div className="flex flex-col gap-3 min-[640px]:flex-row min-[640px]:items-center min-[640px]:justify-between">
+        <div className="min-w-0">
+          {hasAccount ? (
+            <p className="text-sm text-[var(--fgColor-muted)]">
+              Học sinh đăng nhập bằng mã{' '}
+              <code className="rounded bg-[var(--bgColor-neutral-muted)] px-2 py-0.5 font-mono text-xs text-[var(--fgColor-default)]">
+                {code}
+              </code>{' '}
+              và mật khẩu để làm bài trực tuyến tại khu học sinh.
+            </p>
+          ) : (
+            <p className="text-sm text-[var(--fgColor-muted)]">
+              Học sinh chưa có tài khoản. Tạo tài khoản để đăng nhập bằng mã{' '}
+              <code className="rounded bg-[var(--bgColor-neutral-muted)] px-2 py-0.5 font-mono text-xs text-[var(--fgColor-default)]">
+                {code}
+              </code>{' '}
+              và làm bài trực tuyến.
+            </p>
+          )}
+          {error && (
+            <Alert inline className="mt-2">
+              {error}
+            </Alert>
+          )}
+        </div>
+
+        <div className="shrink-0">
+          {hasAccount ? (
+            <Btn variant="ghost" leadingVisual={KeyIcon} loading={pending} onClick={() => run('reset')} disabled={!canManage || pending}>
+              {pending ? 'Đang đặt lại…' : 'Đặt lại mật khẩu'}
+            </Btn>
+          ) : (
+            <Btn variant="primary" leadingVisual={PersonAddIcon} loading={pending} onClick={() => run('create')} disabled={!canManage || pending}>
+              {pending ? 'Đang tạo…' : 'Tạo tài khoản học sinh'}
+            </Btn>
+          )}
+        </div>
       </div>
 
       <Modal
         open={issued !== null}
+        size="md"
         title="Mật khẩu tạm thời"
-        subtitle="Chỉ hiện một lần. Đưa cho học sinh rồi đóng. Học sinh nên đổi mật khẩu khi có chức năng đổi."
+        subtitle="Chỉ hiển thị một lần. Ghi lại và gửi cho học sinh trước khi đóng hộp thoại."
         onClose={() => {
           if (issued) notify(issued.message);
           setIssued(null);
@@ -75,23 +94,29 @@ export function StudentAccountPanel({
       >
         {issued && (
           <div className="flex flex-col gap-4">
-            <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
-              <dt className="text-[var(--fgColor-muted)]">Mã đăng nhập</dt>
-              <dd>
-                <code className="rounded bg-[var(--bgColor-muted)] px-1.5 py-0.5 font-semibold text-[var(--fgColor-default)]">
-                  {issued.code}
-                </code>
-              </dd>
-              <dt className="text-[var(--fgColor-muted)]">Mật khẩu tạm</dt>
-              <dd>
-                <code
-                  aria-label="Mật khẩu tạm thời"
-                  className="rounded bg-[var(--bgColor-muted)] px-1.5 py-0.5 font-semibold text-[var(--fgColor-default)]"
-                >
-                  {issued.password}
-                </code>
-              </dd>
-            </dl>
+            <div className="rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] p-4">
+              <dl className="flex flex-col gap-2.5 text-sm">
+                <div className="flex items-center justify-between gap-4 border-b border-dashed border-[var(--borderColor-muted)] pb-2.5">
+                  <dt className="text-[var(--fgColor-muted)]">Mã đăng nhập</dt>
+                  <dd>
+                    <code className="rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-2.5 py-1 font-mono text-sm font-semibold text-[var(--fgColor-default)]">
+                      {issued.code}
+                    </code>
+                  </dd>
+                </div>
+                <div className="flex items-center justify-between gap-4">
+                  <dt className="text-[var(--fgColor-muted)]">Mật khẩu tạm</dt>
+                  <dd>
+                    <code
+                      aria-label="Mật khẩu tạm thời"
+                      className="rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-accent-emphasis)] bg-[var(--primary-soft)] px-2.5 py-1 font-mono text-sm font-semibold text-[var(--primary-deep)]"
+                    >
+                      {issued.password}
+                    </code>
+                  </dd>
+                </div>
+              </dl>
+            </div>
             <FormFooter>
               <Btn
                 variant="primary"

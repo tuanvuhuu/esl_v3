@@ -1,6 +1,7 @@
 'use client';
 
 import { ThemeProvider } from '@primer/react/next';
+import { MotionConfig } from 'framer-motion';
 import { useEffect, type ReactNode } from 'react';
 import { useLocalStorage } from '@/lib/use-local-storage';
 
@@ -20,14 +21,16 @@ export function PrimerProvider({ children }: { children: ReactNode }) {
   }, [colorMode, storedTheme]);
 
   return (
-    <ThemeProvider colorMode={colorMode} dayScheme="light" nightScheme="dark" preventSSRMismatch>
-      <div
-        data-component="BaseStyles"
-        data-portal-root="true"
-        className="min-h-full font-sans text-[var(--fgColor-default)]"
-      >
-        {children}
-      </div>
-    </ThemeProvider>
+    <MotionConfig reducedMotion="never">
+      <ThemeProvider colorMode={colorMode} dayScheme="light" nightScheme="dark" preventSSRMismatch>
+        <div
+          data-component="BaseStyles"
+          data-portal-root="true"
+          className="min-h-full font-sans text-[var(--fgColor-default)]"
+        >
+          {children}
+        </div>
+      </ThemeProvider>
+    </MotionConfig>
   );
 }

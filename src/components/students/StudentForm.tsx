@@ -16,7 +16,7 @@ import { TUITION_PER_SESSION } from '@/lib/tuition';
 import { todayIsoVN, type ActionResult } from '@/lib/validation/student';
 import { ComboBox, DateInput, SelectBox, TextAreaAutoHeight, TextInput } from '@/components-ui';
 import { Btn } from '@/components/ui/Btn';
-import { Field, FormFooter } from '@/components/ui/Field';
+import { Field, FormFooter, FormSection } from '@/components/ui/Field';
 import { Alert } from '@/components/ui/primitives';
 import { Callout } from '@/components/ui/surfaces';
 
@@ -165,182 +165,192 @@ export function StudentForm({
   }
 
   return (
-    <form onSubmit={submit} noValidate className="grid grid-cols-1 gap-3.5 min-[768px]:grid-cols-3 min-[768px]:gap-x-4 min-[768px]:gap-y-3">
+    <form onSubmit={submit} noValidate className="flex flex-col gap-3.5">
       {state.message && !state.ok && (
-        <Alert className="col-span-full">
+        <Alert>
           {state.message}
         </Alert>
       )}
 
-      {/* Thông tin học sinh trước, rồi nơi học và học phí, cuối cùng là phụ huynh */}
-      <FormSection>Học sinh</FormSection>
-      <Field label="Họ và tên *" error={errors.fullName} wide>
-        <TextInput
-          block
-          name="fullName"
-          defaultValue={values.fullName}
-          placeholder="VD: Nguyễn Minh Anh"
-          autoComplete="off"
-          validationStatus={errors.fullName ? 'error' : undefined}
-        />
-      </Field>
-      {mode === 'create' && (
-        <Field label="Mã HS" error={errors.code ?? codeTaken ?? undefined} hint="Để trống thì hệ thống tự cấp mã tiếp theo.">
+      <FormSection title="Thông tin học viên" description="Họ tên, mã định danh, ngày sinh và trạng thái theo dõi.">
+        <Field label="Họ và tên *" error={errors.fullName} wide={mode === 'edit'}>
           <TextInput
             block
-            name="code"
-            value={code}
-            onChange={(e) => { setCode(e.target.value); setCodeTaken(null); }}
-            onBlur={() => void checkCode()}
-            placeholder="HS-00001"
+            name="fullName"
+            aria-label="Họ và tên *"
+            defaultValue={values.fullName}
+            placeholder="VD: Nguyễn Minh Anh"
             autoComplete="off"
-            validationStatus={errors.code || codeTaken ? 'error' : undefined}
+            validationStatus={errors.fullName ? 'error' : undefined}
           />
         </Field>
-      )}
+        {mode === 'create' && (
+          <Field label="Mã HS" error={errors.code ?? codeTaken ?? undefined} hint="Để trống thì hệ thống tự cấp mã tiếp theo.">
+            <TextInput
+              block
+              name="code"
+              aria-label="Mã HS"
+              value={code}
+              onChange={(e) => { setCode(e.target.value); setCodeTaken(null); }}
+              onBlur={() => void checkCode()}
+              placeholder="HS-00001"
+              autoComplete="off"
+              validationStatus={errors.code || codeTaken ? 'error' : undefined}
+            />
+          </Field>
+        )}
 
-      <Field label="Ngày sinh" error={errors.dob} hint="Để trống nếu chưa biết">
-        <DateInput name="dob" defaultValue={values.dob} error={Boolean(errors.dob)} />
-      </Field>
+        <Field label="Ngày sinh" error={errors.dob} hint="Để trống nếu chưa biết">
+          <DateInput name="dob" defaultValue={values.dob} error={Boolean(errors.dob)} />
+        </Field>
 
-      <Field label="Giới tính">
-        <SelectBox
-          name="gender"
-          label="Giới tính"
-          defaultValue={values.gender}
-          options={[
-            { value: 'female', label: 'Nữ' },
-            { value: 'male', label: 'Nam' },
-          ]}
-          block
-        />
-      </Field>
+        <Field label="Giới tính">
+          <SelectBox
+            name="gender"
+            label="Giới tính"
+            defaultValue={values.gender}
+            options={[
+              { value: 'female', label: 'Nữ' },
+              { value: 'male', label: 'Nam' },
+            ]}
+            block
+          />
+        </Field>
 
-      <Field label="Trạng thái">
-        <SelectBox name="status" label="Trạng thái" defaultValue={values.status} options={STATUS_OPTIONS} block />
-      </Field>
+        <Field label="Trạng thái" wide={mode === 'create'}>
+          <SelectBox name="status" label="Trạng thái" defaultValue={values.status} options={STATUS_OPTIONS} block />
+        </Field>
+      </FormSection>
 
-      <FormSection>Lớp và học phí</FormSection>
-      <Field label="Cơ sở *">
-        <ComboBox
-          label="Cơ sở *"
-          value={String(campusId)}
-          onChange={chooseCampus}
-          options={campuses.map((c) => ({ value: String(c.id), label: c.name }))}
-          block
-        />
-      </Field>
+      <FormSection title="Liên hệ & địa chỉ" description="Phụ huynh nhận thông báo điểm danh, kết quả học tập và học phí.">
+        <Field label="Phụ huynh *" error={errors.parentId} wide hint="Chọn người đã có trong danh sách, hoặc để 'Thêm phụ huynh mới' và nhập bên dưới.">
+          <ComboBox
+            name="parentId"
+            label="Phụ huynh *"
+            value={parentId}
+            onChange={setParentId}
+            options={[
+              { value: '', label: 'Thêm phụ huynh mới' },
+              ...parents.map((p) => ({ value: String(p.id), label: `${p.fullName} · ${p.phone}` })),
+            ]}
+            error={Boolean(errors.parentId)}
+            block
+          />
+        </Field>
 
-      <Field
-        label="Lớp học *"
-        error={errors.classId}
-        hint={campusClasses.length === 0 ? 'Cơ sở này chưa có lớp học. Tạo lớp ở màn Lớp học trước.' : undefined}
-      >
-        <ComboBox
-          name="classId"
-          label="Lớp học *"
-          value={String(classId)}
-          onChange={(v) => setClassId(v ? Number(v) : 0)}
-          options={[
-            { value: '0', label: 'Chọn lớp', disabled: true },
-            ...campusClasses.map((c) => ({ value: String(c.id), label: `${c.name} — ${c.course}` })),
-          ]}
-          placeholder="Chọn lớp"
-          error={Boolean(errors.classId)}
-          block
-        />
-      </Field>
+        {!usingExistingParent && (
+          <>
+            <Field label="Tên phụ huynh *" error={errors.parentName}>
+              <TextInput
+                block
+                name="parentName"
+                aria-label="Tên phụ huynh *"
+                defaultValue={values.parentName}
+                placeholder="Họ tên phụ huynh"
+                autoComplete="off"
+                validationStatus={errors.parentName ? 'error' : undefined}
+              />
+            </Field>
+            <Field label="SĐT phụ huynh *" error={errors.parentPhone}>
+              <TextInput
+                block
+                name="parentPhone"
+                aria-label="SĐT phụ huynh *"
+                type="tel"
+                inputMode="tel"
+                defaultValue={values.parentPhone}
+                placeholder="09xx xxx xxx"
+                autoComplete="off"
+                validationStatus={errors.parentPhone ? 'error' : undefined}
+              />
+            </Field>
+          </>
+        )}
 
-      <Field
-        label="Ngày bắt đầu học *"
-        error={errors.startDate}
-        hint={shownPreview?.firstKey ? `Lớp khai giảng ${dateKeyLabel(shownPreview.firstKey)}. Vào giữa khoá thì chọn ngày học buổi đầu.` : 'Ngày học sinh bắt đầu vào lớp'}
-      >
-        <DateInput
-          name="startDate"
-          value={startDate}
-          onIsoChange={(iso) => {
-            setStartDate(iso);
-            setStartEdited(true);
-          }}
-          error={Boolean(errors.startDate)}
-        />
-      </Field>
+        <Field label="Quan hệ">
+          <SelectBox name="parentRelation" label="Quan hệ" defaultValue={values.parentRelation} options={RELATION_OPTIONS} block />
+        </Field>
 
-      {selectedClass && (
-        <div className="col-span-full" data-testid="class-info">
-          <Callout tone="info" className="leading-relaxed">
-            <b className="font-semibold text-[var(--fgColor-default)]">{selectedClass.course}</b>
-            <br />
-            {selectedClass.teacherName} · Học phí <b className="font-semibold text-[var(--fgColor-default)]">{formatVND(TUITION_PER_SESSION)}</b> một buổi
-            {shownPreview && <> · {shownPreview.total} buổi{shownPreview.firstKey ? ` · Khai giảng ${dateKeyLabel(shownPreview.firstKey)}` : ''}</>}
-          </Callout>
+        <div className="flex min-w-0 flex-col justify-end">
+          <label className="flex h-[var(--ctl-h)] cursor-pointer items-center gap-2.5 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]/60 px-3 text-sm font-normal text-[var(--fgColor-default)] transition-colors hover:border-[var(--borderColor-accent-emphasis)] max-[767px]:h-[var(--ctl-h-touch)]">
+            <input name="parentPrimary" type="checkbox" defaultChecked className="size-4 accent-[var(--control-checked-bgColor-rest)]" />
+            <span>Liên hệ chính</span>
+          </label>
         </div>
-      )}
+      </FormSection>
 
-      <FormSection>Phụ huynh</FormSection>
-      <Field label="Phụ huynh *" error={errors.parentId} wide hint="Chọn người đã có trong danh sách, hoặc để 'Thêm phụ huynh mới' và nhập bên dưới.">
-        <ComboBox
-          name="parentId"
-          label="Phụ huynh *"
-          value={parentId}
-          onChange={setParentId}
-          options={[
-            { value: '', label: 'Thêm phụ huynh mới' },
-            ...parents.map((p) => ({ value: String(p.id), label: `${p.fullName} · ${p.phone}` })),
-          ]}
-          error={Boolean(errors.parentId)}
-          block
-        />
-      </Field>
+      <FormSection title="Học tập & ghi chú" description="Cơ sở theo học, xếp lớp, ngày vào học và lưu ý chuyên môn.">
+        <Field label="Cơ sở *">
+          <ComboBox
+            label="Cơ sở *"
+            value={String(campusId)}
+            onChange={chooseCampus}
+            options={campuses.map((c) => ({ value: String(c.id), label: c.name }))}
+            block
+          />
+        </Field>
 
-      {!usingExistingParent && (
-        <>
-          <Field label="Tên phụ huynh *" error={errors.parentName}>
-            <TextInput
-              block
-              name="parentName"
-              defaultValue={values.parentName}
-              placeholder="Họ tên phụ huynh"
-              autoComplete="off"
-              validationStatus={errors.parentName ? 'error' : undefined}
-            />
-          </Field>
-          <Field label="SĐT phụ huynh *" error={errors.parentPhone}>
-            <TextInput
-              block
-              name="parentPhone"
-              type="tel"
-              inputMode="tel"
-              defaultValue={values.parentPhone}
-              placeholder="09xx xxx xxx"
-              autoComplete="off"
-              validationStatus={errors.parentPhone ? 'error' : undefined}
-            />
-          </Field>
-        </>
-      )}
+        <Field
+          label="Lớp học *"
+          error={errors.classId}
+          hint={campusClasses.length === 0 ? 'Cơ sở này chưa có lớp học. Tạo lớp ở màn Lớp học trước.' : undefined}
+        >
+          <ComboBox
+            name="classId"
+            label="Lớp học *"
+            value={String(classId)}
+            onChange={(v) => setClassId(v ? Number(v) : 0)}
+            options={[
+              { value: '0', label: 'Chọn lớp', disabled: true },
+              ...campusClasses.map((c) => ({ value: String(c.id), label: `${c.name} — ${c.course}` })),
+            ]}
+            placeholder="Chọn lớp"
+            error={Boolean(errors.classId)}
+            block
+          />
+        </Field>
 
-      <Field label="Quan hệ">
-        <SelectBox name="parentRelation" label="Quan hệ" defaultValue={values.parentRelation} options={RELATION_OPTIONS} block />
-      </Field>
+        <Field
+          label="Ngày bắt đầu học *"
+          error={errors.startDate}
+          wide
+          hint={shownPreview?.firstKey ? `Lớp khai giảng ${dateKeyLabel(shownPreview.firstKey)}. Vào giữa khoá thì chọn ngày học buổi đầu.` : 'Ngày học sinh bắt đầu vào lớp'}
+        >
+          <DateInput
+            name="startDate"
+            value={startDate}
+            onIsoChange={(iso) => {
+              setStartDate(iso);
+              setStartEdited(true);
+            }}
+            error={Boolean(errors.startDate)}
+          />
+        </Field>
 
-      <label className="flex min-w-0 items-center gap-2.5 self-end pb-2 text-sm font-normal text-[var(--fgColor-default)]">
-        <input name="parentPrimary" type="checkbox" defaultChecked className="size-4 accent-[var(--control-checked-bgColor-rest)]" />
-        Liên hệ chính
-      </label>
+        {selectedClass && (
+          <div className="min-[768px]:col-span-full" data-testid="class-info">
+            <Callout tone="info" className="leading-relaxed">
+              <b className="font-semibold text-[var(--fgColor-default)]">{selectedClass.course}</b>
+              <br />
+              {selectedClass.teacherName} · Học phí <b className="font-semibold tabular-nums text-[var(--fgColor-default)]">{formatVND(TUITION_PER_SESSION)}</b> một buổi
+              {shownPreview && <> · {shownPreview.total} buổi{shownPreview.firstKey ? ` · Khai giảng ${dateKeyLabel(shownPreview.firstKey)}` : ''}</>}
+            </Callout>
+          </div>
+        )}
 
-      <Field label="Ghi chú" error={errors.note} wide>
-        <TextAreaAutoHeight
-          name="note"
-          defaultValue={values.note}
-          rows={3}
-          placeholder="Mục tiêu, nhu cầu đặc biệt, lịch rảnh…"
-          error={Boolean(errors.note)}
-        />
-      </Field>
+        <Field label="Ghi chú" error={errors.note} wide>
+          <TextAreaAutoHeight
+            name="note"
+            aria-label="Ghi chú"
+            defaultValue={values.note}
+            rows={3}
+            placeholder="Mục tiêu, nhu cầu đặc biệt, lịch rảnh…"
+            error={Boolean(errors.note)}
+          />
+        </Field>
+      </FormSection>
 
-      <FormFooter className="col-span-full">
+      <FormFooter>
         <Btn onClick={onCancel}>Huỷ</Btn>
         <Btn type="submit" variant="primary" loading={pending} disabled={pending}>
           {pending ? 'Đang lưu…' : mode === 'edit' ? 'Lưu thay đổi' : 'Lưu học sinh'}
@@ -348,9 +358,4 @@ export function StudentForm({
       </FormFooter>
     </form>
   );
-}
-
-// Tiêu đề nhóm trong form học sinh: chia form dài thành ba phần dễ dò
-function FormSection({ children }: { children: string }) {
-  return <h3 className="col-span-full mt-2 border-b border-[var(--borderColor-muted)] pb-1.5 text-sm font-semibold text-[var(--fgColor-default)] first:mt-0">{children}</h3>;
 }

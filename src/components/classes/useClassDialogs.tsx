@@ -89,7 +89,14 @@ export function useClassDialogs({
   const dialogs = (
     <>
       <Toast message={message} />
-      <Modal open={creating} title="Tạo lớp học" subtitle="Các trường có dấu * là bắt buộc. Hệ thống sẽ sinh sẵn các buổi học." onClose={() => setCreating(false)} labelledBy="class-create-title">
+      <Modal
+        open={creating}
+        size="lg"
+        title="Tạo lớp học"
+        subtitle="Thiết lập thông tin lớp, đội ngũ giảng dạy và sinh tự động các buổi học hàng tuần."
+        onClose={() => setCreating(false)}
+        labelledBy="class-create-title"
+      >
         <ClassForm
           mode="create"
           teachers={teachers}
@@ -101,7 +108,14 @@ export function useClassDialogs({
           onCancel={() => setCreating(false)}
         />
       </Modal>
-      <Modal open={!!editing} title="Sửa lớp học" subtitle="Các trường có dấu * là bắt buộc." onClose={() => setEditing(null)} labelledBy="class-edit-title">
+      <Modal
+        open={!!editing}
+        size="lg"
+        title="Sửa lớp học"
+        subtitle="Cập nhật thông tin lớp, đội ngũ phụ trách và khung giờ các ca học sắp tới."
+        onClose={() => setEditing(null)}
+        labelledBy="class-edit-title"
+      >
         {editing && (
           <ClassForm
             mode="edit"
@@ -119,6 +133,7 @@ export function useClassDialogs({
       </Modal>
       <Modal
         open={!!rescheduling}
+        size="lg"
         title={rescheduling ? `Xếp lại lịch lớp ${rescheduling.name}` : 'Xếp lại lịch'}
         subtitle="Đổi ngày khai giảng, số buổi, ngày học hoặc ca. Buổi đã học giữ nguyên."
         onClose={() => setRescheduling(null)}

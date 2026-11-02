@@ -2,7 +2,7 @@
 
 // Chọn từ trong kho từ (P36.4): trình độ, chủ đề, lưới từ chạm để chọn. Người có quyền Cài đặt thấy thêm "Chờ duyệt".
 // Dữ liệu tải theo trình độ và chủ đề bằng server action, không gửi cả kho xuống trình duyệt.
-import { CheckIcon, ZapIcon } from '@primer/octicons-react';
+import { BookIcon, CheckIcon, ZapIcon } from '@primer/octicons-react';
 import { useEffect, useState, useTransition } from 'react';
 import { loadVocabAction, reviewVocabAction, type VocabLoad } from '@/app/(app)/bai-tap/vocab-actions';
 import { LEVEL_LABELS, type LevelParams } from '@/lib/level-params';
@@ -125,14 +125,14 @@ export function VocabPicker({
               data-card="true"
               aria-pressed={on}
               onClick={() => onToggle(w)}
-              className={`flex min-h-[52px] min-w-0 items-center gap-2.5 rounded-[var(--borderRadius-medium)] border px-2.5 py-1.5 text-left transition-colors ${
+              className={`flex min-h-[52px] min-w-0 items-center gap-2.5 rounded-[var(--borderRadius-medium)] border px-2.5 py-1.5 text-left transition-all ${
                 on
-                  ? 'border-[var(--fgColor-accent)] bg-[var(--bgColor-accent-muted,var(--color-primary-soft))]'
+                  ? 'border-[var(--primary)] bg-[var(--primary-soft)] shadow-[inset_3px_0_0_var(--primary)]'
                   : 'border-[var(--borderColor-default)] bg-[var(--bgColor-default)] hover:bg-[var(--bgColor-muted)]'
               }`}
             >
               <WordFace w={w} />
-              <span aria-hidden className={`grid size-5 shrink-0 place-items-center rounded-[var(--borderRadius-small)] border-2 ${on ? 'border-accent bg-accent text-white' : 'border-[var(--borderColor-default)]'}`}>
+              <span aria-hidden className={`grid size-5 shrink-0 place-items-center rounded-[var(--borderRadius-small)] border-2 ${on ? 'border-[var(--primary)] bg-[var(--primary)] text-[var(--on-primary)]' : 'border-[var(--borderColor-default)]'}`}>
                 {on && <CheckIcon size={14} aria-hidden />}
               </span>
             </button>
@@ -157,7 +157,7 @@ function WordFace({ w }: { w: VocabWord }) {
   return (
     <span className="flex min-w-0 flex-1 items-center gap-2.5">
       <span aria-hidden className="grid size-9 shrink-0 place-items-center rounded-[var(--borderRadius-medium)] bg-[var(--bgColor-muted)] text-[22px]">
-        {w.emoji || '·'}
+        {w.emoji || <BookIcon size={15} className="text-[var(--fgColor-muted)]" aria-hidden />}
       </span>
       <span className="min-w-0 flex-1">
         <b className="block truncate text-md text-[var(--fgColor-default)]">{w.en}</b>

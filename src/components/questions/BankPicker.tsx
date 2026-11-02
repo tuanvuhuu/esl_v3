@@ -47,16 +47,19 @@ export function BankPicker({
   return (
     <Modal
       open={open}
+      size="lg"
       title="Thêm từ ngân hàng"
       subtitle="Câu được chép vào bài. Sửa ngân hàng sau này không đổi bài đã giao."
       onClose={close}
       labelledBy="bank-picker-title"
     >
-      <div className="flex flex-col gap-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <SelectBox label="Lọc theo trình độ" auto value={filter.level} onChange={(v) => setFilter((f) => ({ ...f, level: v }))} options={LEVEL_OPTIONS} />
-          <ComboBox label="Lọc theo chủ đề" auto value={filter.topic} onChange={(v) => setFilter((f) => ({ ...f, topic: v }))} options={topicOptions(bank)} />
-          <SelectBox label="Lọc theo kỹ năng" auto value={filter.skill} onChange={(v) => setFilter((f) => ({ ...f, skill: v as 'all' | Skill }))} options={SKILL_OPTIONS} />
+      <div className="flex flex-col gap-3.5">
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] p-2.5">
+          <div className="flex flex-wrap items-center gap-2">
+            <SelectBox label="Lọc theo trình độ" auto value={filter.level} onChange={(v) => setFilter((f) => ({ ...f, level: v }))} options={LEVEL_OPTIONS} />
+            <ComboBox label="Lọc theo chủ đề" auto value={filter.topic} onChange={(v) => setFilter((f) => ({ ...f, topic: v }))} options={topicOptions(bank)} />
+            <SelectBox label="Lọc theo kỹ năng" auto value={filter.skill} onChange={(v) => setFilter((f) => ({ ...f, skill: v as 'all' | Skill }))} options={SKILL_OPTIONS} />
+          </div>
           {shown.length > 0 && (
             <Btn
               onClick={() => setChosen((prev) => (allShownChosen ? prev.filter((id) => !shown.some((q) => q.id === id)) : [...new Set([...prev, ...shown.map((q) => q.id)])]))}
@@ -71,31 +74,42 @@ export function BankPicker({
             {bank.length === 0 ? 'Ngân hàng chưa có câu hỏi. Thêm câu ở trang Ngân hàng câu hỏi.' : 'Không có câu nào khớp bộ lọc.'}
           </Notice>
         ) : (
-          <ul className="flex max-h-[50vh] flex-col gap-2 overflow-y-auto pr-1">
-            {shown.map((q) => (
-              <li key={q.id}>
-                <label className="flex cursor-pointer items-start gap-3 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-3 py-2.5 transition-colors hover:bg-[var(--bgColor-muted)]">
-                  <input
-                    type="checkbox"
-                    checked={chosen.includes(q.id)}
-                    onChange={() => toggle(q.id)}
-                    aria-label={`Chọn câu: ${snippet(q.prompt, q.audioName)}`}
-                    className="mt-1 size-4 shrink-0 accent-[var(--control-checked-bgColor-rest)]"
-                  />
-                  <span className="flex min-w-0 flex-col gap-1.5">
-                    <span className="text-base text-[var(--fgColor-default)] [overflow-wrap:anywhere]">{snippet(q.prompt, q.audioName)}</span>
-                    <span className="flex flex-wrap items-center gap-2 text-sm text-[var(--fgColor-muted)]">
-                      <Pill tone="lav">{SKILL_LABELS[q.skill]}</Pill>
-                      <span>
-                        {ITEM_TYPE_LABELS[q.itemType]} · {q.points} điểm
-                        {q.level ? ` · ${levelLabel(q.level)}` : ''}
-                        {q.topic ? ` · ${topicLabel(q.topic)}` : ''}
+          <ul className="flex max-h-[52vh] flex-col gap-2 overflow-y-auto pr-1">
+            {shown.map((q) => {
+              const isSelected = chosen.includes(q.id);
+              return (
+                <li key={q.id}>
+                  <label
+                    className={`flex cursor-pointer items-start gap-3 rounded-lg border px-3.5 py-2.5 transition-all ${
+                      isSelected
+                        ? 'border-[var(--primary)] bg-[var(--primary-soft)] shadow-[inset_3px_0_0_var(--primary)]'
+                        : 'border-[var(--borderColor-default)] bg-[var(--bgColor-default)] hover:border-[var(--borderColor-accent-emphasis)]/60 hover:bg-[var(--bgColor-muted)]'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => toggle(q.id)}
+                      aria-label={`Chọn câu: ${snippet(q.prompt, q.audioName)}`}
+                      className="mt-1 size-4 shrink-0 accent-[var(--control-checked-bgColor-rest)]"
+                    />
+                    <span className="flex min-w-0 flex-1 flex-col gap-1.5">
+                      <span className="text-sm font-medium text-[var(--fgColor-default)] [overflow-wrap:anywhere]">
+                        {snippet(q.prompt, q.audioName)}
+                      </span>
+                      <span className="flex flex-wrap items-center gap-2 text-xs tabular-nums text-[var(--fgColor-muted)]">
+                        <Pill tone="lav">{SKILL_LABELS[q.skill]}</Pill>
+                        <span>
+                          {ITEM_TYPE_LABELS[q.itemType]} · {q.points} điểm
+                          {q.level ? ` · ${levelLabel(q.level)}` : ''}
+                          {q.topic ? ` · ${topicLabel(q.topic)}` : ''}
+                        </span>
                       </span>
                     </span>
-                  </span>
-                </label>
-              </li>
-            ))}
+                  </label>
+                </li>
+              );
+            })}
           </ul>
         )}
 

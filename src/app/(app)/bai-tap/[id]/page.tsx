@@ -23,9 +23,14 @@ export default function GradingPage({ params, searchParams }: { params: Promise<
 
 function GradingSkeleton() {
   return (
-    <section aria-busy="true" aria-label="Đang tải bài tập" className="flex flex-col gap-4">
-      <div className="h-9 w-64 animate-pulse rounded-md bg-[var(--bgColor-muted)]" />
-      <div className="h-[380px] animate-pulse rounded-xl bg-[var(--bgColor-muted)]" />
+    <section aria-busy="true" aria-label="Đang tải bài tập" className="flex flex-col gap-3">
+      <div className="h-9 w-64 animate-pulse rounded-[var(--borderRadius-medium)] bg-[var(--bgColor-muted)]" />
+      <div className="grid grid-cols-2 gap-2.5 min-[768px]:grid-cols-4">
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className="h-16 animate-pulse rounded-[var(--borderRadius-large)] bg-[var(--bgColor-muted)]" />
+        ))}
+      </div>
+      <div className="h-[360px] animate-pulse rounded-[var(--borderRadius-large)] bg-[var(--bgColor-muted)]" />
     </section>
   );
 }

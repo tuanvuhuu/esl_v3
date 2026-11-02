@@ -24,17 +24,21 @@ async function WordReviewData() {
   const { due, others } = await reviewSession(account.studentId);
   if (due.length === 0) {
     return (
-      <section className="mx-auto flex w-full max-w-[480px] flex-col gap-4 py-2">
+      <section className="tsukuba-rise mx-auto flex w-full max-w-[520px] flex-col gap-4 rounded-2xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-5">
         <EmptyPanel title="Hôm nay con ôn xong rồi" hint="Từ mới vào hộp khi con chơi trò chơi từ vựng. Hẹn con lần ôn tới." />
         <Link
           href="/cua-toi"
           data-link="true"
-          className="inline-flex items-center gap-1 self-start text-sm font-medium text-[var(--fgColor-link)] underline underline-offset-2"
+          className="inline-flex items-center gap-1.5 self-start text-sm font-medium text-[var(--fgColor-link)] underline underline-offset-2"
         >
           <ArrowLeftIcon size={16} aria-hidden /> Về trang của con
         </Link>
       </section>
     );
   }
-  return <ReviewSession due={due} others={others} />;
+  return (
+    <div className="tsukuba-rise mx-auto w-full max-w-[540px] rounded-2xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-4 min-[640px]:p-5">
+      <ReviewSession due={due} others={others} />
+    </div>
+  );
 }

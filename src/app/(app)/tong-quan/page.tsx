@@ -1,9 +1,12 @@
 import {
   ArrowRightIcon,
   CalendarIcon,
+  CheckCircleIcon,
   ClockIcon,
   CreditCardIcon,
   FileIcon,
+  HourglassIcon,
+  PeopleIcon,
   TasklistIcon,
   type Icon,
 } from '@primer/octicons-react';
@@ -113,6 +116,7 @@ async function DashboardData() {
         <Kpi
           index={0}
           href={canStudents ? '/hoc-sinh' : undefined}
+          icon={PeopleIcon}
           label="Học sinh đang học"
           tone="mint"
           value={String(stats.active)}
@@ -121,6 +125,7 @@ async function DashboardData() {
         <Kpi
           index={1}
           href={canAttendance ? '/diem-danh' : undefined}
+          icon={CheckCircleIcon}
           label="Chuyên cần 30 ngày"
           tone="lav"
           value={`${stats.attendanceRate}%`}
@@ -130,6 +135,7 @@ async function DashboardData() {
           <Kpi
             index={2}
             href="/hoc-phi?f=overdue"
+            icon={CreditCardIcon}
             label="Công nợ quá hạn"
             tone={debtTotal > 0 ? 'blush' : 'mint'}
             value={formatVND(debtTotal)}
@@ -139,6 +145,7 @@ async function DashboardData() {
           <Kpi
             index={2}
             href={canStudents ? '/hoc-sinh' : undefined}
+            icon={HourglassIcon}
             label="Sắp hết buổi"
             tone="blush"
             value={String(stats.nearlyDone)}
@@ -149,6 +156,7 @@ async function DashboardData() {
           <Kpi
             index={3}
             href="/lich-hoc"
+            icon={CalendarIcon}
             label="Buổi học hôm nay"
             tone="butter"
             value={String(sessionsToday.length)}
@@ -271,8 +279,13 @@ async function DashboardData() {
           <Panel
             title="Lịch hôm nay"
             action={
-              <Link href="/lich-hoc" className="text-xs font-semibold text-[var(--fgColor-link)] hover:underline">
-                Xem lịch tuần →
+              <Link
+                href="/lich-hoc"
+                data-link="true"
+                className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--fgColor-link)] hover:underline"
+              >
+                Xem lịch tuần
+                <ArrowRightIcon size={12} aria-hidden />
               </Link>
             }
           >
@@ -316,8 +329,13 @@ async function DashboardData() {
         <Panel
           title="Lớp đang hoạt động"
           action={
-            <Link href="/lop-hoc" className="text-xs font-semibold text-[var(--fgColor-link)] hover:underline">
-              Xem tất cả ({classes.length}) →
+            <Link
+              href="/lop-hoc"
+              data-link="true"
+              className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--fgColor-link)] hover:underline"
+            >
+              Xem tất cả ({classes.length})
+              <ArrowRightIcon size={12} aria-hidden />
             </Link>
           }
         >
@@ -372,9 +390,17 @@ const KPI_DOT: Record<'mint' | 'lav' | 'blush' | 'butter', string> = {
   butter: 'bg-[var(--butter-ink)]',
 };
 
+const KPI_ICON_TONE: Record<'mint' | 'lav' | 'blush' | 'butter', string> = {
+  mint: 'bg-mint text-mint-ink',
+  lav: 'bg-primary-soft text-primary',
+  blush: 'bg-blush text-blush-ink',
+  butter: 'bg-butter text-butter-ink',
+};
+
 function Kpi({
   index,
   href,
+  icon: IconComp,
   label,
   value,
   sub,
@@ -383,6 +409,7 @@ function Kpi({
 }: {
   index: number;
   href?: string;
+  icon: Icon;
   label: string;
   value: string;
   sub?: string;
@@ -391,10 +418,15 @@ function Kpi({
 }) {
   const inner = (
     <>
-      <small className="flex items-center gap-2 truncate text-xs font-medium text-[var(--fgColor-muted)]">
-        <span className={`size-2 shrink-0 rounded-full ${KPI_DOT[tone]}`} aria-hidden />
-        <span className="truncate">{label}</span>
-      </small>
+      <div className="flex items-center justify-between gap-2">
+        <small className="flex min-w-0 items-center gap-2 truncate text-xs font-medium text-[var(--fgColor-muted)]">
+          <span className={`size-2 shrink-0 rounded-full ${KPI_DOT[tone]}`} aria-hidden />
+          <span className="truncate">{label}</span>
+        </small>
+        <span className={`grid size-6 shrink-0 place-items-center rounded-md ${KPI_ICON_TONE[tone]}`} aria-hidden>
+          <IconComp size={13} />
+        </span>
+      </div>
       <b className="mt-1 block truncate text-xl font-semibold leading-tight tabular-nums text-[var(--fgColor-default)] min-[768px]:text-2xl">
         {value}
       </b>
@@ -455,11 +487,11 @@ function Lane({
       data-card="true"
       className="group grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-3 py-2.5 transition-all duration-150 hover:border-[var(--borderColor-accent-emphasis)] hover:bg-[var(--row-hover)]"
     >
-      <span
-        className={`grid h-8 min-w-8 shrink-0 place-items-center rounded-full px-2 text-xs font-bold tabular-nums ${LANE_BADGE[tone]}`}
+      <b
+        className={`grid h-8 min-w-8 shrink-0 place-items-center rounded-full px-2 text-xs font-semibold tabular-nums ${LANE_BADGE[tone]}`}
       >
         {count}
-      </span>
+      </b>
       <span className="min-w-0">
         <span className="flex flex-wrap items-center gap-1.5">
           <IconComp size={14} className="shrink-0 text-[var(--fgColor-muted)]" aria-hidden />

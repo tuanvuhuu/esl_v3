@@ -139,38 +139,73 @@ export function AssignmentsView({
             <EmptyPanel title={`Lớp ${cls?.name ?? ''} chưa có bài tập`} hint="Bấm Thêm bài tập để giao bài đầu tiên." />
           ) : (
             <div className="grid grid-cols-1 gap-3 min-[768px]:grid-cols-2 min-[1200px]:grid-cols-3">
-              {assignments.map((row) => (
-                <Card key={row.id}>
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <Link href={`/bai-tap/${row.id}`} scroll={false} className="block truncate text-base font-semibold text-[var(--fgColor-default)] hover:underline">{row.title}</Link>
-                      <small className="block text-sm text-[var(--fgColor-muted)]">Hạn {vnDateTimeLabel(new Date(row.dueAt))} · tối đa {row.maxScore} điểm</small>
-                      {row.lessonTitle && <small className="block truncate text-sm text-[var(--fgColor-muted)]">Bài giảng: {row.lessonTitle}</small>}
+              {assignments.map((row) => {
+                const isOpen = !row.overdue && new Date(row.dueAt) > new Date();
+                const accentCls = row.overdue
+                  ? 'border-l-[3px] border-l-[var(--blush-ink)]'
+                  : isOpen
+                    ? 'border-l-[3px] border-l-[var(--primary)]'
+                    : 'border-l-[3px] border-l-[var(--borderColor-default)]';
+                return (
+                  <Card
+                    key={row.id}
+                    className={`tsukuba-rise justify-between hover:border-[var(--borderColor-accent-emphasis)] ${accentCls}`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <Link
+                          href={`/bai-tap/${row.id}`}
+                          scroll={false}
+                          data-link="true"
+                          className="block truncate text-[15px] font-semibold text-[var(--fgColor-default)] transition-colors hover:text-[var(--primary)] hover:underline"
+                        >
+                          {row.title}
+                        </Link>
+                        <small className="mt-0.5 block text-xs tabular-nums text-[var(--fgColor-muted)]">
+                          Hạn {vnDateTimeLabel(new Date(row.dueAt))} · tối đa {row.maxScore} điểm
+                        </small>
+                        {row.lessonTitle && (
+                          <small className="mt-1 inline-block max-w-full truncate rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)] px-2 py-0.5 text-xs text-[var(--fgColor-muted)]">
+                            Bài giảng: {row.lessonTitle}
+                          </small>
+                        )}
+                      </div>
+                      <div className="hidden shrink-0 min-[768px]:block">
+                        <RowMenu label={`Thao tác với bài ${row.title}`} items={menuItems(row)} />
+                      </div>
                     </div>
-                    <div className="hidden min-[768px]:block">
-                      <RowMenu label={`Thao tác với bài ${row.title}`} items={menuItems(row)} />
+
+                    <div className="flex flex-col gap-2 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)] px-3 py-2">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        {row.overdue ? (
+                          <Pill tone="blush">Quá hạn</Pill>
+                        ) : (
+                          <Pill tone={isOpen ? 'mint' : 'stone'}>{isOpen ? 'Đang nhận bài' : 'Đã đóng'}</Pill>
+                        )}
+                        <span className="text-xs tabular-nums text-[var(--fgColor-muted)]">
+                          Đã nộp <b className="font-medium text-[var(--fgColor-default)]">{row.done}/{row.enrolled}</b> · Đã chấm{' '}
+                          <b className="font-medium text-[var(--fgColor-default)]">{row.graded}</b>
+                        </span>
+                      </div>
+                      <ProgressBar value={row.done} max={row.enrolled} />
                     </div>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    {row.overdue ? <Pill tone="blush">Quá hạn</Pill> : <Pill tone="stone">{new Date(row.dueAt) > new Date() ? 'Đang nhận bài' : 'Đã đóng'}</Pill>}
-                    <span className="text-sm text-[var(--fgColor-muted)]">Đã nộp {row.done}/{row.enrolled} · Đã chấm {row.graded}</span>
-                  </div>
-                  <ProgressBar value={row.done} max={row.enrolled} />
-                  {/* Điện thoại: ba nút có chữ, bằng nhau */}
-                  <div className="grid grid-cols-3 gap-2 min-[768px]:hidden">
-                    <Link href={`/bai-tap/${row.id}`} scroll={false} className={`${BTN_BASE} ${BTN_PRIMARY} w-full`}>
-                      <ChecklistIcon size={16} aria-hidden />
-                      Chấm
-                    </Link>
-                    <Btn block leadingVisual={PencilIcon} onClick={() => openEdit(row)} disabled={!canManage}>
-                      Sửa
-                    </Btn>
-                    <Btn block variant="danger" leadingVisual={TrashIcon} onClick={() => setToDelete(row)} disabled={!canManage}>
-                      Xoá
-                    </Btn>
-                  </div>
-                </Card>
-              ))}
+
+                    {/* Điện thoại: ba nút có chữ, bằng nhau */}
+                    <div className="grid grid-cols-3 gap-2 min-[768px]:hidden">
+                      <Link href={`/bai-tap/${row.id}`} scroll={false} className={`${BTN_BASE} ${BTN_PRIMARY} w-full`}>
+                        <ChecklistIcon size={16} aria-hidden />
+                        Chấm
+                      </Link>
+                      <Btn block leadingVisual={PencilIcon} onClick={() => openEdit(row)} disabled={!canManage}>
+                        Sửa
+                      </Btn>
+                      <Btn block variant="danger" leadingVisual={TrashIcon} onClick={() => setToDelete(row)} disabled={!canManage}>
+                        Xoá
+                      </Btn>
+                    </div>
+                  </Card>
+                );
+              })}
             </div>
           )}
         </>
@@ -178,7 +213,14 @@ export function AssignmentsView({
 
       <Toast message={message} />
 
-      <Modal open={creating} title="Thêm bài tập" subtitle="Các trường có dấu * là bắt buộc." onClose={() => setCreating(false)} labelledBy="assignment-create-title">
+      <Modal
+        size="xl"
+        open={creating}
+        title="Thêm bài tập"
+        subtitle="Thiết lập nội dung, hạn nộp và chế độ làm bài. Các trường có dấu * là bắt buộc."
+        onClose={() => setCreating(false)}
+        labelledBy="assignment-create-title"
+      >
         <AssignmentForm
           mode="create"
           classes={classes}
@@ -189,7 +231,14 @@ export function AssignmentsView({
           onCancel={() => setCreating(false)}
         />
       </Modal>
-      <Modal open={!!editing} title="Sửa bài tập" subtitle="Các trường có dấu * là bắt buộc." onClose={() => setEditing(null)} labelledBy="assignment-edit-title">
+      <Modal
+        size="xl"
+        open={!!editing}
+        title="Sửa bài tập"
+        subtitle="Cập nhật thông tin bài tập, hạn nộp và thang điểm. Các trường có dấu * là bắt buộc."
+        onClose={() => setEditing(null)}
+        labelledBy="assignment-edit-title"
+      >
         {editing && (
           <AssignmentForm
             mode="edit"
@@ -205,19 +254,43 @@ export function AssignmentsView({
         )}
       </Modal>
 
-      <Modal open={sampleOpen} title={`Thêm ${STARTERS_SET.name} vào lớp ${cls?.name ?? ''}`} subtitle={STARTERS_SET.description} onClose={() => setSampleOpen(false)} labelledBy="sample-set-title">
-        <div className="flex flex-col gap-3 pb-2">
-          <ul className="flex flex-col gap-1.5 text-base text-[var(--fgColor-default)]" aria-label="Nội dung bộ bài mẫu">
-            {STARTERS_SET.lessons.map((l) => (
-              <li key={l.title}>
-                <b>{l.title}</b> <span className="text-sm text-[var(--fgColor-muted)]">· {l.items.length} câu · {l.description}</span>
+      <Modal
+        size="md"
+        open={sampleOpen}
+        title={`Thêm ${STARTERS_SET.name} vào lớp ${cls?.name ?? ''}`}
+        subtitle={STARTERS_SET.description}
+        onClose={() => setSampleOpen(false)}
+        labelledBy="sample-set-title"
+      >
+        <div className="flex flex-col gap-3.5">
+          <ul
+            className="flex flex-col divide-y divide-[var(--borderColor-muted)] overflow-hidden rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] text-sm text-[var(--fgColor-default)]"
+            aria-label="Nội dung bộ bài mẫu"
+          >
+            {STARTERS_SET.lessons.map((l, idx) => (
+              <li key={l.title} className="flex items-start gap-2.5 px-3.5 py-2.5">
+                <span className="mt-0.5 inline-flex shrink-0 items-center rounded-[var(--borderRadius-medium)] bg-[var(--primary-soft)] px-1.5 py-0.5 font-mono text-xs font-medium text-[var(--primary-deep)]">
+                  #{idx + 1}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <b className="font-semibold text-[var(--fgColor-default)]">{l.title}</b>{' '}
+                  <span className="text-xs tabular-nums text-[var(--fgColor-muted)]">· {l.items.length} câu · {l.description}</span>
+                </div>
               </li>
             ))}
-            <li>
-              <b>Danh sách từ: {STARTERS_SET.wordList.name}</b> <span className="text-sm text-[var(--fgColor-muted)]">· {STARTERS_SET.wordList.words.length} từ cho trò chơi</span>
+            <li className="flex items-start gap-2.5 bg-[var(--bgColor-muted)]/60 px-3.5 py-2.5">
+              <span className="mt-0.5 inline-flex shrink-0 items-center rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-1.5 py-0.5 font-mono text-xs text-[var(--fgColor-muted)]">
+                VOCAB
+              </span>
+              <div className="min-w-0 flex-1">
+                <b className="font-semibold text-[var(--fgColor-default)]">Danh sách từ: {STARTERS_SET.wordList.name}</b>{' '}
+                <span className="text-xs tabular-nums text-[var(--fgColor-muted)]">· {STARTERS_SET.wordList.words.length} từ cho trò chơi</span>
+              </div>
             </li>
           </ul>
-          <p className="text-sm text-[var(--fgColor-muted)]">Bài hạn nộp sau 7 ngày, sửa được như bài thường. Bài đã có trong lớp thì bỏ qua. Không gửi tin bài mới cho phụ huynh.</p>
+          <p className="rounded-[var(--borderRadius-medium)] bg-[var(--bgColor-muted)] px-3 py-2 text-xs leading-relaxed text-[var(--fgColor-muted)]">
+            Bài hạn nộp sau 7 ngày, sửa được như bài thường. Bài đã có trong lớp thì bỏ qua. Không gửi tin bài mới cho phụ huynh.
+          </p>
           <FormFooter>
             <Btn onClick={() => setSampleOpen(false)} disabled={pending}>
               Huỷ

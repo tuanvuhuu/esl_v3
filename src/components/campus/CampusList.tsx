@@ -1,7 +1,7 @@
 'use client';
 
 // Danh sách cơ sở với hộp thoại thêm, sửa, xoá. Mỗi lớp thuộc đúng một cơ sở nên cơ sở còn lớp thì không xoá được.
-import { PencilIcon, PlusIcon, TrashIcon } from '@primer/octicons-react';
+import { LocationIcon, OrganizationIcon, PencilIcon, PlusIcon, TrashIcon } from '@primer/octicons-react';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { deleteCampusAction } from '@/app/(app)/co-so/actions';
@@ -9,14 +9,23 @@ import { Btn } from '@/components/ui/Btn';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Modal } from '@/components/ui/Modal';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { Pill } from '@/components/ui/primitives';
 import { RowMenu, type RowMenuItem } from '@/components/ui/RowMenu';
-import { Toast, useToast } from '@/components/ui/Toast';
 import { Card, EmptyPanel } from '@/components/ui/surfaces';
+import { Toast, useToast } from '@/components/ui/Toast';
 import { CampusForm } from './CampusForm';
 
 export type CampusRowView = { id: number; name: string; address: string; classCount: number };
 
-export function CampusList({ campuses, canManage, canAddRemove = true }: { campuses: CampusRowView[]; canManage: boolean; canAddRemove?: boolean }) {
+export function CampusList({
+  campuses,
+  canManage,
+  canAddRemove = true,
+}: {
+  campuses: CampusRowView[];
+  canManage: boolean;
+  canAddRemove?: boolean;
+}) {
   const router = useRouter();
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<CampusRowView | null>(null);
@@ -58,7 +67,14 @@ export function CampusList({ campuses, canManage, canAddRemove = true }: { campu
   }
 
   const menuItems = (row: CampusRowView): RowMenuItem[] => [
-    { kind: 'action', label: 'Sửa', icon: PencilIcon, onSelect: () => setEditing(row), disabled: !canManage, disabledHint: 'Không có quyền quản lý cơ sở' },
+    {
+      kind: 'action',
+      label: 'Sửa',
+      icon: PencilIcon,
+      onSelect: () => setEditing(row),
+      disabled: !canManage,
+      disabledHint: 'Không có quyền quản lý cơ sở',
+    },
     {
       kind: 'action',
       label: 'Xoá',
@@ -77,7 +93,8 @@ export function CampusList({ campuses, canManage, canAddRemove = true }: { campu
         title="Cơ sở"
         subtitle={`${campuses.length} cơ sở. Mỗi lớp thuộc đúng một cơ sở.`}
         actions={
-          canManage && canAddRemove && (
+          canManage &&
+          canAddRemove && (
             <Btn variant="primary" leadingVisual={PlusIcon} onClick={() => setCreating(true)}>
               Thêm cơ sở
             </Btn>
@@ -88,22 +105,33 @@ export function CampusList({ campuses, canManage, canAddRemove = true }: { campu
       {campuses.length === 0 ? (
         <EmptyPanel title="Chưa có cơ sở nào" hint="Thêm cơ sở đầu tiên để xếp lớp học vào." />
       ) : (
-        <div className="grid grid-cols-1 gap-3 min-[768px]:grid-cols-2 min-[1200px]:grid-cols-3">
+        <div className="tsukuba-rise grid grid-cols-1 gap-3.5 min-[768px]:grid-cols-2 min-[1200px]:grid-cols-3">
           {campuses.map((row) => (
-            <Card key={row.id}>
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <b className="block truncate text-lg font-semibold text-[var(--fgColor-default)]">{row.name}</b>
-                  <small className="block truncate text-sm text-[var(--fgColor-muted)]">{row.address || 'Chưa có địa chỉ'}</small>
+            <Card key={row.id} className="border-l-[3px] border-l-[var(--primary)]">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex min-w-0 items-start gap-3">
+                  <span className="grid size-9 shrink-0 place-items-center rounded-[var(--borderRadius-medium)] bg-[var(--primary-soft)] text-[var(--primary)]">
+                    <OrganizationIcon size={16} aria-hidden />
+                  </span>
+                  <div className="min-w-0">
+                    <b className="block truncate text-base font-semibold text-[var(--fgColor-default)]">{row.name}</b>
+                    <small className="mt-0.5 flex items-center gap-1.5 text-xs text-[var(--fgColor-muted)]">
+                      <LocationIcon size={12} className="shrink-0" aria-hidden />
+                      <span className="truncate">{row.address || 'Chưa cập nhật địa chỉ'}</span>
+                    </small>
+                  </div>
                 </div>
-                <div className="hidden min-[768px]:block">
+                <div className="hidden shrink-0 min-[768px]:block">
                   <RowMenu label={`Thao tác với cơ sở ${row.name}`} items={menuItems(row)} />
                 </div>
               </div>
 
-              <div className="rounded-[var(--borderRadius-medium)] bg-[var(--bgColor-muted)] px-3 py-2.5 text-sm">
-                <span className="font-medium text-[var(--fgColor-default)]">{row.classCount} lớp</span>
-                <span className="text-[var(--fgColor-muted)]">{row.classCount > 0 ? ' · đang có lớp học' : ' · chưa có lớp'}</span>
+              <div className="flex items-center justify-between gap-2 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)] px-3 py-2 text-xs">
+                <span className="text-[var(--fgColor-muted)]">Quy mô vận hành</span>
+                <div className="flex items-center gap-2">
+                  <Pill tone={row.classCount > 0 ? 'mint' : 'stone'}>{row.classCount} lớp</Pill>
+                  <span className="text-[var(--fgColor-muted)]">{row.classCount > 0 ? 'Đang có lớp' : 'Chưa xếp lớp'}</span>
+                </div>
               </div>
 
               {/* Điện thoại: hai nút có chữ, bằng nhau */}
@@ -111,7 +139,13 @@ export function CampusList({ campuses, canManage, canAddRemove = true }: { campu
                 <Btn block leadingVisual={PencilIcon} onClick={() => setEditing(row)} disabled={!canManage}>
                   Sửa
                 </Btn>
-                <Btn block variant="danger" leadingVisual={TrashIcon} onClick={() => askDelete(row)} disabled={!canManage || !canAddRemove}>
+                <Btn
+                  block
+                  variant="danger"
+                  leadingVisual={TrashIcon}
+                  onClick={() => askDelete(row)}
+                  disabled={!canManage || !canAddRemove}
+                >
                   Xoá
                 </Btn>
               </div>
@@ -121,12 +155,31 @@ export function CampusList({ campuses, canManage, canAddRemove = true }: { campu
       )}
 
       <Toast message={message} />
-      <Modal open={creating} title="Thêm cơ sở" subtitle="Các trường có dấu * là bắt buộc." onClose={() => setCreating(false)} labelledBy="campus-create-title">
+      <Modal
+        open={creating}
+        size="md"
+        title="Thêm cơ sở"
+        subtitle="Thiết lập tên gọi và địa chỉ chi nhánh trung tâm. Các trường có dấu * là bắt buộc."
+        onClose={() => setCreating(false)}
+        labelledBy="campus-create-title"
+      >
         <CampusForm onDone={onDone} onCancel={() => setCreating(false)} />
       </Modal>
-      <Modal open={!!editing} title="Sửa cơ sở" subtitle="Các trường có dấu * là bắt buộc." onClose={() => setEditing(null)} labelledBy="campus-edit-title">
+      <Modal
+        open={!!editing}
+        size="md"
+        title="Sửa cơ sở"
+        subtitle="Cập nhật tên gọi hoặc địa chỉ chi nhánh. Các trường có dấu * là bắt buộc."
+        onClose={() => setEditing(null)}
+        labelledBy="campus-edit-title"
+      >
         {editing && (
-          <CampusForm campusId={editing.id} initial={{ name: editing.name, address: editing.address }} onDone={onDone} onCancel={() => setEditing(null)} />
+          <CampusForm
+            campusId={editing.id}
+            initial={{ name: editing.name, address: editing.address }}
+            onDone={onDone}
+            onCancel={() => setEditing(null)}
+          />
         )}
       </Modal>
       <ConfirmDialog

@@ -10,9 +10,9 @@ import { ComboBox, SelectBox, TextInput } from '@/components-ui';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Btn, BTN_BASE, BTN_GHOST } from '@/components/ui/Btn';
 import { EmptyPanel } from '@/components/ui/surfaces';
-import { Field, FormFooter } from '@/components/ui/Field';
+import { Field, FormFooter, FormSection } from '@/components/ui/Field';
 import { Modal } from '@/components/ui/Modal';
-import { Pill, Alert } from '@/components/ui/primitives';
+import { Avatar, Pill, Alert } from '@/components/ui/primitives';
 import { Toast, useToast } from '@/components/ui/Toast';
 import { ZaloLink } from '@/components/ui/ZaloLink';
 
@@ -71,47 +71,55 @@ export function ProfileParents({
   return (
     <div className="flex flex-col gap-3">
       {parents.length === 0 ? (
-        <EmptyPanel title="Chưa có phụ huynh" hint="Thêm phụ huynh để gọi khi cần." />
+        <EmptyPanel title="Chưa có phụ huynh" hint="Thêm phụ huynh để gọi hoặc gửi thông báo khi cần." />
       ) : (
         <ul className="flex flex-col gap-3">
           {parents.map((p) => (
             <li
               key={p.id}
-              className="flex flex-col gap-3 rounded-xl border border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)] p-4"
+              className="flex flex-col gap-3 rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-3.5 transition-colors hover:border-[var(--borderColor-accent-emphasis)]/40"
             >
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <b className="block truncate text-sm font-semibold text-[var(--fgColor-default)]">{p.fullName}</b>
-                  <small className="text-xs text-[var(--fgColor-muted)]">{PARENT_RELATION_LABELS[p.relation]}</small>
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-3">
+                  <Avatar name={p.fullName} seed={p.id} size="md" quiet />
+                  <div className="min-w-0">
+                    <b className="block truncate text-sm font-semibold text-[var(--fgColor-default)]">{p.fullName}</b>
+                    <small className="text-xs text-[var(--fgColor-muted)]">{PARENT_RELATION_LABELS[p.relation]}</small>
+                  </div>
                 </div>
                 {p.isPrimary && <Pill tone="butter">Liên hệ chính</Pill>}
               </div>
-              <a href={`tel:${p.phone}`} className={`${BTN_BASE} ${BTN_GHOST}`}>
-                <DeviceMobileIcon size={16} aria-hidden />
-                Gọi {p.phone}
-              </a>
-              <ZaloLink phone={p.phone} name={p.fullName} />
-              {canManage && (
-                <div className="flex flex-wrap gap-2">
-                  {!p.isPrimary && (
-                    <Btn leadingVisual={StarIcon} onClick={() => setPrimary(p)} disabled={pending}>
-                      Đặt liên hệ chính
+
+              <div className="flex flex-wrap items-center gap-2 border-t border-[var(--borderColor-muted)] pt-2.5">
+                <a href={`tel:${p.phone}`} className={`${BTN_BASE} ${BTN_GHOST}`}>
+                  <DeviceMobileIcon size={16} aria-hidden />
+                  Gọi {p.phone}
+                </a>
+                <ZaloLink phone={p.phone} name={p.fullName} />
+                {canManage && (
+                  <>
+                    {!p.isPrimary && (
+                      <Btn leadingVisual={StarIcon} onClick={() => setPrimary(p)} disabled={pending}>
+                        Đặt liên hệ chính
+                      </Btn>
+                    )}
+                    <Btn variant="danger" leadingVisual={UnlinkIcon} onClick={() => setUnlinking(p)} disabled={pending}>
+                      Gỡ liên kết
                     </Btn>
-                  )}
-                  <Btn variant="danger" leadingVisual={UnlinkIcon} onClick={() => setUnlinking(p)} disabled={pending}>
-                    Gỡ liên kết
-                  </Btn>
-                </div>
-              )}
+                  </>
+                )}
+              </div>
             </li>
           ))}
         </ul>
       )}
 
       {canManage && (
-        <Btn leadingVisual={PlusIcon} onClick={() => setAdding(true)}>
-          Thêm phụ huynh
-        </Btn>
+        <div className="pt-1">
+          <Btn variant="primary" leadingVisual={PlusIcon} onClick={() => setAdding(true)}>
+            Thêm phụ huynh
+          </Btn>
+        </div>
       )}
 
       <Toast message={message} />
@@ -170,47 +178,68 @@ function AddParentDialog({
   }
 
   return (
-    <Modal open title="Thêm phụ huynh" subtitle="Chọn người đã có, hoặc nhập người mới." onClose={onClose} labelledBy="add-parent-title">
-      <form onSubmit={submit} noValidate className="grid grid-cols-1 gap-3.5 pb-2 min-[768px]:grid-cols-2 min-[768px]:gap-x-4">
+    <Modal
+      open
+      size="md"
+      title="Thêm phụ huynh"
+      subtitle="Chọn phụ huynh đã có trong danh sách hoặc tạo hồ sơ liên hệ mới."
+      onClose={onClose}
+      labelledBy="add-parent-title"
+    >
+      <form onSubmit={submit} noValidate className="flex flex-col gap-3.5">
         {state.message && !state.ok && (
-          <Alert className="col-span-full">{state.message}</Alert>
+          <Alert>{state.message}</Alert>
         )}
-        <Field label="Phụ huynh *" error={errors.parentId} wide>
-          <ComboBox
-            name="parentId"
-            label="Phụ huynh *"
-            value={parentId}
-            onChange={setParentId}
-            options={[...choices.map((c) => ({ value: String(c.id), label: `${c.fullName} · ${c.phone}` })), { value: '', label: 'Người mới' }]}
-            error={Boolean(errors.parentId)}
-            block
-          />
-        </Field>
-        {isNew && (
-          <>
-            <Field label="Họ và tên *" error={errors.fullName}>
-              <TextInput block name="fullName" autoComplete="off" validationStatus={errors.fullName ? 'error' : undefined} />
-            </Field>
-            <Field label="Số điện thoại *" error={errors.phone}>
-              <TextInput block name="phone" type="tel" inputMode="tel" placeholder="09xx xxx xxx" autoComplete="off" validationStatus={errors.phone ? 'error' : undefined} />
-            </Field>
-          </>
-        )}
-        <Field label="Quan hệ *" error={errors.relation}>
-          <SelectBox
-            name="relation"
-            label="Quan hệ *"
-            defaultValue="other"
-            options={RELATIONS.map((r) => ({ value: r, label: PARENT_RELATION_LABELS[r] }))}
-            error={Boolean(errors.relation)}
-            block
-          />
-        </Field>
-        <label className="flex min-w-0 items-center gap-2.5 self-end pb-2.5 text-sm font-normal text-[var(--fgColor-default)]">
-          <input name="isPrimary" type="checkbox" className="size-4 accent-[var(--control-checked-bgColor-rest)]" />
-          Đặt làm liên hệ chính
-        </label>
-        <FormFooter className="col-span-full">
+        <FormSection title="Thông tin liên hệ">
+          <Field label="Phụ huynh *" error={errors.parentId} wide>
+            <ComboBox
+              name="parentId"
+              label="Phụ huynh *"
+              value={parentId}
+              onChange={setParentId}
+              options={[...choices.map((c) => ({ value: String(c.id), label: `${c.fullName} · ${c.phone}` })), { value: '', label: 'Người mới' }]}
+              error={Boolean(errors.parentId)}
+              block
+            />
+          </Field>
+          {isNew && (
+            <>
+              <Field label="Họ và tên *" error={errors.fullName}>
+                <TextInput block name="fullName" aria-label="Họ và tên *" autoComplete="off" validationStatus={errors.fullName ? 'error' : undefined} />
+              </Field>
+              <Field label="Số điện thoại *" error={errors.phone}>
+                <TextInput
+                  block
+                  name="phone"
+                  aria-label="Số điện thoại *"
+                  type="tel"
+                  inputMode="tel"
+                  placeholder="09xx xxx xxx"
+                  autoComplete="off"
+                  validationStatus={errors.phone ? 'error' : undefined}
+                />
+              </Field>
+            </>
+          )}
+          <Field label="Quan hệ *" error={errors.relation}>
+            <SelectBox
+              name="relation"
+              label="Quan hệ *"
+              defaultValue="other"
+              options={RELATIONS.map((r) => ({ value: r, label: PARENT_RELATION_LABELS[r] }))}
+              error={Boolean(errors.relation)}
+              block
+            />
+          </Field>
+          <div className="flex min-w-0 flex-col justify-end">
+            <label className="flex h-[var(--ctl-h)] cursor-pointer items-center gap-2.5 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]/60 px-3 text-sm font-normal text-[var(--fgColor-default)] transition-colors hover:border-[var(--borderColor-accent-emphasis)] max-[767px]:h-[var(--ctl-h-touch)]">
+              <input name="isPrimary" type="checkbox" className="size-4 accent-[var(--control-checked-bgColor-rest)]" />
+              <span>Đặt làm liên hệ chính</span>
+            </label>
+          </div>
+        </FormSection>
+
+        <FormFooter>
           <Btn onClick={onClose}>Huỷ</Btn>
           <Btn type="submit" variant="primary" loading={pending} disabled={pending}>
             {pending ? 'Đang thêm…' : 'Thêm vào hồ sơ'}

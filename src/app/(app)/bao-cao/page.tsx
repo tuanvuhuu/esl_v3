@@ -6,7 +6,7 @@ import { BTN_BASE, BTN_GHOST } from '@/components/ui/btn-classes';
 import { DataGrid, type GridColumn } from '@/components/ui/datagrid';
 import { NoAccess } from '@/components/ui/NoAccess';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { EmptyState } from '@/components/ui/primitives';
+import { EmptyState, Pill } from '@/components/ui/primitives';
 import { Panel } from '@/components/ui/surfaces';
 import { getCampusContext } from '@/lib/campus-context';
 import { monthKey, monthLabel, shiftMonth, todayKeyVN } from '@/lib/datetime';
@@ -24,9 +24,10 @@ function first(value: string | string[] | undefined): string {
 
 // Cột bảng theo lớp trong tháng
 const CLASS_COLUMNS: GridColumn[] = [
-  { key: 'name', label: 'Lớp', width: 'minmax(180px,2fr)' },
-  { key: 'count', label: 'Số khoản', width: 'minmax(100px,0.7fr)', align: 'end' },
-  { key: 'total', label: 'Doanh thu', width: 'minmax(130px,1fr)', align: 'end' },
+  { key: 'name', label: 'Lớp', width: 'minmax(180px,1.8fr)' },
+  { key: 'share', label: 'Tỷ trọng', width: 'minmax(140px,1.2fr)' },
+  { key: 'count', label: 'Số khoản', width: 'minmax(96px,0.6fr)', align: 'end' },
+  { key: 'total', label: 'Doanh thu', width: 'minmax(136px,0.9fr)', align: 'end' },
 ];
 
 // Báo cáo doanh thu theo tháng: tổng, số khoản thu, theo lớp, xu hướng sáu tháng. Tháng nằm trên URL.
@@ -42,8 +43,12 @@ function ReportSkeleton() {
   return (
     <section aria-busy="true" aria-label="Đang tải báo cáo" className="flex flex-col gap-4">
       <div className="h-9 w-56 animate-pulse rounded-[var(--borderRadius-medium)] bg-[var(--bgColor-muted)]" />
-      <div className="h-28 w-full animate-pulse rounded-xl bg-[var(--bgColor-muted)]" />
-      <div className="h-[300px] w-full animate-pulse rounded-xl bg-[var(--bgColor-muted)]" />
+      <div className="grid grid-cols-1 gap-3 min-[768px]:grid-cols-3">
+        <div className="h-24 animate-pulse rounded-[var(--borderRadius-large)] bg-[var(--bgColor-muted)]" />
+        <div className="h-24 animate-pulse rounded-[var(--borderRadius-large)] bg-[var(--bgColor-muted)]" />
+        <div className="h-24 animate-pulse rounded-[var(--borderRadius-large)] bg-[var(--bgColor-muted)]" />
+      </div>
+      <div className="h-[260px] w-full animate-pulse rounded-[var(--borderRadius-large)] bg-[var(--bgColor-muted)]" />
     </section>
   );
 }
@@ -61,6 +66,7 @@ async function ReportData({ searchParams }: { searchParams: Promise<SearchParams
   const { scope } = await getCampusContext();
   const report = await getRevenueReport(month, monthsBack, scope);
   const maxTrend = Math.max(1, ...report.trend.map((t) => t.total));
+  const maxClassTotal = Math.max(1, ...report.byClass.map((c) => c.total));
   const href = (m: string) => `/bao-cao?m=${m}`;
 
   const navBtn =
@@ -88,28 +94,69 @@ async function ReportData({ searchParams }: { searchParams: Promise<SearchParams
         }
       />
 
-      <div className="grid grid-cols-1 gap-3 min-[768px]:grid-cols-3 min-[768px]:gap-4">
-        <Stat label={`Doanh thu tháng ${monthLabel(month)}`} value={formatVND(report.total)} strong />
-        <Stat label="Số khoản thu" value={String(report.count)} />
-        <Stat label="Trung bình mỗi khoản" value={report.count > 0 ? formatVND(Math.round(report.total / report.count)) : '—'} />
+      <div className="tsukuba-rise grid grid-cols-1 gap-3 min-[768px]:grid-cols-3">
+        <Stat
+          label={`Doanh thu tháng ${monthLabel(month)}`}
+          value={formatVND(report.total)}
+          sub={report.total > 0 ? 'Đã trừ các khoản hoàn và huỷ' : 'Chưa phát sinh khoản thu'}
+          accent="border-l-[var(--primary)]"
+          strong
+        />
+        <Stat
+          label="Số khoản thu"
+          value={String(report.count)}
+          sub={`Giao dịch ghi nhận trong ${monthLabel(month)}`}
+          accent="border-l-[#2a78d6]"
+        />
+        <Stat
+          label="Trung bình mỗi khoản"
+          value={report.count > 0 ? formatVND(Math.round(report.total / report.count)) : '—'}
+          sub="Giá trị bình quân trên một lần đóng"
+          accent="border-l-[#1baf7a]"
+        />
       </div>
 
-      <Panel title="Sáu tháng gần nhất" className="mt-4">
-        <div className="grid grid-cols-6 items-end gap-2 max-[767px]:gap-1.5" role="img" aria-label="Biểu đồ doanh thu sáu tháng">
+      <Panel
+        title="Sáu tháng gần nhất"
+        action={<Pill tone="stone">Đơn vị: VND</Pill>}
+        className="tsukuba-rise mt-4"
+      >
+        <div className="grid grid-cols-6 items-end gap-2.5 max-[767px]:gap-1.5" role="img" aria-label="Biểu đồ doanh thu sáu tháng">
           {report.trend.map((t) => {
             const active = t.month === month;
+            const pct = Math.max(4, Math.round((t.total / maxTrend) * 100));
             return (
-              <Link key={t.month} href={href(t.month)} className="flex min-w-0 flex-col items-center gap-2">
-                <small className="text-xs tabular-nums text-[var(--fgColor-muted)] max-[767px]:text-2xs">
+              <Link
+                key={t.month}
+                href={href(t.month)}
+                data-card="true"
+                className={`group flex min-w-0 flex-col items-center gap-2 rounded-[var(--borderRadius-medium)] border px-2 py-2.5 transition-colors max-[767px]:px-1 ${
+                  active
+                    ? 'border-[var(--primary)] bg-[var(--primary-soft)]/35'
+                    : 'border-transparent hover:border-[var(--borderColor-default)] hover:bg-[var(--bgColor-muted)]/60'
+                }`}
+              >
+                <small
+                  className={`text-xs tabular-nums max-[767px]:text-2xs ${
+                    active ? 'font-semibold text-[var(--primary-deep)]' : 'text-[var(--fgColor-muted)]'
+                  }`}
+                >
                   {t.total > 0 ? formatVNDShort(t.total) : '0'}
                 </small>
-                <span
-                  className={`block w-full rounded-t-[var(--borderRadius-small)] transition-colors ${
-                    active ? 'bg-[var(--bgColor-accent-emphasis)]' : 'bg-[var(--button-primary-bgColor-rest)]'
+                <span className="flex h-[136px] w-full max-w-[44px] items-end overflow-hidden rounded-[var(--borderRadius-small)] bg-[var(--bgColor-neutral-muted)]">
+                  <span
+                    className="block w-full rounded-t-[var(--borderRadius-small)] transition-all duration-200"
+                    style={{
+                      height: `${pct}%`,
+                      backgroundColor: active ? '#eb6834' : '#2a78d6',
+                    }}
+                  />
+                </span>
+                <small
+                  className={`font-mono text-xs tabular-nums max-[767px]:text-2xs ${
+                    active ? 'font-semibold text-[var(--fgColor-default)]' : 'text-[var(--fgColor-muted)]'
                   }`}
-                  style={{ height: `${Math.max(4, Math.round((t.total / maxTrend) * 140))}px` }}
-                />
-                <small className={`text-xs ${active ? 'font-semibold text-[var(--fgColor-default)]' : 'text-[var(--fgColor-muted)]'}`}>
+                >
                   {monthLabel(t.month)}
                 </small>
               </Link>
@@ -118,7 +165,11 @@ async function ReportData({ searchParams }: { searchParams: Promise<SearchParams
         </div>
       </Panel>
 
-      <Panel title={`Theo lớp trong tháng ${monthLabel(month)}`} className="mt-4">
+      <Panel
+        title={`Theo lớp trong tháng ${monthLabel(month)}`}
+        action={report.byClass.length > 0 ? <Pill tone="mint">{report.byClass.length} lớp có thu</Pill> : undefined}
+        className="tsukuba-rise mt-4"
+      >
         {report.byClass.length === 0 ? (
           <EmptyState title="Chưa có khoản thu trong tháng này" hint="Chọn tháng khác ở trên hoặc ghi thu ở màn Học phí." />
         ) : (
@@ -131,31 +182,55 @@ async function ReportData({ searchParams }: { searchParams: Promise<SearchParams
               from="md"
               fill={false}
               cell={(c, key) => {
+                const ratio = report.total > 0 ? Math.max(0, Math.round((c.total / report.total) * 100)) : 0;
+                const barWidth = Math.max(4, Math.round((Math.max(0, c.total) / maxClassTotal) * 100));
                 switch (key) {
                   case 'name':
-                    return <b className="block truncate text-sm font-semibold text-[var(--fgColor-default)]">{c.name}</b>;
+                    return <b className="block truncate text-sm font-medium text-[var(--fgColor-default)]">{c.name}</b>;
+                  case 'share':
+                    return (
+                      <div className="flex items-center gap-2.5">
+                        <span className="h-2 flex-1 overflow-hidden rounded-full bg-[var(--bgColor-neutral-muted)]">
+                          <span
+                            className="block h-full rounded-full"
+                            style={{ width: `${barWidth}%`, backgroundColor: '#1baf7a' }}
+                          />
+                        </span>
+                        <span className="w-9 text-right font-mono text-xs tabular-nums text-[var(--fgColor-muted)]">{ratio}%</span>
+                      </div>
+                    );
                   case 'count':
                     return <span className="text-sm tabular-nums text-[var(--fgColor-muted)]">{c.count}</span>;
                   case 'total':
-                    return <span className="text-sm tabular-nums text-[var(--fgColor-default)]">{formatVND(c.total)}</span>;
+                    return <span className="text-sm font-medium tabular-nums text-[var(--fgColor-default)]">{formatVND(c.total)}</span>;
                   default:
                     return null;
                 }
               }}
-              card={(c) => (
-                <div className="flex items-center justify-between gap-3 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-muted)] px-3 py-2.5">
-                  <div className="min-w-0">
-                    <b className="block truncate text-sm font-semibold text-[var(--fgColor-default)]">{c.name}</b>
-                    <small className="text-xs text-[var(--fgColor-muted)]">{c.count} khoản thu</small>
+              card={(c) => {
+                const barWidth = Math.max(4, Math.round((Math.max(0, c.total) / maxClassTotal) * 100));
+                return (
+                  <div className="flex flex-col gap-2 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-muted)] bg-[var(--bgColor-default)] px-3 py-2.5">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <b className="block truncate text-sm font-medium text-[var(--fgColor-default)]">{c.name}</b>
+                        <small className="text-xs tabular-nums text-[var(--fgColor-muted)]">{c.count} khoản thu</small>
+                      </div>
+                      <b className="shrink-0 text-sm font-semibold tabular-nums text-[var(--fgColor-default)]">{formatVND(c.total)}</b>
+                    </div>
+                    <span className="block h-1.5 w-full overflow-hidden rounded-full bg-[var(--bgColor-neutral-muted)]">
+                      <span className="block h-full rounded-full" style={{ width: `${barWidth}%`, backgroundColor: '#1baf7a' }} />
+                    </span>
                   </div>
-                  <b className="shrink-0 text-sm font-semibold tabular-nums text-[var(--fgColor-default)]">{formatVND(c.total)}</b>
-                </div>
-              )}
+                );
+              }}
             />
-            {/* Dòng tổng, hiện dưới bảng trên mọi màn hình */}
-            <div className="mt-3 flex items-center justify-between gap-3 border-t border-[var(--borderColor-muted)] pt-3">
-              <span className="text-sm text-[var(--fgColor-muted)]">Tổng · {report.count} khoản thu</span>
-              <b className="text-base font-medium tabular-nums text-[var(--fgColor-default)]">{formatVND(report.total)}</b>
+            {/* Phiếu tổng kết cuối bảng kiểu .slip */}
+            <div className="mt-3 flex items-baseline justify-between gap-3 rounded-[var(--borderRadius-medium)] border border-dashed border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]/60 px-3.5 py-2.5">
+              <span className="text-xs font-semibold uppercase tracking-wide text-[var(--fgColor-muted)]">
+                Tổng cộng · {report.count} khoản thu
+              </span>
+              <b className="text-lg font-semibold tabular-nums text-[var(--primary)]">{formatVND(report.total)}</b>
             </div>
           </>
         )}
@@ -164,13 +239,32 @@ async function ReportData({ searchParams }: { searchParams: Promise<SearchParams
   );
 }
 
-function Stat({ label, value, strong = false }: { label: string; value: string; strong?: boolean }) {
+function Stat({
+  label,
+  value,
+  sub,
+  accent,
+  strong = false,
+}: {
+  label: string;
+  value: string;
+  sub?: string;
+  accent: string;
+  strong?: boolean;
+}) {
   return (
-    <Panel>
-      <small className="block text-xs font-normal text-[var(--fgColor-muted)]">{label}</small>
-      <b className={`mt-1 block tabular-nums ${strong ? 'text-h1 max-[767px]:text-2xl' : 'text-2xl'} font-semibold text-[var(--fgColor-default)]`}>
+    <div
+      className={`rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] border-l-[3px] ${accent} bg-[var(--bgColor-default)] px-4 py-3.5`}
+    >
+      <small className="block text-xs font-medium text-[var(--fgColor-muted)]">{label}</small>
+      <b
+        className={`mt-1 block leading-tight tabular-nums ${
+          strong ? 'text-2xl min-[768px]:text-[26px] text-[var(--primary)]' : 'text-2xl text-[var(--fgColor-default)]'
+        } font-semibold`}
+      >
         {value}
       </b>
-    </Panel>
+      {sub && <small className="mt-1 block text-xs text-[var(--fgColor-muted)]">{sub}</small>}
+    </div>
   );
 }

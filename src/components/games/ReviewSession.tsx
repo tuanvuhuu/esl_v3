@@ -2,7 +2,7 @@
 
 // Ôn từ hôm nay (35.18): mỗi từ đến hạn một câu, nhìn tranh chọn đúng từ trong 3 từ. Đúng là nhớ, sai là quên (ôn lại ngày mai).
 // Không đọc từ trước khi chọn (đọc là lộ đáp án); chọn xong mới đọc và báo lần ôn tới.
-import { ArrowLeftIcon } from '@primer/octicons-react';
+import { ArrowLeftIcon, StarFillIcon, StarIcon } from '@primer/octicons-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import { reviewWordAction } from '@/app/(student)/cua-toi/game-actions';
@@ -52,25 +52,36 @@ export function ReviewSession({ due, others }: { due: BoxWord[]; others: BoxWord
       >
         <ArrowLeftIcon size={16} aria-hidden /> Bài của tôi
       </Link>
-      <h1 className="text-2xl font-semibold text-[var(--fgColor-default)]">Ôn từ hôm nay</h1>
+      <h1 className="m-0 text-xl font-semibold tracking-tight text-[var(--fgColor-default)]">Ôn từ hôm nay</h1>
 
       {done ? (
         <div
-          className="flex flex-col items-center gap-3 rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-6 text-center shadow-[var(--shadow-resting-small,0_1px_2px_rgba(0,0,0,0.04))]"
+          className="tsukuba-rise flex flex-col items-center gap-3 rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-6 text-center"
           role="status"
           aria-label="Kết quả ôn"
         >
-          <span className="text-5xl" aria-label={`${gameStars(score, questions.length)} sao`}>
-            {'⭐'.repeat(gameStars(score, questions.length))}
+          <span
+            className="inline-flex items-center gap-2"
+            role="img"
+            aria-label={`${gameStars(score, questions.length)} sao`}
+          >
+            {[1, 2, 3].map((n) =>
+              n <= gameStars(score, questions.length) ? (
+                <StarFillIcon key={n} size={36} className="text-[var(--fgColor-attention,var(--primary))]" aria-hidden />
+              ) : (
+                <StarIcon key={n} size={36} className="text-[var(--fgColor-muted)] opacity-30" aria-hidden />
+              ),
+            )}
           </span>
-          <b className="text-2xl font-semibold text-[var(--fgColor-default)]">
+          <b className="text-2xl font-semibold tabular-nums text-[var(--fgColor-default)]">
             Con nhớ {score}/{questions.length} từ
           </b>
-          <p className="text-base text-[var(--fgColor-muted)]">
+          <p className="text-sm text-[var(--fgColor-muted)]">
             Từ nhớ rồi sẽ hẹn ôn lại sau vài ngày, từ chưa nhớ thì ngày mai ôn tiếp. Hẹn con ngày mai nhé!
           </p>
           <Link
             href="/cua-toi"
+            data-card="true"
             className={`${BIG_BASE} w-full border-[var(--button-primary-borderColor-rest)] bg-[var(--button-primary-bgColor-rest)] text-[var(--button-primary-fgColor-rest)]`}
           >
             Về trang của con

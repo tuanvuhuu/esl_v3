@@ -1,7 +1,7 @@
 'use client';
 
 import { EyeIcon, PencilIcon, TrashIcon } from '@primer/octicons-react';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState, useTransition, type ReactNode } from 'react';
@@ -88,7 +88,6 @@ export function StudentList({
   drawer,
 }: Props) {
   const router = useRouter();
-  const shouldReduceMotion = useReducedMotion();
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<{ id: number; values: StudentFormValues } | null>(null);
   const [toDelete, setToDelete] = useState<StudentRow | null>(null);
@@ -271,17 +270,17 @@ export function StudentList({
               exit={{ opacity: 0 }}
               transition={{ duration: 0.16 }}
               onClick={() => router.push(closeDrawerHref, { scroll: false })}
-              className="fixed inset-0 z-[64] hidden bg-black/15 backdrop-blur-[1px] min-[768px]:block"
+              className="fixed inset-0 z-[64] hidden bg-[var(--scrim)] backdrop-blur-[1px] min-[768px]:block"
               aria-hidden
             />
             <motion.aside
               key="student-drawer-panel"
               aria-label="Hồ sơ học sinh"
-              initial={shouldReduceMotion ? { opacity: 0 } : { x: '100%' }}
-              animate={shouldReduceMotion ? { opacity: 1 } : { x: 0 }}
-              exit={shouldReduceMotion ? { opacity: 0 } : { x: '100%' }}
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
               transition={{ type: 'spring', stiffness: 380, damping: 36 }}
-              className="fixed inset-y-0 right-0 z-[65] hidden w-[min(560px,100%)] overflow-y-auto border-l border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-5 shadow-[var(--shadow-floating-large,var(--lift))] min-[768px]:block"
+              className="scroll-quiet fixed inset-y-0 right-0 z-[65] hidden w-[min(620px,100%)] overflow-y-auto border-l border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-5 shadow-[var(--shadow-floating-large,var(--lift))] min-[768px]:block"
             >
               {drawer}
             </motion.aside>
@@ -291,7 +290,14 @@ export function StudentList({
 
       <Toast message={message} />
 
-      <Modal open={creating} title="Thêm học sinh mới" subtitle="Các trường có dấu * là bắt buộc." onClose={() => setCreating(false)} labelledBy="create-title">
+      <Modal
+        open={creating}
+        size="xl"
+        title="Thêm học sinh mới"
+        subtitle="Nhập thông tin học viên, phụ huynh liên hệ và xếp lớp ban đầu. Các trường có dấu * là bắt buộc."
+        onClose={() => setCreating(false)}
+        labelledBy="create-title"
+      >
         <StudentForm
           mode="create"
           classes={formClasses}
@@ -303,7 +309,14 @@ export function StudentList({
         />
       </Modal>
 
-      <Modal open={!!editing} title="Sửa thông tin học sinh" subtitle="Các trường có dấu * là bắt buộc." onClose={() => setEditing(null)} labelledBy="edit-title">
+      <Modal
+        open={!!editing}
+        size="xl"
+        title="Sửa thông tin học sinh"
+        subtitle="Cập nhật hồ sơ học viên, chuyển lớp hoặc điều chỉnh thông tin liên hệ. Các trường có dấu * là bắt buộc."
+        onClose={() => setEditing(null)}
+        labelledBy="edit-title"
+      >
         {editing && (
           <StudentForm
             mode="edit"

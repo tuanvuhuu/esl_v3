@@ -34,10 +34,14 @@ export default function AttendancePage({ searchParams }: { searchParams: Promise
 
 function AttendanceSkeleton() {
   return (
-    <section aria-busy="true" aria-label="Đang tải điểm danh" className="flex flex-col gap-4">
-      <div className="h-9 w-48 animate-pulse rounded-md bg-[var(--bgColor-muted)]" />
-      <div className="h-[var(--ctl-h)] w-full animate-pulse rounded-[var(--borderRadius-medium)] bg-[var(--bgColor-muted)]" />
-      <div className="h-[360px] w-full animate-pulse rounded-xl bg-[var(--bgColor-muted)]" />
+    <section aria-busy="true" aria-label="Đang tải điểm danh" className="flex flex-col gap-3.5">
+      <div className="flex items-center justify-between gap-3">
+        <div className="h-7 w-44 animate-pulse rounded-md bg-[var(--bgColor-muted)]" />
+        <div className="h-[var(--ctl-h)] w-44 animate-pulse rounded-[var(--borderRadius-medium)] bg-[var(--bgColor-muted)]" />
+      </div>
+      <div className="h-9 w-full animate-pulse rounded-[var(--borderRadius-medium)] bg-[var(--bgColor-muted)]/70" />
+      <div className="h-32 w-full animate-pulse rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)]" />
+      <div className="h-[320px] w-full animate-pulse rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)]" />
     </section>
   );
 }

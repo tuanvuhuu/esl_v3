@@ -15,18 +15,13 @@ import {
   LinkIcon,
   ListOrderedIcon,
   ListUnorderedIcon,
+  TypographyIcon,
 } from "@primer/octicons-react";
 import { IconButton } from "@primer/react";
 import styles from './html-edtor-lite.module.css';
 import clsx from 'clsx';
 
-// Underline icon (không có sẵn)
-const UnderlineIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-    <path d="M4.5 2.5v7a3.5 3.5 0 007 0v-7h1v7a4.5 4.5 0 11-9 0v-7h1z" />
-    <path d="M1.5 14.5h13v1h-13z" />
-  </svg>
-);
+const UnderlineIcon = TypographyIcon;
 
 interface IHtmlEditorLiteProps {
   value: string;

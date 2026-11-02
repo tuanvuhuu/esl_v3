@@ -1,6 +1,15 @@
 'use client';
 
-import { ArrowLeftIcon, PaperclipIcon, XIcon } from '@primer/octicons-react';
+import {
+  ArrowLeftIcon,
+  CheckIcon,
+  GlobeIcon,
+  ImageIcon,
+  ListUnorderedIcon,
+  PaperclipIcon,
+  PlayIcon,
+  XIcon,
+} from '@primer/octicons-react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useState, useTransition } from 'react';
@@ -83,17 +92,17 @@ export function StudentAssignmentForm({ view }: { view: StudentAssignmentView })
   if (isInteractive) {
     return (
       <div className="flex flex-col gap-4 py-2">
-        <div className="mx-auto flex w-full max-w-[420px] items-center justify-between text-xs">
-          <Link href="/cua-toi" data-link="true" className="inline-flex items-center gap-1 font-medium text-[var(--fgColor-default)] underline">
+        <div className="mx-auto flex w-full max-w-[440px] items-center justify-between text-xs">
+          <Link href="/cua-toi" data-link="true" className="inline-flex items-center gap-1 font-medium text-[var(--fgColor-default)] underline underline-offset-2">
             <ArrowLeftIcon size={14} aria-hidden /> Danh sách bài
           </Link>
           <button
             type="button"
             data-link="true"
             onClick={() => setIsInteractive(false)}
-            className="font-medium text-[var(--fgColor-muted)] underline hover:text-[var(--fgColor-default)]"
+            className="inline-flex items-center gap-1 font-medium text-[var(--fgColor-muted)] underline underline-offset-2 hover:text-[var(--fgColor-default)]"
           >
-            📋 Chuyển sang dạng danh sách
+            <ListUnorderedIcon size={14} aria-hidden /> Chuyển sang dạng danh sách
           </button>
         </div>
         <InteractiveExercisePlayer view={view} onExit={() => setIsInteractive(false)} />
@@ -103,31 +112,34 @@ export function StudentAssignmentForm({ view }: { view: StudentAssignmentView })
 
   return (
     <section className="flex flex-col gap-4">
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-3">
         <Link
           href="/cua-toi"
           data-link="true"
-          className="inline-flex items-center gap-1 self-start text-sm font-semibold text-[var(--fgColor-muted)] underline underline-offset-4 hover:text-[var(--fgColor-default)]"
+          className="inline-flex items-center gap-1.5 self-start text-sm font-semibold text-[var(--fgColor-muted)] underline underline-offset-4 hover:text-[var(--fgColor-default)]"
         >
           <ArrowLeftIcon size={14} aria-hidden /> Bài của tôi
         </Link>
-        <PageHeader
-          crumbs={['Khu học sinh', 'Bài của tôi']}
-          title={view.title}
-          subtitle={`Hạn ${vnDateTimeLabel(view.dueAt)} · tối đa ${view.maxScore} điểm${locked && view.score !== null ? ` · Điểm ${view.score}/${view.maxScore}` : ''}`}
-          actions={
-            <div className="flex items-center gap-2">
-              {!locked && hasInteractiveItems && (
-                <Btn variant="primary" onClick={() => setIsInteractive(true)}>
-                  🎮 Chế độ tương tác sinh động
-                </Btn>
-              )}
-              <SubmissionPill status={view.status} />
-            </div>
-          }
-          titleOnTopbar={false}
-        />
-        {view.description && <Notice className="whitespace-pre-line">{view.description}</Notice>}
+
+        <div className="tsukuba-rise rounded-2xl border border-[var(--borderColor-default)] border-l-4 border-l-[var(--primary)] bg-[var(--bgColor-default)] p-4 min-[640px]:p-5">
+          <PageHeader
+            crumbs={['Khu học sinh', 'Bài của tôi']}
+            title={view.title}
+            subtitle={`Hạn ${vnDateTimeLabel(view.dueAt)} · tối đa ${view.maxScore} điểm${locked && view.score !== null ? ` · Điểm ${view.score}/${view.maxScore}` : ''}`}
+            actions={
+              <div className="flex flex-wrap items-center gap-2">
+                {!locked && hasInteractiveItems && (
+                  <Btn variant="primary" leadingVisual={PlayIcon} onClick={() => setIsInteractive(true)}>
+                    Chế độ tương tác sinh động
+                  </Btn>
+                )}
+                <SubmissionPill status={view.status} />
+              </div>
+            }
+            titleOnTopbar={false}
+          />
+          {view.description && <Notice className="mt-3 whitespace-pre-line">{view.description}</Notice>}
+        </div>
       </div>
 
       {error && <Alert>{error}</Alert>}
@@ -141,60 +153,49 @@ export function StudentAssignmentForm({ view }: { view: StudentAssignmentView })
           const d = drafts[item.id];
           const answer = view.answers.find((a) => a.itemId === item.id);
           return (
-            <Card as="section" key={item.id} aria-label={`Câu ${item.position}`}>
-              <header className="flex flex-wrap items-center gap-2 text-sm">
-                <b className="text-base text-[var(--fgColor-default)]">Câu {item.position}</b>
-                <Pill tone="lav">{SKILL_LABELS[item.skill]}</Pill>
-                <span className="text-[var(--fgColor-muted)]">
+            <section
+              key={item.id}
+              aria-label={`Câu ${item.position}`}
+              className="tsukuba-rise overflow-hidden rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)]"
+            >
+              <header className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)] px-4 py-2.5 text-sm">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="inline-flex h-6 min-w-7 items-center justify-center rounded-[var(--borderRadius-medium)] bg-[var(--primary-soft)] px-1.5 font-mono text-xs tabular-nums text-[var(--primary-deep)]">
+                    #{item.position}
+                  </span>
+                  <b className="text-sm font-semibold text-[var(--fgColor-default)]">Câu {item.position}</b>
+                  <Pill tone="lav">{SKILL_LABELS[item.skill]}</Pill>
+                </div>
+                <span className="text-xs tabular-nums text-[var(--fgColor-muted)]">
                   {ITEM_TYPE_LABELS[item.itemType]} · {item.points} điểm
                 </span>
               </header>
 
-              {item.prompt && <p className="whitespace-pre-line text-base font-medium text-[var(--fgColor-default)]">{item.prompt}</p>}
-              {item.promptVi && <p className="text-xs text-[var(--fgColor-muted)]">🇻🇳 {item.promptVi}</p>}
-              {item.passage && <Notice className="whitespace-pre-line">{item.passage}</Notice>}
-              {item.audioFileId !== null && (
-                <audio controls preload="none" src={`/api/files/${item.audioFileId}`} aria-label={`Âm thanh câu ${item.position}`} className="w-full" />
-              )}
+              <div className="flex flex-col gap-3 p-4">
+                {item.prompt && <p className="whitespace-pre-line text-base font-medium text-[var(--fgColor-default)]">{item.prompt}</p>}
+                {item.promptVi && (
+                  <p className="inline-flex items-center gap-1.5 text-xs text-[var(--fgColor-muted)]">
+                    <GlobeIcon size={13} aria-hidden />
+                    <span>{item.promptVi}</span>
+                  </p>
+                )}
+                {item.passage && <Notice className="whitespace-pre-line">{item.passage}</Notice>}
+                {item.audioFileId !== null && (
+                  <audio controls preload="none" src={`/api/files/${item.audioFileId}`} aria-label={`Âm thanh câu ${item.position}`} className="w-full" />
+                )}
 
-              {/* Trắc nghiệm chữ */}
-              {item.itemType === 'choice' && (
-                <fieldset className="flex flex-col gap-1">
-                  <legend className="mb-1 text-sm font-normal text-[var(--fgColor-muted)]">Chọn một đáp án</legend>
-                  {item.options.map((o, oi) => (
-                    <label
-                      key={o.id}
-                      className="flex cursor-pointer items-center gap-2.5 rounded-[var(--borderRadius-medium)] px-2 py-2 text-base text-[var(--fgColor-default)] transition-colors hover:bg-[var(--bgColor-muted)]"
-                    >
-                      <input
-                        type="radio"
-                        name={`answer-${item.id}`}
-                        checked={d.selectedOptionId === o.id}
-                        onChange={() => patch(item.id, { selectedOptionId: o.id })}
-                        disabled={locked}
-                        className="size-4 shrink-0 accent-[var(--fgColor-accent)]"
-                      />
-                      <span className="min-w-0">
-                        {String.fromCharCode(65 + oi)}. {o.label}
-                      </span>
-                    </label>
-                  ))}
-                </fieldset>
-              )}
-
-              {/* Nghe / Chọn tranh */}
-              {item.itemType === 'picture_choice' && (
-                <fieldset className="flex flex-col gap-2">
-                  <legend className="mb-1 text-sm font-normal text-[var(--fgColor-muted)]">Chọn tranh đúng</legend>
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                    {item.options.map((o) => {
+                {/* Trắc nghiệm chữ */}
+                {item.itemType === 'choice' && (
+                  <fieldset className="flex flex-col gap-1.5">
+                    <legend className="mb-1 text-xs font-medium text-[var(--fgColor-muted)]">Chọn một đáp án</legend>
+                    {item.options.map((o, oi) => {
                       const isSel = d.selectedOptionId === o.id;
                       return (
                         <label
                           key={o.id}
-                          className={`flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 p-3 text-center transition-all ${
+                          className={`flex cursor-pointer items-center gap-2.5 rounded-lg border px-3 py-2 text-sm transition-all ${
                             isSel
-                              ? 'border-[var(--bgColor-success-emphasis)] bg-mint font-medium text-mint-ink'
+                              ? 'border-[var(--primary)] bg-[var(--primary-soft)] text-[var(--fgColor-default)] shadow-[inset_3px_0_0_var(--primary)]'
                               : 'border-[var(--borderColor-default)] bg-[var(--bgColor-default)] text-[var(--fgColor-default)] hover:bg-[var(--bgColor-muted)]'
                           }`}
                         >
@@ -204,22 +205,62 @@ export function StudentAssignmentForm({ view }: { view: StudentAssignmentView })
                             checked={isSel}
                             onChange={() => patch(item.id, { selectedOptionId: o.id })}
                             disabled={locked}
-                            className="sr-only"
+                            className="size-4 shrink-0 accent-[var(--control-checked-bgColor-rest)]"
                           />
-                          {o.imageFileId ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={`/api/files/${o.imageFileId}`} alt={o.label} className="max-h-20 max-w-full rounded object-contain" />
-                          ) : (
-                            <span className="text-4xl">🖼️</span>
-                          )}
-                          <span className="mt-1 max-w-full truncate text-xs">{o.label}</span>
-                          {isSel && <span className="mt-1 text-xs font-medium text-[var(--fgColor-success)]">✓ Đã chọn</span>}
+                          <span className="min-w-0">
+                            {String.fromCharCode(65 + oi)}. {o.label}
+                          </span>
                         </label>
                       );
                     })}
-                  </div>
-                </fieldset>
-              )}
+                  </fieldset>
+                )}
+
+                {/* Nghe / Chọn tranh */}
+                {item.itemType === 'picture_choice' && (
+                  <fieldset className="flex flex-col gap-2">
+                    <legend className="mb-1 text-xs font-medium text-[var(--fgColor-muted)]">Chọn tranh đúng</legend>
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                      {item.options.map((o) => {
+                        const isSel = d.selectedOptionId === o.id;
+                        return (
+                          <label
+                            key={o.id}
+                            className={`flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 p-3 text-center transition-all ${
+                              isSel
+                                ? 'border-[var(--bgColor-success-emphasis)] bg-mint font-medium text-mint-ink'
+                                : 'border-[var(--borderColor-default)] bg-[var(--bgColor-default)] text-[var(--fgColor-default)] hover:bg-[var(--bgColor-muted)]'
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name={`answer-${item.id}`}
+                              checked={isSel}
+                              onChange={() => patch(item.id, { selectedOptionId: o.id })}
+                              disabled={locked}
+                              className="sr-only"
+                            />
+                            {o.imageFileId ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={`/api/files/${o.imageFileId}`} alt={o.label} className="max-h-20 max-w-full rounded object-contain" />
+                            ) : (
+                              <span className="flex size-12 items-center justify-center rounded-xl bg-[var(--bgColor-muted)] text-[var(--fgColor-muted)]" aria-hidden>
+                                <ImageIcon size={24} aria-hidden />
+                              </span>
+                            )}
+                            <span className="mt-1.5 max-w-full truncate text-xs">{o.label}</span>
+                            {isSel && (
+                              <span className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-[var(--fgColor-success)]">
+                                <CheckIcon size={12} aria-hidden />
+                                Đã chọn
+                              </span>
+                            )}
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </fieldset>
+                )}
 
               {/* Sắp xếp câu hoặc điền từ */}
               {item.itemType === 'order' && item.orderWords.length > 0 && (
@@ -349,12 +390,13 @@ export function StudentAssignmentForm({ view }: { view: StudentAssignmentView })
               )}
 
               {locked && item.itemType !== 'choice' && answer && (
-                <small className="text-sm text-[var(--fgColor-muted)]">
+                <small className="rounded-lg border border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)] px-3 py-2 text-xs tabular-nums text-[var(--fgColor-muted)]">
                   Điểm: {answer.points ?? 'chưa chấm'} / {item.points}
                   {answer.comment ? ` · Nhận xét: ${answer.comment}` : ''}
                 </small>
               )}
-            </Card>
+              </div>
+            </section>
           );
         })
       )}

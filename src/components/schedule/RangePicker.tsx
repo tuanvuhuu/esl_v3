@@ -3,7 +3,18 @@
 import { CalendarIcon, ChevronLeftIcon, ChevronRightIcon } from '@primer/octicons-react';
 import { useEffect, useRef, useState } from 'react';
 import { ActIcon } from '@/components/ui/ActIcon';
-import { addDaysKey, dateKeyLabel, daysBetweenKeys, monthKey, monthLabel, monthStartKey, shiftMonth, todayKeyVN, weekdayLabel, weekdayOfKey } from '@/lib/datetime';
+import {
+  addDaysKey,
+  dateKeyLabel,
+  daysBetweenKeys,
+  monthKey,
+  monthLabel,
+  monthStartKey,
+  shiftMonth,
+  todayKeyVN,
+  weekdayLabel,
+  weekdayOfKey,
+} from '@/lib/datetime';
 
 // Khoảng ngày xem tối đa 62 ngày (đồng bộ với trang Lịch học)
 const MAX_SPAN_DAYS = 62;
@@ -104,9 +115,9 @@ export function RangePicker({ from, to, onPick }: { from: string; to: string; on
     const active = draft !== null ? key === draft : key === from || key === to;
     const between = draft === null && key > from && key < to;
     const state = active
-      ? 'bg-[var(--button-primary-bgColor-rest,var(--color-primary))] font-medium text-[var(--button-primary-fgColor-rest,var(--color-on-primary))]'
-      : `${between ? 'bg-[var(--bgColor-accent-muted,var(--color-primary-soft))] hover:bg-[var(--bgColor-neutral-muted)]' : 'hover:bg-[var(--bgColor-muted)]'} ${key.startsWith(month) ? 'text-[var(--fgColor-default)]' : 'text-[var(--fgColor-muted)]'}`;
-    const todayRing = key === today && !active ? 'font-medium ring-1 ring-inset ring-[var(--fgColor-accent)]' : '';
+      ? 'bg-[var(--button-primary-bgColor-rest,var(--primary))] font-semibold text-[var(--button-primary-fgColor-rest,var(--on-primary))]'
+      : `${between ? 'bg-[var(--primary-soft)] text-[var(--primary-deep)] hover:bg-[var(--bgColor-neutral-muted)]' : 'hover:bg-[var(--bgColor-muted)]'} ${key.startsWith(month) ? 'text-[var(--fgColor-default)]' : 'text-[var(--fgColor-muted)]/70'}`;
+    const todayRing = key === today && !active ? 'font-semibold ring-1 ring-inset ring-[var(--primary)]' : '';
     return `grid size-[var(--icon-h)] place-items-center rounded-[var(--borderRadius-medium)] text-sm tabular-nums transition-colors ${state} ${todayRing}`;
   }
 
@@ -118,50 +129,63 @@ export function RangePicker({ from, to, onPick }: { from: string; to: string; on
         aria-expanded={open}
         aria-label={`Chọn khoảng ngày, đang xem ${label}`}
         onClick={toggle}
-        className="inline-flex h-[var(--icon-h)] shrink-0 items-center gap-1.5 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-3 text-sm font-semibold text-[var(--fgColor-default)] transition-colors hover:bg-[var(--bgColor-muted)] max-[767px]:h-[var(--icon-h-touch)]"
+        className="inline-flex h-[var(--icon-h)] shrink-0 items-center gap-1.5 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-3 text-sm font-medium text-[var(--fgColor-default)] transition-colors hover:border-[var(--borderColor-accent-emphasis)] hover:bg-[var(--bgColor-muted)] max-[767px]:h-[var(--icon-h-touch)]"
       >
-        <CalendarIcon size={16} aria-hidden />
-        <span className="tabular-nums">{label}</span>
+        <CalendarIcon size={15} className="text-[var(--fgColor-muted)]" aria-hidden />
+        <span className="font-mono text-[13px] font-semibold tabular-nums">{label}</span>
       </button>
       {open && (
         <div
           role="dialog"
           aria-label="Chọn khoảng ngày"
           style={{ top: place.top, left: place.left, width: place.width }}
-          className="fixed z-30 rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-3 shadow-[var(--shadow-floating-small,0_8px_24px_rgba(140,149,159,0.2))]"
+          className="fixed z-30 overflow-hidden rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] shadow-[var(--lift)]"
         >
-          <div className="mb-2 flex items-center justify-between gap-2">
-            <ActIcon label="Tháng trước" icon={ChevronLeftIcon} onClick={() => setMonth(shiftMonth(month, -1))} />
-            <b className="text-sm font-semibold text-[var(--fgColor-default)]">Tháng {monthLabel(month)}</b>
-            <ActIcon label="Tháng sau" icon={ChevronRightIcon} onClick={() => setMonth(shiftMonth(month, 1))} />
+          <div className="flex items-center justify-between gap-2 border-b border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)] px-2.5 py-2">
+            <ActIcon quiet label="Tháng trước" icon={ChevronLeftIcon} onClick={() => setMonth(shiftMonth(month, -1))} />
+            <b className="text-sm font-semibold tabular-nums text-[var(--fgColor-default)]">Tháng {monthLabel(month)}</b>
+            <ActIcon quiet label="Tháng sau" icon={ChevronRightIcon} onClick={() => setMonth(shiftMonth(month, 1))} />
           </div>
-          <div className="mb-1 grid grid-cols-7 gap-1">
-            {[1, 2, 3, 4, 5, 6, 0].map((d) => (
-              <span key={d} className="text-center text-xs font-normal text-[var(--fgColor-muted)]">{weekdayLabel(d)}</span>
-            ))}
+          <div className="p-3">
+            <div className="mb-1.5 grid grid-cols-7 gap-1">
+              {[1, 2, 3, 4, 5, 6, 0].map((d) => (
+                <span key={d} className="text-center text-[11px] font-medium uppercase text-[var(--fgColor-muted)]">
+                  {weekdayLabel(d)}
+                </span>
+              ))}
+            </div>
+            <div className="grid grid-cols-7 gap-1">
+              {cells.map((key) => (
+                <button
+                  key={key}
+                  type="button"
+                  aria-label={dateKeyLabel(key)}
+                  aria-pressed={draft !== null ? key === draft : key >= from && key <= to}
+                  aria-current={key === today ? 'date' : undefined}
+                  onClick={() => pickDay(key)}
+                  className={dayClass(key)}
+                >
+                  {Number(key.slice(8))}
+                </button>
+              ))}
+            </div>
+            <p className="m-0 mt-3 border-t border-[var(--borderColor-muted)] pt-2 text-xs leading-relaxed text-[var(--fgColor-muted)]">
+              {draft === null ? (
+                <>
+                  Đang xem{' '}
+                  <b className="font-semibold tabular-nums text-[var(--fgColor-default)]">
+                    {dateKeyLabel(from)} – {dateKeyLabel(to)}
+                  </b>{' '}
+                  · {span} ngày
+                </>
+              ) : (
+                <>
+                  Đã chọn ngày bắt đầu{' '}
+                  <b className="font-semibold tabular-nums text-[var(--fgColor-default)]">{dateKeyLabel(draft)}</b>. Bấm ngày kết thúc, hoặc bấm lại ngày này để bỏ chọn. Tối đa {MAX_SPAN_DAYS} ngày.
+                </>
+              )}
+            </p>
           </div>
-          <div className="grid grid-cols-7 gap-1">
-            {cells.map((key) => (
-              <button
-                key={key}
-                type="button"
-                aria-label={dateKeyLabel(key)}
-                aria-pressed={draft !== null ? key === draft : key >= from && key <= to}
-                aria-current={key === today ? 'date' : undefined}
-                onClick={() => pickDay(key)}
-                className={dayClass(key)}
-              >
-                {Number(key.slice(8))}
-              </button>
-            ))}
-          </div>
-          <p className="mt-3 border-t border-[var(--borderColor-muted)] pt-2 text-xs text-[var(--fgColor-muted)]">
-            {draft === null ? (
-              <>Đang xem <b className="font-semibold text-[var(--fgColor-default)]">{dateKeyLabel(from)} – {dateKeyLabel(to)}</b> · {span} ngày</>
-            ) : (
-              <>Đã chọn ngày bắt đầu <b className="font-semibold text-[var(--fgColor-default)]">{dateKeyLabel(draft)}</b>. Bấm ngày kết thúc, hoặc bấm lại ngày này để bỏ chọn. Tối đa {MAX_SPAN_DAYS} ngày.</>
-            )}
-          </p>
         </div>
       )}
     </div>

@@ -13,7 +13,7 @@ import {
   UnderlineNav,
 } from '@primer/react';
 import clsx from 'clsx';
-import { motion, useReducedMotion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import Link from 'next/link';
 import {
   createContext,
@@ -146,7 +146,6 @@ export function Chip({
   ...rest
 }: ButtonHTMLAttributes<HTMLButtonElement> & { selected: boolean; count?: number; href?: string; tab?: boolean }) {
   const { mode, groupId } = useContext(ChipGroupContext);
-  const shouldReduceMotion = useReducedMotion();
 
   if (mode === 'underline') {
     if (href) {
@@ -195,7 +194,7 @@ export function Chip({
   const slidingBg =
     segmented && selected ? (
       <motion.span
-        layoutId={shouldReduceMotion ? undefined : `tsukuba-chip-${groupId}`}
+        layoutId={`tsukuba-chip-${groupId}`}
         transition={{ type: 'spring', stiffness: 520, damping: 38 }}
         className="pointer-events-none absolute inset-0 rounded-[calc(var(--borderRadius-medium)-2px)] bg-[var(--bgColor-default)] shadow-[0_1px_2px_rgba(31,35,40,0.08),0_0_0_1px_var(--borderColor-default)]"
         aria-hidden

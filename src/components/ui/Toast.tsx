@@ -2,7 +2,7 @@
 
 // Thông báo nổi góc phải dưới chuẩn .toast (ui.module.css của dự án 01. TSUKUBA) + hiệu ứng trượt mượt framer-motion.
 import { CheckCircleFillIcon } from '@primer/octicons-react';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useCallback, useSyncExternalStore } from 'react';
 
 type ToastState = { text: string; id: number } | null;
@@ -50,16 +50,15 @@ export function useToast(durationMs = 3200) {
 }
 
 export function Toast({ message }: { message: string | null }) {
-  const shouldReduceMotion = useReducedMotion();
   return (
     <AnimatePresence>
       {message && (
         <motion.div
           key={message}
           role="status"
-          initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 14, scale: 0.98 }}
+          initial={{ opacity: 0, y: 14, scale: 0.98 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 10, scale: 0.98 }}
+          exit={{ opacity: 0, y: 10, scale: 0.98 }}
           transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
           className="fixed bottom-[calc(96px+var(--safe-b))] right-4 z-[95] flex max-w-[min(26rem,calc(100vw-32px))] items-center gap-2.5 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] border-l-4 border-l-[var(--bgColor-success-emphasis)] bg-[var(--bgColor-default)] px-3.5 py-2.5 text-[13px] text-[var(--fgColor-default)] shadow-[0_8px_24px_rgba(0,0,0,0.14)] max-[767px]:inset-x-4 max-[767px]:mx-auto max-[767px]:w-fit min-[768px]:bottom-5"
         >

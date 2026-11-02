@@ -4,7 +4,7 @@ import { startTransition, useActionState, type FormEvent } from 'react';
 import { assignStudentsAction } from '@/app/(app)/phu-huynh/actions';
 import { ComboBox, SelectBox } from '@/components-ui';
 import { Btn } from '@/components/ui/Btn';
-import { Field, FormFooter } from '@/components/ui/Field';
+import { Field, FormFooter, FormSection } from '@/components/ui/Field';
 import { PARENT_RELATION_LABELS } from '@/lib/parent-labels';
 import type { StudentChoice } from '@/lib/queries/parents';
 import type { ActionResult } from '@/lib/validation/student';
@@ -41,40 +41,44 @@ export function ParentAssignForm({
   }
 
   return (
-    <form onSubmit={submit} noValidate className="grid grid-cols-1 gap-3.5">
+    <form onSubmit={submit} noValidate className="flex flex-col gap-3.5">
       {state.message && !state.ok && (
         <Alert>
           {state.message}
         </Alert>
       )}
 
-      <Field label="Học sinh *" error={errors.studentIds} hint="Gõ để tìm. Chọn được nhiều học sinh cùng lúc.">
-        <ComboBox
-          name="studentIds"
-          label="Học sinh *"
-          multiple
-          defaultValues={[]}
-          options={students.map((s) => ({ value: String(s.id), label: `${s.fullName} · ${s.className} · ${s.campusName}` }))}
-          error={Boolean(errors.studentIds)}
-          block
-        />
-      </Field>
+      <FormSection title="Thông tin gán học sinh" grid={false}>
+        <div className="flex flex-col gap-3.5">
+          <Field label="Học sinh *" error={errors.studentIds} hint="Gõ để tìm. Chọn được nhiều học sinh cùng lúc.">
+            <ComboBox
+              name="studentIds"
+              label="Học sinh *"
+              multiple
+              defaultValues={[]}
+              options={students.map((s) => ({ value: String(s.id), label: `${s.fullName} · ${s.className} · ${s.campusName}` }))}
+              error={Boolean(errors.studentIds)}
+              block
+            />
+          </Field>
 
-      <Field label="Quan hệ với học sinh *" error={errors.relation}>
-        <SelectBox
-          name="relation"
-          label="Quan hệ với học sinh *"
-          defaultValue="father"
-          options={RELATION_OPTIONS}
-          error={Boolean(errors.relation)}
-          block
-        />
-      </Field>
+          <Field label="Quan hệ với học sinh *" error={errors.relation}>
+            <SelectBox
+              name="relation"
+              label="Quan hệ với học sinh *"
+              defaultValue="father"
+              options={RELATION_OPTIONS}
+              error={Boolean(errors.relation)}
+              block
+            />
+          </Field>
 
-      <label className="flex min-w-0 items-center gap-2.5 text-sm font-normal text-[var(--fgColor-default)]">
-        <input name="isPrimary" type="checkbox" className="size-4 accent-[var(--control-checked-bgColor-rest)]" />
-        Đặt làm liên hệ chính của các học sinh này
-      </label>
+          <label className="flex h-[var(--ctl-h)] cursor-pointer items-center gap-2.5 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]/60 px-3 text-sm font-normal text-[var(--fgColor-default)] transition-colors hover:border-[var(--borderColor-accent-emphasis)] max-[767px]:h-[var(--ctl-h-touch)]">
+            <input name="isPrimary" type="checkbox" className="size-4 accent-[var(--control-checked-bgColor-rest)]" />
+            <span>Đặt làm liên hệ chính của các học sinh này</span>
+          </label>
+        </div>
+      </FormSection>
 
       <FormFooter>
         <Btn onClick={onCancel}>Huỷ</Btn>

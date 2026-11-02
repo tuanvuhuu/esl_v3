@@ -25,7 +25,7 @@ import { SelectBox, TextAreaAutoHeight } from '@/components-ui';
 import { Btn } from '@/components/ui/Btn';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Chip, ChipGroup } from '@/components/ui/controls';
-import { Field, FormFooter } from '@/components/ui/Field';
+import { Field, FormFooter, FormSection } from '@/components/ui/Field';
 import { Modal } from '@/components/ui/Modal';
 import { Alert, Pill, type Tone } from '@/components/ui/primitives';
 import { RowMenu, type RowMenuItem } from '@/components/ui/RowMenu';
@@ -67,7 +67,7 @@ export function ConsentPanel({ studentId }: { studentId: number }) {
   const linkedCount = data?.parents.filter((p) => p.linked).length ?? 0;
 
   return (
-    <Panel title="Đồng ý của phụ huynh" className="flex flex-col gap-3">
+    <Panel title="Đồng ý của phụ huynh" className="tsukuba-rise flex flex-col gap-3">
       <p className="text-sm text-[var(--fgColor-muted)]">
         Học sinh chỉ ghi âm được khi phụ huynh đã đồng ý. Trẻ từ 7 tuổi sẽ được hỏi thêm trong khu học sinh.
       </p>
@@ -212,36 +212,45 @@ function RecordDialog({
   const [granted, setGranted] = useState(true);
   const [note, setNote] = useState('');
   return (
-    <Modal open title="Ghi nhận ý kiến phụ huynh" subtitle={CONSENT_LABELS[purpose]} onClose={onClose} labelledBy="consent-record-title">
-      <div className="flex flex-col gap-4">
+    <Modal
+      open
+      size="md"
+      title="Ghi nhận ý kiến phụ huynh"
+      subtitle={CONSENT_LABELS[purpose]}
+      onClose={onClose}
+      labelledBy="consent-record-title"
+    >
+      <div className="flex flex-col gap-3.5">
         <Notice>{CONSENT_TERMS[purpose]}</Notice>
         {parents.length === 0 ? (
           <Alert inline>Học sinh chưa có phụ huynh. Thêm phụ huynh ở tab Phụ huynh trước.</Alert>
         ) : (
-          <>
-            <Field label="Phụ huynh">
-              <SelectBox
-                label="Phụ huynh đồng ý"
-                block
-                value={parentId}
-                onChange={setParentId}
-                options={parents.map((p) => ({ value: String(p.id), label: p.name }))}
-              />
-            </Field>
-            <Field label="Ý kiến">
-              <ChipGroup label="Ý kiến của phụ huynh">
-                <Chip selected={granted} onClick={() => setGranted(true)}>
-                  Đồng ý
-                </Chip>
-                <Chip selected={!granted} onClick={() => setGranted(false)}>
-                  Không đồng ý
-                </Chip>
-              </ChipGroup>
-            </Field>
-            <Field label="Bằng chứng" hint="Ví dụ: Đã ký giấy đồng ý ngày 22/10, lưu ở hồ sơ giấy">
-              <TextAreaAutoHeight value={note} onChange={(e) => setNote(e.target.value)} rows={3} aria-label="Bằng chứng đồng ý" />
-            </Field>
-          </>
+          <FormSection title="Chi tiết xác nhận" grid={false}>
+            <div className="flex flex-col gap-3.5">
+              <Field label="Phụ huynh">
+                <SelectBox
+                  label="Phụ huynh đồng ý"
+                  block
+                  value={parentId}
+                  onChange={setParentId}
+                  options={parents.map((p) => ({ value: String(p.id), label: p.name }))}
+                />
+              </Field>
+              <Field label="Ý kiến">
+                <ChipGroup label="Ý kiến của phụ huynh">
+                  <Chip selected={granted} onClick={() => setGranted(true)}>
+                    Đồng ý
+                  </Chip>
+                  <Chip selected={!granted} onClick={() => setGranted(false)}>
+                    Không đồng ý
+                  </Chip>
+                </ChipGroup>
+              </Field>
+              <Field label="Bằng chứng" hint="Ví dụ: Đã ký giấy đồng ý ngày 22/10, lưu ở hồ sơ giấy">
+                <TextAreaAutoHeight value={note} onChange={(e) => setNote(e.target.value)} rows={3} aria-label="Bằng chứng đồng ý" />
+              </Field>
+            </div>
+          </FormSection>
         )}
         <FormFooter>
           <Btn onClick={onClose}>Huỷ</Btn>

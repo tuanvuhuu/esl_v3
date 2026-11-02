@@ -17,11 +17,11 @@ export function QrImage({ payload, size, label }: { payload: string; size: numbe
   }, [payload, size]);
   return (
     <div
-      className="rounded-[var(--borderRadius-medium)] bg-[var(--qr-bg)] p-1.5 ring-1 ring-[var(--borderColor-default)]"
-      style={{ width: size + 12, height: size + 12 }}
+      className="inline-grid shrink-0 place-items-center rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] bg-[var(--qr-bg)] p-2 shadow-[var(--shadow)]"
+      style={{ width: size + 16, height: size + 16 }}
     >
       {/* eslint-disable-next-line @next/next/no-img-element -- ảnh data URL tạo tại chỗ, không qua next/image */}
-      {src && <img src={src} alt={label} width={size} height={size} />}
+      {src && <img src={src} alt={label} width={size} height={size} className="block rounded-[4px]" />}
     </div>
   );
 }

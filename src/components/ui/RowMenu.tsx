@@ -17,10 +17,10 @@ export type RowMenuItem =
       disabledHint?: string;
     };
 
-// Nút ⋯ mở ActionMenu của @primer/react v38. Tương thích cả Octicons lẫn LucideIcon trong quá trình chuyển đổi.
+// Nút ⋯ mở ActionMenu của @primer/react v38. Chuẩn cao 32px máy tính / 44px điện thoại.
 export function RowMenu({ items, label }: { items: RowMenuItem[]; label: string }) {
   return (
-    <div data-act="true" className="more-btn relative inline-flex" onClick={(e) => e.stopPropagation()}>
+    <div data-act="true" className="more-btn -my-0.5 relative inline-flex" onClick={(e) => e.stopPropagation()}>
       <ActionMenu>
         <ActionMenu.Anchor>
           <IconButton
@@ -29,7 +29,7 @@ export function RowMenu({ items, label }: { items: RowMenuItem[]; label: string 
             title={label}
             variant="invisible"
             unsafeDisableTooltip
-            className="!size-7 !text-[var(--fgColor-muted)] hover:!text-[var(--fgColor-default)] max-[767px]:!size-[var(--icon-h-touch)]"
+            className="!size-[var(--icon-h)] !text-[var(--fgColor-muted)] hover:!text-[var(--fgColor-default)] max-[767px]:!size-[var(--icon-h-touch)]"
           />
         </ActionMenu.Anchor>
         <ActionMenu.Overlay align="end" width="small" className="row-menu">

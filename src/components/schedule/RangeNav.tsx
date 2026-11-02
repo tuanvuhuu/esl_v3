@@ -7,7 +7,7 @@ import { RangePicker } from './RangePicker';
 // Thanh điều hướng lịch gộp một chỗ: nút lùi, nút chọn khoảng ngày, nút tiến. Ba nút cùng cỡ, cùng hàng.
 // Lùi và tiến đi theo độ dài khoảng đang xem (xem một tuần thì lùi, tiến một tuần).
 const ARROW =
-  'grid size-[var(--icon-h)] shrink-0 place-items-center rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] text-[var(--fgColor-muted)] transition-colors hover:bg-[var(--bgColor-muted)] hover:text-[var(--fgColor-default)] max-[767px]:size-[var(--icon-h-touch)]';
+  'grid size-[var(--icon-h)] shrink-0 place-items-center rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] text-[var(--fgColor-muted)] transition-colors hover:border-[var(--borderColor-accent-emphasis)] hover:bg-[var(--bgColor-muted)] hover:text-[var(--fgColor-default)] max-[767px]:size-[var(--icon-h-touch)]';
 
 export function RangeNav({
   from,

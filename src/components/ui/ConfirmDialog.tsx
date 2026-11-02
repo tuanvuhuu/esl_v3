@@ -1,7 +1,9 @@
 'use client';
 
-// Hộp xác nhận chuẩn GitHub Primer v38 dùng Dialog (role="alertdialog") + footerButtons gốc của @primer/react.
+// Hộp xác nhận chuẩn GitHub Primer v38 & 01. TSUKUBA dùng Dialog (role="alertdialog") + footerButtons gốc của @primer/react.
+import { AlertIcon, InfoIcon } from '@primer/octicons-react';
 import { Dialog, type DialogButtonProps } from '@primer/react';
+import clsx from 'clsx';
 import { useLayoutEffect, useRef, type ReactNode } from 'react';
 
 export function ConfirmDialog({
@@ -66,21 +68,36 @@ export function ConfirmDialog({
         },
       ];
 
+  const isDanger = tone === 'danger' && !blocked;
+
   return (
     <Dialog
       ref={dialogRef}
       role="alertdialog"
       title={title}
       width="medium"
-      style={{ width: 'min(420px, 100%)' }}
+      style={{ width: 'min(440px, 100%)' }}
       initialFocusRef={blocked ? okRef : cancelRef}
       onClose={() => {
         if (!pending) onCancel();
       }}
       footerButtons={buttons}
     >
-      <div id="confirm-text" className="text-sm leading-relaxed text-[var(--fgColor-default)]">
-        {text}
+      <div className="flex items-start gap-3">
+        <span
+          aria-hidden="true"
+          className={clsx(
+            'mt-0.5 grid size-9 shrink-0 place-items-center rounded-full border',
+            isDanger
+              ? 'border-[var(--borderColor-danger-muted)] bg-blush text-blush-ink'
+              : 'border-[var(--borderColor-accent-muted)] bg-primary-soft text-primary',
+          )}
+        >
+          {isDanger ? <AlertIcon size={16} /> : <InfoIcon size={16} />}
+        </span>
+        <div id="confirm-text" className="min-w-0 flex-1 pt-0.5 text-sm leading-relaxed text-[var(--fgColor-default)]">
+          {text}
+        </div>
       </div>
     </Dialog>
   );

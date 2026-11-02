@@ -16,7 +16,7 @@ import { BulkActionBar, TextAreaAutoHeight, TextInput, TextInputNumber } from '@
 import { Btn } from '@/components/ui/Btn';
 import { Chip, ChipGroup } from '@/components/ui/controls';
 import { DataGrid, type GridColumn } from '@/components/ui/datagrid';
-import { Field, FormFooter } from '@/components/ui/Field';
+import { Field, FormFooter, FormSection } from '@/components/ui/Field';
 import { Modal } from '@/components/ui/Modal';
 import { PageCrumbs } from '@/components/shell/PageCrumbs';
 import { Alert, Pill, type Tone } from '@/components/ui/primitives';
@@ -166,14 +166,14 @@ export function TuitionView({
         );
       case 'actions':
         return (
-          <div className="flex justify-end gap-1">
-            {canManage && <Btn size="small" onClick={() => setPaying(r)}>Ghi thu</Btn>}
+          <div className="-my-0.5 flex justify-end gap-1">
+            {canManage && <Btn onClick={() => setPaying(r)}>Ghi thu</Btn>}
             {canManage && needsPay(r) && (
-              <Btn size="small" onClick={() => remind(r)} disabled={pending}>
+              <Btn onClick={() => remind(r)} disabled={pending}>
                 Nhắc
               </Btn>
             )}
-            {canRefund(r) && <Btn size="small" onClick={() => setRefunding(r)}>Hoàn số dư</Btn>}
+            {canRefund(r) && <Btn onClick={() => setRefunding(r)}>Hoàn số dư</Btn>}
           </div>
         );
       default:
@@ -196,7 +196,7 @@ export function TuitionView({
       )}
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <Link href={`/hoc-sinh/${r.id}`} className="text-sm font-medium text-[var(--fgColor-link)] underline underline-offset-2">
+          <Link href={`/hoc-sinh/${r.id}`} data-link="true" className="text-sm font-medium text-[var(--fgColor-link)] underline underline-offset-2">
             {r.fullName}
           </Link>
           <small className="block truncate text-xs text-[var(--fgColor-muted)]">
@@ -374,14 +374,25 @@ export function TuitionView({
 // Dải tổng ngoài bảng: đã nộp, giảm trừ, buổi đã mua, tiền trước hoặc nợ của mọi học sinh trong phạm vi đang xem
 function TotalsStrip({ totals }: { totals: InvoiceTotals }) {
   const label = totals.balance < 0 ? 'Đang nợ' : totals.balance > 0 ? 'Tiền trước' : 'Tiền trước/nợ';
-  const items: { label: string; value: string; tone: string }[] = [
-    { label: 'Đã nộp', value: formatVND(totals.paid), tone: 'text-[var(--fgColor-default)]' },
-    { label: 'Giảm trừ', value: formatVND(totals.discount), tone: 'text-[var(--fgColor-default)]' },
-    { label: 'Buổi đã mua', value: `${totals.sessionsBought.toLocaleString('vi-VN')} buổi`, tone: 'text-[var(--fgColor-default)]' },
+  const items: { label: string; value: string; tone: string; accent: string }[] = [
+    { label: 'Đã nộp', value: formatVND(totals.paid), tone: 'text-[var(--fgColor-default)]', accent: 'border-l-[#1baf7a]' },
+    { label: 'Giảm trừ', value: formatVND(totals.discount), tone: 'text-[var(--fgColor-default)]', accent: 'border-l-[#eb6834]' },
+    {
+      label: 'Buổi đã mua',
+      value: `${totals.sessionsBought.toLocaleString('vi-VN')} buổi`,
+      tone: 'text-[var(--fgColor-default)]',
+      accent: 'border-l-[#2a78d6]',
+    },
     {
       label,
       value: formatVND(Math.abs(totals.balance)),
       tone: totals.balance < 0 ? 'text-[var(--fgColor-danger)]' : totals.balance > 0 ? 'text-[var(--fgColor-success)]' : 'text-[var(--fgColor-muted)]',
+      accent:
+        totals.balance < 0
+          ? 'border-l-[var(--borderColor-danger-emphasis)]'
+          : totals.balance > 0
+            ? 'border-l-[#1baf7a]'
+            : 'border-l-[var(--borderColor-default)]',
     },
   ];
   return (
@@ -389,7 +400,7 @@ function TotalsStrip({ totals }: { totals: InvoiceTotals }) {
       {items.map((it) => (
         <div
           key={it.label}
-          className="flex items-baseline justify-between gap-2 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-3 py-1.5"
+          className={`flex items-baseline justify-between gap-2 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] border-l-[3px] ${it.accent} bg-[var(--bgColor-default)] px-3 py-1.5`}
         >
           <dt className="text-xs text-[var(--fgColor-muted)]">{it.label}</dt>
           <dd className={`m-0 text-sm font-medium tabular-nums ${it.tone}`}>{it.value}</dd>
@@ -448,7 +459,16 @@ function MoneyField({
   );
 }
 
-// Hộp thoại ghi thu: số tiền, giảm trừ, số buổi được cộng xem ngay; có lịch sử thu của học sinh
+function parseBankLine(bankLine: string) {
+  const parts = bankLine.split(' · ').map((s) => s.trim());
+  const bankAndAcc = parts[0] ?? '';
+  const holder = parts[1] ?? '';
+  const memoPart = parts.find((p) => p.toLowerCase().startsWith('nội dung:'));
+  const memo = memoPart ? memoPart.replace(/^nội dung:\s*/i, '') : '';
+  return { bankAndAcc, holder, memo };
+}
+
+// Hộp thoại ghi thu: số tiền, giảm trừ, số buổi được cộng xem ngay; có mã VietQR và lịch sử thu của học sinh
 function PaymentDialog({
   row,
   canManage,
@@ -520,17 +540,30 @@ function PaymentDialog({
   }
 
   const now = row.sessionsLeft < 0 ? `đang nợ ${-row.sessionsLeft} buổi` : `còn ${row.sessionsLeft} buổi`;
+  const parsedQr = qr ? parseBankLine(qr.bankLine) : null;
+
   return (
     <Modal
       open
+      size="lg"
       title={`Ghi thu học phí · ${row.fullName}`}
-      subtitle={`${row.className} · đã mua ${row.sessionsBought} buổi, đã học ${row.sessionsDone}, ${now}`}
+      subtitle={`${row.code} · ${row.className} · đã mua ${row.sessionsBought} buổi, đã học ${row.sessionsDone}, ${now}`}
       onClose={onClose}
       labelledBy="payment-title"
     >
-      <div className="flex flex-col gap-4 pb-2">
-        <form onSubmit={submit} noValidate className="grid grid-cols-1 gap-3.5 min-[768px]:grid-cols-2 min-[768px]:gap-x-4">
-          {state.message && !state.ok && <Alert className="col-span-full">{state.message}</Alert>}
+      <form onSubmit={submit} noValidate className="flex flex-col gap-3.5">
+        {state.message && !state.ok && <Alert>{state.message}</Alert>}
+
+        <FormSection
+          title="Ghi nhận khoản thu"
+          action={
+            row.debt > 0 ? (
+              <Pill tone="blush">Còn thiếu {formatVND(row.debt)}</Pill>
+            ) : (
+              <Pill tone="mint">Không nợ buổi</Pill>
+            )
+          }
+        >
           <Field
             label="Học phí (VND)"
             error={errors.fee}
@@ -544,68 +577,131 @@ function PaymentDialog({
           <Field label="Ghi chú" error={errors.note} wide>
             <TextAreaAutoHeight
               name="note"
+              aria-label="Ghi chú"
               rows={2}
               maxLength={200}
               placeholder="VD: Đóng tiền mặt, đăng ký khoá tiếp"
               error={Boolean(errors.note)}
             />
           </Field>
-          <p
+
+          {/* Phiếu tính nhẩm kiểu .slip của 01. TSUKUBA */}
+          <div
             role="status"
-            className="col-span-full rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-accent-muted)] bg-[var(--bgColor-accent-muted)] px-3 py-2 text-sm text-[var(--fgColor-default)]"
+            className="min-[768px]:col-span-full rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]/60 px-3.5 py-2.5"
           >
-            Phụ huynh trả <b className={pay < 0 ? 'text-[var(--fgColor-danger)]' : ''}>{formatVND(Math.max(0, pay))}</b>
-            {discountValue > 0 ? ` (học phí ${formatVND(feeValue)} − giảm trừ ${formatVND(discountValue)})` : ''}. Cộng <b>{addedSessions} buổi</b>.
-            <br />
-            Sau khi thu: <b>đã mua {boughtAfter} buổi</b>, đã học {row.sessionsDone},{' '}
-            {leftAfter >= 0 ? <b>còn {leftAfter} buổi</b> : <b className="text-[var(--fgColor-danger)]">còn nợ {-leftAfter} buổi</b>}.
-          </p>
-          <FormFooter className="col-span-full">
-            <Btn onClick={onClose} disabled={pending}>
-              Huỷ
-            </Btn>
-            <Btn type="submit" variant="primary" loading={pending} disabled={pending || feeValue <= 0 || pay < 0}>
-              {pending ? 'Đang ghi…' : 'Ghi nhận thu'}
-            </Btn>
-          </FormFooter>
-        </form>
+            <dl className="m-0 flex flex-col text-sm">
+              <div className="flex items-baseline justify-between gap-3 border-b border-dashed border-[var(--borderColor-muted)] py-1.5">
+                <dt className="text-xs text-[var(--fgColor-muted)]">Học phí quy đổi buổi</dt>
+                <dd className="m-0 tabular-nums text-[var(--fgColor-default)]">
+                  {formatVND(feeValue)} · <b>+{addedSessions} buổi</b>
+                </dd>
+              </div>
+              {discountValue > 0 && (
+                <div className="flex items-baseline justify-between gap-3 border-b border-dashed border-[var(--borderColor-muted)] py-1.5">
+                  <dt className="text-xs text-[var(--fgColor-muted)]">Giảm trừ trực tiếp</dt>
+                  <dd className="m-0 tabular-nums text-[var(--fgColor-attention)]">− {formatVND(discountValue)}</dd>
+                </div>
+              )}
+              <div className="flex items-baseline justify-between gap-3 border-b border-dashed border-[var(--borderColor-muted)] py-1.5">
+                <dt className="text-xs text-[var(--fgColor-muted)]">Số buổi sau khi thu</dt>
+                <dd className="m-0 text-xs tabular-nums text-[var(--fgColor-default)]">
+                  Đã mua <b>{boughtAfter} buổi</b> · đã học {row.sessionsDone} ·{' '}
+                  {leftAfter >= 0 ? (
+                    <b className="text-[var(--fgColor-success)]">còn {leftAfter} buổi</b>
+                  ) : (
+                    <b className="text-[var(--fgColor-danger)]">còn nợ {-leftAfter} buổi</b>
+                  )}
+                </dd>
+              </div>
+              <div className="flex items-baseline justify-between gap-3 pt-2">
+                <dt className="text-xs font-semibold uppercase tracking-wide text-[var(--fgColor-muted)]">Phụ huynh thực nộp</dt>
+                <dd
+                  className={`m-0 text-lg font-semibold tabular-nums ${
+                    pay < 0 ? 'text-[var(--fgColor-danger)]' : 'text-[var(--primary)]'
+                  }`}
+                >
+                  {formatVND(Math.max(0, pay))}
+                </dd>
+              </div>
+            </dl>
+          </div>
+        </FormSection>
 
         {qr && (
-          <div className="flex items-center gap-3 border-t border-[var(--borderColor-muted)] pt-3 max-[767px]:flex-col max-[767px]:items-start">
-            <QrImage payload={qr.payload} size={132} label={`Mã QR chuyển khoản học phí của ${row.fullName}`} />
-            <div className="min-w-0">
-              <h3 className="mb-1 text-xs font-semibold uppercase tracking-wider text-[var(--fgColor-muted)]">Chuyển khoản</h3>
-              <p className="text-sm text-[var(--fgColor-muted)]">
-                Phụ huynh quét bằng app ngân hàng: nội dung điền sẵn{row.debt > 0 ? ', số tiền đang nợ' : ', số tiền tự nhập'}.
-              </p>
-              <p className="mt-1 break-words text-sm text-[var(--fgColor-default)]">{qr.bankLine}</p>
+          <FormSection
+            title="Chuyển khoản VietQR"
+            description={`Phụ huynh mở ứng dụng ngân hàng quét mã${row.debt > 0 ? ' — số tiền đang nợ điền sẵn' : ' — tự nhập số tiền'}.`}
+            action={
+              row.debt > 0 ? (
+                <Pill tone="butter">Mặc định {formatVND(row.debt)}</Pill>
+              ) : (
+                <Pill tone="stone">Số tiền linh hoạt</Pill>
+              )
+            }
+            grid={false}
+          >
+            <div className="flex items-start gap-4 max-[767px]:flex-col">
+              <QrImage payload={qr.payload} size={136} label={`Mã QR chuyển khoản học phí của ${row.fullName}`} />
+              <div className="min-w-0 flex-1">
+                {parsedQr && (parsedQr.bankAndAcc || parsedQr.holder || parsedQr.memo) && (
+                  <dl className="m-0 grid grid-cols-1 gap-1.5 text-xs min-[640px]:grid-cols-2">
+                    {parsedQr.bankAndAcc && (
+                      <div className="rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)] px-2.5 py-1.5">
+                        <dt className="text-[11px] text-[var(--fgColor-muted)]">Ngân hàng & STK</dt>
+                        <dd className="m-0 mt-0.5 truncate font-mono text-xs font-medium text-[var(--fgColor-default)]">{parsedQr.bankAndAcc}</dd>
+                      </div>
+                    )}
+                    {parsedQr.holder && (
+                      <div className="rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)] px-2.5 py-1.5">
+                        <dt className="text-[11px] text-[var(--fgColor-muted)]">Chủ tài khoản</dt>
+                        <dd className="m-0 mt-0.5 truncate font-mono text-xs font-medium text-[var(--fgColor-default)]">{parsedQr.holder}</dd>
+                      </div>
+                    )}
+                    {parsedQr.memo && (
+                      <div className="rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)] px-2.5 py-1.5 min-[640px]:col-span-2">
+                        <dt className="text-[11px] text-[var(--fgColor-muted)]">Nội dung chuyển khoản</dt>
+                        <dd className="m-0 mt-0.5 break-words font-mono text-xs font-medium text-[var(--primary-deep)]">{parsedQr.memo}</dd>
+                      </div>
+                    )}
+                  </dl>
+                )}
+                <p className="m-0 mt-2 break-words rounded-[var(--borderRadius-medium)] border border-dashed border-[var(--borderColor-muted)] px-2.5 py-1.5 font-mono text-xs text-[var(--fgColor-muted)]">
+                  {qr.bankLine}
+                </p>
+              </div>
             </div>
-          </div>
+          </FormSection>
         )}
 
-        <div className="border-t border-[var(--borderColor-muted)] pt-3">
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-[var(--fgColor-muted)]">Lịch sử thu</h3>
-          {historyError && <p className="text-sm text-[var(--fgColor-danger)]">{historyError}</p>}
-          {!history && !historyError && <p className="text-sm text-[var(--fgColor-muted)]">Đang tải…</p>}
-          {history && history.length === 0 && <p className="text-sm text-[var(--fgColor-muted)]">Chưa có khoản thu nào.</p>}
-          {voidError && <Alert className="mb-2">{voidError}</Alert>}
+        <FormSection title="Lịch sử thu" grid={false}>
+          {historyError && <p className="m-0 text-sm text-[var(--fgColor-danger)]">{historyError}</p>}
+          {!history && !historyError && <p className="m-0 text-sm text-[var(--fgColor-muted)]">Đang tải…</p>}
+          {history && history.length === 0 && <p className="m-0 text-sm text-[var(--fgColor-muted)]">Chưa có khoản thu nào.</p>}
+          {voidError && <Alert className="mb-2.5">{voidError}</Alert>}
           {history && history.length > 0 && (
-            <ul className="flex flex-col gap-2">
+            <ul className="m-0 flex list-none flex-col divide-y divide-dashed divide-[var(--borderColor-muted)] p-0">
               {history.map((p) => {
                 const label = p.kind === 'refund' ? 'Hoàn tiền' : p.kind === 'void' ? 'Huỷ khoản' : '';
                 const struck = p.voided ? 'line-through text-[var(--fgColor-muted)]' : '';
                 return (
-                  <li key={p.id} className="flex flex-col gap-1.5 text-sm">
+                  <li key={p.id} className="flex flex-col gap-2 py-2 first:pt-0 last:pb-0 text-sm">
                     <div className="flex items-center justify-between gap-3">
                       <span className={`min-w-0 text-[var(--fgColor-muted)] ${p.voided ? 'line-through' : ''}`}>
-                        {dateKeyLabel(p.paidDate)}
+                        <span className="font-mono text-xs text-[var(--fgColor-default)]">{dateKeyLabel(p.paidDate)}</span>
                         {label ? ` · ${label}` : ''}
                         {p.discount > 0 ? ` · giảm trừ ${formatVND(p.discount)}` : ''}
                         {p.note ? ` · ${p.note}` : ''}
                         {p.voided ? ' · đã huỷ' : ''}
                       </span>
                       <span className="flex shrink-0 items-center gap-2">
-                        <b className={`tabular-nums ${struck || 'text-[var(--fgColor-default)]'}`}>{formatVND(p.amount)}</b>
+                        <b
+                          className={`tabular-nums ${
+                            struck || (p.amount < 0 ? 'text-[var(--fgColor-danger)]' : 'text-[var(--fgColor-default)]')
+                          }`}
+                        >
+                          {formatVND(p.amount)}
+                        </b>
                         {canManage && p.kind === 'payment' && !p.voided && voidId !== p.id && (
                           <Btn
                             onClick={() => {
@@ -620,7 +716,7 @@ function PaymentDialog({
                       </span>
                     </div>
                     {voidId === p.id && (
-                      <div className="flex flex-wrap items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)] p-2">
                         <div className="min-w-0 flex-1">
                           <TextInput
                             block
@@ -643,8 +739,17 @@ function PaymentDialog({
               })}
             </ul>
           )}
-        </div>
-      </div>
+        </FormSection>
+
+        <FormFooter>
+          <Btn onClick={onClose} disabled={pending}>
+            Huỷ
+          </Btn>
+          <Btn type="submit" variant="primary" loading={pending} disabled={pending || feeValue <= 0 || pay < 0}>
+            {pending ? 'Đang ghi…' : 'Ghi nhận thu'}
+          </Btn>
+        </FormFooter>
+      </form>
     </Modal>
   );
 }
@@ -670,35 +775,58 @@ function RefundDialog({ row, onClose, onDone }: { row: InvoiceRow; onClose: () =
   return (
     <Modal
       open
+      size="md"
       title={`Hoàn số dư · ${row.fullName}`}
-      subtitle={`Tiền trước ${formatVND(row.balance)} (${row.sessionsLeft} buổi chưa học)`}
+      subtitle={`${row.code} · ${row.className} · Tiền trước ${formatVND(row.balance)} (${row.sessionsLeft} buổi chưa học)`}
       onClose={onClose}
       labelledBy="refund-title"
     >
-      <form onSubmit={submit} noValidate className="grid grid-cols-1 gap-3.5 pb-2 min-[768px]:grid-cols-2 min-[768px]:gap-x-4">
-        {error && <Alert className="col-span-full">{error}</Alert>}
-        <Field label="Số tiền hoàn (VND) *" hint={`Tối đa ${formatVND(max)}`}>
-          <TextInputNumber
-            name="amount"
-            min={1}
-            max={max}
-            thousandSeparator="."
-            value={amount}
-            onTextChange={setAmount}
-            error={Boolean(error)}
-          />
-        </Field>
-        <Field label="Ghi chú">
-          <TextInput
-            block
-            name="note"
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder="VD: nghỉ học từ tháng 10"
-            autoComplete="off"
-          />
-        </Field>
-        <FormFooter className="col-span-full">
+      <form onSubmit={submit} noValidate className="flex flex-col gap-3.5 pb-1">
+        {error && <Alert>{error}</Alert>}
+
+        <dl className="m-0 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]/60 px-3.5 py-2 text-sm">
+          <div className="flex items-baseline justify-between gap-3 border-b border-dashed border-[var(--borderColor-muted)] py-1.5">
+            <dt className="text-xs text-[var(--fgColor-muted)]">Số dư tiền trước</dt>
+            <dd className="m-0 font-medium tabular-nums text-[var(--fgColor-success)]">{formatVND(row.balance)}</dd>
+          </div>
+          <div className="flex items-baseline justify-between gap-3 border-b border-dashed border-[var(--borderColor-muted)] py-1.5">
+            <dt className="text-xs text-[var(--fgColor-muted)]">Số buổi chưa học</dt>
+            <dd className="m-0 tabular-nums text-[var(--fgColor-default)]">{row.sessionsLeft} buổi</dd>
+          </div>
+          <div className="flex items-baseline justify-between gap-3 py-1.5">
+            <dt className="text-xs font-semibold uppercase tracking-wide text-[var(--fgColor-muted)]">Mức hoàn tối đa</dt>
+            <dd className="m-0 font-semibold tabular-nums text-[var(--fgColor-default)]">{formatVND(max)}</dd>
+          </div>
+        </dl>
+
+        <FormSection title="Thông tin hoàn phí">
+          <Field label="Số tiền hoàn (VND) *" hint={`Tối đa ${formatVND(max)}`}>
+            <TextInputNumber
+              name="amount"
+              aria-label="Số tiền hoàn (VND) *"
+              min={1}
+              max={max}
+              thousandSeparator="."
+              value={amount}
+              onTextChange={setAmount}
+              error={Boolean(error)}
+              className="tabular-nums"
+            />
+          </Field>
+          <Field label="Ghi chú">
+            <TextInput
+              block
+              name="note"
+              aria-label="Ghi chú"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="VD: nghỉ học từ tháng 10"
+              autoComplete="off"
+            />
+          </Field>
+        </FormSection>
+
+        <FormFooter>
           <Btn onClick={onClose} disabled={pending}>
             Huỷ
           </Btn>
@@ -741,59 +869,76 @@ function BulkPaymentDialog({ rows, onClose, onDone }: { rows: InvoiceRow[]; onCl
   return (
     <Modal
       open
+      size="lg"
       title={`Ghi thu cho ${rows.length} học sinh`}
       subtitle={`Mỗi người mặc định thu số đang nợ. ${PRICE} một buổi, nộp bao nhiêu cũng được.`}
       onClose={onClose}
       labelledBy="bulk-payment-title"
     >
-      <form onSubmit={submit} noValidate className="flex flex-col gap-3.5 pb-2">
+      <form onSubmit={submit} noValidate className="flex flex-col gap-3.5 pb-1">
         {error && <Alert>{error}</Alert>}
-        <ul className="flex max-h-[50vh] flex-col divide-y divide-[var(--borderColor-muted)] overflow-y-auto">
-          {rows.map((r) => {
-            const a = Number(amounts[r.id] || 0);
-            return (
-              <li key={r.id} className="flex flex-wrap items-center justify-between gap-3 py-2.5">
-                <div className="min-w-0">
-                  <b className="block truncate text-sm font-medium text-[var(--fgColor-default)]">{r.fullName}</b>
-                  <small className="block truncate text-xs text-[var(--fgColor-muted)]">
-                    {r.code} · {r.sessionsLeft < 0 ? `nợ ${-r.sessionsLeft} buổi` : `còn ${r.sessionsLeft} buổi`}
-                    {a > 0 ? ` · +${Math.floor(a / TUITION_PER_SESSION)} buổi` : ''}
-                  </small>
-                </div>
-                <div className="w-36 shrink-0">
-                  <TextInputNumber
-                    aria-label={`Số tiền thu ${r.fullName} (VND)`}
-                    thousandSeparator="."
-                    max={1_000_000_000}
-                    isAlignRight
-                    value={amounts[r.id]}
-                    onTextChange={(raw) =>
-                      setAmounts((prev) => ({
-                        ...prev,
-                        [r.id]: raw,
-                      }))
-                    }
-                    placeholder="0"
-                    error={badIds.has(r.id)}
-                    className="tabular-nums"
-                  />
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-        <p className="text-sm text-[var(--fgColor-muted)]">
-          Tổng thu: <b className="tabular-nums text-[var(--fgColor-default)]">{formatVND(total)}</b> từ {rows.length} học sinh. Bấm xác nhận là ghi ngay.
-        </p>
-        <Field label="Ghi chú chung" hint="VD: đóng tiền mặt tại lớp">
-          <TextAreaAutoHeight
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            rows={2}
-            maxLength={200}
-            placeholder="VD: đóng tiền mặt tại lớp"
-          />
-        </Field>
+
+        <FormSection title={`Danh sách học sinh (${rows.length})`} grid={false}>
+          <ul className="m-0 flex max-h-[42vh] list-none flex-col divide-y divide-dashed divide-[var(--borderColor-muted)] overflow-y-auto p-0 scroll-quiet">
+            {rows.map((r) => {
+              const a = Number(amounts[r.id] || 0);
+              return (
+                <li key={r.id} className="flex flex-wrap items-center justify-between gap-3 py-2.5 first:pt-0">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <b className="truncate text-sm font-medium text-[var(--fgColor-default)]">{r.fullName}</b>
+                      <span className="rounded bg-[var(--bgColor-neutral-muted)] px-1.5 py-0.5 font-mono text-[11px] text-[var(--fgColor-muted)]">
+                        {r.code}
+                      </span>
+                    </div>
+                    <small className="mt-0.5 block truncate text-xs text-[var(--fgColor-muted)]">
+                      {r.className} · {r.sessionsLeft < 0 ? `nợ ${-r.sessionsLeft} buổi` : `còn ${r.sessionsLeft} buổi`}
+                      {a > 0 ? ` · +${Math.floor(a / TUITION_PER_SESSION)} buổi` : ''}
+                    </small>
+                  </div>
+                  <div className="w-40 shrink-0">
+                    <TextInputNumber
+                      aria-label={`Số tiền thu ${r.fullName} (VND)`}
+                      thousandSeparator="."
+                      max={1_000_000_000}
+                      isAlignRight
+                      value={amounts[r.id]}
+                      onTextChange={(raw) =>
+                        setAmounts((prev) => ({
+                          ...prev,
+                          [r.id]: raw,
+                        }))
+                      }
+                      placeholder="0"
+                      error={badIds.has(r.id)}
+                      className="tabular-nums"
+                    />
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+          <div className="mt-2.5 flex items-baseline justify-between gap-3 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)] px-3 py-2">
+            <span className="text-xs font-semibold uppercase tracking-wide text-[var(--fgColor-muted)]">
+              Tổng thu ({rows.length} học sinh)
+            </span>
+            <b className="text-lg font-semibold tabular-nums text-[var(--primary)]">{formatVND(total)}</b>
+          </div>
+        </FormSection>
+
+        <FormSection title="Thông tin bổ sung" grid={false}>
+          <Field label="Ghi chú chung" hint="VD: đóng tiền mặt tại lớp">
+            <TextAreaAutoHeight
+              aria-label="Ghi chú chung"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              rows={2}
+              maxLength={200}
+              placeholder="VD: đóng tiền mặt tại lớp"
+            />
+          </Field>
+        </FormSection>
+
         <FormFooter>
           <Btn onClick={onClose} disabled={pending}>
             Huỷ

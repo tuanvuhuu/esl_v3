@@ -9,7 +9,7 @@ import { todayKeyVN } from '@/lib/datetime';
 import type { ActionResult } from '@/lib/validation/student';
 import { DateInput, SelectBox, TextAreaAutoHeight, TextInput } from '@/components-ui';
 import { Btn } from '@/components/ui/Btn';
-import { Field, FormFooter } from '@/components/ui/Field';
+import { Field, FormFooter, FormSection } from '@/components/ui/Field';
 import { Modal } from '@/components/ui/Modal';
 import { Toast, useToast } from '@/components/ui/Toast';
 import { Alert } from '@/components/ui/primitives';
@@ -26,12 +26,32 @@ export function LearningEventButton({ studentId, studentName }: { studentId: num
         Thêm ghi chú
       </Btn>
       <Toast message={message} />
-      {open && <EventDialog studentId={studentId} studentName={studentName} onClose={() => setOpen(false)} onDone={(m) => { setOpen(false); notify(m); }} />}
+      {open && (
+        <EventDialog
+          studentId={studentId}
+          studentName={studentName}
+          onClose={() => setOpen(false)}
+          onDone={(m) => {
+            setOpen(false);
+            notify(m);
+          }}
+        />
+      )}
     </>
   );
 }
 
-function EventDialog({ studentId, studentName, onClose, onDone }: { studentId: number; studentName: string; onClose: () => void; onDone: (m: string) => void }) {
+function EventDialog({
+  studentId,
+  studentName,
+  onClose,
+  onDone,
+}: {
+  studentId: number;
+  studentName: string;
+  onClose: () => void;
+  onDone: (m: string) => void;
+}) {
   const router = useRouter();
   const [state, formAction, pending] = useActionState<ActionResult, FormData>(async (prev, formData) => {
     const result = await addLearningEventAction(studentId, prev, formData);
@@ -51,40 +71,57 @@ function EventDialog({ studentId, studentName, onClose, onDone }: { studentId: n
   }
 
   return (
-    <Modal open title={`Thêm vào lịch sử · ${studentName}`} subtitle="Ghi chú, thăng cấp, kiểm tra hoặc đổi trạng thái. Các ô có dấu * là bắt buộc." onClose={onClose} labelledBy="learning-event-title">
-      <form onSubmit={submit} noValidate className="grid grid-cols-1 gap-3.5 pb-2 min-[768px]:grid-cols-2 min-[768px]:gap-x-4">
-        {state.message && !state.ok && (
-          <Alert className="col-span-full">{state.message}</Alert>
-        )}
-        <Field label="Loại *" error={errors.eventType}>
-          <SelectBox
-            name="eventType"
-            label="Loại *"
-            defaultValue="note"
-            options={LEARNING_EVENT_TYPES.map((t) => ({ value: t, label: LEARNING_EVENT_LABELS[t] }))}
-            error={Boolean(errors.eventType)}
-            block
-          />
-        </Field>
-        <Field label="Ngày *" error={errors.occurredDate}>
-          <DateInput name="occurredDate" defaultValue={todayKeyVN()} aria-label="Ngày *" error={Boolean(errors.occurredDate)} />
-        </Field>
-        <Field label="Tiêu đề *" error={errors.title} wide>
-          <TextInput
-            name="title"
-            placeholder="VD: Lên Band 6.0 · Ghi chú: cần luyện phát âm"
-            autoComplete="off"
-            aria-label="Tiêu đề *"
-            block
-            validationStatus={errors.title ? 'error' : undefined}
-          />
-        </Field>
-        <Field label="Chi tiết" error={errors.detail} wide>
-          <TextAreaAutoHeight name="detail" rows={3} aria-label="Chi tiết" error={Boolean(errors.detail)} />
-        </Field>
-        <FormFooter className="col-span-full">
+    <Modal
+      open
+      size="md"
+      title={`Thêm vào lịch sử · ${studentName}`}
+      subtitle="Ghi chú, thăng cấp, kiểm tra hoặc đổi trạng thái. Các ô có dấu * là bắt buộc."
+      onClose={onClose}
+      labelledBy="learning-event-title"
+    >
+      <form onSubmit={submit} noValidate className="flex flex-col gap-3.5 pb-1">
+        {state.message && !state.ok && <Alert>{state.message}</Alert>}
+
+        <FormSection title="Chi tiết sự kiện học tập">
+          <Field label="Loại *" error={errors.eventType}>
+            <SelectBox
+              name="eventType"
+              label="Loại *"
+              defaultValue="note"
+              options={LEARNING_EVENT_TYPES.map((t) => ({ value: t, label: LEARNING_EVENT_LABELS[t] }))}
+              error={Boolean(errors.eventType)}
+              block
+            />
+          </Field>
+          <Field label="Ngày *" error={errors.occurredDate}>
+            <DateInput name="occurredDate" defaultValue={todayKeyVN()} aria-label="Ngày *" error={Boolean(errors.occurredDate)} />
+          </Field>
+          <Field label="Tiêu đề *" error={errors.title} wide>
+            <TextInput
+              name="title"
+              placeholder="VD: Lên Band 6.0 · Ghi chú: cần luyện phát âm"
+              autoComplete="off"
+              aria-label="Tiêu đề *"
+              block
+              validationStatus={errors.title ? 'error' : undefined}
+            />
+          </Field>
+          <Field label="Chi tiết" error={errors.detail} wide>
+            <TextAreaAutoHeight
+              name="detail"
+              rows={3}
+              aria-label="Chi tiết"
+              placeholder="Nhận xét chi tiết hoặc điểm thành phần (nếu có)"
+              error={Boolean(errors.detail)}
+            />
+          </Field>
+        </FormSection>
+
+        <FormFooter>
           <Btn onClick={onClose}>Huỷ</Btn>
-          <Btn type="submit" variant="primary" loading={pending} disabled={pending}>{pending ? 'Đang ghi…' : 'Ghi vào lịch sử'}</Btn>
+          <Btn type="submit" variant="primary" loading={pending} disabled={pending}>
+            {pending ? 'Đang ghi…' : 'Ghi vào lịch sử'}
+          </Btn>
         </FormFooter>
       </form>
     </Modal>

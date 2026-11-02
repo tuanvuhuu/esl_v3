@@ -212,6 +212,7 @@ export function StudentFilters({
       <Sheet
         open={sheetOpen}
         title="Bộ lọc"
+        subtitle="Lọc danh sách theo lớp học và tình trạng học phí."
         onClose={() => setSheetOpen(false)}
         labelledBy="filter-title"
         footer={

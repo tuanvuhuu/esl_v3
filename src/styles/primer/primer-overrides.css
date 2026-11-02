@@ -107,15 +107,113 @@ span[class*='prc-components-TextInputWrapper-'] input {
   font-size: 0.8125rem;
 }
 
+/* ───────────── Dialog / Modal / Sheet chuẩn 01. TSUKUBA ───────────── */
+div[class*='prc-Dialog-Backdrop-'] {
+  background-color: rgba(15, 23, 42, 0.32);
+  backdrop-filter: blur(2px);
+  animation: tsukuba-fade-in 0.16s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+div[class*='prc-Dialog-Dialog-'] {
+  border: 1px solid var(--borderColor-default);
+  border-radius: 1rem;
+  box-shadow: 0 20px 44px -12px rgba(15, 23, 42, 0.2), 0 4px 12px rgba(15, 23, 42, 0.06);
+  animation: tsukuba-dialog-pop 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+div[class*='prc-Dialog-Dialog-'][data-position-regular='right'] {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  animation: tsukuba-sheet-right 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+div[class*='prc-Dialog-Dialog-'][data-position-regular='left'] {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+div[class*='prc-Dialog-Header-'] {
+  background-color: var(--bgColor-muted);
+  box-shadow: none;
+  border-bottom: 1px solid var(--borderColor-muted);
+  padding: 0.75rem 1.25rem;
+  border-top-left-radius: 1rem;
+  border-top-right-radius: 1rem;
+}
+
+div[class*='prc-Dialog-Dialog-'][data-position-regular='right'] div[class*='prc-Dialog-Header-'] {
+  border-top-right-radius: 0;
+}
+
+[class*='prc-Dialog-HeaderContent-'] {
+  padding: 0.125rem 0;
+}
+
+[class*='prc-Dialog-Title-'] {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--fgColor-default);
+}
+
+[class*='prc-Dialog-Subtitle-'] {
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: var(--fgColor-muted);
+  margin-top: 0.1875rem;
+}
+
 /* Chân form cố định ở đáy vùng cuộn ScrollableRegion của Dialog Primer */
 div[class*='prc-Dialog-Body-'] {
+  --dialog-pad-x: 1.25rem;
+  --dialog-pad-y: 1.125rem;
+  padding: var(--dialog-pad-y) var(--dialog-pad-x);
   overflow: visible !important;
 }
 
-/* Ô nhập TextInput của Primer trên điện thoại: giữ chữ 16px không phóng to iOS */
+div[class*='prc-Dialog-Footer-'] {
+  background-color: var(--bgColor-muted);
+  border-top: 1px solid var(--borderColor-muted);
+  padding: 0.75rem 1.25rem;
+  border-bottom-left-radius: 1rem;
+  border-bottom-right-radius: 1rem;
+}
+
+div[class*='prc-Dialog-Dialog-'][data-position-regular='right'] div[class*='prc-Dialog-Footer-'] {
+  border-bottom-right-radius: 0;
+}
+
+/* Điện thoại: giữ chữ 16px không phóng to iOS & vừa khít Dialog fullscreen / bottom sheet */
 @media (max-width: 767px) {
   span[class*='prc-components-TextInputWrapper-'],
   span[class*='prc-components-TextInputWrapper-'] input {
     font-size: var(--fs-input);
+  }
+
+  div[class*='prc-Dialog-Dialog-'][data-position-narrow='fullscreen'] {
+    border-radius: 0 !important;
+    border: 0;
+  }
+
+  div[class*='prc-Dialog-Dialog-'][data-position-narrow='fullscreen'] div[class*='prc-Dialog-Header-'],
+  div[class*='prc-Dialog-Dialog-'][data-position-narrow='fullscreen'] div[class*='prc-Dialog-Footer-'] {
+    border-radius: 0;
+  }
+
+  div[class*='prc-Dialog-Dialog-'][data-position-narrow='bottom'] {
+    animation: tsukuba-sheet-up 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  div[class*='prc-Dialog-Header-'] {
+    padding: 0.75rem 1rem;
+  }
+
+  div[class*='prc-Dialog-Body-'] {
+    --dialog-pad-x: 1rem;
+    --dialog-pad-y: 1rem;
+  }
+
+  div[class*='prc-Dialog-Footer-'] {
+    padding: 0.75rem 1rem;
   }
 }

@@ -4,16 +4,17 @@ import { HistoryTimeline } from '@/components/learning/HistoryTimeline';
 import { Btn } from '@/components/ui/Btn';
 import { NoAccess } from '@/components/ui/NoAccess';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { Pill } from '@/components/ui/primitives';
 import { SelectPanel } from '@/components/ui/SelectPanel';
-import { getCampusContext } from '@/lib/campus-context';
+import { Panel } from '@/components/ui/surfaces';
 import { withCampusNames } from '@/lib/campus';
-import { idListParam, listParam } from '@/lib/list-param';
+import { getCampusContext } from '@/lib/campus-context';
 import { filterHistory, HISTORY_KIND_LABELS, HISTORY_KINDS, type HistoryKind } from '@/lib/learning-history';
+import { idListParam, listParam } from '@/lib/list-param';
 import { hasPermission } from '@/lib/permissions';
 import { listClassChoices } from '@/lib/queries/classes';
 import { listHistoryAll } from '@/lib/queries/learning';
 import { getCurrentPermissions } from '@/lib/session';
-import { Panel } from '@/components/ui/surfaces';
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -30,8 +31,8 @@ function HistorySkeleton() {
   return (
     <section aria-busy="true" aria-label="Đang tải lịch sử học tập" className="flex flex-col gap-4">
       <div className="h-9 w-56 animate-pulse rounded-[var(--borderRadius-medium)] bg-[var(--bgColor-muted)]" />
-      <div className="h-[var(--ctl-h)] w-full animate-pulse rounded-[var(--borderRadius-medium)] bg-[var(--bgColor-muted)]" />
-      <div className="h-[420px] w-full animate-pulse rounded-xl bg-[var(--bgColor-muted)]" />
+      <div className="h-14 w-full animate-pulse rounded-[var(--borderRadius-large)] bg-[var(--bgColor-muted)]" />
+      <div className="h-[420px] w-full animate-pulse rounded-[var(--borderRadius-large)] bg-[var(--bgColor-muted)]" />
     </section>
   );
 }
@@ -59,7 +60,12 @@ async function HistoryData({ searchParams }: { searchParams: Promise<SearchParam
         subtitle="Gộp từ điểm danh, bài tập đã chấm, học phí và ghi chú. Mới nhất ở trên."
       />
 
-      <form method="get" action="/lich-su-hoc-tap" role="search" className="mb-5 flex flex-wrap items-center gap-2">
+      <form
+        method="get"
+        action="/lich-su-hoc-tap"
+        role="search"
+        className="mb-4 flex flex-wrap items-center gap-2 rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-3"
+      >
         <SelectPanel
           multiple
           name="cls"
@@ -80,11 +86,20 @@ async function HistoryData({ searchParams }: { searchParams: Promise<SearchParam
           block
           className="flex-1 min-[768px]:max-w-xs"
         />
-        <Btn type="submit" variant="ghost">Lọc</Btn>
+        <Btn type="submit" variant="ghost">
+          Lọc
+        </Btn>
       </form>
 
-      <Panel>
-        <p className="mb-4 text-sm text-[var(--fgColor-muted)]">{items.length} mục{all.length >= 400 ? ' (chỉ tải 400 mục gần nhất)' : ''}</p>
+      <Panel
+        title="Dòng thời gian sự kiện"
+        action={
+          <Pill tone="stone">
+            {items.length} mục{all.length >= 400 ? ' (400 mục gần nhất)' : ''}
+          </Pill>
+        }
+        className="tsukuba-rise"
+      >
         <HistoryTimeline items={items} showStudent />
       </Panel>
     </section>

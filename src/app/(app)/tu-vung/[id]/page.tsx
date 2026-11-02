@@ -1,7 +1,7 @@
 import { connection } from 'next/server';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
-import { GameHub } from '@/components/games/GameHub';
+import { WordListDetailView } from '@/components/word-lists/WordListDetailView';
 import { NoAccess } from '@/components/ui/NoAccess';
 import { ForbiddenError } from '@/lib/authz';
 import { requireClassAccess } from '@/lib/campus-access';
@@ -9,10 +9,17 @@ import { hasPermission } from '@/lib/permissions';
 import { getWordListHeader, getWordListItems } from '@/lib/queries/word-lists';
 import { getCurrentPermissions } from '@/lib/session';
 
-// Giáo viên chơi thử danh sách từ (35.15), giống hệt màn học sinh thấy.
+// Giáo viên xem chi tiết từ vựng và chơi thử danh sách từ (35.15).
 export default function WordListPlayPage({ params }: { params: Promise<{ id: string }> }) {
   return (
-    <Suspense fallback={<section aria-busy="true" className="h-[360px] animate-pulse rounded-xl bg-[var(--bgColor-muted)]" />}>
+    <Suspense
+      fallback={
+        <section aria-busy="true" className="grid grid-cols-1 gap-5 min-[1024px]:grid-cols-[minmax(0,1.35fr)_minmax(380px,460px)]">
+          <div className="h-[420px] animate-pulse rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]" />
+          <div className="h-[420px] animate-pulse rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]" />
+        </section>
+      }
+    >
       <WordListPlayData params={params} />
     </Suspense>
   );
@@ -35,5 +42,5 @@ async function WordListPlayData({ params }: { params: Promise<{ id: string }> })
     }
   }
   const words = await getWordListItems(list.id);
-  return <GameHub title={list.name} words={words} backHref="/tu-vung" backLabel="Danh sách từ" />;
+  return <WordListDetailView title={list.name} words={words} />;
 }

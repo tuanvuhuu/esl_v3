@@ -49,48 +49,58 @@ export function LevelSettings({ levels, canManage }: { levels: LevelRow[]; canMa
   return (
     <Panel title="Trình độ và ngưỡng lên lớp" className="min-[1200px]:col-span-2">
       <div className="flex flex-col gap-3">
-        <p className="text-sm text-[var(--fgColor-muted)]">Ngưỡng là điểm trung bình tối thiểu (%) của ba bài đã chấm gần nhất để được gợi ý lên trình độ kế tiếp.</p>
+        <p className="m-0 text-sm text-[var(--fgColor-muted)]">
+          Ngưỡng là điểm trung bình tối thiểu (%) của ba bài đã chấm gần nhất để được gợi ý lên trình độ kế tiếp.
+        </p>
 
         {levels.map((l) => {
           const d = drafts[l.id];
           const err = errors[l.id];
           return (
-            <div key={l.id} className="flex flex-col gap-3 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-3.5">
-              <div className="grid grid-cols-1 gap-3 min-[768px]:grid-cols-[120px_minmax(0,1fr)]">
-                <Field label={`Tên trình độ ${l.code}`}>
-                  <TextInput
-                    block
-                    value={d.name}
-                    onChange={(e) => patch(l.id, { name: e.target.value })}
-                    disabled={!canManage}
-                    aria-label={`Tên trình độ ${l.code}`}
-                  />
-                </Field>
-                <div className="grid grid-cols-2 gap-2.5 min-[768px]:grid-cols-4">
-                  {SKILLS.map((s) => (
-                    <Field key={s} label={`Ngưỡng ${SKILL_LABELS[s]} (%)`}>
-                      <TextInputNumber
-                        min={0}
-                        max={100}
-                        thousandSeparator={false}
-                        value={d.thresholds[s]}
-                        onTextChange={(raw) => patch(l.id, { thresholds: { ...d.thresholds, [s]: raw } })}
-                        disabled={!canManage}
-                        aria-label={`Ngưỡng ${SKILL_LABELS[s]} của trình độ ${l.code}`}
-                      />
-                    </Field>
-                  ))}
+            <div
+              key={l.id}
+              className="flex flex-col overflow-hidden rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)]"
+            >
+              <div className="flex items-center justify-between gap-2 border-b border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)] px-3.5 py-2">
+                <div className="flex items-center gap-2">
+                  <span className="rounded-[var(--borderRadius-small)] bg-[var(--bgColor-neutral-muted)] px-2 py-0.5 font-mono text-xs font-semibold text-[var(--fgColor-default)]">
+                    {l.code}
+                  </span>
+                  <span className="text-xs font-medium text-[var(--fgColor-muted)]">{d.name || l.name}</span>
                 </div>
-              </div>
-              {err && (
-                <Alert inline>
-                  {err}
-                </Alert>
-              )}
-              <div className="flex justify-end">
                 <Btn variant="ghost" loading={pendingId === l.id} onClick={() => save(l.id)} disabled={!canManage || pendingId === l.id}>
                   {pendingId === l.id ? 'Đang lưu…' : `Lưu ${l.code}`}
                 </Btn>
+              </div>
+
+              <div className="flex flex-col gap-3 p-3.5">
+                <div className="grid grid-cols-1 gap-3 min-[768px]:grid-cols-[180px_minmax(0,1fr)]">
+                  <Field label={`Tên trình độ ${l.code}`}>
+                    <TextInput
+                      block
+                      value={d.name}
+                      onChange={(e) => patch(l.id, { name: e.target.value })}
+                      disabled={!canManage}
+                      aria-label={`Tên trình độ ${l.code}`}
+                    />
+                  </Field>
+                  <div className="grid grid-cols-2 gap-2.5 min-[768px]:grid-cols-4">
+                    {SKILLS.map((s) => (
+                      <Field key={s} label={`Ngưỡng ${SKILL_LABELS[s]} (%)`}>
+                        <TextInputNumber
+                          min={0}
+                          max={100}
+                          thousandSeparator={false}
+                          value={d.thresholds[s]}
+                          onTextChange={(raw) => patch(l.id, { thresholds: { ...d.thresholds, [s]: raw } })}
+                          disabled={!canManage}
+                          aria-label={`Ngưỡng ${SKILL_LABELS[s]} của trình độ ${l.code}`}
+                        />
+                      </Field>
+                    ))}
+                  </div>
+                </div>
+                {err && <Alert inline>{err}</Alert>}
               </div>
             </div>
           );

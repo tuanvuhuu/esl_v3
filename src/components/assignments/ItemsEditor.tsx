@@ -9,10 +9,10 @@ import { Btn } from '@/components/ui/Btn';
 import { FormFooter } from '@/components/ui/Field';
 import { Modal } from '@/components/ui/Modal';
 import { BankPicker } from '@/components/questions/BankPicker';
-import { blankDraft, draftFromBank, draftFromInput, draftToInput, toDraft, type Draft } from './item-draft';
+import { blankDraft, criteriaTotal, draftFromBank, draftFromInput, draftToInput, toDraft, type Draft } from './item-draft';
 import { QuickCompose } from './QuickCompose';
 import { ItemDraftCard } from './ItemDraftCard';
-import { Alert } from '@/components/ui/primitives';
+import { Alert, Pill } from '@/components/ui/primitives';
 import { Notice } from '@/components/ui/surfaces';
 
 // Hộp thoại soạn câu hỏi của bài tập: thêm, sửa, sắp xếp, xoá câu, chép câu từ ngân hàng, Soạn nhanh (P36).
@@ -64,18 +64,36 @@ export function ItemsEditor({
     });
   }
 
+  const totalPoints = drafts.reduce((sum, d) => sum + (d.criteria.length > 0 ? criteriaTotal(d) : Number(d.points) || 0), 0);
+
   return (
     <>
-      <Modal open={open && !quick} title="Câu hỏi của bài tập" subtitle="Mỗi câu có kỹ năng, loại và điểm. Điểm tối đa của bài là tổng điểm các câu." onClose={onClose} labelledBy="items-editor-title">
-        <div className="flex flex-col gap-4">
-          {error && (
-            <Alert>
-              {error}
-            </Alert>
-          )}
+      <Modal
+        size="xl"
+        open={open && !quick}
+        title="Câu hỏi của bài tập"
+        subtitle="Mỗi câu có kỹ năng, loại và điểm. Điểm tối đa của bài là tổng điểm các câu."
+        onClose={onClose}
+        labelledBy="items-editor-title"
+      >
+        <div className="flex flex-col gap-3.5">
+          {error && <Alert>{error}</Alert>}
 
-          {drafts.length === 0 && (
+          {drafts.length === 0 ? (
             <Notice>Bài chưa có câu hỏi. Thêm câu đầu tiên bên dưới.</Notice>
+          ) : (
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] border-l-4 border-l-[var(--primary)] bg-[var(--bgColor-muted)] px-3.5 py-2.5 text-xs text-[var(--fgColor-muted)]">
+              <div className="flex flex-wrap items-center gap-3 tabular-nums">
+                <span>
+                  Tổng số câu <b className="font-semibold text-[var(--fgColor-default)]">{drafts.length}</b>
+                </span>
+                <span>·</span>
+                <span>
+                  Tổng điểm <b className="font-semibold text-[var(--primary-deep)]">{totalPoints}</b>
+                </span>
+              </div>
+              {levelCode && <Pill tone="lav">Trình độ {levelCode}</Pill>}
+            </div>
           )}
 
           {drafts.map((d, index) => (
@@ -93,7 +111,7 @@ export function ItemsEditor({
             />
           ))}
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2 rounded-[var(--borderRadius-large)] border border-dashed border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]/50 p-3">
             <Btn variant="primary" leadingVisual={ZapIcon} onClick={() => setQuick(true)}>
               Soạn nhanh
             </Btn>
@@ -106,9 +124,7 @@ export function ItemsEditor({
           </div>
 
           <FormFooter>
-            <Btn onClick={onClose}>
-              Huỷ
-            </Btn>
+            <Btn onClick={onClose}>Huỷ</Btn>
             <Btn variant="primary" onClick={save} disabled={pending}>
               {pending ? 'Đang lưu…' : 'Lưu câu hỏi'}
             </Btn>

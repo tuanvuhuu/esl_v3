@@ -21,22 +21,22 @@ import {
   setRolePermissionAction,
   type AccountFormValues,
 } from '@/app/(app)/tai-khoan/actions';
-import type { AccountRow, AuditRow, RoleMatrix } from '@/lib/queries/accounts';
-import { LOCKED_ADMIN_PERMISSIONS, PERMISSIONS, ROLE_CODES, ROLE_LABELS, type Permission, type Role } from '@/lib/permissions';
-import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { Modal } from '@/components/ui/Modal';
-import { RowMenu, type RowMenuItem } from '@/components/ui/RowMenu';
-import { PageHeader } from '@/components/ui/PageHeader';
-import { ActIcon } from '@/components/ui/ActIcon';
-import { Avatar, EmptyState, Pill, type Tone, Alert } from '@/components/ui/primitives';
-import { DataGrid, type GridColumn } from '@/components/ui/datagrid';
-import { AccountForm, type TeacherOption } from './AccountForm';
-import type { CampusOption } from '@/lib/campus';
-import { Toast } from '@/components/ui/Toast';
-import { EmptyPanel, Panel, Card } from '@/components/ui/surfaces';
 import { SelectBox, TextInput } from '@/components-ui';
+import { ActIcon } from '@/components/ui/ActIcon';
 import { Btn } from '@/components/ui/Btn';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Chip, ChipGroup } from '@/components/ui/controls';
+import { DataGrid, type GridColumn } from '@/components/ui/datagrid';
+import { Modal } from '@/components/ui/Modal';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { Alert, Avatar, EmptyState, Pill, type Tone } from '@/components/ui/primitives';
+import { RowMenu, type RowMenuItem } from '@/components/ui/RowMenu';
+import { Card, EmptyPanel, Panel } from '@/components/ui/surfaces';
+import { Toast } from '@/components/ui/Toast';
+import type { CampusOption } from '@/lib/campus';
+import { LOCKED_ADMIN_PERMISSIONS, PERMISSIONS, ROLE_CODES, ROLE_LABELS, type Permission, type Role } from '@/lib/permissions';
+import type { AccountRow, AuditRow, RoleMatrix } from '@/lib/queries/accounts';
+import { AccountForm, type TeacherOption } from './AccountForm';
 
 export type TabKey = 'nguoi-dung' | 'phan-quyen' | 'nhat-ky';
 
@@ -96,7 +96,9 @@ export function AccountsView({ tab, accounts, total, filters, teachers, campuses
         })}
       </ChipGroup>
 
-      {tab === 'nguoi-dung' && <UsersTab accounts={accounts} total={total} filters={filters} teachers={teachers} campuses={campuses} canManage={canManage} />}
+      {tab === 'nguoi-dung' && (
+        <UsersTab accounts={accounts} total={total} filters={filters} teachers={teachers} campuses={campuses} canManage={canManage} />
+      )}
       {tab === 'phan-quyen' && <PermissionsTab matrix={matrix} canManage={isAdmin} />}
       {tab === 'nhat-ky' && <AuditTab audit={audit} />}
     </section>
@@ -105,8 +107,23 @@ export function AccountsView({ tab, accounts, total, filters, teachers, campuses
 
 // ---------- Người dùng ----------
 
-function UsersTab({ accounts, total, filters, teachers, campuses, canManage }: { accounts: AccountRow[]; total: number; filters: Props['filters']; teachers: TeacherOption[]; campuses: CampusOption[]; canManage: boolean }) {
-  const campusText = (row: AccountRow) => (row.role === 'admin' ? 'Mọi cơ sở' : row.campusIds.map((id) => campuses.find((c) => c.id === id)?.name ?? `#${id}`).join(', '));
+function UsersTab({
+  accounts,
+  total,
+  filters,
+  teachers,
+  campuses,
+  canManage,
+}: {
+  accounts: AccountRow[];
+  total: number;
+  filters: Props['filters'];
+  teachers: TeacherOption[];
+  campuses: CampusOption[];
+  canManage: boolean;
+}) {
+  const campusText = (row: AccountRow) =>
+    row.role === 'admin' ? 'Mọi cơ sở' : row.campusIds.map((id) => campuses.find((c) => c.id === id)?.name ?? `#${id}`).join(', ');
   const router = useRouter();
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<{ id: number; values: AccountFormValues } | null>(null);
@@ -120,12 +137,15 @@ function UsersTab({ accounts, total, filters, teachers, campuses, canManage }: {
     return () => window.clearTimeout(t);
   }, [message]);
 
-  const onDone = useCallback((text: string) => {
-    setCreating(false);
-    setEditing(null);
-    setMessage(text);
-    router.refresh();
-  }, [router]);
+  const onDone = useCallback(
+    (text: string) => {
+      setCreating(false);
+      setEditing(null);
+      setMessage(text);
+      router.refresh();
+    },
+    [router],
+  );
 
   function openEdit(row: AccountRow) {
     startTransition(async () => {
@@ -157,7 +177,14 @@ function UsersTab({ accounts, total, filters, teachers, campuses, canManage }: {
   const menuItems = (row: AccountRow): RowMenuItem[] => {
     const isAdmin = row.role === 'admin';
     return [
-      { kind: 'action', label: 'Sửa', icon: PencilIcon, onSelect: () => openEdit(row), disabled: !canManage, disabledHint: 'Không có quyền quản lý tài khoản' },
+      {
+        kind: 'action',
+        label: 'Sửa',
+        icon: PencilIcon,
+        onSelect: () => openEdit(row),
+        disabled: !canManage,
+        disabledHint: 'Không có quyền quản lý tài khoản',
+      },
       {
         kind: 'action',
         label: row.status === 'active' ? 'Khoá tài khoản' : 'Mở khoá',
@@ -193,11 +220,19 @@ function UsersTab({ accounts, total, filters, teachers, campuses, canManage }: {
       case 'role':
         return <Pill tone={ROLE_TONE[row.role]}>{row.roleLabel}</Pill>;
       case 'campus':
-        return <div className="min-w-0 truncate text-sm text-[var(--fgColor-muted)]" title={campusText(row)}>{campusText(row)}</div>;
+        return (
+          <div className="min-w-0 truncate text-sm text-[var(--fgColor-muted)]" title={campusText(row)}>
+            {campusText(row)}
+          </div>
+        );
       case 'link':
         return <div className="min-w-0 truncate text-sm text-[var(--fgColor-muted)]">{row.teacherName ?? ''}</div>;
       case 'last':
-        return <div className="whitespace-nowrap text-sm tabular-nums text-[var(--fgColor-muted)]">{row.lastLoginAt ? formatTime(row.lastLoginAt) : 'Chưa đăng nhập'}</div>;
+        return (
+          <div className="whitespace-nowrap font-mono text-xs tabular-nums text-[var(--fgColor-muted)]">
+            {row.lastLoginAt ? formatTime(row.lastLoginAt) : 'Chưa đăng nhập'}
+          </div>
+        );
       case 'status':
         return <Pill tone={row.status === 'active' ? 'mint' : 'blush'}>{row.status === 'active' ? 'Hoạt động' : 'Tạm khoá'}</Pill>;
       case 'actions':
@@ -230,7 +265,13 @@ function UsersTab({ accounts, total, filters, teachers, campuses, canManage }: {
       </div>
       <div className="flex justify-end gap-2">
         <ActIcon label={`Sửa ${row.fullName}`} icon={PencilIcon} onClick={() => openEdit(row)} disabled={!canManage} />
-        <ActIcon label={`Xoá ${row.fullName}`} icon={TrashIcon} danger onClick={() => setToDelete(row)} disabled={!canManage || row.role === 'admin'} />
+        <ActIcon
+          label={`Xoá ${row.fullName}`}
+          icon={TrashIcon}
+          danger
+          onClick={() => setToDelete(row)}
+          disabled={!canManage || row.role === 'admin'}
+        />
       </div>
     </Card>
   );
@@ -248,7 +289,7 @@ function UsersTab({ accounts, total, filters, teachers, campuses, canManage }: {
         title={
           <div className="flex items-baseline gap-2">
             <span className="text-base font-medium text-[var(--fgColor-default)]">Tài khoản</span>
-            <span className="text-xs text-[var(--fgColor-muted)]">
+            <span className="text-xs tabular-nums text-[var(--fgColor-muted)]">
               ({accounts.length}/{total})
             </span>
           </div>
@@ -279,7 +320,9 @@ function UsersTab({ accounts, total, filters, teachers, campuses, canManage }: {
                   { value: 'locked', label: 'Tạm khoá' },
                 ]}
               />
-              <Btn type="submit" variant="ghost">Lọc</Btn>
+              <Btn type="submit" variant="ghost">
+                Lọc
+              </Btn>
             </form>
             {canManage && (
               <Btn variant="primary" leadingVisual={PlusIcon} onClick={() => setCreating(true)}>
@@ -288,18 +331,40 @@ function UsersTab({ accounts, total, filters, teachers, campuses, canManage }: {
             )}
           </>
         }
-        empty={
-          <EmptyPanel title="Không có tài khoản phù hợp" hint="Thử đổi bộ lọc hoặc từ khoá." />
-        }
+        empty={<EmptyPanel title="Không có tài khoản phù hợp" hint="Thử đổi bộ lọc hoặc từ khoá." />}
       />
 
       <Toast message={message} />
 
-      <Modal open={creating} title="Mời thành viên" subtitle="Các trường có dấu * là bắt buộc." onClose={() => setCreating(false)} labelledBy="account-create-title">
+      <Modal
+        open={creating}
+        size="md"
+        title="Mời thành viên"
+        subtitle="Tạo tài khoản nhân sự với mật khẩu mặc định và gán cơ sở làm việc. Các trường có dấu * là bắt buộc."
+        onClose={() => setCreating(false)}
+        labelledBy="account-create-title"
+      >
         <AccountForm mode="create" teachers={teachers} campuses={campuses} onDone={onDone} onCancel={() => setCreating(false)} />
       </Modal>
-      <Modal open={!!editing} title="Sửa tài khoản" subtitle="Các trường có dấu * là bắt buộc." onClose={() => setEditing(null)} labelledBy="account-edit-title">
-        {editing && <AccountForm mode="edit" accountId={editing.id} initial={editing.values} teachers={teachers} campuses={campuses} onDone={onDone} onCancel={() => setEditing(null)} />}
+      <Modal
+        open={!!editing}
+        size="md"
+        title="Sửa tài khoản"
+        subtitle="Cập nhật vai trò, trạng thái đăng nhập hoặc phạm vi cơ sở. Các trường có dấu * là bắt buộc."
+        onClose={() => setEditing(null)}
+        labelledBy="account-edit-title"
+      >
+        {editing && (
+          <AccountForm
+            mode="edit"
+            accountId={editing.id}
+            initial={editing.values}
+            teachers={teachers}
+            campuses={campuses}
+            onDone={onDone}
+            onCancel={() => setEditing(null)}
+          />
+        )}
       </Modal>
       <ConfirmDialog
         open={!!toDelete}
@@ -333,19 +398,41 @@ function PermissionsTab({ matrix, canManage }: { matrix: RoleMatrix; canManage: 
   const isLocked = (role: Role, permission: Permission) => role === 'admin' && (LOCKED_ADMIN_PERMISSIONS as string[]).includes(permission);
 
   return (
-    <div className="flex flex-col gap-3">
-      <p className="text-sm text-[var(--fgColor-muted)]">Đánh dấu những việc mỗi vai trò được làm. Quản trị luôn giữ quyền quản lý tài khoản và cài đặt.</p>
+    <div className="tsukuba-rise flex flex-col gap-3">
+      <p className="m-0 text-sm text-[var(--fgColor-muted)]">
+        Đánh dấu những việc mỗi vai trò được làm. Quản trị luôn giữ quyền quản lý tài khoản và cài đặt hệ thống.
+      </p>
       {notice && <Alert>{notice}</Alert>}
 
-      {/* Máy tính: ma trận đầy đủ */}
+      {/* Máy tính: ma trận đầy đủ — lưu ý giữ font-normal (400) trên mọi [role="columnheader"] theo chuẩn giao diện */}
       <Panel padded={false} className="hidden overflow-hidden min-[768px]:block">
-        <div role="table" aria-label="Ma trận quyền" className="grid grid-cols-[minmax(220px,2fr)_repeat(4,minmax(90px,1fr))]">
-          <div role="columnheader" className="border-b border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)]/60 px-4 py-3 text-xs font-normal text-[var(--fgColor-muted)]">Quyền</div>
+        <div role="table" aria-label="Ma trận quyền" className="grid grid-cols-[minmax(220px,2fr)_repeat(4,minmax(96px,1fr))]">
+          <div
+            role="columnheader"
+            className="border-b border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)] px-4 py-2.5 text-xs font-normal uppercase tracking-wide text-[var(--fgColor-muted)]"
+          >
+            Quyền thao tác
+          </div>
           {ROLE_CODES.map((r) => (
-            <div key={r} role="columnheader" className="border-b border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)]/60 px-2 py-3 text-center text-sm font-normal text-[var(--fgColor-default)]">{ROLE_LABELS[r]}</div>
+            <div
+              key={r}
+              role="columnheader"
+              className="border-b border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)] px-2 py-2.5 text-center text-xs font-normal uppercase tracking-wide text-[var(--fgColor-muted)]"
+            >
+              {ROLE_LABELS[r]}
+            </div>
           ))}
           {PERMISSIONS.map((p) => (
-            <PermissionCells key={p.key} label={p.label} permission={p.key} matrix={matrix} isLocked={isLocked} canManage={canManage} onToggle={toggle} pending={pending} />
+            <PermissionCells
+              key={p.key}
+              label={p.label}
+              permission={p.key}
+              matrix={matrix}
+              isLocked={isLocked}
+              canManage={canManage}
+              onToggle={toggle}
+              pending={pending}
+            />
           ))}
         </div>
       </Panel>
@@ -356,7 +443,15 @@ function PermissionsTab({ matrix, canManage }: { matrix: RoleMatrix; canManage: 
   );
 }
 
-function PermissionCells({ label, permission, matrix, isLocked, canManage, onToggle, pending }: {
+function PermissionCells({
+  label,
+  permission,
+  matrix,
+  isLocked,
+  canManage,
+  onToggle,
+  pending,
+}: {
   label: string;
   permission: Permission;
   matrix: RoleMatrix;
@@ -367,12 +462,17 @@ function PermissionCells({ label, permission, matrix, isLocked, canManage, onTog
 }) {
   return (
     <>
-      <div role="cell" className="flex items-center border-b border-[var(--borderColor-muted)] px-4 py-3 text-base font-semibold text-[var(--fgColor-default)]">{label}</div>
+      <div
+        role="cell"
+        className="flex items-center border-b border-[var(--borderColor-muted)] px-4 py-2.5 text-sm font-medium text-[var(--fgColor-default)]"
+      >
+        {label}
+      </div>
       {ROLE_CODES.map((r) => {
         const granted = matrix[r][permission];
         const locked = isLocked(r, permission) || !canManage;
         return (
-          <div key={r} role="cell" className="flex items-center justify-center border-b border-[var(--borderColor-muted)] px-2 py-3">
+          <div key={r} role="cell" className="flex items-center justify-center border-b border-[var(--borderColor-muted)] px-2 py-2.5">
             <button
               type="button"
               role="checkbox"
@@ -380,13 +480,13 @@ function PermissionCells({ label, permission, matrix, isLocked, canManage, onTog
               aria-label={`${label} — ${ROLE_LABELS[r]}`}
               disabled={locked || pending}
               onClick={() => onToggle(r, permission, !granted)}
-              className={`grid size-7 place-items-center rounded-[var(--borderRadius-small)] border transition-colors disabled:opacity-50 ${
+              className={`grid size-6 place-items-center rounded-[var(--borderRadius-small)] border transition-colors disabled:opacity-50 ${
                 granted
-                  ? 'border-[var(--bgColor-success-emphasis)] bg-[var(--bgColor-success-emphasis)] text-[var(--bgColor-default)]'
-                  : 'border-[var(--borderColor-default)] bg-[var(--bgColor-default)] text-transparent'
+                  ? 'border-[#1baf7a] bg-[#1baf7a] text-white'
+                  : 'border-[var(--borderColor-default)] bg-[var(--bgColor-default)] text-transparent hover:border-[var(--primary)]'
               }`}
             >
-              <CheckIcon size={16} aria-hidden />
+              <CheckIcon size={14} aria-hidden />
             </button>
           </div>
         );
@@ -395,7 +495,13 @@ function PermissionCells({ label, permission, matrix, isLocked, canManage, onTog
   );
 }
 
-function PhonePermissions({ matrix, canManage, isLocked, onToggle, pending }: {
+function PhonePermissions({
+  matrix,
+  canManage,
+  isLocked,
+  onToggle,
+  pending,
+}: {
   matrix: RoleMatrix;
   canManage: boolean;
   isLocked: (r: Role, p: Permission) => boolean;
@@ -412,7 +518,7 @@ function PhonePermissions({ matrix, canManage, isLocked, onToggle, pending }: {
           </Chip>
         ))}
       </ChipGroup>
-      <ul className="flex flex-col gap-2">
+      <ul className="m-0 flex list-none flex-col gap-2 p-0">
         {PERMISSIONS.map((p) => {
           const granted = matrix[role][p.key];
           const locked = isLocked(role, p.key) || !canManage;
@@ -426,9 +532,18 @@ function PhonePermissions({ matrix, canManage, isLocked, onToggle, pending }: {
                 onClick={() => onToggle(role, p.key, !granted)}
                 className="flex min-h-12 w-full items-center justify-between gap-3 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-3.5 py-2.5 text-left transition-colors hover:bg-[var(--bgColor-muted)] disabled:opacity-50"
               >
-                <span className="text-base font-semibold text-[var(--fgColor-default)]">{p.label}</span>
-                <span className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${granted ? 'bg-[var(--bgColor-success-emphasis)]' : 'bg-[var(--bgColor-muted)]'}`} aria-hidden>
-                  <span className={`absolute top-0.5 size-5 rounded-full bg-[var(--bgColor-default)] shadow-sm transition-transform ${granted ? 'translate-x-5.5' : 'translate-x-0.5'}`} />
+                <span className="text-sm font-medium text-[var(--fgColor-default)]">{p.label}</span>
+                <span
+                  className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
+                    granted ? 'bg-[#1baf7a]' : 'bg-[var(--bgColor-neutral-muted)]'
+                  }`}
+                  aria-hidden
+                >
+                  <span
+                    className={`absolute top-0.5 size-5 rounded-full bg-[var(--bgColor-default)] shadow-sm transition-transform ${
+                      granted ? 'translate-x-5.5' : 'translate-x-0.5'
+                    }`}
+                  />
                 </span>
               </button>
             </li>
@@ -441,26 +556,32 @@ function PhonePermissions({ matrix, canManage, isLocked, onToggle, pending }: {
 
 // ---------- Nhật ký ----------
 
-const ACTION_LABEL: Record<string, string> = {
-  create: 'Thêm',
-  update: 'Sửa',
-  delete: 'Xoá',
-  lock: 'Khoá',
-  unlock: 'Mở khoá',
-  grant: 'Cấp quyền',
-  revoke: 'Gỡ quyền',
-  seed: 'Nạp dữ liệu',
+const ACTION_META: Record<string, { label: string; tone: Tone }> = {
+  create: { label: 'Thêm', tone: 'mint' },
+  update: { label: 'Sửa', tone: 'butter' },
+  delete: { label: 'Xoá', tone: 'blush' },
+  lock: { label: 'Khoá', tone: 'blush' },
+  unlock: { label: 'Mở khoá', tone: 'mint' },
+  grant: { label: 'Cấp quyền', tone: 'lav' },
+  revoke: { label: 'Gỡ quyền', tone: 'butter' },
+  seed: { label: 'Nạp dữ liệu', tone: 'stone' },
 };
 
 function AuditTab({ audit }: { audit: AuditRow[] }) {
+  const meta = (action: string) => ACTION_META[action] ?? { label: action, tone: 'stone' as Tone };
+
   const cell = (a: AuditRow, key: string) => {
     switch (key) {
       case 'time':
-        return <div className="whitespace-nowrap text-sm tabular-nums text-[var(--fgColor-muted)]">{formatTime(a.createdAt)}</div>;
+        return <div className="whitespace-nowrap font-mono text-xs tabular-nums text-[var(--fgColor-muted)]">{formatTime(a.createdAt)}</div>;
       case 'action':
-        return <Pill tone="stone">{ACTION_LABEL[a.action] ?? a.action}</Pill>;
+        return <Pill tone={meta(a.action).tone}>{meta(a.action).label}</Pill>;
       case 'summary':
-        return <div className="min-w-0 truncate text-sm text-[var(--fgColor-default)]" title={a.summary}>{a.summary}</div>;
+        return (
+          <div className="min-w-0 truncate text-sm text-[var(--fgColor-default)]" title={a.summary}>
+            {a.summary}
+          </div>
+        );
       case 'actor':
         return <div className="min-w-0 truncate text-sm text-[var(--fgColor-muted)]">{a.accountName ?? 'Hệ thống'}</div>;
       default:
@@ -471,10 +592,14 @@ function AuditTab({ audit }: { audit: AuditRow[] }) {
   const card = (a: AuditRow) => (
     <Card>
       <div className="flex items-start gap-3">
-        <span className="mt-0.5 shrink-0"><Pill tone="stone">{ACTION_LABEL[a.action] ?? a.action}</Pill></span>
+        <span className="mt-0.5 shrink-0">
+          <Pill tone={meta(a.action).tone}>{meta(a.action).label}</Pill>
+        </span>
         <div className="min-w-0 flex-1">
-          <p className="text-base text-[var(--fgColor-default)]">{a.summary}</p>
-          <small className="text-xs text-[var(--fgColor-muted)]">{a.accountName ?? 'Hệ thống'} · {formatTime(a.createdAt)}</small>
+          <p className="m-0 text-sm text-[var(--fgColor-default)]">{a.summary}</p>
+          <small className="mt-1 block font-mono text-xs tabular-nums text-[var(--fgColor-muted)]">
+            {a.accountName ?? 'Hệ thống'} · {formatTime(a.createdAt)}
+          </small>
         </div>
       </div>
     </Card>

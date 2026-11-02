@@ -10,8 +10,8 @@ import { Btn } from '@/components/ui/Btn';
 import { DataGrid, type GridColumn } from '@/components/ui/datagrid';
 import { Modal } from '@/components/ui/Modal';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { Pill } from '@/components/ui/primitives';
-import { Card, EmptyPanel, Notice } from '@/components/ui/surfaces';
+import { Avatar, Pill } from '@/components/ui/primitives';
+import { Card, EmptyPanel, Notice, StatCards } from '@/components/ui/surfaces';
 import { Toast, useToast } from '@/components/ui/Toast';
 import { usePresent } from '@/components/present/usePresent';
 import { SubmissionPill } from './SubmissionPill';
@@ -53,6 +53,12 @@ export function ItemGradingView({
     submitted: rows.filter((r) => r.status === 'submitted').length,
     graded: rows.filter((r) => r.status === 'graded').length,
   };
+  const gradedRows = rows.filter((r) => r.status === 'graded');
+  const maxTotalPoints = rows[0]?.summary.maxTotal ?? assignment.maxScore;
+  const avgScore =
+    gradedRows.length > 0
+      ? `${(gradedRows.reduce((s, r) => s + r.summary.total, 0) / gradedRows.length).toFixed(1).replace(/\.0$/, '')}/${maxTotalPoints}`
+      : '—';
 
   const skillText = (r: ItemGradingRow) => r.summary.skills.map((s) => `${SKILL_LABELS[s.skill]} ${s.raw}/${s.max}`).join(' · ');
   const scoreText = (r: ItemGradingRow) => `${r.summary.total}/${r.summary.maxTotal}${r.summary.complete ? '' : ' (chưa chấm đủ)'}`;
@@ -68,18 +74,37 @@ export function ItemGradingView({
   const cell = (r: ItemGradingRow, key: string) => {
     switch (key) {
       case 'student':
-        return <span className="min-w-0 truncate text-sm font-medium text-[var(--fgColor-default)]">{r.fullName}</span>;
+        return (
+          <div className="flex min-w-0 items-center gap-2.5">
+            <Avatar name={r.fullName} seed={r.studentId} quiet size="sm" />
+            <span className="min-w-0 truncate text-sm font-medium text-[var(--fgColor-default)]">{r.fullName}</span>
+          </div>
+        );
       case 'status':
         return <SubmissionPill status={r.status} />;
       case 'score':
         return (
-          <span className="flex flex-wrap items-center gap-2">
-            <span className="text-sm text-[var(--fgColor-default)]">{scoreText(r)}</span>
+          <span className="flex flex-wrap items-center gap-2 tabular-nums">
+            <span className="text-sm font-medium text-[var(--fgColor-default)]">{scoreText(r)}</span>
             {hasFlaggedMark(r) && <Pill tone="blush">Chấm chéo lệch</Pill>}
           </span>
         );
       case 'skills':
-        return <span className="text-sm text-[var(--fgColor-muted)]">{skillText(r) || '—'}</span>;
+        return r.summary.skills.length > 0 ? (
+          <div className="flex flex-wrap items-center gap-1.5">
+            {r.summary.skills.map((s) => (
+              <span
+                key={s.skill}
+                className="inline-flex items-center gap-1 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] px-2 py-0.5 text-xs tabular-nums text-[var(--fgColor-default)]"
+              >
+                <span className="text-[var(--fgColor-muted)]">{SKILL_LABELS[s.skill]}</span>
+                <b className="font-medium">{s.raw}/{s.max}</b>
+              </span>
+            ))}
+          </div>
+        ) : (
+          <span className="text-sm text-[var(--fgColor-muted)]">—</span>
+        );
       case 'action':
         return (
           <Btn variant="ghost" onClick={() => setOpenId(r.studentId)} disabled={!canManage && r.submissionId === null}>
@@ -117,39 +142,56 @@ export function ItemGradingView({
       {rows.length === 0 ? (
         <EmptyPanel title="Lớp chưa có học sinh đang học" hint="Thêm học sinh vào lớp để chấm bài." />
       ) : (
-        <DataGrid
-          label="Chấm bài theo câu"
-          columns={COLUMNS}
-          rows={rows}
-          rowKey={(r) => r.studentId}
-          cell={cell}
-          from="md"
-          searchEnable
-          paging={{ enable: false }}
-          title={
-            <span className="text-xs text-[var(--fgColor-muted)]">
-              {items.length} câu hỏi · Chưa nộp <b className="font-semibold text-[var(--fgColor-default)]">{counts.not_submitted}</b> · Đã nộp <b className="font-semibold text-[var(--fgColor-default)]">{counts.submitted}</b> · Đã chấm{' '}
-              <b className="font-semibold text-[var(--fgColor-default)]">{counts.graded}</b>
-            </span>
-          }
-          card={(r) => (
-            <Card>
-              <div className="flex items-start justify-between gap-2">
-                <b className="min-w-0 truncate text-base text-[var(--fgColor-default)]">{r.fullName}</b>
-                <SubmissionPill status={r.status} />
-              </div>
-              <small className="block text-sm text-[var(--fgColor-muted)]">Điểm {scoreText(r)}</small>
-              {hasFlaggedMark(r) && <Pill tone="blush">Chấm chéo lệch</Pill>}
-              {skillText(r) && <small className="block text-sm text-[var(--fgColor-muted)]">{skillText(r)}</small>}
-              <Btn block variant="ghost" onClick={() => setOpenId(r.studentId)}>
-                {canManage ? 'Chấm bài' : 'Xem bài'}
-              </Btn>
-            </Card>
-          )}
-        />
+        <>
+          <div className="mb-3">
+            <StatCards
+              items={[
+                { label: 'Đã nộp', value: `${counts.submitted + counts.graded}/${rows.length}`, sub: `${counts.not_submitted} chưa nộp` },
+                { label: 'Đã chấm', value: `${counts.graded}/${rows.length}`, sub: `${counts.submitted} chờ chấm` },
+                { label: 'Điểm TB', value: avgScore, sub: `${items.length} câu hỏi trong đề` },
+              ]}
+            />
+          </div>
+          <DataGrid
+            label="Chấm bài theo câu"
+            columns={COLUMNS}
+            rows={rows}
+            rowKey={(r) => r.studentId}
+            cell={cell}
+            from="md"
+            searchEnable
+            paging={{ enable: false }}
+            title={
+              <span className="text-xs tabular-nums text-[var(--fgColor-muted)]">
+                {items.length} câu hỏi · Chưa nộp <b className="font-semibold text-[var(--fgColor-default)]">{counts.not_submitted}</b> · Đã nộp <b className="font-semibold text-[var(--fgColor-default)]">{counts.submitted}</b> · Đã chấm{' '}
+                <b className="font-semibold text-[var(--fgColor-default)]">{counts.graded}</b>
+              </span>
+            }
+            card={(r) => (
+              <Card>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <Avatar name={r.fullName} seed={r.studentId} quiet size="sm" />
+                    <b className="min-w-0 truncate text-base text-[var(--fgColor-default)]">{r.fullName}</b>
+                  </div>
+                  <SubmissionPill status={r.status} />
+                </div>
+                <div className="flex flex-wrap items-center gap-2 rounded-[var(--borderRadius-medium)] bg-[var(--bgColor-muted)] px-3 py-2 text-xs tabular-nums">
+                  <span className="font-medium text-[var(--fgColor-default)]">Điểm {scoreText(r)}</span>
+                  {hasFlaggedMark(r) && <Pill tone="blush">Chấm chéo lệch</Pill>}
+                  {skillText(r) && <span className="text-[var(--fgColor-muted)]">· {skillText(r)}</span>}
+                </div>
+                <Btn block variant="ghost" onClick={() => setOpenId(r.studentId)}>
+                  {canManage ? 'Chấm bài' : 'Xem bài'}
+                </Btn>
+              </Card>
+            )}
+          />
+        </>
       )}
 
       <Modal
+        size="xl"
         open={!!open}
         title={open ? `Bài làm của ${open.fullName}` : 'Bài làm'}
         subtitle={`${assignment.title} · ${assignment.className}`}

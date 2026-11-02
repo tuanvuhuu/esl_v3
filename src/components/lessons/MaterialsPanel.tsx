@@ -10,8 +10,8 @@ import { SelectBox, TextInput } from '@/components-ui';
 import { ActIcon } from '@/components/ui/ActIcon';
 import { Btn } from '@/components/ui/Btn';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { Field, FileInput } from '@/components/ui/Field';
-import { Alert } from '@/components/ui/primitives';
+import { Field, FileInput, FormSection } from '@/components/ui/Field';
+import { Alert, Pill } from '@/components/ui/primitives';
 import { Notice } from '@/components/ui/surfaces';
 import { UPLOAD_ACCEPT } from '@/lib/upload-types';
 
@@ -96,42 +96,83 @@ export function MaterialsPanel({ lesson, canManage, onChanged }: { lesson: Lesso
       {lesson.materials.length === 0 ? (
         <Notice>Bài giảng chưa có tài liệu.</Notice>
       ) : (
-        <ul className="flex flex-col gap-2">
-          {lesson.materials.map((m) => (
-            <li key={m.id} className="flex items-center justify-between gap-3 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-3 py-2.5">
-              <div className="flex min-w-0 items-center gap-2.5">
-                {m.kind === 'link' ? (
-                  <LinkIcon size={16} className="shrink-0 text-[var(--fgColor-muted)]" aria-hidden />
-                ) : (
-                  <PaperclipIcon size={16} className="shrink-0 text-[var(--fgColor-muted)]" aria-hidden />
-                )}
-                <div className="min-w-0">
-                  {m.kind === 'link' ? (
-                    <a href={m.url} target="_blank" rel="noopener noreferrer" data-link="true" className="block truncate text-base font-normal text-[var(--fgColor-link)] underline underline-offset-2">
-                      {m.title}
-                    </a>
-                  ) : (
-                    <a href={`/api/files/${m.fileId}`} target="_blank" rel="noopener" data-link="true" className="block truncate text-base font-normal text-[var(--fgColor-link)] underline underline-offset-2">
-                      {m.title}
-                    </a>
+        <section className="overflow-hidden rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)]">
+          <header className="flex items-center justify-between gap-2 border-b border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)] px-4 py-2.5">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--fgColor-muted)]">
+              Tài liệu đã gắn
+            </span>
+            <span className="rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-2 py-0.5 font-mono text-xs tabular-nums text-[var(--fgColor-muted)]">
+              {lesson.materials.length}
+            </span>
+          </header>
+          <ul className="divide-y divide-[var(--borderColor-muted)]">
+            {lesson.materials.map((m) => {
+              const badgeText = m.kind === 'link' ? 'LINK' : m.fileName?.startsWith('gdrive:') ? 'DRIVE' : 'FILE';
+              return (
+                <li
+                  key={m.id}
+                  className="flex items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-[var(--row-hover,var(--bgColor-muted))]"
+                >
+                  <div className="flex min-w-0 items-center gap-3">
+                    <span className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)] text-[var(--fgColor-muted)]">
+                      {m.kind === 'link' ? (
+                        <LinkIcon size={15} aria-hidden />
+                      ) : (
+                        <PaperclipIcon size={15} aria-hidden />
+                      )}
+                    </span>
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        {m.kind === 'link' ? (
+                          <a
+                            href={m.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            data-link="true"
+                            className="truncate text-sm font-medium text-[var(--fgColor-link)] underline underline-offset-2"
+                          >
+                            {m.title}
+                          </a>
+                        ) : (
+                          <a
+                            href={`/api/files/${m.fileId}`}
+                            target="_blank"
+                            rel="noopener"
+                            data-link="true"
+                            className="truncate text-sm font-medium text-[var(--fgColor-link)] underline underline-offset-2"
+                          >
+                            {m.title}
+                          </a>
+                        )}
+                        <Pill tone={m.kind === 'link' ? 'lav' : 'mint'}>{badgeText}</Pill>
+                      </div>
+                      <small className="mt-0.5 block truncate text-xs text-[var(--fgColor-muted)]">
+                        {MATERIAL_KIND_LABELS[m.kind]}
+                        {m.kind === 'file' && m.fileName ? ` · ${m.fileName}` : ''}
+                      </small>
+                    </div>
+                  </div>
+                  {canManage && (
+                    <ActIcon
+                      label={`Xoá tài liệu ${m.title}`}
+                      icon={TrashIcon}
+                      danger
+                      onClick={() => setToDelete(m)}
+                      disabled={pending}
+                    />
                   )}
-                  <small className="block truncate text-sm text-[var(--fgColor-muted)]">
-                    {MATERIAL_KIND_LABELS[m.kind]}
-                    {m.kind === 'file' && m.fileName ? ` · ${m.fileName}` : ''}
-                  </small>
-                </div>
-              </div>
-              {canManage && (
-                <ActIcon label={`Xoá tài liệu ${m.title}`} icon={TrashIcon} danger onClick={() => setToDelete(m)} disabled={pending} />
-              )}
-            </li>
-          ))}
-        </ul>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
       )}
 
       {canManage && (
-        <div className="flex flex-col gap-3 rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-3.5">
-          <b className="text-base text-[var(--fgColor-default)]">Thêm tài liệu</b>
+        <FormSection
+          title="Thêm tài liệu"
+          description="Đính kèm liên kết trang web, tệp tải lên hoặc tài liệu từ Google Drive"
+        >
           <div className="grid grid-cols-1 gap-3 min-[768px]:grid-cols-2">
             <Field label="Loại tài liệu">
               <SelectBox
@@ -184,10 +225,10 @@ export function MaterialsPanel({ lesson, canManage, onChanged }: { lesson: Lesso
 
           {kind === 'file' && (
             <div className="flex flex-col gap-2">
-              <span className="text-sm font-normal text-[var(--fgColor-muted)]">Tệp *</span>
+              <span className="text-xs font-medium text-[var(--fgColor-muted)]">Tệp *</span>
               {fileId !== null ? (
-                <span className="inline-flex items-center gap-1.5 text-sm text-[var(--fgColor-default)]">
-                  <PaperclipIcon size={16} className="text-[var(--fgColor-muted)]" aria-hidden />
+                <span className="inline-flex items-center gap-2 self-start rounded-lg border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] px-3 py-1.5 text-sm text-[var(--fgColor-default)]">
+                  <PaperclipIcon size={15} className="text-[var(--fgColor-muted)]" aria-hidden />
                   {fileName}
                 </span>
               ) : (
@@ -196,12 +237,12 @@ export function MaterialsPanel({ lesson, canManage, onChanged }: { lesson: Lesso
             </div>
           )}
 
-          <div className="flex justify-end">
+          <div className="flex justify-end pt-1">
             <Btn variant="primary" loading={pending} onClick={add} disabled={pending} className="max-[767px]:w-full">
               {pending ? 'Đang lưu…' : 'Thêm tài liệu'}
             </Btn>
           </div>
-        </div>
+        </FormSection>
       )}
 
       <ConfirmDialog

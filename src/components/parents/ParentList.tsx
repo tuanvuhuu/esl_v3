@@ -190,10 +190,12 @@ export function ParentList(props: { parents: ParentRow[]; students?: StudentChoi
       return (
         <button
           type="button"
+          aria-label="+ Thêm"
           onClick={() => setAssigning(row)}
-          className="-mx-1 h-[var(--ctl-h)] rounded-[var(--borderRadius-small)] px-1 text-sm text-[var(--fgColor-link)] underline underline-offset-2 opacity-0 transition-opacity hover:opacity-100 focus-visible:opacity-100 group-hover:opacity-100"
+          className="-mx-1 inline-flex h-[var(--ctl-h)] items-center gap-1 rounded-[var(--borderRadius-small)] px-1 text-sm text-[var(--fgColor-link)] underline underline-offset-2 opacity-0 transition-opacity hover:opacity-100 focus-visible:opacity-100 group-hover:opacity-100"
         >
-          + Thêm
+          <PlusIcon size={12} aria-hidden />
+          <span>Thêm</span>
         </button>
       );
     }
@@ -373,13 +375,34 @@ export function ParentList(props: { parents: ParentRow[]; students?: StudentChoi
 
       <Toast message={message} />
 
-      <Modal open={creating} title="Thêm phụ huynh" subtitle="Các trường có dấu * là bắt buộc." onClose={() => setCreating(false)} labelledBy="parent-create-title">
+      <Modal
+        open={creating}
+        size="md"
+        title="Thêm phụ huynh"
+        subtitle="Nhập thông tin liên hệ và gán học sinh đang theo học (nếu có). Các trường có dấu * là bắt buộc."
+        onClose={() => setCreating(false)}
+        labelledBy="parent-create-title"
+      >
         <ParentForm mode="create" students={students} onDone={onDone} onCancel={() => setCreating(false)} />
       </Modal>
-      <Modal open={!!editing} title="Sửa phụ huynh" subtitle="Các trường có dấu * là bắt buộc." onClose={() => setEditing(null)} labelledBy="parent-edit-title">
+      <Modal
+        open={!!editing}
+        size="md"
+        title="Sửa phụ huynh"
+        subtitle="Cập nhật họ tên, số điện thoại, email hoặc ghi chú liên hệ. Các trường có dấu * là bắt buộc."
+        onClose={() => setEditing(null)}
+        labelledBy="parent-edit-title"
+      >
         {editing && <ParentForm mode="edit" parentId={editing.id} initial={editing.values} onDone={onDone} onCancel={() => setEditing(null)} />}
       </Modal>
-      <Modal open={!!assigning} title={`Gán học sinh · ${assigning?.fullName ?? ''}`} subtitle="Học sinh đã liên kết được bỏ qua." onClose={() => setAssigning(null)} labelledBy="parent-assign-title">
+      <Modal
+        open={!!assigning}
+        size="md"
+        title={`Gán học sinh · ${assigning?.fullName ?? ''}`}
+        subtitle="Chọn một hoặc nhiều học sinh để liên kết. Học sinh đã liên kết được bỏ qua."
+        onClose={() => setAssigning(null)}
+        labelledBy="parent-assign-title"
+      >
         {assigning && <ParentAssignForm parentId={assigning.id} students={students} onDone={onDone} onCancel={() => setAssigning(null)} />}
       </Modal>
 
@@ -455,7 +478,7 @@ function ParentCard({
         <ul className="grid grid-cols-[minmax(0,max-content)_auto] justify-start gap-x-3 gap-y-1.5" aria-label={`Học sinh của ${row.fullName}`}>
           {row.children.map((c) => (
             <li key={c.studentId} className="contents">
-              <Link href={`/hoc-sinh/${c.studentId}`} className="min-w-0 break-words text-sm font-medium text-[var(--fgColor-link)] underline underline-offset-2">
+              <Link href={`/hoc-sinh/${c.studentId}`} data-link="true" className="min-w-0 break-words text-sm font-medium text-[var(--fgColor-link)] underline underline-offset-2">
                 {c.studentName}
               </Link>
               <span className="inline-flex items-center gap-1 text-xs text-[var(--fgColor-muted)]">

@@ -7,7 +7,7 @@ import { checkSessionAction, createSessionAction } from '@/app/(app)/lich-hoc/ac
 import { ComboBox, DateInput, TextInput, TimeInput24h } from '@/components-ui';
 import { durationLabel } from '@/components/classes/DayTimeRows';
 import { Btn } from '@/components/ui/Btn';
-import { Field, FormFooter } from '@/components/ui/Field';
+import { Field, FormFooter, FormSection } from '@/components/ui/Field';
 import { Modal } from '@/components/ui/Modal';
 import { Alert } from '@/components/ui/primitives';
 import type { ActionResult } from '@/lib/validation/student';
@@ -67,7 +67,14 @@ export function AddSessionDialog({
   useEffect(() => {
     if (!open || !classId) return;
     const timer = setTimeout(async () => {
-      const r = await checkSessionAction({ classId: Number(classId), date, startTime: start, endTime: end, teacherId: Number(teacherId), room });
+      const r = await checkSessionAction({
+        classId: Number(classId),
+        date,
+        startTime: start,
+        endTime: end,
+        teacherId: Number(teacherId),
+        room,
+      });
       setCheck(r.ok ? r.conflicts : null);
     }, 400);
     return () => clearTimeout(timer);
@@ -91,94 +98,113 @@ export function AddSessionDialog({
     errors.endTime ??
     (start && end && TIME.test(start) && TIME.test(end) && end <= start ? 'Giờ kết thúc phải sau giờ bắt đầu' : undefined);
   return (
-    <Modal open={open} title="Thêm buổi học" subtitle="Học bù, học thêm hoặc ôn thi. Số buổi của lớp tự đánh lại theo ngày." onClose={onClose} labelledBy="add-session-title">
-      <form onSubmit={submit} noValidate className="grid grid-cols-1 gap-3.5 min-[768px]:grid-cols-2 min-[768px]:gap-x-4">
-        {state.message && !state.ok && <Alert className="col-span-full">{state.message}</Alert>}
-        <Field label="Lớp *">
-          <ComboBox
-            label="Lớp của buổi học"
-            block
-            value={classId}
-            onChange={(id) => {
-              if (id) chooseClass(id);
-            }}
-            options={classes.map((c) => ({ value: String(c.id), label: c.name }))}
-          />
-        </Field>
-        <Field label="Ngày học *" error={errors.date}>
-          <DateInput
-            name="date"
-            value={date}
-            aria-label="Ngày học *"
-            onIsoChange={setDate}
-            error={Boolean(errors.date)}
-          />
-        </Field>
-        <Field label="Giờ bắt đầu *" error={errors.startTime}>
-          <TimeInput24h
-            name="startTime"
-            ariaLabel="Giờ bắt đầu *"
-            value={start}
-            placeholder="18:00"
-            error={Boolean(errors.startTime)}
-            onChange={changeStart}
-          />
-        </Field>
-        <Field label="Giờ kết thúc *" error={endError} hint={timesOk ? durationLabel(start, end) : undefined}>
-          <TimeInput24h
-            name="endTime"
-            ariaLabel="Giờ kết thúc *"
-            value={end}
-            placeholder="19:30"
-            error={Boolean(endError)}
-            onChange={setEnd}
-          />
-        </Field>
-        <Field label="Giáo viên *" error={errors.teacherId}>
-          <ComboBox
-            name="teacherId"
-            label="Giáo viên dạy buổi này"
-            block
-            value={teacherId}
-            onChange={(val) => {
-              if (val) setTeacherId(val);
-            }}
-            options={teachers.map((t) => ({ value: String(t.id), label: t.name }))}
-            error={Boolean(errors.teacherId)}
-          />
-        </Field>
-        <Field label="Phòng" error={errors.room}>
-          <TextInput
-            name="room"
-            value={room}
-            onChange={(e) => setRoom(e.target.value)}
-            placeholder="VD: P.201"
-            autoComplete="off"
-            aria-label="Phòng"
-            block
-            validationStatus={errors.room ? 'error' : undefined}
-          />
-        </Field>
-        <Field label="Chủ đề buổi học" error={errors.topic} wide>
-          <TextInput
-            name="topic"
-            value={topic}
-            onChange={(e) => setTopic(e.target.value)}
-            placeholder="VD: Buổi học bù ngày 20/10"
-            autoComplete="off"
-            aria-label="Chủ đề buổi học"
-            block
-            validationStatus={errors.topic ? 'error' : undefined}
-          />
-        </Field>
-        {check && timesOk && (
-          <div className="col-span-full">
-            {check.length > 0 ? <Alert inline>Trùng: {check.join('; ')}. Vẫn lưu được.</Alert> : <Alert inline tone="ok">Không trùng phòng và lớp.</Alert>}
-          </div>
-        )}
-        <FormFooter className="col-span-full">
+    <Modal
+      open={open}
+      size="md"
+      title="Thêm buổi học"
+      subtitle="Học bù, phụ đạo hoặc ôn thi. Thứ tự buổi học của lớp được đánh lại tự động theo ngày."
+      onClose={onClose}
+      labelledBy="add-session-title"
+    >
+      <form onSubmit={submit} noValidate className="flex flex-col gap-3.5">
+        {state.message && !state.ok && <Alert>{state.message}</Alert>}
+
+        <FormSection
+          title="Thông tin buổi học mới"
+          description="Chọn lớp học để tự động lấy giáo viên và phòng học mặc định."
+        >
+          <Field label="Lớp *">
+            <ComboBox
+              label="Lớp của buổi học"
+              block
+              value={classId}
+              onChange={(id) => {
+                if (id) chooseClass(id);
+              }}
+              options={classes.map((c) => ({ value: String(c.id), label: c.name }))}
+            />
+          </Field>
+          <Field label="Ngày học *" error={errors.date}>
+            <DateInput
+              name="date"
+              value={date}
+              aria-label="Ngày học *"
+              onIsoChange={setDate}
+              error={Boolean(errors.date)}
+            />
+          </Field>
+          <Field label="Giờ bắt đầu *" error={errors.startTime}>
+            <TimeInput24h
+              name="startTime"
+              ariaLabel="Giờ bắt đầu *"
+              value={start}
+              placeholder="18:00"
+              error={Boolean(errors.startTime)}
+              onChange={changeStart}
+            />
+          </Field>
+          <Field label="Giờ kết thúc *" error={endError} hint={timesOk ? durationLabel(start, end) : undefined}>
+            <TimeInput24h
+              name="endTime"
+              ariaLabel="Giờ kết thúc *"
+              value={end}
+              placeholder="19:30"
+              error={Boolean(endError)}
+              onChange={setEnd}
+            />
+          </Field>
+          <Field label="Giáo viên *" error={errors.teacherId}>
+            <ComboBox
+              name="teacherId"
+              label="Giáo viên dạy buổi này"
+              block
+              value={teacherId}
+              onChange={(val) => {
+                if (val) setTeacherId(val);
+              }}
+              options={teachers.map((t) => ({ value: String(t.id), label: t.name }))}
+              error={Boolean(errors.teacherId)}
+            />
+          </Field>
+          <Field label="Phòng" error={errors.room}>
+            <TextInput
+              name="room"
+              value={room}
+              onChange={(e) => setRoom(e.target.value)}
+              placeholder="VD: P.201"
+              autoComplete="off"
+              aria-label="Phòng"
+              block
+              validationStatus={errors.room ? 'error' : undefined}
+            />
+          </Field>
+          <Field label="Chủ đề buổi học" error={errors.topic} wide>
+            <TextInput
+              name="topic"
+              value={topic}
+              onChange={(e) => setTopic(e.target.value)}
+              placeholder="VD: Buổi học bù ngày 20/10"
+              autoComplete="off"
+              aria-label="Chủ đề buổi học"
+              block
+              validationStatus={errors.topic ? 'error' : undefined}
+            />
+          </Field>
+
+          {check && timesOk && (
+            <div className="rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)]/60 px-3 py-2 min-[768px]:col-span-full">
+              {check.length > 0 ? (
+                <Alert inline>Trùng: {check.join('; ')}. Vẫn lưu được.</Alert>
+              ) : (
+                <Alert inline tone="ok">Không trùng phòng và lớp.</Alert>
+              )}
+            </div>
+          )}
+        </FormSection>
+
+        <FormFooter>
           <Btn onClick={onClose}>Huỷ</Btn>
-          <Btn type="submit" variant="primary" disabled={pending || !classId}>
+          <Btn type="submit" variant="primary" loading={pending} disabled={pending || !classId}>
             {pending ? 'Đang thêm…' : 'Thêm buổi'}
           </Btn>
         </FormFooter>

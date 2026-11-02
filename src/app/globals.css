@@ -441,14 +441,6 @@
     outline: 2px solid var(--primary);
     outline-offset: 2px;
   }
-  @media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after {
-      animation: none !important;
-      transition: none !important;
-    }
-  }
 }
 
 /* Thanh cuộn của menu: ẩn khi không dùng, hiện khi rê chuột vào menu hoặc đang có tiêu điểm trong menu */

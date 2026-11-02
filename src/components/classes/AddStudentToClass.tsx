@@ -33,8 +33,9 @@ export function AddStudentToClass({
       </Btn>
       <Modal
         open={open}
+        size="lg"
         title="Thêm học sinh vào lớp"
-        subtitle="Các trường có dấu * là bắt buộc."
+        subtitle="Nhập hồ sơ học sinh, liên hệ phụ huynh và ngày bắt đầu theo học tại lớp."
         onClose={() => setOpen(false)}
         labelledBy="class-add-student-title"
       >
