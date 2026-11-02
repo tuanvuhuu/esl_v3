@@ -102,6 +102,10 @@ const MyTextInput = forwardRef<HTMLInputElement, IMyTextInputProps>((props, forw
             {(!register || !name) && (
                 <TextInput
                     ref={forwardedRef}
+                    name={name}
+                    required={required}
+                    minLength={minLength}
+                    maxLength={maxLength}
                     {...textInputProps}
                     // input do tempValue điều khiển → không truyền thêm defaultValue (React cảnh báo khi có cả hai)
                     defaultValue={undefined}

@@ -43,7 +43,7 @@ async function StudentShell({ children }: { children: React.ReactNode }) {
             </Link>
           )}
           <form action="/logout" method="post">
-            <Btn type="submit" variant="ghost" leadingVisual={SignOutIcon}>
+            <Btn type="submit" variant="ghost" leadingVisual={<SignOutIcon size={16} aria-hidden />}>
               Đăng xuất
             </Btn>
           </form>

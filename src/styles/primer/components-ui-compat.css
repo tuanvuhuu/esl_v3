@@ -1,0 +1,70 @@
+/* Lớp tiện ích tương thích cho bộ `src/components-ui/` từ dự án 01. TSUKUBA.
+ * Đặt trong `@layer utilities` để hoà hợp hoàn toàn với Tailwind CSS v4 mà không đè lên responsive modifiers. */
+@layer utilities {
+  .d-flex { display: flex; }
+  .d-grid { display: grid; }
+  .d-block { display: block; }
+  .d-inline-flex { display: inline-flex; }
+  .d-inline-block { display: inline-block; }
+  .d-none { display: none; }
+
+  .fs-0 { font-size: var(--fs-0); }
+  .fs-1 { font-size: var(--fs-1); }
+  .fs-2 { font-size: var(--fs-2); }
+  .fs-3 { font-size: var(--fs-3); }
+  .fs-4 { font-size: var(--fs-4); }
+  .fs-5 { font-size: var(--fs-5); }
+  .fs-6 { font-size: var(--fs-6); }
+  .fs-7 { font-size: var(--fs-7); }
+
+  .fw-light { font-weight: var(--fw-light); }
+  .fw-normal { font-weight: var(--fw-normal); }
+  .fw-semibold { font-weight: var(--fw-semibold); }
+  .fw-bold { font-weight: var(--fw-bold); }
+  .fw-bolder { font-weight: var(--fw-bolder); }
+
+  .grid-cols-auto-fr { grid-template-columns: auto 1fr; }
+  .grid-cols-fr-auto { grid-template-columns: 1fr auto; }
+  .grid-cols-auto-fr-auto { grid-template-columns: auto 1fr auto; }
+
+  .upper-case { text-transform: uppercase; }
+
+  .text-muted { color: var(--app-fg-muted); }
+  .text-default { color: var(--app-fg-default); }
+  .text-accent { color: var(--fgColor-accent); }
+  .text-danger { color: var(--fgColor-danger); }
+  .text-success { color: var(--fgColor-success); }
+  .text-on-emphasis { color: var(--fgColor-onEmphasis); }
+
+  .bg-default { background-color: var(--bgColor-default); }
+  .bg-subtle { background-color: var(--bgColor-muted); }
+  .bg-inset { background-color: var(--bgColor-inset); }
+  .bg-emphasis { background-color: var(--bgColor-emphasis); }
+  .bg-disabled { background-color: var(--bgColor-disabled); }
+  .bg-accent { background-color: var(--bgColor-accent-muted); }
+  .bg-accent-emphasis { background-color: var(--bgColor-accent-emphasis); }
+  .bg-success { background-color: var(--bgColor-success-muted); }
+  .bg-success-emphasis { background-color: var(--bgColor-success-emphasis); }
+  .bg-attention { background-color: var(--bgColor-attention-muted); }
+  .bg-attention-emphasis { background-color: var(--bgColor-attention-emphasis); }
+  .bg-severe { background-color: var(--bgColor-severe-muted); }
+  .bg-severe-emphasis { background-color: var(--bgColor-severe-emphasis); }
+  .bg-danger { background-color: var(--bgColor-danger-muted); }
+  .bg-danger-emphasis { background-color: var(--bgColor-danger-emphasis); }
+  .bg-done { background-color: var(--bgColor-done-muted); }
+  .bg-done-emphasis { background-color: var(--bgColor-done-emphasis); }
+  .bg-sponsors { background-color: var(--bgColor-sponsors-muted); }
+  .bg-sponsors-emphasis { background-color: var(--bgColor-sponsors-emphasis); }
+  .bg-neutral { background-color: var(--bgColor-neutral-muted); }
+  .bg-neutral-emphasis { background-color: var(--bgColor-neutral-emphasis); }
+  .bg-open { background-color: var(--bgColor-open-muted); }
+  .bg-open-emphasis { background-color: var(--bgColor-open-emphasis); }
+  .bg-closed { background-color: var(--bgColor-closed-muted); }
+  .bg-closed-emphasis { background-color: var(--bgColor-closed-emphasis); }
+
+  .segment {
+    display: inline-flex;
+    align-items: center;
+  }
+}
+

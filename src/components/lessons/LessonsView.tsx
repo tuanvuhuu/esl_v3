@@ -10,7 +10,7 @@ import { Btn } from '@/components/ui/Btn';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { DataGrid, type GridColumn } from '@/components/ui/datagrid';
 import { Modal } from '@/components/ui/Modal';
-import { PageHeader } from '@/components/ui/PageHeader';
+import { PageCrumbs } from '@/components/shell/PageCrumbs';
 import { RowMenu, type RowMenuItem } from '@/components/ui/RowMenu';
 import { Card, EmptyPanel } from '@/components/ui/surfaces';
 import { Toast, useToast } from '@/components/ui/Toast';
@@ -84,55 +84,56 @@ export function LessonsView({
 
   return (
     <section className="flex flex-col">
-      <PageHeader
-        crumbs={['Đào tạo', 'Bài giảng']}
-        title="Bài giảng"
-        subtitle="Bài giảng dùng chung cho các cơ sở đã chọn. Bài tập có thể gắn một bài giảng."
-        actions={
+      <PageCrumbs crumbs={['Đào tạo', 'Bài giảng']} />
+
+      <DataGrid
+        label="Danh sách bài giảng"
+        columns={COLUMNS}
+        rows={lessons}
+        rowKey={(l) => l.id}
+        cell={cell}
+        from="md"
+        stickyEnd
+        searchEnable
+        title={
+          <div className="flex items-baseline gap-2">
+            <h1 className="m-0 text-base font-bold text-[var(--fgColor-default)]">Bài giảng</h1>
+            <span className="text-xs text-[var(--fgColor-muted)]">({lessons.length})</span>
+          </div>
+        }
+        actionComponent={
           canManage && (
             <Btn variant="primary" leadingVisual={PlusIcon} onClick={() => setEditing('new')}>
               Thêm bài giảng
             </Btn>
           )
         }
+        empty={
+          <EmptyPanel
+            title={scope === null ? 'Chưa có bài giảng' : 'Cơ sở này chưa có bài giảng'}
+            hint={canManage ? 'Bấm Thêm bài giảng để soạn bài đầu tiên.' : 'Bài giảng do giáo viên và học vụ soạn.'}
+          />
+        }
+        card={(l) => (
+          <Card>
+            <b className="text-base font-normal text-[var(--fgColor-default)] [overflow-wrap:anywhere]">{l.title}</b>
+            <small className="block text-sm text-[var(--fgColor-muted)]">
+              {campusText(l)} · {l.materials.length} tài liệu · {l.assignmentCount} bài tập
+            </small>
+            <div className="grid grid-cols-3 gap-2">
+              <Btn block leadingVisual={PaperclipIcon} onClick={() => setMaterialsId(l.id)}>
+                Tài liệu
+              </Btn>
+              <Btn block leadingVisual={PencilIcon} onClick={() => setEditing(l)} disabled={!canManage}>
+                Sửa
+              </Btn>
+              <Btn block variant="danger" leadingVisual={TrashIcon} onClick={() => setToDelete(l)} disabled={!canManage}>
+                Xoá
+              </Btn>
+            </div>
+          </Card>
+        )}
       />
-
-      {lessons.length === 0 ? (
-        <EmptyPanel
-          title={scope === null ? 'Chưa có bài giảng' : 'Cơ sở này chưa có bài giảng'}
-          hint={canManage ? 'Bấm Thêm bài giảng để soạn bài đầu tiên.' : 'Bài giảng do giáo viên và học vụ soạn.'}
-        />
-      ) : (
-        // Điện thoại: thẻ của DataGrid, mỗi bài một thẻ với các nút có chữ
-        <DataGrid
-          label="Danh sách bài giảng"
-          columns={COLUMNS}
-          rows={lessons}
-          rowKey={(l) => l.id}
-          cell={cell}
-          from="md"
-          stickyEnd
-          card={(l) => (
-            <Card>
-              <b className="text-base font-normal text-[var(--fgColor-default)] [overflow-wrap:anywhere]">{l.title}</b>
-              <small className="block text-sm text-[var(--fgColor-muted)]">
-                {campusText(l)} · {l.materials.length} tài liệu · {l.assignmentCount} bài tập
-              </small>
-              <div className="grid grid-cols-3 gap-2">
-                <Btn block leadingVisual={PaperclipIcon} onClick={() => setMaterialsId(l.id)}>
-                  Tài liệu
-                </Btn>
-                <Btn block leadingVisual={PencilIcon} onClick={() => setEditing(l)} disabled={!canManage}>
-                  Sửa
-                </Btn>
-                <Btn block variant="danger" leadingVisual={TrashIcon} onClick={() => setToDelete(l)} disabled={!canManage}>
-                  Xoá
-                </Btn>
-              </div>
-            </Card>
-          )}
-        />
-      )}
 
       <Toast message={message} />
 

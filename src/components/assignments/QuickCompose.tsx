@@ -29,10 +29,11 @@ import {
   type QuickWord,
   type WordLookup,
 } from '@/lib/quick-compose';
+import { TextAreaAutoHeight } from '@/components-ui';
 import { Btn } from '@/components/ui/Btn';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { Chip, ChipGroup } from '@/components/ui/controls';
-import { Field, FormFooter, textareaClass } from '@/components/ui/Field';
+import { Chip, ChipGroup, SegmentedSwitch } from '@/components/ui/controls';
+import { Field, FormFooter } from '@/components/ui/Field';
 import { Modal } from '@/components/ui/Modal';
 import { Alert, Pill } from '@/components/ui/primitives';
 import { RowMenu, type RowMenuItem } from '@/components/ui/RowMenu';
@@ -234,13 +235,27 @@ export function QuickCompose({ open, levelCode, onClose, onAdd }: { open: boolea
               <div className="flex min-w-0 flex-col gap-3">
                 {source === 'paste' && (
                   <Field label="Mỗi dòng một từ: từ - nghĩa - emoji. Ngăn bằng tab, “ - ”, “|” hoặc dấu phẩy.">
-                    <textarea value={raw} onChange={(e) => setRaw(e.target.value)} rows={10} spellCheck={false} placeholder={'cat - con mèo - 🐱\ndog - con chó\nfish'} aria-label="Danh sách từ" className={textareaClass()} />
+                    <TextAreaAutoHeight
+                      value={raw}
+                      onChange={(e) => setRaw(e.target.value)}
+                      rows={10}
+                      spellCheck={false}
+                      placeholder={'cat - con mèo - 🐱\ndog - con chó\nfish'}
+                      aria-label="Danh sách từ"
+                    />
                   </Field>
                 )}
                 {source === 'sentences' && (
                   <>
                     <Field label="Dán vài câu tiếng Anh, ví dụ câu trong bài đọc của sách.">
-                      <textarea value={sentRaw} onChange={(e) => setSentRaw(e.target.value)} rows={8} spellCheck={false} placeholder="I have a little dog. The monkey likes bananas." aria-label="Câu tiếng Anh" className={textareaClass()} />
+                      <TextAreaAutoHeight
+                        value={sentRaw}
+                        onChange={(e) => setSentRaw(e.target.value)}
+                        rows={8}
+                        spellCheck={false}
+                        placeholder="I have a little dog. The monkey likes bananas."
+                        aria-label="Câu tiếng Anh"
+                      />
                     </Field>
                     <Notice>
                       Đã nhận {sentences.length} câu. Câu dài {level.orderWords[0]}–{level.orderWords[1]} từ dùng cho sắp xếp; từ có trong danh sách được chọn để đục lỗ. Từ gạch chân là từ thuộc trình độ {LEVEL_LABELS[level.code]} trong kho từ.
@@ -322,13 +337,12 @@ export function QuickCompose({ open, levelCode, onClose, onAdd }: { open: boolea
             <section aria-label="Độ khó theo trình độ" className="flex flex-col gap-2">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <h3 className="text-lg font-extrabold text-[var(--fgColor-default)]">Độ khó theo trình độ</h3>
-                <ChipGroup label="Trình độ">
-                  {LEVEL_CODES.map((c) => (
-                    <Chip key={c} selected={level.code === c} onClick={() => changeLevel(c)}>
-                      {LEVEL_LABELS[c]}
-                    </Chip>
-                  ))}
-                </ChipGroup>
+                <SegmentedSwitch
+                  label="Trình độ"
+                  value={level.code}
+                  onChange={changeLevel}
+                  options={LEVEL_CODES.map((c) => ({ value: c, label: LEVEL_LABELS[c] }))}
+                />
               </div>
               <dl className="grid grid-cols-1 gap-x-4 min-[768px]:grid-cols-3">
                 {[

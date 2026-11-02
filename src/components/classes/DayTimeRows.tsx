@@ -14,8 +14,8 @@ import {
 import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { ReactNode } from 'react';
+import { TimeInput24h } from '@/components-ui';
 import { MAX_SLOTS_PER_DAY, slotField, WEEKDAY_CODE_LABELS, type WeekdayCode } from '@/lib/validation/class';
-import { inputClass } from '@/components/ui/Field';
 import { Btn } from '@/components/ui/Btn';
 import { Alert } from '@/components/ui/primitives';
 import { Notice } from '@/components/ui/surfaces';
@@ -215,32 +215,24 @@ function SlotRow({
         <span className="w-8 shrink-0 text-sm font-semibold text-[var(--fgColor-default)]" title={dayLabel}>
           {index === 0 ? code : ''}
         </span>
-        <input
+        <TimeInput24h
           name={slotField('start', code, index)}
-          type="text"
-          inputMode="numeric"
-          maxLength={5}
-          placeholder="18:30"
-          autoComplete="off"
-          aria-label={`Giờ bắt đầu ${caption}`}
+          ariaLabel={`Giờ bắt đầu ${caption}`}
           value={s.start}
-          onChange={(e) => onChange(code, index, 'start', typingTime(e.target.value))}
-          onBlur={(e) => onChange(code, index, 'start', finishTime(e.target.value))}
-          className={`${inputClass(startError)} min-w-0 flex-1 tabular-nums`}
+          placeholder="18:30"
+          error={Boolean(startError)}
+          onChange={(val) => onChange(code, index, 'start', val)}
+          className="min-w-0 flex-1"
         />
         <span className="shrink-0 text-[var(--fgColor-muted)]" aria-hidden>–</span>
-        <input
+        <TimeInput24h
           name={slotField('end', code, index)}
-          type="text"
-          inputMode="numeric"
-          maxLength={5}
-          placeholder="20:00"
-          autoComplete="off"
-          aria-label={`Giờ kết thúc ${caption}`}
+          ariaLabel={`Giờ kết thúc ${caption}`}
           value={s.end}
-          onChange={(e) => onChange(code, index, 'end', typingTime(e.target.value))}
-          onBlur={(e) => onChange(code, index, 'end', finishTime(e.target.value))}
-          className={`${inputClass(endError)} min-w-0 flex-1 tabular-nums`}
+          placeholder="20:00"
+          error={Boolean(endError)}
+          onChange={(val) => onChange(code, index, 'end', val)}
+          className="min-w-0 flex-1"
         />
       </div>
       {durationLabel(s.start, s.end) && !(startError || endError) && (

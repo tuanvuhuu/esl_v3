@@ -4,12 +4,12 @@ import { startTransition, useActionState, useState, type FormEvent } from 'react
 import { saveSettingsAction } from '@/app/(app)/cai-dat/actions';
 import type { CenterSettings } from '@/lib/queries/settings';
 import type { ActionResult } from '@/lib/validation/student';
+import { ComboBox, TextInput, TextInputNumber } from '@/components-ui';
 import { Btn } from '@/components/ui/Btn';
-import { Field, inputClass } from '@/components/ui/Field';
+import { Field } from '@/components/ui/Field';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Alert } from '@/components/ui/primitives';
 import { Panel } from '@/components/ui/surfaces';
-import { SelectPanel } from '@/components/ui/SelectPanel';
 import { QrImage } from '@/components/tuition/QrImage';
 import { BANKS, isBankReady, vietQrPayload } from '@/lib/vietqr';
 
@@ -45,19 +45,19 @@ export function SettingsForm({ settings, canManage }: { settings: CenterSettings
         <Panel title="Thông tin trung tâm">
           <div className="grid grid-cols-1 gap-3.5 min-[768px]:grid-cols-2 min-[768px]:gap-x-4">
             <Field label="Tên trung tâm *" error={errors.centerName} wide>
-              <input name="centerName" defaultValue={settings.centerName} disabled={!canManage} className={inputClass(errors.centerName)} />
+              <TextInput block name="centerName" defaultValue={settings.centerName} disabled={!canManage} validationStatus={errors.centerName ? 'error' : undefined} />
             </Field>
             <Field label="Địa chỉ" error={errors.address} wide>
-              <input name="address" defaultValue={settings.address} disabled={!canManage} className={inputClass(errors.address)} />
+              <TextInput block name="address" defaultValue={settings.address} disabled={!canManage} validationStatus={errors.address ? 'error' : undefined} />
             </Field>
             <Field label="Hotline" error={errors.hotline}>
-              <input name="hotline" type="tel" inputMode="tel" defaultValue={settings.hotline} disabled={!canManage} className={inputClass(errors.hotline)} />
+              <TextInput block name="hotline" type="tel" inputMode="tel" defaultValue={settings.hotline} disabled={!canManage} validationStatus={errors.hotline ? 'error' : undefined} />
             </Field>
             <Field label="Email" error={errors.email}>
-              <input name="email" type="email" defaultValue={settings.email} disabled={!canManage} className={inputClass(errors.email)} />
+              <TextInput block name="email" type="email" defaultValue={settings.email} disabled={!canManage} validationStatus={errors.email ? 'error' : undefined} />
             </Field>
             <Field label="Giờ làm việc" error={errors.workingHours} wide>
-              <input name="workingHours" defaultValue={settings.workingHours} placeholder="VD: T2 – T7, 8:00 – 21:00" disabled={!canManage} className={inputClass(errors.workingHours)} />
+              <TextInput block name="workingHours" defaultValue={settings.workingHours} placeholder="VD: T2 – T7, 8:00 – 21:00" disabled={!canManage} validationStatus={errors.workingHours ? 'error' : undefined} />
             </Field>
           </div>
         </Panel>
@@ -65,10 +65,18 @@ export function SettingsForm({ settings, canManage }: { settings: CenterSettings
         <Panel title="Quy định học phí">
           <div className="grid grid-cols-1 gap-3.5 min-[768px]:grid-cols-2 min-[768px]:gap-x-4">
             <Field label="Ngày đến hạn trong tháng *" error={errors.dueDay} hint="Hạn đóng là ngày này của tháng sau tháng khai giảng (từ 1 đến 28)">
-              <input name="dueDay" type="number" inputMode="numeric" min={1} max={28} step={1} defaultValue={settings.dueDay} disabled={!canManage} className={inputClass(errors.dueDay)} />
+              <TextInputNumber
+                name="dueDay"
+                min={1}
+                max={28}
+                thousandSeparator={false}
+                defaultValue={settings.dueDay}
+                disabled={!canManage}
+                error={Boolean(errors.dueDay)}
+              />
             </Field>
             <Field label="Đơn vị tiền">
-              <input value={settings.currency} readOnly className={inputClass()} />
+              <TextInput block value={settings.currency} readOnly disabled />
             </Field>
           </div>
         </Panel>
@@ -77,7 +85,7 @@ export function SettingsForm({ settings, canManage }: { settings: CenterSettings
           <div className="grid grid-cols-1 gap-4 min-[768px]:grid-cols-[minmax(0,1fr)_auto]">
             <div className="grid grid-cols-1 gap-3.5 min-[768px]:grid-cols-2 min-[768px]:gap-x-4">
               <Field label="Ngân hàng" error={errors.bankBin}>
-                <SelectPanel
+                <ComboBox
                   name="bankBin"
                   label="Ngân hàng"
                   block
@@ -85,14 +93,32 @@ export function SettingsForm({ settings, canManage }: { settings: CenterSettings
                   onChange={setBankBin}
                   disabled={!canManage}
                   options={[{ value: '', label: 'Chưa chọn' }, ...BANKS.map((b) => ({ value: b.bin, label: b.name }))]}
-                  error={!!errors.bankBin}
+                  error={Boolean(errors.bankBin)}
                 />
               </Field>
               <Field label="Số tài khoản" error={errors.bankAccount}>
-                <input name="bankAccount" inputMode="numeric" autoComplete="off" value={bankAccount} onChange={(e) => setBankAccount(e.target.value)} disabled={!canManage} className={`${inputClass(errors.bankAccount)} tabular-nums`} />
+                <TextInput
+                  block
+                  name="bankAccount"
+                  inputMode="numeric"
+                  autoComplete="off"
+                  value={bankAccount}
+                  onChange={(e) => setBankAccount(e.target.value)}
+                  disabled={!canManage}
+                  validationStatus={errors.bankAccount ? 'error' : undefined}
+                  className="tabular-nums"
+                />
               </Field>
               <Field label="Tên chủ tài khoản" error={errors.bankAccountName} wide hint="Hiện trong tin nhắc học phí để phụ huynh đối chiếu">
-                <input name="bankAccountName" defaultValue={settings.bankAccountName} placeholder="VD: TRUNG TAM ANH NGU ESL" autoComplete="off" disabled={!canManage} className={inputClass(errors.bankAccountName)} />
+                <TextInput
+                  block
+                  name="bankAccountName"
+                  defaultValue={settings.bankAccountName}
+                  placeholder="VD: TRUNG TAM ANH NGU ESL"
+                  autoComplete="off"
+                  disabled={!canManage}
+                  validationStatus={errors.bankAccountName ? 'error' : undefined}
+                />
               </Field>
               <p className="col-span-full text-sm text-[var(--fgColor-muted)]">
                 Có tài khoản thì tin nhắc học phí qua Telegram kèm mã QR: phụ huynh quét bằng app ngân hàng, số tiền còn thiếu và nội dung (mã học sinh) điền sẵn.

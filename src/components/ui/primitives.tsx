@@ -1,19 +1,22 @@
 'use client';
 
-// Thành phần cơ bản dùng trực tiếp Core & Experimental của @primer/react v38:
-// - Pill → @primer/react Label
-// - ProgressBar → @primer/react ProgressBar
-// - Alert → @primer/react Banner
-// - EmptyState → @primer/react/experimental Blankslate
+// Thành phần cơ bản dùng trực tiếp bộ `@/components-ui` (01. TSUKUBA) + `@primer/react` v38:
+// - Pill → `@/components-ui` Tag (nhãn trạng thái semantic muted-bg + fg)
+// - Avatar → `@/components-ui` UserAvatar (avatar gradient theo tên)
+// - ProgressBar → `@/components-ui` ProgressBarView
+// - Alert / EmptyState → `@primer/react` Banner + Blankslate
 import { AlertIcon, CheckCircleIcon, InboxIcon } from '@primer/octicons-react';
-import { Banner, Label, ProgressBar as PrimerProgressBar, type LabelColorOptions } from '@primer/react';
+import { Banner, type LabelColorOptions } from '@primer/react';
 import { Blankslate } from '@primer/react/experimental';
 import clsx from 'clsx';
 import type { ReactNode } from 'react';
+import ProgressBarView from '@/components-ui/progress-bar-view';
+import UiTag from '@/components-ui/tag';
+import UserAvatar from '@/components-ui/user-avatar';
 
 export type Tone = 'mint' | 'lav' | 'butter' | 'blush' | 'stone';
 
-const PRIMER_LABEL_VARIANT: Record<Tone, LabelColorOptions> = {
+const TAG_VARIANT: Record<Tone, NonNullable<LabelColorOptions>> = {
   mint: 'success',
   lav: 'accent',
   butter: 'attention',
@@ -21,28 +24,18 @@ const PRIMER_LABEL_VARIANT: Record<Tone, LabelColorOptions> = {
   stone: 'secondary',
 };
 
-const AVATAR_TONE_CLASS: Record<Tone, string> = {
-  mint: 'bg-mint text-mint-ink',
-  lav: 'bg-lav text-lav-ink',
-  butter: 'bg-butter text-butter-ink',
-  blush: 'bg-blush text-blush-ink',
-  stone: 'bg-stone text-stone-ink',
-};
-
-// Nhãn trạng thái dùng Label của @primer/react.
+// Nhãn trạng thái dùng `Tag` của `@/components-ui` (nền mờ + chữ màu ngữ nghĩa Primer).
 export function Pill({ tone, children }: { tone: Tone; children: ReactNode }) {
   return (
-    <Label variant={PRIMER_LABEL_VARIANT[tone]} size="small" className="!font-normal">
+    <UiTag variant={TAG_VARIANT[tone]} size="small" className="!font-medium">
       {children}
-    </Label>
+    </UiTag>
   );
 }
 
-const AVATAR_TONES: Tone[] = ['mint', 'lav', 'butter', 'blush'];
-
 export function Avatar({
   name,
-  seed,
+  seed: _seed,
   size = 'md',
   quiet = false,
 }: {
@@ -51,24 +44,29 @@ export function Avatar({
   size?: 'md' | 'lg';
   quiet?: boolean;
 }) {
-  const initials = name
-    .trim()
-    .split(/\s+/)
-    .slice(-2)
-    .map((w) => w[0])
-    .join('')
-    .toUpperCase();
-  const tone = AVATAR_TONES[Math.abs(seed) % AVATAR_TONES.length];
-  const dims = size === 'lg' ? 'size-16 text-xl' : 'size-9 text-xs';
-  const color = quiet ? 'bg-[var(--bgColor-muted)] text-[var(--fgColor-muted)]' : AVATAR_TONE_CLASS[tone];
-  return (
-    <span
-      className={clsx('grid shrink-0 place-items-center rounded-full border border-black/10 font-bold', dims, color)}
-      aria-hidden
-    >
-      {initials}
-    </span>
-  );
+  void _seed;
+  if (quiet) {
+    const initials = name
+      .trim()
+      .split(/\s+/)
+      .slice(-2)
+      .map((w) => w[0])
+      .join('')
+      .toUpperCase();
+    const dims = size === 'lg' ? 'size-12 text-base' : 'size-8 text-xs';
+    return (
+      <span
+        className={clsx(
+          'grid shrink-0 place-items-center rounded-full border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] font-bold text-[var(--fgColor-muted)]',
+          dims,
+        )}
+        aria-hidden
+      >
+        {initials}
+      </span>
+    );
+  }
+  return <UserAvatar fullName={name} size={size === 'lg' ? 'xlarge' : 'large'} />;
 }
 
 export function ProgressBar({ value, max, className = '' }: { value: number; max: number; className?: string }) {
@@ -81,7 +79,7 @@ export function ProgressBar({ value, max, className = '' }: { value: number; max
         : percent < 75
           ? 'accent.emphasis'
           : 'success.emphasis';
-  return <PrimerProgressBar progress={percent} bg={bg} barSize="default" className={clsx('w-full', className)} aria-valuenow={percent} />;
+  return <ProgressBarView progress={percent} bg={bg} barSize="default" className={clsx('w-full', className)} aria-valuenow={percent} />;
 }
 
 export function Alert({

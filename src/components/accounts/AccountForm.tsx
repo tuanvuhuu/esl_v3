@@ -5,9 +5,9 @@ import { createAccountAction, updateAccountAction, type AccountFormValues } from
 import { ROLE_CODES, ROLE_LABELS } from '@/lib/permissions';
 import type { CampusOption } from '@/lib/campus';
 import type { ActionResult } from '@/lib/validation/student';
+import { ComboBox, SelectBox, TextInput } from '@/components-ui';
 import { Btn } from '@/components/ui/Btn';
-import { Field, inputClass, FormFooter } from '@/components/ui/Field';
-import { SelectPanel } from '@/components/ui/SelectPanel';
+import { Field, FormFooter } from '@/components/ui/Field';
 import { Alert } from '@/components/ui/primitives';
 
 export type TeacherOption = { id: number; name: string; linkedAccountId: number | null };
@@ -61,24 +61,24 @@ export function AccountForm({
       )}
 
       <Field label="Họ và tên *" error={errors.fullName}>
-        <input name="fullName" defaultValue={values.fullName} autoComplete="off" className={inputClass(errors.fullName)} />
+        <TextInput block name="fullName" defaultValue={values.fullName} autoComplete="off" validationStatus={errors.fullName ? 'error' : undefined} />
       </Field>
       <Field label="Email *" error={errors.email}>
-        <input name="email" type="email" defaultValue={values.email} autoComplete="off" className={inputClass(errors.email)} />
+        <TextInput block name="email" type="email" defaultValue={values.email} autoComplete="off" validationStatus={errors.email ? 'error' : undefined} />
       </Field>
       <Field label="Vai trò *" error={errors.role}>
-        <SelectPanel
+        <SelectBox
           name="role"
           label="Vai trò *"
           value={role}
           onChange={(v) => setRole(v as typeof role)}
           options={ROLE_CODES.map((r) => ({ value: r, label: ROLE_LABELS[r] }))}
-          error={!!errors.role}
+          error={Boolean(errors.role)}
           block
         />
       </Field>
       <Field label="Trạng thái" error={errors.status}>
-        <SelectPanel
+        <SelectBox
           name="status"
           label="Trạng thái"
           defaultValue={values.status}
@@ -86,19 +86,19 @@ export function AccountForm({
             { value: 'active', label: 'Hoạt động' },
             { value: 'locked', label: 'Tạm khoá' },
           ]}
-          error={!!errors.status}
+          error={Boolean(errors.status)}
           block
         />
       </Field>
 
       {role === 'teacher' && (
         <Field label="Giáo viên tương ứng *" error={errors.teacherId} wide>
-          <SelectPanel
+          <ComboBox
             name="teacherId"
             label="Giáo viên tương ứng *"
             defaultValue={String(values.teacherId)}
             options={[{ value: '', label: 'Chọn giáo viên' }, ...available.map((t) => ({ value: String(t.id), label: t.name }))]}
-            error={!!errors.teacherId}
+            error={Boolean(errors.teacherId)}
             block
           />
         </Field>
@@ -108,13 +108,13 @@ export function AccountForm({
       {/* Cơ sở được làm việc (P32). Quản trị luôn làm việc ở mọi cơ sở nên không cần chọn. */}
       {role !== 'admin' ? (
         <Field label="Cơ sở làm việc *" error={errors.campusIds} wide hint="Chỉ thấy và sửa dữ liệu của các cơ sở được chọn">
-          <SelectPanel
+          <ComboBox
             name="campusIds"
             label="Cơ sở làm việc *"
             multiple
             defaultValues={values.campusIds.length > 0 ? values.campusIds : campuses.length === 1 ? [String(campuses[0].id)] : []}
             options={campuses.map((c) => ({ value: String(c.id), label: c.name }))}
-            error={!!errors.campusIds}
+            error={Boolean(errors.campusIds)}
             block
           />
         </Field>

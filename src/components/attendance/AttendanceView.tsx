@@ -7,9 +7,9 @@ import { saveAttendanceAction } from '@/app/(app)/diem-danh/actions';
 import type { RosterRow, Mark } from '@/lib/queries/attendance';
 import type { SessionRow } from '@/lib/queries/sessions';
 import { dateKeyLabel, weekdayLabel, weekdayOfKey } from '@/lib/datetime';
+import { ComboBox } from '@/components-ui';
 import { Btn } from '@/components/ui/Btn';
 import { Chip } from '@/components/ui/controls';
-import { SelectPanel } from '@/components/ui/SelectPanel';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Pill, type Tone } from '@/components/ui/primitives';
 import { Card, EmptyPanel, Panel } from '@/components/ui/surfaces';
@@ -90,40 +90,41 @@ export function AttendanceView({
   const status = session ? sessionStatus(session) : null;
 
   return (
-    <section className="flex flex-col gap-4">
+    <section className="flex flex-col gap-2.5">
       <PageHeader
         crumbs={['Đào tạo', 'Điểm danh']}
         title="Điểm danh"
-        subtitle="Chọn lớp và buổi học, rồi đánh dấu từng học sinh. Chỉ điểm danh được buổi đã bắt đầu."
+        actions={
+          <ComboBox
+            label="Chọn lớp"
+            variant="bar"
+            icon={<PeopleIcon size={14} className="text-[var(--fgColor-muted)]" aria-hidden />}
+            value={String(classId)}
+            onChange={(v) => {
+              if (v) go({ cls: Number(v), s: null });
+            }}
+            options={classes.map((c) => ({ value: String(c.id), label: c.name }))}
+            auto
+          />
+        }
       />
 
-      {/* Chọn lớp, rồi dải buổi học của lớp: bấm để chuyển buổi */}
-      <div className="flex flex-col gap-3">
-        <SelectPanel
-          label="Chọn lớp"
-          icon={<PeopleIcon size={14} className="text-[var(--fgColor-muted)]" aria-hidden />}
-          value={String(classId)}
-          onChange={(v) => go({ cls: Number(v), s: null })}
-          options={classes.map((c) => ({ value: String(c.id), label: c.name }))}
-          auto
-        />
-
-        {sessions.length > 0 && (
-          <div role="tablist" aria-label="Buổi học" className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
-            {sessions.map((s) => {
-              const st = sessionStatus(s);
-              const on = s.id === session?.id;
-              return (
-                <Chip key={s.id} tab selected={on} onClick={() => go({ s: s.id })} className={s.status === 'cancelled' ? 'opacity-70 line-through' : ''}>
-                  <span className={`size-1.5 shrink-0 rounded-full ${on ? 'bg-on-primary' : st.dot}`} aria-hidden />
-                  Buổi {s.sessionNo}
-                  <span className="text-xs font-normal opacity-80">{dateKeyLabel(s.dateKey).slice(0, 5)}</span>
-                </Chip>
-              );
-            })}
-          </div>
-        )}
-      </div>
+      {/* Dải buổi học của lớp: bấm để chuyển buổi */}
+      {sessions.length > 0 && (
+        <div role="tablist" aria-label="Buổi học" className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1">
+          {sessions.map((s) => {
+            const st = sessionStatus(s);
+            const on = s.id === session?.id;
+            return (
+              <Chip key={s.id} tab selected={on} onClick={() => go({ s: s.id })} className={s.status === 'cancelled' ? 'opacity-70 line-through' : ''}>
+                <span className={`size-1.5 shrink-0 rounded-full ${on ? 'bg-on-primary' : st.dot}`} aria-hidden />
+                Buổi {s.sessionNo}
+                <span className="text-xs font-normal opacity-80">{dateKeyLabel(s.dateKey).slice(0, 5)}</span>
+              </Chip>
+            );
+          })}
+        </div>
+      )}
 
       {!session ? (
         <EmptyPanel title="Lớp này chưa có buổi học" hint="Tạo lịch học cho lớp ở màn Lịch học." />

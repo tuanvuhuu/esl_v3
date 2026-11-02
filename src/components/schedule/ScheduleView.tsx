@@ -9,8 +9,8 @@ import { startTransition, useEffect, useOptimistic, useRef, useState, type CSSPr
 import type { SessionRow } from '@/lib/queries/sessions';
 import { addDaysKey, dateKeyLabel, daysBetweenKeys, weekdayLabel, weekdayOfKey, weekStartKey } from '@/lib/datetime';
 import { listParam } from '@/lib/list-param';
+import { ComboBox } from '@/components-ui';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { SelectPanel } from '@/components/ui/SelectPanel';
 import { Pill, type Tone } from '@/components/ui/primitives';
 import { EmptyPanel } from '@/components/ui/surfaces';
 import { Btn } from '@/components/ui/Btn';
@@ -171,10 +171,6 @@ export function ScheduleView({
     router.push(`/lich-hoc?${params.toString()}`, { scroll: false });
   }
 
-  const subtitle = isWeek
-    ? `Tuần ${dateKeyLabel(rangeFrom)} – ${dateKeyLabel(rangeTo)}. Bấm vào buổi để xem hoặc sửa.`
-    : `Từ ${dateKeyLabel(rangeFrom)} đến ${dateKeyLabel(rangeTo)} (${days.length} ngày). Bấm vào buổi để xem hoặc sửa.`;
-
   // Kéo buổi trên lưới tuần để dời (người quản lý lớp). Thả xong giờ mới làm tròn 15 phút, kiểm trùng ở máy chủ.
   const dragging = useRef(false);
   const [pendingMove, setPendingMove] = useState<{ session: SessionRow; day: string; start: number } | null>(null);
@@ -216,13 +212,38 @@ export function ScheduleView({
       <PageHeader
         crumbs={['Đào tạo', 'Lịch học']}
         title="Lịch học"
-        subtitle={subtitle}
+        subtitle={isWeek ? `${dateKeyLabel(rangeFrom)} – ${dateKeyLabel(rangeTo)}` : `${days.length} ngày`}
         actions={
-          canManage && classes.length > 0 ? (
-            <Btn variant="primary" leadingVisual={PlusIcon} onClick={() => setAdding(true)}>
-              Thêm buổi
-            </Btn>
-          ) : null
+          <div className="flex flex-wrap items-center gap-1.5">
+            <RangeNav from={rangeFrom} to={rangeTo} prevHref={prevHref} nextHref={nextHref} onPick={pickRange} />
+            <ComboBox
+              multiple
+              auto
+              variant="bar"
+              label="Lọc theo lớp"
+              icon={<PeopleIcon size={14} className="text-[var(--fgColor-muted)]" aria-hidden />}
+              values={listParam(clsView)}
+              onChange={(vs) => applyFilter({ cls: vs.join(',') })}
+              options={classes.map((c) => ({ value: String(c.id), label: c.name }))}
+              placeholder="Mọi lớp"
+            />
+            <ComboBox
+              multiple
+              auto
+              variant="bar"
+              label="Lọc theo giáo viên"
+              icon={<FilterIcon size={14} className="text-[var(--fgColor-muted)]" aria-hidden />}
+              values={listParam(teacherView)}
+              onChange={(vs) => applyFilter({ teacher: vs.join(',') })}
+              options={teachers.map((t) => ({ value: String(t.id), label: t.name }))}
+              placeholder="Mọi giáo viên"
+            />
+            {canManage && classes.length > 0 && (
+              <Btn variant="primary" leadingVisual={PlusIcon} onClick={() => setAdding(true)}>
+                Thêm buổi
+              </Btn>
+            )}
+          </div>
         }
       />
       {adding && (
@@ -240,32 +261,6 @@ export function ScheduleView({
           }}
         />
       )}
-
-      <div className="mb-4 flex flex-wrap items-center gap-2">
-        <RangeNav from={rangeFrom} to={rangeTo} prevHref={prevHref} nextHref={nextHref} onPick={pickRange} />
-        <div className="flex min-w-0 flex-wrap items-center gap-2 max-[767px]:w-full min-[768px]:flex-1">
-          <SelectPanel
-            multiple
-            label="Lọc theo lớp"
-            icon={<PeopleIcon size={14} className="text-[var(--fgColor-muted)]" aria-hidden />}
-            values={listParam(clsView)}
-            onChange={(vs) => applyFilter({ cls: vs.join(',') })}
-            options={classes.map((c) => ({ value: String(c.id), label: c.name }))}
-            placeholder="Mọi lớp"
-            className="min-w-0 flex-1 min-[768px]:flex-none"
-          />
-          <SelectPanel
-            multiple
-            label="Lọc theo giáo viên"
-            icon={<FilterIcon size={14} className="text-[var(--fgColor-muted)]" aria-hidden />}
-            values={listParam(teacherView)}
-            onChange={(vs) => applyFilter({ teacher: vs.join(',') })}
-            options={teachers.map((t) => ({ value: String(t.id), label: t.name }))}
-            placeholder="Mọi giáo viên"
-            className="min-w-0 flex-1 min-[768px]:flex-none"
-          />
-        </div>
-      </div>
 
       {sessions.length === 0 ? (
         <EmptyPanel title="Không có buổi học nào trong khoảng này" hint="Đổi bộ lọc hoặc chọn khoảng ngày khác." />

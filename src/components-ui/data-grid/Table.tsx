@@ -55,7 +55,7 @@ const Table = (props: ITableProps) => {
           {dataColumn
             .filter((x) => x.isVisible === true)
             .map((col, idx) => (
-              <col key={idx} style={{ width: col.width ?? 100 }} />
+              <col key={idx} style={col.width !== undefined ? { width: col.width } : undefined} />
             ))}
         </colgroup>
         <Header

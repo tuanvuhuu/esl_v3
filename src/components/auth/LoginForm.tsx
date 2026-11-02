@@ -1,10 +1,11 @@
 'use client';
 
 // Form đăng nhập theo kiến trúc LoginPage của dự án 01. TSUKUBA trên nền @primer/react v38 + Octicons.
-import { KeyIcon, PersonIcon, RocketIcon } from '@primer/octicons-react';
-import { Button, TextInput } from '@primer/react';
+import { PersonIcon, RocketIcon } from '@primer/octicons-react';
+import { Button } from '@primer/react';
 import { startTransition, useActionState, useState, useTransition, type FormEvent } from 'react';
 import { devQuickLoginAction, loginAction } from '@/app/dang-nhap/actions';
+import { PasswordToggleInput, TextInput } from '@/components-ui';
 import { BTN_BASE, BTN_GHOST } from '@/components/ui/Btn';
 import { Field } from '@/components/ui/Field';
 import { Alert } from '@/components/ui/primitives';
@@ -75,13 +76,10 @@ export function LoginForm({
           </Field>
 
           <Field label="Mật khẩu" error={errors.password}>
-            <TextInput
-              block
+            <PasswordToggleInput
               name="password"
-              type="password"
               autoComplete="current-password"
-              leadingVisual={KeyIcon}
-              validationStatus={errors.password ? 'error' : undefined}
+              error={Boolean(errors.password)}
             />
           </Field>
 

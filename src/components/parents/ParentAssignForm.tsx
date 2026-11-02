@@ -2,9 +2,9 @@
 
 import { startTransition, useActionState, type FormEvent } from 'react';
 import { assignStudentsAction } from '@/app/(app)/phu-huynh/actions';
+import { ComboBox, SelectBox } from '@/components-ui';
 import { Btn } from '@/components/ui/Btn';
 import { Field, FormFooter } from '@/components/ui/Field';
-import { SelectPanel } from '@/components/ui/SelectPanel';
 import { PARENT_RELATION_LABELS } from '@/lib/parent-labels';
 import type { StudentChoice } from '@/lib/queries/parents';
 import type { ActionResult } from '@/lib/validation/student';
@@ -49,24 +49,24 @@ export function ParentAssignForm({
       )}
 
       <Field label="Học sinh *" error={errors.studentIds} hint="Gõ để tìm. Chọn được nhiều học sinh cùng lúc.">
-        <SelectPanel
+        <ComboBox
           name="studentIds"
           label="Học sinh *"
           multiple
           defaultValues={[]}
           options={students.map((s) => ({ value: String(s.id), label: `${s.fullName} · ${s.className} · ${s.campusName}` }))}
-          error={!!errors.studentIds}
+          error={Boolean(errors.studentIds)}
           block
         />
       </Field>
 
       <Field label="Quan hệ với học sinh *" error={errors.relation}>
-        <SelectPanel
+        <SelectBox
           name="relation"
           label="Quan hệ với học sinh *"
           defaultValue="father"
           options={RELATION_OPTIONS}
-          error={!!errors.relation}
+          error={Boolean(errors.relation)}
           block
         />
       </Field>

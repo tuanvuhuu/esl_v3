@@ -5,8 +5,9 @@ import { useRouter } from 'next/navigation';
 import { saveLevelAction } from '@/app/(app)/cai-dat/level-actions';
 import { SKILL_LABELS, SKILLS, type Skill } from '@/lib/assignment-scoring';
 import type { LevelRow } from '@/lib/level-rule';
+import { TextInput, TextInputNumber } from '@/components-ui';
 import { Btn } from '@/components/ui/Btn';
-import { Field, inputClass } from '@/components/ui/Field';
+import { Field } from '@/components/ui/Field';
 import { Toast, useToast } from '@/components/ui/Toast';
 import { Alert } from '@/components/ui/primitives';
 import { Panel } from '@/components/ui/surfaces';
@@ -57,22 +58,25 @@ export function LevelSettings({ levels, canManage }: { levels: LevelRow[]; canMa
             <div key={l.id} className="flex flex-col gap-3 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-3.5">
               <div className="grid grid-cols-1 gap-3 min-[768px]:grid-cols-[120px_minmax(0,1fr)]">
                 <Field label={`Tên trình độ ${l.code}`}>
-                  <input value={d.name} onChange={(e) => patch(l.id, { name: e.target.value })} disabled={!canManage} aria-label={`Tên trình độ ${l.code}`} className={inputClass()} />
+                  <TextInput
+                    block
+                    value={d.name}
+                    onChange={(e) => patch(l.id, { name: e.target.value })}
+                    disabled={!canManage}
+                    aria-label={`Tên trình độ ${l.code}`}
+                  />
                 </Field>
                 <div className="grid grid-cols-2 gap-2.5 min-[768px]:grid-cols-4">
                   {SKILLS.map((s) => (
                     <Field key={s} label={`Ngưỡng ${SKILL_LABELS[s]} (%)`}>
-                      <input
-                        type="number"
-                        inputMode="numeric"
+                      <TextInputNumber
                         min={0}
                         max={100}
-                        step={1}
+                        thousandSeparator={false}
                         value={d.thresholds[s]}
-                        onChange={(e) => patch(l.id, { thresholds: { ...d.thresholds, [s]: e.target.value } })}
+                        onTextChange={(raw) => patch(l.id, { thresholds: { ...d.thresholds, [s]: raw } })}
                         disabled={!canManage}
                         aria-label={`Ngưỡng ${SKILL_LABELS[s]} của trình độ ${l.code}`}
-                        className={inputClass()}
                       />
                     </Field>
                   ))}

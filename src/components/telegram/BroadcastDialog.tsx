@@ -3,8 +3,9 @@
 import { PaperAirplaneIcon } from '@primer/octicons-react';
 import { useState, useTransition } from 'react';
 import { broadcastTelegramAction } from '@/app/(app)/tin-nhan/actions';
+import { ComboBox, SelectBox, TextAreaAutoHeight } from '@/components-ui';
 import { Btn } from '@/components/ui/Btn';
-import { Field, FormFooter, inputClass, textareaClass } from '@/components/ui/Field';
+import { Field, FormFooter } from '@/components/ui/Field';
 import { Modal } from '@/components/ui/Modal';
 import { Alert } from '@/components/ui/primitives';
 
@@ -62,53 +63,55 @@ export function BroadcastDialog({
         {error && <Alert>{error}</Alert>}
 
         <Field label="Phạm vi gửi thông báo">
-          <select
+          <SelectBox
+            label="Phạm vi gửi thông báo"
             value={scope}
-            onChange={(e) => setScope(e.target.value as 'all' | 'campus' | 'class')}
-            className={inputClass()}
-          >
-            {canBroadcastAll && <option value="all">Toàn bộ trung tâm (Tất cả phụ huynh)</option>}
-            {campuses.length > 0 && <option value="campus">Theo cơ sở cụ thể</option>}
-            {classes.length > 0 && <option value="class">Theo lớp học cụ thể</option>}
-          </select>
+            onChange={(v) => setScope(v as 'all' | 'campus' | 'class')}
+            options={[
+              ...(canBroadcastAll ? [{ value: 'all', label: 'Toàn bộ trung tâm (Tất cả phụ huynh)' }] : []),
+              ...(campuses.length > 0 ? [{ value: 'campus', label: 'Theo cơ sở cụ thể' }] : []),
+              ...(classes.length > 0 ? [{ value: 'class', label: 'Theo lớp học cụ thể' }] : []),
+            ]}
+            block
+          />
         </Field>
 
         {scope === 'campus' && campuses.length > 0 && (
           <Field label="Chọn cơ sở">
-            <select
-              value={campusId}
-              onChange={(e) => setCampusId(Number(e.target.value))}
-              className={inputClass()}
-            >
-              {campuses.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
+            <ComboBox
+              label="Chọn cơ sở"
+              value={String(campusId)}
+              onChange={(v) => {
+                if (v) setCampusId(Number(v));
+              }}
+              options={campuses.map((c) => ({ value: String(c.id), label: c.name }))}
+              block
+            />
           </Field>
         )}
 
         {scope === 'class' && classes.length > 0 && (
           <Field label="Chọn lớp học">
-            <select
-              value={classId}
-              onChange={(e) => setClassId(Number(e.target.value))}
-              className={inputClass()}
-            >
-              {classes.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
+            <ComboBox
+              label="Chọn lớp học"
+              value={String(classId)}
+              onChange={(v) => {
+                if (v) setClassId(Number(v));
+              }}
+              options={classes.map((c) => ({ value: String(c.id), label: c.name }))}
+              block
+            />
           </Field>
         )}
 
         <Field label="Nội dung thông báo (tối đa 3000 ký tự)" error={error ?? undefined}>
-          <textarea
+          <TextAreaAutoHeight
             rows={4}
             value={text}
             onChange={(e) => setText(e.target.value)}
             maxLength={3000}
             placeholder="Ví dụ: Kính gửi quý phụ huynh, trung tâm xin thông báo lịch nghỉ lễ..."
-            className={textareaClass(error ?? undefined)}
+            error={Boolean(error)}
           />
         </Field>
 

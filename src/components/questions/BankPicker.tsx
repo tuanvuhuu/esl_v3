@@ -5,9 +5,9 @@ import { ITEM_TYPE_LABELS, SKILL_LABELS, type Skill } from '@/lib/assignment-sco
 import { topicLabel } from '@/lib/vocab-topics';
 import { ALL, EMPTY_FILTER, filterBank, LEVEL_OPTIONS, levelLabel, SKILL_OPTIONS, topicOptions, type BankFilter } from './bank-filters';
 import type { BankQuestion } from '@/lib/queries/question-bank';
+import { ComboBox, SelectBox } from '@/components-ui';
 import { Btn } from '@/components/ui/Btn';
 import { Modal } from '@/components/ui/Modal';
-import { SelectPanel } from '@/components/ui/SelectPanel';
 import { Pill } from '@/components/ui/primitives';
 import { snippet } from '@/components/assignments/item-draft';
 import { FormFooter } from '@/components/ui/Field';
@@ -54,9 +54,9 @@ export function BankPicker({
     >
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center gap-2">
-          <SelectPanel label="Lọc theo trình độ" auto value={filter.level} onChange={(v) => setFilter((f) => ({ ...f, level: v }))} options={LEVEL_OPTIONS} />
-          <SelectPanel label="Lọc theo chủ đề" auto value={filter.topic} onChange={(v) => setFilter((f) => ({ ...f, topic: v }))} options={topicOptions(bank)} />
-          <SelectPanel label="Lọc theo kỹ năng" auto value={filter.skill} onChange={(v) => setFilter((f) => ({ ...f, skill: v as 'all' | Skill }))} options={SKILL_OPTIONS} />
+          <SelectBox label="Lọc theo trình độ" auto value={filter.level} onChange={(v) => setFilter((f) => ({ ...f, level: v }))} options={LEVEL_OPTIONS} />
+          <ComboBox label="Lọc theo chủ đề" auto value={filter.topic} onChange={(v) => setFilter((f) => ({ ...f, topic: v }))} options={topicOptions(bank)} />
+          <SelectBox label="Lọc theo kỹ năng" auto value={filter.skill} onChange={(v) => setFilter((f) => ({ ...f, skill: v as 'all' | Skill }))} options={SKILL_OPTIONS} />
           {shown.length > 0 && (
             <Btn
               onClick={() => setChosen((prev) => (allShownChosen ? prev.filter((id) => !shown.some((q) => q.id === id)) : [...new Set([...prev, ...shown.map((q) => q.id)])]))}

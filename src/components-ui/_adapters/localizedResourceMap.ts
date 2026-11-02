@@ -19,6 +19,7 @@ export const defaultTranslations: Record<string, string> = {
   'Base.Label.Close': 'Đóng',
   'Base.Label.Save': 'Lưu',
   'Base.Label.Cancel': 'Hủy',
+  'Base.Label.Confirm': 'Xác nhận',
   'Base.Label.Search': 'Tìm kiếm...',
   'Files.Empty': 'Chưa có tệp đính kèm',
 };

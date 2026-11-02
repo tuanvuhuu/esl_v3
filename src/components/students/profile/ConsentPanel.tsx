@@ -21,14 +21,14 @@ import {
   type ConsentStatus,
 } from '@/lib/consent';
 import { vnDateTimeLabel } from '@/lib/datetime';
+import { SelectBox, TextAreaAutoHeight } from '@/components-ui';
 import { Btn } from '@/components/ui/Btn';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Chip, ChipGroup } from '@/components/ui/controls';
-import { Field, FormFooter, textareaClass } from '@/components/ui/Field';
+import { Field, FormFooter } from '@/components/ui/Field';
 import { Modal } from '@/components/ui/Modal';
 import { Alert, Pill, type Tone } from '@/components/ui/primitives';
 import { RowMenu, type RowMenuItem } from '@/components/ui/RowMenu';
-import { SelectPanel } from '@/components/ui/SelectPanel';
 import { Notice, Panel } from '@/components/ui/surfaces';
 import { Toast, useToast } from '@/components/ui/Toast';
 
@@ -220,7 +220,7 @@ function RecordDialog({
         ) : (
           <>
             <Field label="Phụ huynh">
-              <SelectPanel
+              <SelectBox
                 label="Phụ huynh đồng ý"
                 block
                 value={parentId}
@@ -239,7 +239,7 @@ function RecordDialog({
               </ChipGroup>
             </Field>
             <Field label="Bằng chứng" hint="Ví dụ: Đã ký giấy đồng ý ngày 22/10, lưu ở hồ sơ giấy">
-              <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3} aria-label="Bằng chứng đồng ý" className={textareaClass()} />
+              <TextAreaAutoHeight value={note} onChange={(e) => setNote(e.target.value)} rows={3} aria-label="Bằng chứng đồng ý" />
             </Field>
           </>
         )}

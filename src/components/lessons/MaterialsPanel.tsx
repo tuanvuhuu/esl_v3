@@ -6,11 +6,11 @@ import { deleteMaterialAction, saveMaterialAction, attachDriveMaterialAction } f
 import { uploadAsStaff } from '@/lib/upload-client';
 import type { LessonRow } from '@/lib/queries/lessons';
 import { MATERIAL_KIND_LABELS } from '@/lib/validation/lesson';
+import { SelectBox, TextInput } from '@/components-ui';
 import { ActIcon } from '@/components/ui/ActIcon';
 import { Btn } from '@/components/ui/Btn';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { Field, inputClass, FileInput } from '@/components/ui/Field';
-import { SelectPanel } from '@/components/ui/SelectPanel';
+import { Field, FileInput } from '@/components/ui/Field';
 import { Alert } from '@/components/ui/primitives';
 import { Notice } from '@/components/ui/surfaces';
 import { UPLOAD_ACCEPT } from '@/lib/upload-types';
@@ -134,7 +134,7 @@ export function MaterialsPanel({ lesson, canManage, onChanged }: { lesson: Lesso
           <b className="text-base text-[var(--fgColor-default)]">Thêm tài liệu</b>
           <div className="grid grid-cols-1 gap-3 min-[768px]:grid-cols-2">
             <Field label="Loại tài liệu">
-              <SelectPanel
+              <SelectBox
                 label="Loại tài liệu"
                 value={kind}
                 onChange={(v) => setKind(v as UiMaterialKind)}
@@ -143,26 +143,26 @@ export function MaterialsPanel({ lesson, canManage, onChanged }: { lesson: Lesso
               />
             </Field>
             <Field label={kind === 'drive' ? 'Tên tài liệu (tuỳ chọn)' : 'Tên tài liệu *'}>
-              <input
+              <TextInput
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder={kind === 'drive' ? 'Để trống sẽ lấy tên từ Google Drive' : 'VD: Slide buổi 3'}
                 aria-label="Tên tài liệu"
-                className={inputClass()}
+                block
               />
             </Field>
           </div>
 
           {kind === 'link' && (
             <Field label="Liên kết *" hint="Bắt đầu bằng https://">
-              <input
+              <TextInput
                 type="url"
                 inputMode="url"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
                 placeholder="https://"
                 aria-label="Liên kết tài liệu"
-                className={inputClass()}
+                block
               />
             </Field>
           )}
@@ -172,12 +172,12 @@ export function MaterialsPanel({ lesson, canManage, onChanged }: { lesson: Lesso
               label="Liên kết hoặc ID tệp Google Drive *"
               hint="Dành cho video bài giảng hoặc tài liệu lớn (sách PDF, audio nặng) trên Google Drive của trung tâm. Học sinh xem trực tiếp qua app với quyền bảo mật của lớp."
             >
-              <input
+              <TextInput
                 value={driveInput}
                 onChange={(e) => setDriveInput(e.target.value)}
                 placeholder="https://drive.google.com/file/d/... hoặc mã tệp Drive"
                 aria-label="Liên kết hoặc ID tệp Google Drive"
-                className={inputClass()}
+                block
               />
             </Field>
           )}

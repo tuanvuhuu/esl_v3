@@ -2,8 +2,9 @@
 
 import { startTransition, useActionState, type FormEvent } from 'react';
 import { createCampusAction, updateCampusAction } from '@/app/(app)/co-so/actions';
+import { TextInput } from '@/components-ui';
 import { Btn } from '@/components/ui/Btn';
-import { Field, inputClass, FormFooter } from '@/components/ui/Field';
+import { Field, FormFooter } from '@/components/ui/Field';
 import type { ActionResult } from '@/lib/validation/student';
 import { Alert } from '@/components/ui/primitives';
 
@@ -45,10 +46,10 @@ export function CampusForm({
       )}
 
       <Field label="Tên cơ sở *" error={errors.name} hint="VD: Cơ sở Quận 3">
-        <input name="name" defaultValue={values.name} autoComplete="off" className={inputClass(errors.name)} />
+        <TextInput block name="name" defaultValue={values.name} autoComplete="off" validationStatus={errors.name ? 'error' : undefined} />
       </Field>
       <Field label="Địa chỉ" error={errors.address}>
-        <input name="address" defaultValue={values.address} autoComplete="off" className={inputClass(errors.address)} />
+        <TextInput block name="address" defaultValue={values.address} autoComplete="off" validationStatus={errors.address ? 'error' : undefined} />
       </Field>
 
       <FormFooter>

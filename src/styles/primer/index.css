@@ -5,6 +5,7 @@
 @import "./tokens.css";
 @import "./theme.css";
 @import "./colors.css";
+@import "./components-ui-compat.css";
 @import "./primer-overrides.css";
 @import "./editor.css";
 @import "./animations.css";

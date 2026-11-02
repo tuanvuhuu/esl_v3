@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { commitImportAction, previewImportAction, type PreviewResponse } from '@/app/(app)/nhap-du-lieu/actions';
 import type { Action, EntityKind, ImportSummary, RowResult } from '@/lib/import/plan';
+import { Steps } from '@/components-ui';
 import { Btn, BTN_BASE, BTN_GHOST } from '@/components/ui/Btn';
 import { Chip, ChipGroup } from '@/components/ui/controls';
 import { DataGrid, type GridColumn } from '@/components/ui/datagrid';
@@ -154,6 +155,16 @@ export function ImportView() {
 
   return (
     <div className="flex flex-col gap-4">
+      <Panel>
+        <Steps
+          steps={[
+            { id: 1, name: 'Tải file mẫu', is_active: !file && !done },
+            { id: 2, name: 'Xem trước & kiểm tra', is_active: !!file && !done },
+            { id: 3, name: 'Hoàn tất nhập', is_active: !!done },
+          ]}
+        />
+      </Panel>
+
       <Panel title="1. Tải file mẫu">
         <div className="flex flex-col gap-3">
           <p className="text-base text-[var(--fgColor-default)]">

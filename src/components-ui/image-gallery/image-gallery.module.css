@@ -97,7 +97,7 @@
   cursor: zoom-in;
 }
 
-.imageGallery_box11:hover :global(.zoom-icon) {
+.imageGallery_box11:hover [class~="zoom-icon"] {
   opacity: 1;
 }
 

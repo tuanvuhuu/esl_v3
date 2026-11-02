@@ -7,8 +7,9 @@ import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { createMyLinkAction, replyToParentAction } from '@/app/(app)/tin-nhan/actions';
 import type { Conversation, ThreadMessage } from '@/lib/telegram/service';
+import { TextAreaAutoHeight } from '@/components-ui';
 import { Btn } from '@/components/ui/Btn';
-import { Field, textareaClass } from '@/components/ui/Field';
+import { Field } from '@/components/ui/Field';
 import { Avatar } from '@/components/ui/primitives';
 import { EmptyPanel, Notice, Panel } from '@/components/ui/surfaces';
 import { Toast, useToast } from '@/components/ui/Toast';
@@ -213,13 +214,13 @@ export function TelegramInbox({
             {selected.linked ? (
               <div className="flex flex-col gap-2">
                 <Field label="Trả lời" error={error ?? undefined}>
-                  <textarea
+                  <TextAreaAutoHeight
                     name="text"
                     rows={3}
                     value={text}
                     onChange={(e) => setText(e.target.value)}
                     maxLength={2000}
-                    className={textareaClass(error ?? undefined)}
+                    error={Boolean(error)}
                   />
                 </Field>
                 <div className="flex justify-end">

@@ -88,6 +88,18 @@ const Rows = (props: IRowsProps) => {
 
   return (
     <>
+      {_pagedData.length === 0 && (
+        <tbody>
+          <tr>
+            <td
+              colSpan={Math.max(1, visibleLeafColumns.length)}
+              className="py-6 text-center text-muted"
+            >
+              Không tìm thấy dữ liệu phù hợp.
+            </td>
+          </tr>
+        </tbody>
+      )}
       {_pagedData.length > 0 && (
         <tbody>
           {groupData ? (

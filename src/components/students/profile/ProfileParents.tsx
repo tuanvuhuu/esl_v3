@@ -6,11 +6,11 @@ import { useRouter } from 'next/navigation';
 import { addParentLinkAction, setPrimaryParentAction, unlinkParentAction } from '@/app/(app)/phu-huynh/actions';
 import { PARENT_RELATION_LABELS } from '@/lib/parent-labels';
 import type { ActionResult } from '@/lib/validation/student';
+import { ComboBox, SelectBox, TextInput } from '@/components-ui';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Btn, BTN_BASE, BTN_GHOST } from '@/components/ui/Btn';
 import { EmptyPanel } from '@/components/ui/surfaces';
-import { Field, inputClass, FormFooter } from '@/components/ui/Field';
-import { SelectPanel } from '@/components/ui/SelectPanel';
+import { Field, FormFooter } from '@/components/ui/Field';
 import { Modal } from '@/components/ui/Modal';
 import { Pill, Alert } from '@/components/ui/primitives';
 import { Toast, useToast } from '@/components/ui/Toast';
@@ -176,32 +176,35 @@ function AddParentDialog({
           <Alert className="col-span-full">{state.message}</Alert>
         )}
         <Field label="Phụ huynh *" error={errors.parentId} wide>
-          <SelectPanel
+          <ComboBox
             name="parentId"
             label="Phụ huynh *"
             value={parentId}
             onChange={setParentId}
             options={[...choices.map((c) => ({ value: String(c.id), label: `${c.fullName} · ${c.phone}` })), { value: '', label: 'Người mới' }]}
-            error={!!errors.parentId}
+            error={Boolean(errors.parentId)}
             block
           />
         </Field>
         {isNew && (
           <>
             <Field label="Họ và tên *" error={errors.fullName}>
-              <input name="fullName" autoComplete="off" className={inputClass(errors.fullName)} />
+              <TextInput block name="fullName" autoComplete="off" validationStatus={errors.fullName ? 'error' : undefined} />
             </Field>
             <Field label="Số điện thoại *" error={errors.phone}>
-              <input name="phone" type="tel" inputMode="tel" placeholder="09xx xxx xxx" autoComplete="off" className={inputClass(errors.phone)} />
+              <TextInput block name="phone" type="tel" inputMode="tel" placeholder="09xx xxx xxx" autoComplete="off" validationStatus={errors.phone ? 'error' : undefined} />
             </Field>
           </>
         )}
         <Field label="Quan hệ *" error={errors.relation}>
-          <select name="relation" defaultValue="other" className={inputClass(errors.relation)}>
-            {RELATIONS.map((r) => (
-              <option key={r} value={r}>{PARENT_RELATION_LABELS[r]}</option>
-            ))}
-          </select>
+          <SelectBox
+            name="relation"
+            label="Quan hệ *"
+            defaultValue="other"
+            options={RELATIONS.map((r) => ({ value: r, label: PARENT_RELATION_LABELS[r] }))}
+            error={Boolean(errors.relation)}
+            block
+          />
         </Field>
         <label className="flex min-w-0 items-center gap-2.5 self-end pb-2.5 text-sm font-normal text-[var(--fgColor-default)]">
           <input name="isPrimary" type="checkbox" className="size-4 accent-[var(--control-checked-bgColor-rest)]" />

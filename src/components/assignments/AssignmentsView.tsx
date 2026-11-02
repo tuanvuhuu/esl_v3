@@ -12,7 +12,7 @@ import type { AssignmentRow } from '@/lib/queries/assignments';
 import { addDaysKey, todayKeyVN, vnDateTimeLabel } from '@/lib/datetime';
 import { BTN_BASE, BTN_PRIMARY, Btn } from '@/components/ui/Btn';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { SelectPanel } from '@/components/ui/SelectPanel';
+import { ComboBox } from '@/components-ui';
 import { Modal } from '@/components/ui/Modal';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { RowMenu, type RowMenuItem } from '@/components/ui/RowMenu';
@@ -95,28 +95,39 @@ export function AssignmentsView({
       <PageHeader
         crumbs={['Đào tạo', 'Bài tập']}
         title="Bài tập"
-        subtitle="Bài tập theo lớp. Bấm Chấm điểm để ghi trạng thái nộp và điểm của từng học sinh."
         actions={
-          canManage && (
-            <div className="flex flex-wrap gap-2.5">
-              <Btn variant="ghost" leadingVisual={GraphIcon} onClick={() => router.push(`/bao-cao-ky-nang?cls=${classId}`)} disabled={classes.length === 0}>
-                Báo cáo kỹ năng
-              </Btn>
-              <Btn variant="ghost" leadingVisual={LibraryIcon} onClick={() => router.push('/ngan-hang-cau-hoi')}>
-                Ngân hàng câu hỏi
-              </Btn>
-              {classes.length > 0 && (
-                <Btn variant="ghost" leadingVisual={SparklesFillIcon} onClick={() => setSampleOpen(true)}>
-                  Bộ bài mẫu
+          <div className="flex flex-wrap items-center gap-1.5">
+            {classes.length > 0 && (
+              <ComboBox
+                label="Chọn lớp"
+                auto
+                variant="bar"
+                value={String(classId)}
+                onChange={(v) => router.push(`/bai-tap?cls=${v}`, { scroll: false })}
+                options={classes.map((c) => ({ value: String(c.id), label: c.name }))}
+              />
+            )}
+            {canManage && (
+              <>
+                <Btn variant="ghost" leadingVisual={GraphIcon} onClick={() => router.push(`/bao-cao-ky-nang?cls=${classId}`)} disabled={classes.length === 0}>
+                  Báo cáo kỹ năng
                 </Btn>
-              )}
-              {classes.length > 0 && (
-                <Btn variant="primary" leadingVisual={PlusIcon} onClick={() => setCreating(true)}>
-                  Thêm bài tập
+                <Btn variant="ghost" leadingVisual={LibraryIcon} onClick={() => router.push('/ngan-hang-cau-hoi')}>
+                  Ngân hàng câu hỏi
                 </Btn>
-              )}
-            </div>
-          )
+                {classes.length > 0 && (
+                  <Btn variant="ghost" leadingVisual={SparklesFillIcon} onClick={() => setSampleOpen(true)}>
+                    Bộ bài mẫu
+                  </Btn>
+                )}
+                {classes.length > 0 && (
+                  <Btn variant="primary" leadingVisual={PlusIcon} onClick={() => setCreating(true)}>
+                    Thêm bài tập
+                  </Btn>
+                )}
+              </>
+            )}
+          </div>
         }
       />
 
@@ -124,16 +135,6 @@ export function AssignmentsView({
         <EmptyPanel title="Chưa có lớp nào" hint="Tạo lớp học trước khi giao bài tập." />
       ) : (
         <>
-          <div className="mb-4">
-            <SelectPanel
-              label="Chọn lớp"
-              auto
-              value={String(classId)}
-              onChange={(v) => router.push(`/bai-tap?cls=${v}`, { scroll: false })}
-              options={classes.map((c) => ({ value: String(c.id), label: c.name }))}
-            />
-          </div>
-
           {assignments.length === 0 ? (
             <EmptyPanel title={`Lớp ${cls?.name ?? ''} chưa có bài tập`} hint="Bấm Thêm bài tập để giao bài đầu tiên." />
           ) : (

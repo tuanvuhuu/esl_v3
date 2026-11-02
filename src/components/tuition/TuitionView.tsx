@@ -1,6 +1,6 @@
 'use client';
 
-import { SearchIcon } from '@primer/octicons-react';
+import { CreditCardIcon, SearchIcon } from '@primer/octicons-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { startTransition, useActionState, useEffect, useState, useTransition, type FormEvent } from 'react';
@@ -12,12 +12,13 @@ import {
   remindTuitionAction,
   voidPaymentAction,
 } from '@/app/(app)/hoc-phi/actions';
+import { BulkActionBar, TextAreaAutoHeight, TextInput, TextInputNumber } from '@/components-ui';
 import { Btn } from '@/components/ui/Btn';
-import { Chip, ChipGroup, TextInput } from '@/components/ui/controls';
+import { Chip, ChipGroup } from '@/components/ui/controls';
 import { DataGrid, type GridColumn } from '@/components/ui/datagrid';
-import { Field, FormFooter, inputClass } from '@/components/ui/Field';
+import { Field, FormFooter } from '@/components/ui/Field';
 import { Modal } from '@/components/ui/Modal';
-import { PageHeader } from '@/components/ui/PageHeader';
+import { PageCrumbs } from '@/components/shell/PageCrumbs';
 import { Alert, Pill, type Tone } from '@/components/ui/primitives';
 import { Card, EmptyPanel } from '@/components/ui/surfaces';
 import { Toast, useToast } from '@/components/ui/Toast';
@@ -67,7 +68,7 @@ const FILTERS: { key: InvoiceFilter; label: string }[] = [
 export function TuitionView({
   rows,
   counts,
-  totalDebt,
+  totalDebt: _totalDebt,
   totals,
   filter,
   q,
@@ -81,6 +82,7 @@ export function TuitionView({
   q: string;
   canManage: boolean;
 }) {
+  void _totalDebt;
   const router = useRouter();
   const { message, notify } = useToast();
   const [paying, setPaying] = useState<InvoiceRow | null>(null);
@@ -253,66 +255,11 @@ export function TuitionView({
   );
 
   return (
-    <section className="flex flex-col">
-      <PageHeader
-        crumbs={['Tài chính', 'Học phí']}
-        title="Học phí"
-        subtitle={`Học phí ${PRICE} một buổi. Nộp bao nhiêu thì cộng bấy nhiêu buổi, học buổi nào trừ buổi đó. Đang nợ ${formatVND(totalDebt)}.`}
-      />
-
-      <ChipGroup label="Lọc học phí" className="mb-4">
-        {FILTERS.map((f) => (
-          <Chip key={f.key} selected={filter === f.key} count={counts[f.key]} onClick={() => go({ f: f.key })}>
-            {f.label}
-          </Chip>
-        ))}
-      </ChipGroup>
-
-      <form
-        role="search"
-        onSubmit={(e: FormEvent<HTMLFormElement>) => {
-          e.preventDefault();
-          go({ q: search });
-        }}
-        className="mb-4 flex items-center gap-2"
-      >
-        <TextInput
-          type="search"
-          leadingVisual={SearchIcon}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Tìm học sinh theo tên hoặc mã HS-"
-          className="flex-1 [&::-webkit-search-cancel-button]:hidden"
-        />
-        <Btn type="submit" variant="ghost">
-          Tìm
-        </Btn>
-      </form>
+    <section className="relative flex flex-col">
+      <PageCrumbs crumbs={['Tài chính', 'Học phí']} />
+      <h1 className="sr-only">Học phí</h1>
 
       <TotalsStrip totals={totals} />
-
-      {canManage && rows.length > 0 && (
-        <div className="mb-3 flex flex-wrap items-center gap-2">
-          {pickedRows.length === 0 ? (
-            needRows.length > 0 && (
-              <Btn onClick={() => setPicked(new Set(needRows.map((r) => r.id)))}>Chọn tất cả cần đóng ({needRows.length})</Btn>
-            )
-          ) : (
-            <>
-              <div
-                role="status"
-                className="min-w-0 flex-1 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-accent-muted)] bg-[var(--bgColor-accent-muted)] px-3 py-1.5 text-sm text-[var(--fgColor-default)]"
-              >
-                <b>Đã chọn {pickedRows.length} học sinh</b>
-              </div>
-              <Btn onClick={() => setPicked(new Set())}>Bỏ chọn</Btn>
-              <Btn variant="primary" onClick={() => setBulkOpen(true)}>
-                Ghi thu cho {pickedRows.length} học sinh
-              </Btn>
-            </>
-          )}
-        </div>
-      )}
 
       <DataGrid
         label="Học phí theo buổi"
@@ -322,8 +269,67 @@ export function TuitionView({
         cell={cell}
         card={card}
         from="md"
+        title={
+          <ChipGroup label="Lọc học phí">
+            {FILTERS.map((f) => (
+              <Chip key={f.key} selected={filter === f.key} count={counts[f.key]} onClick={() => go({ f: f.key })}>
+                {f.label}
+              </Chip>
+            ))}
+          </ChipGroup>
+        }
+        actionComponent={
+          <>
+            <form
+              role="search"
+              onSubmit={(e: FormEvent<HTMLFormElement>) => {
+                e.preventDefault();
+                go({ q: search });
+              }}
+              className="flex items-center gap-1.5"
+            >
+              <div className="w-52 max-w-full">
+                <TextInput
+                  block
+                  type="search"
+                  leadingVisual={SearchIcon}
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Tìm tên hoặc mã HS-…"
+                  className="[&::-webkit-search-cancel-button]:hidden"
+                />
+              </div>
+              <Btn type="submit" variant="ghost">
+                Tìm
+              </Btn>
+            </form>
+            {canManage && rows.length > 0 && needRows.length > 0 && (
+              <Btn onClick={() => setPicked(new Set(needRows.map((r) => r.id)))}>
+                Chọn cần đóng ({needRows.length})
+              </Btn>
+            )}
+          </>
+        }
         empty={<EmptyPanel title="Không có học sinh phù hợp với bộ lọc này." />}
       />
+
+      {canManage && pickedRows.length > 0 && !bulkOpen && !paying && !refunding && (
+        <div className="pointer-events-none sticky bottom-0 z-40 h-20 w-full [&>*]:pointer-events-auto">
+          <BulkActionBar
+            count={pickedRows.length}
+            itemLabel="học sinh"
+            onClear={() => setPicked(new Set())}
+            actions={[
+              {
+                key: 'bulk-pay',
+                label: `Ghi thu cho ${pickedRows.length} học sinh`,
+                icon: CreditCardIcon,
+                onClick: () => setBulkOpen(true),
+              },
+            ]}
+          />
+        </div>
+      )}
 
       {paying && (
         <PaymentDialog
@@ -379,14 +385,14 @@ function TotalsStrip({ totals }: { totals: InvoiceTotals }) {
     },
   ];
   return (
-    <dl className="mb-4 grid grid-cols-2 gap-2.5 min-[768px]:grid-cols-4" aria-label="Tổng học phí">
+    <dl className="mb-2.5 grid grid-cols-2 gap-2 min-[768px]:grid-cols-4" aria-label="Tổng học phí">
       {items.map((it) => (
         <div
           key={it.label}
-          className="rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-4 py-3 shadow-[var(--shadow-resting-small,0_1px_2px_rgba(0,0,0,0.04))]"
+          className="flex items-baseline justify-between gap-2 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-3 py-2"
         >
           <dt className="text-xs text-[var(--fgColor-muted)]">{it.label}</dt>
-          <dd className={`mt-0.5 text-lg font-bold tabular-nums ${it.tone}`}>{it.value}</dd>
+          <dd className={`m-0 text-sm font-bold tabular-nums ${it.tone}`}>{it.value}</dd>
         </div>
       ))}
     </dl>
@@ -427,15 +433,15 @@ function MoneyField({
 }) {
   return (
     <>
-      <input
-        type="text"
-        inputMode="numeric"
-        autoComplete="off"
+      <TextInputNumber
+        thousandSeparator="."
+        max={1_000_000_000}
         aria-label={label}
-        value={value ? Number(value).toLocaleString('vi-VN') : ''}
+        value={value}
+        onTextChange={onChange}
         placeholder="0"
-        onChange={(e) => onChange(e.target.value.replace(/\D/g, '').replace(/^0+(?=\d)/, '').slice(0, 10))}
-        className={`${inputClass(invalid)} tabular-nums`}
+        error={Boolean(invalid)}
+        className="tabular-nums"
       />
       <input type="hidden" name={name} value={value || '0'} />
     </>
@@ -535,8 +541,14 @@ function PaymentDialog({
           <Field label="Giảm trừ (VND)" error={errors.discount} hint="Trừ vào số tiền phụ huynh trả, không đổi số buổi">
             <MoneyField name="discount" value={discount} onChange={setDiscount} invalid={errors.discount} label="Giảm trừ (VND)" />
           </Field>
-          <Field label="Ghi chú" error={errors.note}>
-            <input name="note" placeholder="VD: Đóng tiền mặt, đăng ký khoá tiếp" autoComplete="off" className={inputClass(errors.note)} />
+          <Field label="Ghi chú" error={errors.note} wide>
+            <TextAreaAutoHeight
+              name="note"
+              rows={2}
+              maxLength={200}
+              placeholder="VD: Đóng tiền mặt, đăng ký khoá tiếp"
+              error={Boolean(errors.note)}
+            />
           </Field>
           <p
             role="status"
@@ -609,13 +621,15 @@ function PaymentDialog({
                     </div>
                     {voidId === p.id && (
                       <div className="flex flex-wrap items-center gap-2">
-                        <input
-                          value={voidReason}
-                          onChange={(e) => setVoidReason(e.target.value)}
-                          placeholder="Lý do huỷ (VD: ghi nhầm số tiền)"
-                          aria-label="Lý do huỷ khoản thu"
-                          className={`${inputClass()} min-w-0 flex-1`}
-                        />
+                        <div className="min-w-0 flex-1">
+                          <TextInput
+                            block
+                            value={voidReason}
+                            onChange={(e) => setVoidReason(e.target.value)}
+                            placeholder="Lý do huỷ (VD: ghi nhầm số tiền)"
+                            aria-label="Lý do huỷ khoản thu"
+                          />
+                        </div>
                         <Btn variant="danger" loading={voiding} onClick={() => confirmVoid(p)} disabled={voiding}>
                           Xác nhận huỷ
                         </Btn>
@@ -664,26 +678,24 @@ function RefundDialog({ row, onClose, onDone }: { row: InvoiceRow; onClose: () =
       <form onSubmit={submit} noValidate className="grid grid-cols-1 gap-3.5 pb-2 min-[768px]:grid-cols-2 min-[768px]:gap-x-4">
         {error && <Alert className="col-span-full">{error}</Alert>}
         <Field label="Số tiền hoàn (VND) *" hint={`Tối đa ${formatVND(max)}`}>
-          <input
+          <TextInputNumber
             name="amount"
-            type="number"
-            inputMode="numeric"
             min={1}
             max={max}
-            step={1}
+            thousandSeparator="."
             value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            className={inputClass()}
+            onTextChange={setAmount}
+            error={Boolean(error)}
           />
         </Field>
         <Field label="Ghi chú">
-          <input
+          <TextInput
+            block
             name="note"
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder="VD: nghỉ học từ tháng 10"
             autoComplete="off"
-            className={inputClass()}
           />
         </Field>
         <FormFooter className="col-span-full">
@@ -748,21 +760,24 @@ function BulkPaymentDialog({ rows, onClose, onDone }: { rows: InvoiceRow[]; onCl
                     {a > 0 ? ` · +${Math.floor(a / TUITION_PER_SESSION)} buổi` : ''}
                   </small>
                 </div>
-                <input
-                  aria-label={`Số tiền thu ${r.fullName} (VND)`}
-                  type="text"
-                  inputMode="numeric"
-                  autoComplete="off"
-                  value={amounts[r.id] ? Number(amounts[r.id]).toLocaleString('vi-VN') : ''}
-                  placeholder="0"
-                  onChange={(e) =>
-                    setAmounts((prev) => ({
-                      ...prev,
-                      [r.id]: e.target.value.replace(/\D/g, '').replace(/^0+(?=\d)/, '').slice(0, 10),
-                    }))
-                  }
-                  className={`${inputClass(badIds.has(r.id) ? 'sai' : undefined)} !w-36 text-right tabular-nums`}
-                />
+                <div className="w-36 shrink-0">
+                  <TextInputNumber
+                    aria-label={`Số tiền thu ${r.fullName} (VND)`}
+                    thousandSeparator="."
+                    max={1_000_000_000}
+                    isAlignRight
+                    value={amounts[r.id]}
+                    onTextChange={(raw) =>
+                      setAmounts((prev) => ({
+                        ...prev,
+                        [r.id]: raw,
+                      }))
+                    }
+                    placeholder="0"
+                    error={badIds.has(r.id)}
+                    className="tabular-nums"
+                  />
+                </div>
               </li>
             );
           })}
@@ -771,7 +786,13 @@ function BulkPaymentDialog({ rows, onClose, onDone }: { rows: InvoiceRow[]; onCl
           Tổng thu: <b className="tabular-nums text-[var(--fgColor-default)]">{formatVND(total)}</b> từ {rows.length} học sinh. Bấm xác nhận là ghi ngay.
         </p>
         <Field label="Ghi chú chung" hint="VD: đóng tiền mặt tại lớp">
-          <input value={note} onChange={(e) => setNote(e.target.value)} maxLength={200} autoComplete="off" className={inputClass()} />
+          <TextAreaAutoHeight
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            rows={2}
+            maxLength={200}
+            placeholder="VD: đóng tiền mặt tại lớp"
+          />
         </Field>
         <FormFooter>
           <Btn onClick={onClose} disabled={pending}>

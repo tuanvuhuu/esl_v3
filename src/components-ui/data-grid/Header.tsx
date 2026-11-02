@@ -287,7 +287,7 @@ const Header = (props: IHeaderProps) => {
                               ? stickyOffsets.rightOffsets[uuid]
                               : undefined,
                           zIndex: column.fixed ? 20 : 1,
-                          backgroundColor: "#fff",
+                          backgroundColor: "var(--bgColor-default)",
                         }}
                         className={clsx(
                           column.fixed ? styles.fixed : "",

@@ -17,7 +17,7 @@ import { Modal } from '@/components/ui/Modal';
 import { RowMenu, type RowMenuItem } from '@/components/ui/RowMenu';
 import { Pill, ProgressBar, type Tone } from '@/components/ui/primitives';
 import { Card, EmptyPanel } from '@/components/ui/surfaces';
-import { StudentFilters, type FilterState } from './StudentFilters';
+import { StudentFilters, StudentStatusTabs, StudentToolbarActions, type FilterState } from './StudentFilters';
 import { StudentForm, type CampusChoice, type ClassOption, type ParentChoice } from './StudentForm';
 import { Toast } from '@/components/ui/Toast';
 
@@ -196,25 +196,17 @@ export function StudentList({
 
   return (
     <section className="flex flex-col min-[1200px]:min-h-0 min-[1200px]:flex-1">
-      <header className="mb-4 flex flex-wrap items-end justify-between gap-4 max-[767px]:mb-3">
-        <div className="min-w-0">
-          <PageCrumbs crumbs={['Đào tạo', 'Học sinh']} />
-          {/* Từ 768px tên trang nằm trên thanh trên cùng (đường dẫn), nên tiêu đề chỉ còn cho trình đọc màn hình */}
-          <h1 className="text-h1 font-extrabold leading-tight tracking-tight text-[var(--fgColor-default)] min-[768px]:sr-only">Học sinh</h1>
-          <p className="mt-1 text-sm text-[var(--fgColor-muted)] max-[767px]:mt-1.5">Quản lý hồ sơ, tiến độ học và học phí của từng học viên.</p>
-        </div>
-      </header>
+      <PageCrumbs crumbs={['Đào tạo', 'Học sinh']} />
+      <h1 className="mb-1 text-lg font-bold text-[var(--fgColor-default)] min-[768px]:sr-only">Học sinh</h1>
 
       <StudentFilters current={filters} classes={classes} statusCounts={statusCounts} onAdd={canEdit ? () => setCreating(true) : undefined} />
 
-      <p className="mb-3 text-sm text-[var(--fgColor-muted)] min-[768px]:hidden">
+      <p className="mb-2 text-xs text-[var(--fgColor-muted)] min-[768px]:hidden">
         {total === 0 ? 'Không có học sinh phù hợp.' : `Đang hiển thị ${phoneRows.length} trên ${total} học sinh`}
       </p>
 
-      {/* Máy tính (từ 1200px): bảng 9 cột, thân bảng tự cuộn. Máy tính bảng (768–1199px): thẻ theo số trang. */}
-      {rows.length === 0 ? (
-        <div className="hidden min-[768px]:block">{empty}</div>
-      ) : (
+      {/* Máy tính (từ 1200px): DataGrid tích hợp 1 dòng công cụ gọn (chip trạng thái + bộ lọc & nút Thêm học sinh trong actionComponent). */}
+      <div className="hidden min-[768px]:flex min-[768px]:min-h-0 min-[768px]:flex-1 min-[768px]:flex-col">
         <DataGrid
           label="Danh sách học sinh"
           columns={COLUMNS}
@@ -224,16 +216,23 @@ export function StudentList({
           cardsFrom="md"
           fill
           from="xl"
+          title={<StudentStatusTabs current={filters} statusCounts={statusCounts} />}
+          actionComponent={
+            <StudentToolbarActions
+              current={filters}
+              classes={classes}
+              onAdd={canEdit ? () => setCreating(true) : undefined}
+            />
+          }
+          empty={empty}
           card={(row) => (
             <StudentCard row={row} viewHref={profileHref(row.id)} canEdit={canEdit} canDelete={canDelete} onEdit={() => openEdit(row)} onDelete={() => setToDelete(row)} />
           )}
           footer={
-            <div className="hidden min-[768px]:block">
-              <Pagination page={page} pageCount={pageCount} hrefFor={(p) => studentsHref({ ...filters, p })} label="Phân trang" />
-            </div>
+            <Pagination page={page} pageCount={pageCount} totalCount={total} hrefFor={(p) => studentsHref({ ...filters, p })} label="Phân trang" />
           }
         />
-      )}
+      </div>
 
       {/* Điện thoại: thẻ, bấm Xem thêm để tải tiếp */}
       <div className="flex flex-col gap-3 min-[768px]:hidden">

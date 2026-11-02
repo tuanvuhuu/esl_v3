@@ -3,10 +3,10 @@
 import { startTransition, useActionState, type FormEvent } from 'react';
 import { createParentAction, updateParentAction, type ParentFormValues } from '@/app/(app)/phu-huynh/actions';
 import type { ActionResult } from '@/lib/validation/student';
+import { ComboBox, SelectBox, TextAreaAutoHeight, TextInput } from '@/components-ui';
 import { Btn } from '@/components/ui/Btn';
-import { Field, inputClass, textareaClass, FormFooter } from '@/components/ui/Field';
+import { Field, FormFooter } from '@/components/ui/Field';
 import { Alert } from '@/components/ui/primitives';
-import { SelectPanel } from '@/components/ui/SelectPanel';
 import { PARENT_RELATION_LABELS } from '@/lib/parent-labels';
 import type { StudentChoice } from '@/lib/queries/parents';
 
@@ -51,34 +51,71 @@ export function ParentForm({
         <Alert className="col-span-full">{state.message}</Alert>
       )}
       <Field label="Họ và tên *" error={errors.fullName}>
-        <input name="fullName" defaultValue={values.fullName} placeholder="VD: Nguyễn Văn Hùng" autoComplete="off" className={inputClass(errors.fullName)} />
+        <TextInput
+          block
+          name="fullName"
+          defaultValue={values.fullName}
+          placeholder="VD: Nguyễn Văn Hùng"
+          autoComplete="off"
+          validationStatus={errors.fullName ? 'error' : undefined}
+        />
       </Field>
       <Field label="Số điện thoại *" error={errors.phone}>
-        <input name="phone" type="tel" inputMode="tel" defaultValue={values.phone} placeholder="09xx xxx xxx" autoComplete="off" className={inputClass(errors.phone)} />
+        <TextInput
+          block
+          name="phone"
+          type="tel"
+          inputMode="tel"
+          defaultValue={values.phone}
+          placeholder="09xx xxx xxx"
+          autoComplete="off"
+          validationStatus={errors.phone ? 'error' : undefined}
+        />
       </Field>
       <Field label="Email" error={errors.email}>
-        <input name="email" type="email" defaultValue={values.email} autoComplete="off" className={inputClass(errors.email)} />
+        <TextInput
+          block
+          name="email"
+          type="email"
+          defaultValue={values.email}
+          autoComplete="off"
+          validationStatus={errors.email ? 'error' : undefined}
+        />
       </Field>
       {mode === 'create' && students.length > 0 && (
         <>
           <Field label="Con học ở trung tâm" error={errors.studentIds} hint="Không bắt buộc. Gõ để tìm, chọn được nhiều con.">
-            <SelectPanel
+            <ComboBox
               name="studentIds"
               label="Con học ở trung tâm"
               multiple
               defaultValues={[]}
               placeholder="Chưa chọn"
               options={students.map((s) => ({ value: String(s.id), label: `${s.fullName} · ${s.className}` }))}
+              error={Boolean(errors.studentIds)}
               block
             />
           </Field>
           <Field label="Quan hệ với con" error={errors.relation}>
-            <SelectPanel name="relation" label="Quan hệ với con" defaultValue="mother" options={RELATION_OPTIONS} block />
+            <SelectBox
+              name="relation"
+              label="Quan hệ với con"
+              defaultValue="mother"
+              options={RELATION_OPTIONS}
+              error={Boolean(errors.relation)}
+              block
+            />
           </Field>
         </>
       )}
       <Field label="Ghi chú" error={errors.note} wide>
-        <textarea name="note" defaultValue={values.note} rows={3} placeholder="Giờ liên hệ thuận tiện, lưu ý…" className={textareaClass(errors.note)} />
+        <TextAreaAutoHeight
+          name="note"
+          defaultValue={values.note}
+          rows={3}
+          placeholder="Giờ liên hệ thuận tiện, lưu ý…"
+          error={Boolean(errors.note)}
+        />
       </Field>
       <FormFooter className="col-span-full">
         <Btn onClick={onCancel}>Huỷ</Btn>

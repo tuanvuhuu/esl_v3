@@ -1,18 +1,18 @@
 'use client';
 
-// Bộ điều khiển dùng trực tiếp thành phần Core của @primer/react v38:
-// - TextInput → @primer/react TextInput
-// - ChipGroup (tabs) + Chip → @primer/react UnderlineNav + UnderlineNav.Item
-// - ChipGroup (filter) + Chip → @primer/react Button / LinkButton + CounterLabel
-// - Tag → @primer/react Token
-// - Pagination → @primer/react Pagination
+// Bộ điều khiển dùng trực tiếp thành phần từ `@/components-ui` (01. TSUKUBA) + `@primer/react` v38:
+// - TextInput → `@/components-ui` TextInput (hỗ trợ debounce + trạng thái lỗi Primer)
+// - Tag → `@/components-ui` Tag (nhãn màu muted theo semantic token)
+// - SegmentedSwitch → `@/components-ui` SegementedControlWraper + `@primer/react` SegmentedControl
+// - ChipGroup / Chip → `@primer/react` UnderlineNav + Button + CounterLabel
+// - Pagination → tích hợp `@/components-ui` Paging & `@primer/react` Pagination
+import type { Icon } from '@primer/octicons-react';
 import {
   Button,
   CounterLabel,
   LinkButton,
   Pagination as PrimerPagination,
-  TextInput as PrimerTextInput,
-  Token,
+  SegmentedControl,
   UnderlineNav,
 } from '@primer/react';
 import clsx from 'clsx';
@@ -27,6 +27,10 @@ import {
   type ReactElement,
   type ReactNode,
 } from 'react';
+import UiPaging from '@/components-ui/paging';
+import SegementedControlWraper from '@/components-ui/segementd-control-wrapper';
+import UiTag from '@/components-ui/tag';
+import UiTextInput from '@/components-ui/text-input';
 
 const CTL_BOX =
   'h-[var(--ctl-h)] min-w-0 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] text-sm text-[var(--fgColor-default)] outline-none placeholder:text-[var(--fgColor-muted)] focus:border-[var(--focus-outlineColor)] max-[767px]:h-[var(--ctl-h-touch)] max-[767px]:text-input';
@@ -37,6 +41,7 @@ export function TextInput({
   error = false,
   leadingVisual,
   trailingVisual,
+  onValueDelayChanged,
   className = '',
   size: _htmlSize,
   ...rest
@@ -44,17 +49,50 @@ export function TextInput({
   error?: boolean;
   leadingVisual?: ElementType | ReactElement | null;
   trailingVisual?: ElementType | ReactElement | null;
+  onValueDelayChanged?: (value: string) => void;
 }) {
   void _htmlSize;
   return (
-    <PrimerTextInput
+    <UiTextInput
       {...rest}
       block
-      leadingVisual={leadingVisual}
-      trailingVisual={trailingVisual}
+      leadingVisual={leadingVisual ?? undefined}
+      trailingVisual={trailingVisual ?? undefined}
+      onValueDelayChanged={onValueDelayChanged}
       validationStatus={error ? 'error' : undefined}
       className={clsx('!min-w-0', className)}
     />
+  );
+}
+
+export function SegmentedSwitch<T extends string>({
+  label,
+  options,
+  value,
+  onChange,
+  className = '',
+}: {
+  label: string;
+  options: Array<{ value: T; label: string; icon?: Icon }>;
+  value: T;
+  onChange: (next: T) => void;
+  className?: string;
+}) {
+  return (
+    <SegementedControlWraper className={className}>
+      <SegmentedControl aria-label={label}>
+        {options.map((opt) => (
+          <SegmentedControl.Button
+            key={opt.value}
+            selected={opt.value === value}
+            leadingIcon={opt.icon}
+            onClick={() => onChange(opt.value)}
+          >
+            {opt.label}
+          </SegmentedControl.Button>
+        ))}
+      </SegmentedControl>
+    </SegementedControlWraper>
   );
 }
 
@@ -74,7 +112,7 @@ export function ChipGroup({
   if (tabs) {
     return (
       <UnderlineTabContext.Provider value={true}>
-        <UnderlineNav aria-label={label} className={clsx('!px-0', className)}>
+        <UnderlineNav aria-label={label} className={clsx('!w-auto !border-b-0 !px-0 !py-0', className)}>
           {children}
         </UnderlineNav>
       </UnderlineTabContext.Provider>
@@ -163,37 +201,28 @@ export function Chip({
   );
 }
 
-// Thẻ nhãn dữ liệu dùng Token của @primer/react (con của phụ huynh, lớp của giáo viên)
+// Thẻ nhãn dữ liệu dùng `Tag` của `@/components-ui`
 export function Tag({ href, children, className = '' }: { href?: string; children: ReactNode; className?: string }) {
-  if (typeof children === 'string' || typeof children === 'number') {
-    if (href) {
-      return (
-        <Link href={href} scroll={false} className="inline-flex">
-          <Token as="span" text={String(children)} size="large" className={clsx('cursor-pointer', className)} />
-        </Link>
-      );
-    }
-    return <Token as="span" text={String(children)} size="large" className={className} />;
-  }
-
-  const cls = clsx(
-    'inline-flex min-w-0 max-w-full items-center gap-1 rounded-full border border-[var(--borderColor-default)] bg-[var(--bgColor-neutral-muted)] px-2.5 py-0.5 text-xs font-medium text-[var(--fgColor-default)]',
-    href && 'hover:border-[var(--borderColor-accent-emphasis)] hover:text-[var(--fgColor-link)]',
-    className,
+  const content = (
+    <UiTag variant="default" className={clsx('!inline-flex items-center gap-1', href && 'cursor-pointer hover:opacity-85', className)}>
+      {children}
+    </UiTag>
   );
   if (href) {
     return (
-      <Link href={href} scroll={false} className={cls}>
-        {children}
+      <Link href={href} scroll={false} className="inline-flex">
+        {content}
       </Link>
     );
   }
-  return <span className={cls}>{children}</span>;
+  return content;
 }
 
 type PaginationProps = {
   page: number;
   pageCount: number;
+  totalCount?: number;
+  pageSize?: number;
   label?: string;
   summary?: string;
 } & (
@@ -203,7 +232,7 @@ type PaginationProps = {
 );
 
 export function Pagination(props: PaginationProps) {
-  const { page, pageCount, label, summary } = props;
+  const { page, pageCount, totalCount, pageSize = 20, label, summary } = props;
   const infoText = summary ?? `Trang ${page} / ${pageCount}`;
 
   if (pageCount <= 1) {
@@ -219,34 +248,37 @@ export function Pagination(props: PaginationProps) {
     else if ('onChange' in props) props.onChange(n);
   };
 
+  if (!('hrefFor' in props)) {
+    return (
+      <nav aria-label={label ?? 'Phân trang'} className="border-t border-[var(--borderColor-muted)] pt-2">
+        <UiPaging
+          data={{
+            page_index: Math.max(0, page - 1),
+            page_size: pageSize,
+            page_count: pageCount,
+            total_count: totalCount ?? pageCount * pageSize,
+          }}
+          onValueChanged={(next) => handleSelect(next.page_index + 1)}
+        />
+      </nav>
+    );
+  }
+
   return (
     <nav aria-label={label ?? 'Phân trang'} className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--borderColor-muted)] pt-3 text-xs text-[var(--fgColor-muted)]">
       <span>{infoText}</span>
-      {'hrefFor' in props ? (
-        <PrimerPagination
-          pageCount={pageCount}
-          currentPage={page}
-          marginPageCount={1}
-          surroundingPageCount={1}
-          hrefBuilder={(n) => props.hrefFor(n)}
-          renderPage={({ number, children, key, ...pageProps }) => (
-            <Link key={key} {...pageProps} href={props.hrefFor(number)} scroll={false}>
-              {children}
-            </Link>
-          )}
-        />
-      ) : (
-        <PrimerPagination
-          pageCount={pageCount}
-          currentPage={page}
-          marginPageCount={1}
-          surroundingPageCount={1}
-          onPageChange={(e, n) => {
-            e.preventDefault();
-            handleSelect(n);
-          }}
-        />
-      )}
+      <PrimerPagination
+        pageCount={pageCount}
+        currentPage={page}
+        marginPageCount={1}
+        surroundingPageCount={1}
+        hrefBuilder={(n) => props.hrefFor(n)}
+        renderPage={({ number, children, key, ...pageProps }) => (
+          <Link key={key} {...pageProps} href={props.hrefFor(number)} scroll={false}>
+            {children}
+          </Link>
+        )}
+      />
     </nav>
   );
 }

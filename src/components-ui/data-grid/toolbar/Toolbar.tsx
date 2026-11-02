@@ -1,9 +1,11 @@
 'use client';
 
-import { DownloadIcon } from "@primer/octicons-react";
+import { DownloadIcon, SearchIcon } from "@primer/octicons-react";
 import { IconButton } from "@primer/react";
 import React, { useContext } from "react";
 import Text from "../../text";
+import TextInput from "../../text-input";
+import Tooltip from "../../tooltip";
 import styles from "../DataGrid.module.css";
 
 import {
@@ -57,14 +59,28 @@ const Toolbar = (props: IToolbarProps) => {
     columnChooserConfig,
   } = useContext<IDataGridContainerContext>(DataGridContainerContext);
 
+  const hasToolbarContent = Boolean(
+    title ||
+      subTitle ||
+      actionComponent ||
+      searchEnable ||
+      exportConfig?.enable ||
+      columnChooserConfig?.enable,
+  );
+  if (!hasToolbarContent) return null;
+
   return (
-    <div className="d-grid gap-1">
-      <div className="d-flex flex-wrap">
-        <div className={styles.toolbarTitle}>
-          <Tittle title={title} />
-          <SubTittle subTitle={subTitle} />
-        </div>
-        <div className="d-flex gap-1">
+    <div className="d-grid gap-1 mb-1">
+      <div className="d-flex flex-wrap items-center justify-between gap-2">
+        {(title || subTitle) ? (
+          <div className={styles.toolbarTitle}>
+            <Tittle title={title} />
+            <SubTittle subTitle={subTitle} />
+          </div>
+        ) : (
+          <div className="flex-1" />
+        )}
+        <div className="d-flex flex-wrap items-center gap-1.5">
           <Actions
             actionComponent={actionComponent}
             searchEnable={searchEnable}
@@ -104,6 +120,8 @@ SubTittle.displayName = "SubTittle";
 const Actions = React.memo((props: IActionsProps) => {
   const {
     actionComponent,
+    searchEnable,
+    onSearchKeyChanged,
     exportConfig,
     columns,
     filterdData,
@@ -120,13 +138,13 @@ const Actions = React.memo((props: IActionsProps) => {
 
     const dataStartRow = headerGroups.length + 1;
     dataColumns
-      .filter((x) => x.id !== "col_idx" && x.id !== "selection")
+      .filter((x) => x.id !== "col_idx" && x.id !== "selection" && x.id !== "actions" && x.id !== "select")
       .forEach((col, idx) => {
-        worksheet.getColumn(idx + 1).width = col.width ? col.width / 10 : 10;
+        worksheet.getColumn(idx + 1).width = col.width ? Math.max(12, col.width / 8) : 18;
       });
     filterdData.forEach((item) => {
       const rowValues = dataColumns
-        .filter((x) => x.id !== "col_idx" && x.id !== "selection")
+        .filter((x) => x.id !== "col_idx" && x.id !== "selection" && x.id !== "actions" && x.id !== "select")
         .map((col) =>
           col.dataField ? formatDisplay(col, item[col.dataField]) : "",
         );
@@ -135,47 +153,55 @@ const Actions = React.memo((props: IActionsProps) => {
     worksheet.eachRow({ includeEmpty: true }, (row, rowNumber) => {
       for (let col = 1; col <= worksheet.columnCount; col++) {
         const cell = row.getCell(col);
-
         cell.border = {
           top: { style: "thin" },
           left: { style: "thin" },
           bottom: { style: "thin" },
           right: { style: "thin" },
         };
-
         if (rowNumber < dataStartRow) {
           cell.font = { bold: true };
         }
       }
     });
 
-    // Xuất file
     const buffer = await workbook.xlsx.writeBuffer();
     const blob = new Blob([buffer], { type: "application/octet-stream" });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = `${exportConfig?.fileName ?? "Download"}.xlsx`;
+    link.download = `${exportConfig?.fileName ?? "Danh-sach"}.xlsx`;
     link.click();
   };
 
   return (
-    <div className="d-flex gap-1 items-center">
+    <div className="d-flex flex-wrap gap-1.5 items-center">
+      {searchEnable && (
+        <TextInput
+          placeholder="Lọc nhanh trên bảng…"
+          leadingVisual={SearchIcon}
+          onValueDelayChanged={onSearchKeyChanged}
+          className="min-w-[190px]"
+        />
+      )}
       {actionComponent}
       {exportConfig?.enable && (
         <>
           {!exportConfig.render && (
-            <IconButton
-              icon={DownloadIcon}
-              variant="default"
-              aria-label="Download"
-              onClick={() => {
-                if (props.exportConfig?.onExportClick) {
-                  props.exportConfig.onExportClick();
-                } else {
-                  handleExportAsync();
-                }
-              }}
-            />
+            <Tooltip text="Xuất Excel (.xlsx)" direction="s">
+              <IconButton
+                icon={DownloadIcon}
+                variant="default"
+                aria-label="Xuất Excel"
+                unsafeDisableTooltip
+                onClick={() => {
+                  if (props.exportConfig?.onExportClick) {
+                    props.exportConfig.onExportClick();
+                  } else {
+                    void handleExportAsync();
+                  }
+                }}
+              />
+            </Tooltip>
           )}
           {exportConfig.render && (
             <div
@@ -183,7 +209,7 @@ const Actions = React.memo((props: IActionsProps) => {
                 if (props.exportConfig?.onExportClick) {
                   props.exportConfig.onExportClick();
                 } else {
-                  handleExportAsync();
+                  void handleExportAsync();
                 }
               }}
               className="cursor-pointer"

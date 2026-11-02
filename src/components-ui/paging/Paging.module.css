@@ -1,10 +1,10 @@
-/* Chỉ giữ phần utility (src/styles/utilities.css) không diễn đạt được: style lồng vào Pagination của Primer, độ rộng cố định. */
+/* Chỉ giữ phần utility không diễn đạt được: style lồng vào Pagination của Primer, độ rộng cố định. */
 
-.pagingContainer :global([class*="prc-Pagination-"]) {
+.pagingContainer [class*="prc-Pagination-"] {
   margin: 0;
 }
 
-.pagingContainer :global([class*="prc-Pagination-"]) a {
+.pagingContainer [class*="prc-Pagination-"] a {
   line-height: 1.5;
 }
 

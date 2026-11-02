@@ -4,15 +4,16 @@ import { FilterIcon, PlusIcon, SearchIcon, SlidersIcon } from '@primer/octicons-
 import { CounterLabel } from '@primer/react';
 import { useRouter } from 'next/navigation';
 import { startTransition, useOptimistic, useState, type FormEvent } from 'react';
+import { ComboBox } from '@/components-ui/combo-box';
+import { SelectBox } from '@/components-ui/select-box';
+import TextInput from '@/components-ui/text-input';
+import { Btn } from '@/components/ui/Btn';
+import { Chip, ChipGroup } from '@/components/ui/controls';
+import { Sheet } from '@/components/ui/Sheet';
 import { listParam } from '@/lib/list-param';
 import { studentsHref, type ListParams } from '@/lib/student-url';
 import type { ClassOption } from './StudentForm';
-import { Btn } from '@/components/ui/Btn';
-import { Chip, ChipGroup, TextInput } from '@/components/ui/controls';
-import { SelectPanel } from '@/components/ui/SelectPanel';
-import { Sheet } from '@/components/ui/Sheet';
 
-// Lớp và học phí chọn nhiều, trên URL viết "1,2". Danh sách rỗng nghĩa là không lọc.
 export type FilterState = {
   q: string;
   status: string;
@@ -36,12 +37,106 @@ const TUITION_OPTIONS = [
   { value: 'unpaid', label: 'Chưa đóng' },
 ];
 
-// Thêm hoặc bớt một giá trị trong danh sách chọn nhiều
 function toggleValue(list: string[], value: string): string[] {
   return list.includes(value) ? list.filter((v) => v !== value) : [...list, value];
 }
 
-// Thanh lọc: chip trạng thái, chọn lớp và học phí (máy tính), ô tìm kiếm và nút Bộ lọc (điện thoại).
+// Thanh chip trạng thái gọn đặt bên trái thanh công cụ của DataGrid.
+export function StudentStatusTabs({
+  current,
+  statusCounts,
+}: {
+  current: FilterState;
+  statusCounts: Record<string, number>;
+}) {
+  const router = useRouter();
+  return (
+    <ChipGroup label="Lọc theo trạng thái">
+      {STATUS_CHIPS.map((chip) => (
+        <Chip
+          key={chip.value}
+          tab
+          selected={current.status === chip.value}
+          count={statusCounts[chip.value] ?? 0}
+          onClick={() => router.push(studentsHref({ ...current, status: chip.value, p: 1, n: 1 }))}
+        >
+          {chip.label}
+        </Chip>
+      ))}
+    </ChipGroup>
+  );
+}
+
+// Nhóm bộ lọc lớp, học phí và nút Thêm học sinh đặt thẳng vào `actionComponent` của DataGrid (1 hàng duy nhất).
+export function StudentToolbarActions({
+  current,
+  classes,
+  onAdd,
+}: {
+  current: FilterState;
+  classes: ClassOption[];
+  onAdd?: () => void;
+}) {
+  const router = useRouter();
+  const selectedTuition = listParam(current.tuition);
+  const [clsView, setClsView] = useOptimistic(current.cls);
+  const [tuitionView, setTuitionView] = useOptimistic(current.tuition);
+
+  function changeDesktop(next: { cls?: string; tuition?: string }) {
+    startTransition(() => {
+      if (next.cls !== undefined) setClsView(next.cls);
+      if (next.tuition !== undefined) setTuitionView(next.tuition);
+      router.push(
+        studentsHref({
+          ...current,
+          cls: next.cls ?? clsView,
+          tuition: next.tuition ?? tuitionView,
+          p: 1,
+          n: 1,
+        }),
+      );
+    });
+  }
+
+  return (
+    <>
+      <ComboBox
+        multiple
+        auto
+        variant="bar"
+        label="Lọc theo lớp"
+        icon={<FilterIcon size={14} className="text-[var(--fgColor-muted)]" aria-hidden />}
+        values={listParam(clsView)}
+        onChange={(vs) => changeDesktop({ cls: vs.join(',') })}
+        options={classes.map((c) => ({ value: String(c.id), label: c.name }))}
+        placeholder="Mọi lớp"
+        allowClear
+      />
+      <SelectBox
+        auto
+        variant="bar"
+        label="Lọc theo học phí"
+        value={tuitionView}
+        onChange={(v) => changeDesktop({ tuition: v })}
+        options={[{ value: '', label: 'Mọi học phí' }, ...TUITION_OPTIONS]}
+        placeholder={
+          selectedTuition.length > 1
+            ? TUITION_OPTIONS.filter((o) => selectedTuition.includes(o.value))
+                .map((o) => o.label)
+                .join(', ')
+            : 'Mọi học phí'
+        }
+      />
+      {onAdd && (
+        <Btn variant="primary" leadingVisual={PlusIcon} onClick={onAdd}>
+          Thêm học sinh
+        </Btn>
+      )}
+    </>
+  );
+}
+
+// Thanh lọc riêng cho màn điện thoại (< 768px): tìm kiếm + Sheet Bộ lọc + chip trạng thái.
 export function StudentFilters({
   current,
   classes,
@@ -60,22 +155,10 @@ export function StudentFilters({
   const [draftQ, setDraftQ] = useState(current.q);
   const selectedCls = listParam(current.cls);
   const selectedTuition = listParam(current.tuition);
-
-  // Lớp và học phí hiện ngay khi chọn, không chờ trang tải lại (chọn liên tiếp không mất mục)
-  const [clsView, setClsView] = useOptimistic(current.cls);
-  const [tuitionView, setTuitionView] = useOptimistic(current.tuition);
+  const activeFilterCount = selectedCls.length + selectedTuition.length;
 
   function go(next: Partial<ListParams>) {
     router.push(studentsHref({ ...current, ...next, p: 1, n: 1 }));
-  }
-
-  // Đổi lớp hoặc học phí ở thanh lọc: giữ các bộ lọc còn lại
-  function changeDesktop(next: { cls?: string; tuition?: string }) {
-    startTransition(() => {
-      if (next.cls !== undefined) setClsView(next.cls);
-      if (next.tuition !== undefined) setTuitionView(next.tuition);
-      go({ cls: next.cls ?? clsView, tuition: next.tuition ?? tuitionView });
-    });
   }
 
   function onSearch(e: FormEvent) {
@@ -94,16 +177,15 @@ export function StudentFilters({
     router.push(studentsHref({ ...current, q: draftQ, cls: draftCls.join(','), tuition: draftTuition.join(','), p: 1, n: 1 }));
   }
 
-  // Huy hiệu trên nút Bộ lọc đếm số mục đang chọn
-  const activeFilterCount = selectedCls.length + selectedTuition.length;
-
   return (
-    <div className="mb-4 flex flex-col gap-3">
-      {/* Điện thoại: tìm kiếm, Bộ lọc và Thêm mới cùng một hàng */}
-      <div className="flex gap-2 min-[768px]:hidden">
+    <div className="mb-2.5 flex flex-col gap-2 min-[768px]:hidden">
+      <div className="flex gap-2">
         <form onSubmit={onSearch} role="search" className="relative min-w-0 flex-1">
-          <label htmlFor="mobile-search" className="sr-only">Tìm học sinh</label>
+          <label htmlFor="mobile-search" className="sr-only">
+            Tìm học sinh
+          </label>
           <TextInput
+            block
             id="mobile-search"
             type="search"
             leadingVisual={SearchIcon}
@@ -116,9 +198,7 @@ export function StudentFilters({
         </form>
         <Btn onClick={openSheet} leadingVisual={SlidersIcon} className="relative shrink-0">
           Bộ lọc
-          {activeFilterCount > 0 && (
-            <CounterLabel className="ml-1 !font-normal">{activeFilterCount}</CounterLabel>
-          )}
+          {activeFilterCount > 0 && <CounterLabel className="ml-1 !font-normal">{activeFilterCount}</CounterLabel>}
         </Btn>
         {onAdd && (
           <Btn variant="primary" leadingVisual={PlusIcon} onClick={onAdd} className="shrink-0">
@@ -127,50 +207,8 @@ export function StudentFilters({
         )}
       </div>
 
-      {/* Chip trạng thái (mọi màn hình). Máy tính: chip, bộ lọc và nút thêm nằm cùng một hàng */}
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <ChipGroup tabs label="Lọc theo trạng thái">
-          {STATUS_CHIPS.map((chip) => (
-            <Chip
-              key={chip.value}
-              tab
-              selected={current.status === chip.value}
-              count={statusCounts[chip.value] ?? 0}
-              onClick={() => go({ status: chip.value })}
-            >
-              {chip.label}
-            </Chip>
-          ))}
-        </ChipGroup>
+      <StudentStatusTabs current={current} statusCounts={statusCounts} />
 
-        {/* Máy tính và máy tính bảng: chọn nhiều lớp, nhiều học phí và thêm học sinh */}
-        <div className="ml-auto hidden flex-wrap items-center gap-2 min-[768px]:flex">
-          <SelectPanel
-            multiple
-            label="Lọc theo lớp"
-            icon={<FilterIcon size={14} className="text-[var(--fgColor-muted)]" aria-hidden />}
-            values={listParam(clsView)}
-            onChange={(vs) => changeDesktop({ cls: vs.join(',') })}
-            options={classes.map((c) => ({ value: String(c.id), label: c.name }))}
-            placeholder="Mọi lớp"
-          />
-          <SelectPanel
-            multiple
-            label="Lọc theo học phí"
-            values={listParam(tuitionView)}
-            onChange={(vs) => changeDesktop({ tuition: vs.join(',') })}
-            options={TUITION_OPTIONS}
-            placeholder="Mọi học phí"
-          />
-          {onAdd && (
-            <Btn variant="primary" leadingVisual={PlusIcon} onClick={onAdd}>
-              Thêm học sinh
-            </Btn>
-          )}
-        </div>
-      </div>
-
-      {/* Điện thoại: bảng Bộ lọc trượt từ đáy (DESIGN mục 3). Lớp và học phí đánh dấu nhiều mục. */}
       <Sheet
         open={sheetOpen}
         title="Bộ lọc"
@@ -178,7 +216,14 @@ export function StudentFilters({
         labelledBy="filter-title"
         footer={
           <div className="flex gap-2.5">
-            <Btn block onClick={() => { setDraftCls([]); setDraftTuition([]); }} className="flex-1">
+            <Btn
+              block
+              onClick={() => {
+                setDraftCls([]);
+                setDraftTuition([]);
+              }}
+              className="flex-1"
+            >
               Đặt lại
             </Btn>
             <Btn block variant="primary" onClick={applySheet} className="flex-[2]">
@@ -218,7 +263,6 @@ export function StudentFilters({
   );
 }
 
-// Dòng chọn nhiều trong bảng Bộ lọc: ô đánh dấu, không cần chọn xong mới áp dụng
 function OptionCheck({
   value,
   label,

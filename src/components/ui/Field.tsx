@@ -1,10 +1,44 @@
-// Trường nhập liệu dùng chung cho form theo chuẩn Primer.
-// Giữ cấu trúc <label> bao quanh ô nhập để mọi kịch bản getByLabel(...) hoạt động đồng nhất,
-// và giữ span.text-blush-ink cho thông báo lỗi từng ô (dialogFieldErrors).
+'use client';
+
+// Trường nhập liệu dùng chung cho form, xuất kèm toàn bộ control từ `@/components-ui`
+// (ComboBox, SelectBox, DateInput, DateTimeInput, TimeInput24h, MonthYearPicker, TextInputNumber, TextAreaAutoHeight, PasswordToggleInput).
 import clsx from 'clsx';
 import type { ReactNode } from 'react';
+import BulkActionBar from '@/components-ui/bulk-action-bar';
+import { ComboBox } from '@/components-ui/combo-box';
+import DateInput from '@/components-ui/date-input';
+import DateRangeInput from '@/components-ui/date-range-input';
+import DateRangeQuickInput from '@/components-ui/date-range-quick-input';
+import DateTimeInput from '@/components-ui/date-time-input';
+import ModalActions from '@/components-ui/modal/ModalActions';
+import MonthYearPicker from '@/components-ui/month-year-picker';
+import PasswordToggleInput from '@/components-ui/password-input/PasswordToggleInput';
+import { SelectBox } from '@/components-ui/select-box';
+import Steps from '@/components-ui/steps';
+import TextAreaAutoHeight from '@/components-ui/text-area-auto-height';
+import UiTextInput from '@/components-ui/text-input';
+import TextInputNumber from '@/components-ui/text-input-number';
+import TimeInput24h from '@/components-ui/time-input-24h';
 import { BTN_BASE, BTN_GHOST, BTN_PRIMARY } from './Btn';
 import { CTL_FIELD } from './controls';
+
+export {
+  BulkActionBar,
+  ComboBox,
+  DateInput,
+  DateRangeInput,
+  DateRangeQuickInput,
+  DateTimeInput,
+  ModalActions,
+  MonthYearPicker,
+  PasswordToggleInput,
+  SelectBox,
+  Steps,
+  TextAreaAutoHeight,
+  TextInputNumber,
+  TimeInput24h,
+  UiTextInput,
+};
 
 export function Field({
   label,
@@ -20,7 +54,7 @@ export function Field({
   children: ReactNode;
 }) {
   return (
-    <label
+    <div
       className={clsx(
         'flex min-w-0 flex-col gap-1.5 text-sm font-normal text-[var(--fgColor-default)]',
         wide && 'min-[768px]:col-span-full',
@@ -33,7 +67,7 @@ export function Field({
       ) : hint ? (
         <span className="text-xs text-[var(--fgColor-muted)]">{hint}</span>
       ) : null}
-    </label>
+    </div>
   );
 }
 
@@ -49,7 +83,11 @@ export function textareaClass(error?: string) {
 }
 
 export function FormFooter({ children, className = '' }: { children: ReactNode; className?: string }) {
-  return <div className={clsx('mt-2 flex justify-end gap-2 max-[767px]:[&>button]:flex-1', className)}>{children}</div>;
+  return (
+    <ModalActions className={clsx('mt-2 !justify-end max-[767px]:[&>button]:flex-1', className)}>
+      {children}
+    </ModalActions>
+  );
 }
 
 export function FileInput({

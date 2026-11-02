@@ -4,8 +4,9 @@
 // "Điều con làm tốt" bắt buộc. Điểm câu tự quy đổi; giáo viên vẫn sửa được ô điểm nếu cần.
 import { StarFillIcon, StarIcon } from '@primer/octicons-react';
 import type { SpeakingRubric as Rubric } from '@/app/(app)/bai-tap/speaking-actions';
+import { TextAreaAutoHeight } from '@/components-ui';
 import { rubricToPoints, SCALE_CRITERIA, SCALE_RANGE, SPEAKING_CRITERIA, type SpeakingScale } from '@/lib/speaking';
-import { Field, textareaClass } from '@/components/ui/Field';
+import { Field } from '@/components/ui/Field';
 
 export function SpeakingRubric({
   scale,
@@ -81,7 +82,7 @@ export function SpeakingRubric({
         })}
       </ul>
       <Field label="Điều con làm tốt *" hint="Bắt buộc. Khen một điều cụ thể trước khi nêu lỗi.">
-        <textarea
+        <TextAreaAutoHeight
           value={rubric.praise}
           onChange={(e) => onChange({ ...rubric, praise: e.target.value })}
           rows={2}
@@ -89,7 +90,6 @@ export function SpeakingRubric({
           disabled={!canManage}
           placeholder="VD: Con nói to, rõ và đủ câu."
           aria-label={`Điều con làm tốt câu ${position}`}
-          className={textareaClass()}
         />
       </Field>
     </div>

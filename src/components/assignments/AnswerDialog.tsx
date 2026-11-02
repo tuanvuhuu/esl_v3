@@ -13,9 +13,10 @@ import { uploadAsStaff } from '@/lib/upload-client';
 import type { AssignmentItem, ItemAnswer, ItemSecondMark } from '@/lib/queries/assignment-items';
 import { ITEM_TYPE_LABELS, markGap, summarizeSubmission, SKILL_LABELS, type ScoringAnswer, type ScoringItem } from '@/lib/assignment-scoring';
 import { SUBMISSION_LABELS } from '@/lib/validation/assignment';
+import { TextAreaAutoHeight, TextInput, TextInputNumber } from '@/components-ui';
 import { ActIcon } from '@/components/ui/ActIcon';
 import { Btn } from '@/components/ui/Btn';
-import { Field, inputClass, textareaClass, FileInput } from '@/components/ui/Field';
+import { Field, FileInput } from '@/components/ui/Field';
 import { Pill, Alert } from '@/components/ui/primitives';
 import { Notice } from '@/components/ui/surfaces';
 import { UPLOAD_ACCEPT } from '@/lib/upload-types';
@@ -336,13 +337,12 @@ export function AnswerDialog({
 
             {item.itemType === 'text' && (
               <Field label="Bài làm của học sinh">
-                <textarea
+                <TextAreaAutoHeight
                   value={d.answerText}
                   onChange={(e) => setDraft(item.id, { answerText: e.target.value })}
                   rows={4}
                   disabled={!canManage}
                   aria-label={`Bài làm câu ${item.position}`}
-                  className={textareaClass()}
                 />
               </Field>
             )}
@@ -369,17 +369,15 @@ export function AnswerDialog({
                 <div className="grid grid-cols-1 gap-3 min-[768px]:grid-cols-2">
                   {item.criteria.map((c) => (
                     <Field key={c.id} label={`${c.name} (tối đa ${c.maxPoints})`}>
-                      <input
-                        type="number"
-                        inputMode="numeric"
+                      <TextInputNumber
+                        thousandSeparator={false}
+                        decimalScale={0}
                         min={0}
                         max={c.maxPoints}
-                        step={1}
                         value={d.criterionPoints[c.id] ?? ''}
-                        onChange={(e) => setCriterion(item.id, c.id, e.target.value)}
+                        onTextChange={(raw) => setCriterion(item.id, c.id, raw)}
                         disabled={!canManage}
                         aria-label={`Điểm tiêu chí ${c.name} câu ${item.position}`}
-                        className={inputClass()}
                       />
                     </Field>
                   ))}
@@ -394,29 +392,26 @@ export function AnswerDialog({
               <div className="grid grid-cols-1 gap-3 min-[768px]:grid-cols-[140px_minmax(0,1fr)]">
                 {!hasCriteria(item) && (
                   <Field label={`Điểm (tối đa ${item.points})`}>
-                    <input
-                      type="number"
-                      inputMode="numeric"
+                    <TextInputNumber
+                      thousandSeparator={false}
+                      decimalScale={0}
                       min={0}
                       max={item.points}
-                      step={1}
                       value={d.points}
-                      onChange={(e) => setDraft(item.id, { points: e.target.value })}
+                      onTextChange={(raw) => setDraft(item.id, { points: raw })}
                       disabled={!canManage}
                       aria-label={`Điểm câu ${item.position}`}
-                      className={inputClass()}
                     />
                   </Field>
                 )}
                 <Field label="Nhận xét">
-                  <input
-                    type="text"
+                  <TextInput
                     value={d.comment}
                     onChange={(e) => setDraft(item.id, { comment: e.target.value })}
                     disabled={!canManage}
                     placeholder="Nhận xét ngắn cho câu này"
                     aria-label={`Nhận xét câu ${item.position}`}
-                    className={inputClass()}
+                    block
                   />
                 </Field>
               </div>
@@ -526,25 +521,22 @@ function SecondMarkPanel({
       {savedPoints !== null && !isFirstGrader && (
         <div className="grid grid-cols-1 gap-2.5 min-[768px]:grid-cols-[140px_minmax(0,1fr)_auto] min-[768px]:items-end">
           <Field label={`Điểm chấm lại (tối đa ${item.points})`}>
-            <input
-              type="number"
-              inputMode="numeric"
+            <TextInputNumber
+              thousandSeparator={false}
+              decimalScale={0}
               min={0}
               max={item.points}
-              step={1}
               value={points}
-              onChange={(e) => setPoints(e.target.value)}
+              onTextChange={setPoints}
               aria-label={`Điểm chấm lại câu ${item.position}`}
-              className={inputClass()}
             />
           </Field>
           <Field label="Nhận xét chấm lại">
-            <input
-              type="text"
+            <TextInput
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               aria-label={`Nhận xét chấm lại câu ${item.position}`}
-              className={inputClass()}
+              block
             />
           </Field>
           <Btn variant="ghost" onClick={save} disabled={pending} className="max-[767px]:w-full">

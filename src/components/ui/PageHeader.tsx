@@ -1,7 +1,7 @@
 'use client';
 
-// Tiêu đề trang dùng PageHeader chính gốc của @primer/react v38 + khai báo đường dẫn cho Breadcrumbs của khung ứng dụng.
-import { Label, PageHeader as PrimerPageHeader } from '@primer/react';
+// Tiêu đề trang gọn gàng theo chuẩn Primer + 01. TSUKUBA: 1 dòng duy nhất gồm tiêu đề + nút thao tác bên phải.
+import { Label } from '@primer/react';
 import type { ReactNode } from 'react';
 import { PageCrumbs } from '@/components/shell/PageCrumbs';
 
@@ -22,30 +22,18 @@ export function PageHeader({
 }) {
   void _legacyTitleOnTopbar;
   return (
-    <div className="mb-4 max-[767px]:mb-3">
+    <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2 border-b border-[var(--borderColor-muted)] pb-2 max-[767px]:mb-2">
       <PageCrumbs crumbs={crumbs} />
-      <PrimerPageHeader role="banner" aria-label={title} hasBorder className="pb-3">
-        <PrimerPageHeader.TitleArea variant="medium">
-          <PrimerPageHeader.Title as="h1">{title}</PrimerPageHeader.Title>
-          {code && (
-            <PrimerPageHeader.TrailingVisual>
-              <Label variant="secondary" className="font-mono !font-normal">
-                {code}
-              </Label>
-            </PrimerPageHeader.TrailingVisual>
-          )}
-        </PrimerPageHeader.TitleArea>
-        {actions && (
-          <PrimerPageHeader.Actions>
-            <div className="flex flex-wrap items-center gap-2">{actions}</div>
-          </PrimerPageHeader.Actions>
+      <div className="flex min-w-0 flex-wrap items-baseline gap-x-2.5 gap-y-0.5">
+        <h1 className="m-0 text-base font-bold leading-snug text-[var(--fgColor-default)]">{title}</h1>
+        {code && (
+          <Label variant="secondary" className="font-mono !font-normal">
+            {code}
+          </Label>
         )}
-        {subtitle && (
-          <PrimerPageHeader.Description>
-            <span className="text-sm text-[var(--fgColor-muted)]">{subtitle}</span>
-          </PrimerPageHeader.Description>
-        )}
-      </PrimerPageHeader>
+        {subtitle && <span className="text-xs text-[var(--fgColor-muted)]">{subtitle}</span>}
+      </div>
+      {actions && <div className="ml-auto flex flex-wrap items-center gap-1.5">{actions}</div>}
     </div>
   );
 }

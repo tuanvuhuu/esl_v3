@@ -4,9 +4,9 @@ import { useState, useTransition } from 'react';
 import { saveLessonAction } from '@/app/(app)/bai-giang/actions';
 import type { CampusOption } from '@/lib/campus';
 import type { LessonRow } from '@/lib/queries/lessons';
+import { ComboBox, TextAreaAutoHeight, TextInput } from '@/components-ui';
 import { Btn } from '@/components/ui/Btn';
-import { Field, inputClass, textareaClass, FormFooter } from '@/components/ui/Field';
-import { SelectPanel } from '@/components/ui/SelectPanel';
+import { Field, FormFooter } from '@/components/ui/Field';
 import { Alert } from '@/components/ui/primitives';
 
 // Form tạo và sửa bài giảng: tiêu đề, mục tiêu, nội dung và cơ sở dùng bài giảng.
@@ -47,11 +47,17 @@ export function LessonForm({
       )}
 
       <Field label="Tiêu đề *">
-        <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="VD: Unit 3 — Past simple" aria-label="Tiêu đề bài giảng" className={inputClass()} />
+        <TextInput
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="VD: Unit 3 — Past simple"
+          aria-label="Tiêu đề bài giảng"
+          block
+        />
       </Field>
 
       <Field label="Cơ sở dùng bài giảng *" hint="Chọn một hoặc nhiều cơ sở">
-        <SelectPanel
+        <ComboBox
           label="Cơ sở dùng bài giảng *"
           multiple
           values={campusIds}
@@ -62,24 +68,22 @@ export function LessonForm({
       </Field>
 
       <Field label="Mục tiêu" hint="Viết theo dạng học sinh làm được gì">
-        <textarea
+        <TextAreaAutoHeight
           value={objectives}
           onChange={(e) => setObjectives(e.target.value)}
           rows={3}
           placeholder="VD: Học sinh kể lại một việc đã làm hôm qua bằng quá khứ đơn"
           aria-label="Mục tiêu bài giảng"
-          className={textareaClass()}
         />
       </Field>
 
       <Field label="Nội dung">
-        <textarea
+        <TextAreaAutoHeight
           value={content}
           onChange={(e) => setContent(e.target.value)}
           rows={5}
           placeholder="Các phần chính của buổi học, bài tập về nhà gợi ý, lưu ý"
           aria-label="Nội dung bài giảng"
-          className={textareaClass()}
         />
       </Field>
 

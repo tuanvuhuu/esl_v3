@@ -4,13 +4,9 @@
 // Lỗi hiện ngay dưới ô và ô vẫn mở để sửa tiếp. Không có quyền thì chỉ hiện chữ.
 import { useRouter } from 'next/navigation';
 import { useRef, useState, useTransition, type ChangeEvent, type KeyboardEvent } from 'react';
+import { TextAreaAutoHeight, TextInput } from '@/components-ui';
 import type { ActionResult } from '@/lib/validation/student';
 import { Alert } from '@/components/ui/primitives';
-
-const INPUT =
-  'h-[var(--ctl-h)] w-full min-w-0 rounded-[var(--borderRadius-medium)] border border-[var(--focus-outlineColor)] bg-[var(--bgColor-default)] px-2 text-sm text-[var(--fgColor-default)] outline-none max-[767px]:h-[var(--ctl-h-touch)]';
-const AREA =
-  'w-full min-w-0 rounded-[var(--borderRadius-medium)] border border-[var(--focus-outlineColor)] bg-[var(--bgColor-default)] px-2 py-1 text-sm text-[var(--fgColor-default)] outline-none';
 
 export function InlineText({
   value,
@@ -90,18 +86,19 @@ export function InlineText({
     return (
       <div className="flex min-w-0 flex-col gap-1">
         {multiline ? (
-          <textarea
+          <TextAreaAutoHeight
             aria-label={label}
             rows={2}
             value={draft}
-            autoFocus
+            isAutoFocus
             onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setDraft(e.target.value)}
             onBlur={commit}
             onKeyDown={onKey}
-            className={AREA}
+            error={Boolean(error)}
           />
         ) : (
-          <input
+          <TextInput
+            block
             aria-label={label}
             type={inputType}
             value={draft}
@@ -109,7 +106,7 @@ export function InlineText({
             onChange={(e: ChangeEvent<HTMLInputElement>) => setDraft(e.target.value)}
             onBlur={commit}
             onKeyDown={onKey}
-            className={INPUT}
+            validationStatus={error ? 'error' : undefined}
           />
         )}
         {pending && <span className="text-xs text-[var(--fgColor-muted)]">Đang lưu…</span>}

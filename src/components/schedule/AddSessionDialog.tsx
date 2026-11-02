@@ -4,12 +4,12 @@
 // Kiểm trùng giáo viên, phòng ngay khi nhập; máy chủ kiểm lại khi lưu.
 import { startTransition, useActionState, useEffect, useState, type FormEvent } from 'react';
 import { checkSessionAction, createSessionAction } from '@/app/(app)/lich-hoc/actions';
-import { durationLabel, finishTime, typingTime } from '@/components/classes/DayTimeRows';
+import { ComboBox, DateInput, TextInput, TimeInput24h } from '@/components-ui';
+import { durationLabel } from '@/components/classes/DayTimeRows';
 import { Btn } from '@/components/ui/Btn';
-import { Field, FormFooter, inputClass } from '@/components/ui/Field';
+import { Field, FormFooter } from '@/components/ui/Field';
 import { Modal } from '@/components/ui/Modal';
 import { Alert } from '@/components/ui/primitives';
-import { SelectPanel } from '@/components/ui/SelectPanel';
 import type { ActionResult } from '@/lib/validation/student';
 
 export type ClassPick = { id: number; name: string; teacherId: number; room: string };
@@ -87,52 +87,89 @@ export function AddSessionDialog({
   }
 
   const timesOk = TIME.test(start) && TIME.test(end) && end > start;
+  const endError =
+    errors.endTime ??
+    (start && end && TIME.test(start) && TIME.test(end) && end <= start ? 'Giờ kết thúc phải sau giờ bắt đầu' : undefined);
   return (
     <Modal open={open} title="Thêm buổi học" subtitle="Học bù, học thêm hoặc ôn thi. Số buổi của lớp tự đánh lại theo ngày." onClose={onClose} labelledBy="add-session-title">
       <form onSubmit={submit} noValidate className="grid grid-cols-1 gap-3.5 min-[768px]:grid-cols-2 min-[768px]:gap-x-4">
         {state.message && !state.ok && <Alert className="col-span-full">{state.message}</Alert>}
         <Field label="Lớp *">
-          <SelectPanel label="Lớp của buổi học" block value={classId} onChange={chooseClass} options={classes.map((c) => ({ value: String(c.id), label: c.name }))} />
-        </Field>
-        <Field label="Ngày học *" error={errors.date}>
-          <input name="date" type="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputClass(errors.date)} />
-        </Field>
-        <Field label="Giờ bắt đầu *" error={errors.startTime}>
-          <input
-            name="startTime"
-            type="text"
-            inputMode="numeric"
-            maxLength={5}
-            placeholder="18:00"
-            autoComplete="off"
-            value={start}
-            onChange={(e) => changeStart(typingTime(e.target.value))}
-            onBlur={(e) => changeStart(finishTime(e.target.value))}
-            className={`${inputClass(errors.startTime)} tabular-nums`}
+          <ComboBox
+            label="Lớp của buổi học"
+            block
+            value={classId}
+            onChange={(id) => {
+              if (id) chooseClass(id);
+            }}
+            options={classes.map((c) => ({ value: String(c.id), label: c.name }))}
           />
         </Field>
-        <Field label="Giờ kết thúc *" error={errors.endTime ?? (start && end && TIME.test(start) && TIME.test(end) && end <= start ? 'Giờ kết thúc phải sau giờ bắt đầu' : undefined)} hint={timesOk ? durationLabel(start, end) : undefined}>
-          <input
+        <Field label="Ngày học *" error={errors.date}>
+          <DateInput
+            name="date"
+            value={date}
+            aria-label="Ngày học *"
+            onIsoChange={setDate}
+            error={Boolean(errors.date)}
+          />
+        </Field>
+        <Field label="Giờ bắt đầu *" error={errors.startTime}>
+          <TimeInput24h
+            name="startTime"
+            ariaLabel="Giờ bắt đầu *"
+            value={start}
+            placeholder="18:00"
+            error={Boolean(errors.startTime)}
+            onChange={changeStart}
+          />
+        </Field>
+        <Field label="Giờ kết thúc *" error={endError} hint={timesOk ? durationLabel(start, end) : undefined}>
+          <TimeInput24h
             name="endTime"
-            type="text"
-            inputMode="numeric"
-            maxLength={5}
-            placeholder="19:30"
-            autoComplete="off"
+            ariaLabel="Giờ kết thúc *"
             value={end}
-            onChange={(e) => setEnd(typingTime(e.target.value))}
-            onBlur={(e) => setEnd(finishTime(e.target.value))}
-            className={`${inputClass(errors.endTime)} tabular-nums`}
+            placeholder="19:30"
+            error={Boolean(endError)}
+            onChange={setEnd}
           />
         </Field>
         <Field label="Giáo viên *" error={errors.teacherId}>
-          <SelectPanel name="teacherId" label="Giáo viên dạy buổi này" block value={teacherId} onChange={setTeacherId} options={teachers.map((t) => ({ value: String(t.id), label: t.name }))} error={!!errors.teacherId} />
+          <ComboBox
+            name="teacherId"
+            label="Giáo viên dạy buổi này"
+            block
+            value={teacherId}
+            onChange={(val) => {
+              if (val) setTeacherId(val);
+            }}
+            options={teachers.map((t) => ({ value: String(t.id), label: t.name }))}
+            error={Boolean(errors.teacherId)}
+          />
         </Field>
         <Field label="Phòng" error={errors.room}>
-          <input name="room" value={room} onChange={(e) => setRoom(e.target.value)} placeholder="VD: P.201" autoComplete="off" className={inputClass(errors.room)} />
+          <TextInput
+            name="room"
+            value={room}
+            onChange={(e) => setRoom(e.target.value)}
+            placeholder="VD: P.201"
+            autoComplete="off"
+            aria-label="Phòng"
+            block
+            validationStatus={errors.room ? 'error' : undefined}
+          />
         </Field>
         <Field label="Chủ đề buổi học" error={errors.topic} wide>
-          <input name="topic" value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="VD: Buổi học bù ngày 20/10" autoComplete="off" className={inputClass(errors.topic)} />
+          <TextInput
+            name="topic"
+            value={topic}
+            onChange={(e) => setTopic(e.target.value)}
+            placeholder="VD: Buổi học bù ngày 20/10"
+            autoComplete="off"
+            aria-label="Chủ đề buổi học"
+            block
+            validationStatus={errors.topic ? 'error' : undefined}
+          />
         </Field>
         {check && timesOk && (
           <div className="col-span-full">

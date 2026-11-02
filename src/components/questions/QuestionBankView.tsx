@@ -11,9 +11,9 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { DataGrid, type GridColumn } from '@/components/ui/datagrid';
 import { Field, FormFooter } from '@/components/ui/Field';
 import { Modal } from '@/components/ui/Modal';
-import { PageHeader } from '@/components/ui/PageHeader';
+import { PageCrumbs } from '@/components/shell/PageCrumbs';
 import { RowMenu, type RowMenuItem } from '@/components/ui/RowMenu';
-import { SelectPanel } from '@/components/ui/SelectPanel';
+import { ComboBox, SelectBox } from '@/components-ui';
 import { Pill, Alert } from '@/components/ui/primitives';
 import { Card, EmptyPanel } from '@/components/ui/surfaces';
 import { Toast, useToast } from '@/components/ui/Toast';
@@ -114,66 +114,66 @@ export function QuestionBankView({ questions }: { questions: BankQuestion[] }) {
 
   return (
     <section className="flex flex-col">
-      <PageHeader
-        crumbs={['Đào tạo', 'Bài tập', 'Ngân hàng câu hỏi']}
-        title="Ngân hàng câu hỏi"
-        subtitle="Câu hỏi dùng chung toàn trung tâm. Thêm vào bài thì chép nội dung, nên sửa ở đây không đổi bài đã giao."
-        actions={
-          <Btn variant="primary" leadingVisual={PlusIcon} onClick={openNew}>
-            Thêm câu hỏi
-          </Btn>
-        }
-      />
+      <PageCrumbs crumbs={['Đào tạo', 'Bài tập', 'Ngân hàng câu hỏi']} />
 
-      {questions.length === 0 ? (
-        <EmptyPanel title="Chưa có câu hỏi trong ngân hàng" hint="Bấm Thêm câu hỏi để soạn câu đầu tiên. Câu đó sẽ dùng được ở mọi bài tập." />
-      ) : (
-        <>
-          <div className="mb-4 flex flex-wrap items-center gap-2">
-            <SelectPanel label="Lọc theo trình độ" auto value={filter.level} onChange={(v) => setFilter((f) => ({ ...f, level: v }))} options={LEVEL_OPTIONS} />
-            <SelectPanel label="Lọc theo chủ đề" auto value={filter.topic} onChange={(v) => setFilter((f) => ({ ...f, topic: v }))} options={topicOptions(questions)} />
-            <SelectPanel label="Lọc theo kỹ năng" auto value={filter.skill} onChange={(v) => setFilter((f) => ({ ...f, skill: v as 'all' | Skill }))} options={SKILL_OPTIONS} />
-            <SelectPanel label="Lọc theo dạng câu" auto value={filter.type} onChange={(v) => setFilter((f) => ({ ...f, type: v as 'all' | ItemType }))} options={TYPE_OPTIONS} />
-            <span className="text-sm text-[var(--fgColor-muted)]">{shown.length} câu</span>
+      <DataGrid
+        label="Ngân hàng câu hỏi"
+        columns={COLUMNS}
+        rows={shown}
+        rowKey={(q) => q.id}
+        cell={cell}
+        from="md"
+        stickyEnd
+        title={
+          <div className="flex items-baseline gap-2">
+            <h1 className="m-0 text-base font-bold text-[var(--fgColor-default)]">Ngân hàng câu hỏi</h1>
+            <span className="text-xs text-[var(--fgColor-muted)]">({shown.length} câu)</span>
           </div>
-
-          {shown.length === 0 ? (
-            <EmptyPanel title="Không có câu nào khớp bộ lọc" hint="Đổi trình độ, chủ đề, kỹ năng hoặc dạng câu." />
+        }
+        actionComponent={
+          <>
+            {questions.length > 0 && (
+              <>
+                <SelectBox label="Lọc theo trình độ" auto variant="bar" value={filter.level} onChange={(v) => setFilter((f) => ({ ...f, level: v }))} options={LEVEL_OPTIONS} />
+                <ComboBox label="Lọc theo chủ đề" auto variant="bar" value={filter.topic} onChange={(v) => setFilter((f) => ({ ...f, topic: v }))} options={topicOptions(questions)} />
+                <SelectBox label="Lọc theo kỹ năng" auto variant="bar" value={filter.skill} onChange={(v) => setFilter((f) => ({ ...f, skill: v as 'all' | Skill }))} options={SKILL_OPTIONS} />
+                <SelectBox label="Lọc theo dạng câu" auto variant="bar" value={filter.type} onChange={(v) => setFilter((f) => ({ ...f, type: v as 'all' | ItemType }))} options={TYPE_OPTIONS} />
+              </>
+            )}
+            <Btn variant="primary" leadingVisual={PlusIcon} onClick={openNew}>
+              Thêm câu hỏi
+            </Btn>
+          </>
+        }
+        empty={
+          questions.length === 0 ? (
+            <EmptyPanel title="Chưa có câu hỏi trong ngân hàng" hint="Bấm Thêm câu hỏi để soạn câu đầu tiên. Câu đó sẽ dùng được ở mọi bài tập." />
           ) : (
-            // Điện thoại: thẻ của DataGrid, mỗi câu một thẻ với hai nút có chữ
-            <DataGrid
-              label="Ngân hàng câu hỏi"
-              columns={COLUMNS}
-              rows={shown}
-              rowKey={(q) => q.id}
-              cell={cell}
-              from="md"
-              stickyEnd
-              card={(q) => (
-                <Card>
-                  <b className="text-base font-normal text-[var(--fgColor-default)] [overflow-wrap:anywhere]">{snippet(q.prompt, q.audioName)}</b>
-                  <div className="flex flex-wrap items-center gap-2 text-sm text-[var(--fgColor-muted)]">
-                    <Pill tone="lav">{SKILL_LABELS[q.skill]}</Pill>
-                    <span>
-                      {ITEM_TYPE_LABELS[q.itemType]} · {q.points} điểm · {usageText(q).toLowerCase()}
-                      {q.level ? ` · ${levelLabel(q.level)}` : ''}
-                      {q.topic ? ` · ${topicLabel(q.topic)}` : ''}
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <Btn block leadingVisual={PencilIcon} onClick={() => openEdit(q)}>
-                      Sửa
-                    </Btn>
-                    <Btn block variant="danger" leadingVisual={TrashIcon} onClick={() => setToDelete(q)}>
-                      Xoá
-                    </Btn>
-                  </div>
-                </Card>
-              )}
-            />
-          )}
-        </>
-      )}
+            <EmptyPanel title="Không có câu nào khớp bộ lọc" hint="Đổi trình độ, chủ đề, kỹ năng hoặc dạng câu." />
+          )
+        }
+        card={(q) => (
+          <Card>
+            <b className="text-base font-normal text-[var(--fgColor-default)] [overflow-wrap:anywhere]">{snippet(q.prompt, q.audioName)}</b>
+            <div className="flex flex-wrap items-center gap-2 text-sm text-[var(--fgColor-muted)]">
+              <Pill tone="lav">{SKILL_LABELS[q.skill]}</Pill>
+              <span>
+                {ITEM_TYPE_LABELS[q.itemType]} · {q.points} điểm · {usageText(q).toLowerCase()}
+                {q.level ? ` · ${levelLabel(q.level)}` : ''}
+                {q.topic ? ` · ${topicLabel(q.topic)}` : ''}
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <Btn block leadingVisual={PencilIcon} onClick={() => openEdit(q)}>
+                Sửa
+              </Btn>
+              <Btn block variant="danger" leadingVisual={TrashIcon} onClick={() => setToDelete(q)}>
+                Xoá
+              </Btn>
+            </div>
+          </Card>
+        )}
+      />
 
       <Modal
         open={editor !== null}
@@ -191,10 +191,10 @@ export function QuestionBankView({ questions }: { questions: BankQuestion[] }) {
             )}
             <div className="grid grid-cols-1 gap-3 min-[768px]:grid-cols-2">
               <Field label="Trình độ">
-                <SelectPanel label="Trình độ của câu" block value={meta.level} onChange={(v) => setMeta((m) => ({ ...m, level: v }))} options={LEVEL_FIELD_OPTIONS} />
+                <SelectBox label="Trình độ của câu" block value={meta.level} onChange={(v) => setMeta((m) => ({ ...m, level: v }))} options={LEVEL_FIELD_OPTIONS} />
               </Field>
               <Field label="Chủ đề">
-                <SelectPanel label="Chủ đề của câu" block value={meta.topic} onChange={(v) => setMeta((m) => ({ ...m, topic: v }))} options={topicFieldOptions(questions)} />
+                <ComboBox label="Chủ đề của câu" block value={meta.topic} onChange={(v) => setMeta((m) => ({ ...m, topic: v }))} options={topicFieldOptions(questions)} />
               </Field>
             </div>
             <ItemDraftCard

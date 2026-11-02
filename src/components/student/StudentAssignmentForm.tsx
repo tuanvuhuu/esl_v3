@@ -9,8 +9,9 @@ import { uploadAsStudent } from '@/lib/upload-client';
 import { ITEM_TYPE_LABELS, SKILL_LABELS } from '@/lib/assignment-scoring';
 import type { StudentAssignmentView } from '@/lib/queries/student-portal';
 import { vnDateTimeLabel } from '@/lib/datetime';
+import { TextAreaAutoHeight, TextInput } from '@/components-ui';
 import { Btn } from '@/components/ui/Btn';
-import { Field, FileInput, inputClass, textareaClass } from '@/components/ui/Field';
+import { Field, FileInput } from '@/components/ui/Field';
 import { ActIcon } from '@/components/ui/ActIcon';
 import { SubmissionPill } from '@/components/assignments/SubmissionPill';
 import { Alert, Pill } from '@/components/ui/primitives';
@@ -235,13 +236,13 @@ export function StudentAssignmentForm({ view }: { view: StudentAssignmentView })
               )}
               {(item.itemType === 'order' || item.itemType === 'gap_fill') && (
                 <Field label={item.itemType === 'order' ? 'Xếp các từ thành câu đúng' : 'Điền từ vào chỗ trống'}>
-                  <input
-                    type="text"
+                  <TextInput
                     value={d.answerText}
                     onChange={(e) => patch(item.id, { answerText: e.target.value })}
                     disabled={locked}
                     placeholder={item.itemType === 'order' ? 'Nhập câu hoàn chỉnh…' : 'Nhập từ còn thiếu…'}
-                    className={inputClass()}
+                    aria-label={item.itemType === 'order' ? `Xếp câu ${item.position}` : `Điền từ câu ${item.position}`}
+                    block
                   />
                 </Field>
               )}
@@ -274,13 +275,13 @@ export function StudentAssignmentForm({ view }: { view: StudentAssignmentView })
                     </ul>
                   </div>
                   <Field label="Bài làm ghép đôi của bạn (hoặc vào Chế độ tương tác để chạm nối sinh động)">
-                    <input
-                      type="text"
+                    <TextInput
                       value={d.answerText}
                       onChange={(e) => patch(item.id, { answerText: e.target.value })}
                       disabled={locked}
                       placeholder='VD: [{"left":"mother","right":"mẹ"}]'
-                      className={inputClass()}
+                      aria-label={`Ghép đôi câu ${item.position}`}
+                      block
                     />
                   </Field>
                 </div>
@@ -289,13 +290,12 @@ export function StudentAssignmentForm({ view }: { view: StudentAssignmentView })
               {/* Tự luận viết */}
               {item.itemType === 'text' && (
                 <Field label="Bài làm của bạn">
-                  <textarea
+                  <TextAreaAutoHeight
                     value={d.answerText}
                     onChange={(e) => patch(item.id, { answerText: e.target.value })}
                     rows={6}
                     disabled={locked}
                     aria-label={`Bài làm câu ${item.position}`}
-                    className={textareaClass()}
                   />
                 </Field>
               )}

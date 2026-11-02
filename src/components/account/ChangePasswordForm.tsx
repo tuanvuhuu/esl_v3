@@ -1,9 +1,9 @@
 'use client';
 
-import { KeyIcon, LockIcon } from '@primer/octicons-react';
-import { Button, TextInput } from '@primer/react';
+import { Button } from '@primer/react';
 import { startTransition, useActionState, useEffect, useRef, type FormEvent } from 'react';
 import { changePasswordAction } from '@/app/(app)/doi-mat-khau/actions';
+import { PasswordToggleInput } from '@/components-ui';
 import { Field, FormFooter } from '@/components/ui/Field';
 import { Alert } from '@/components/ui/primitives';
 import { Panel } from '@/components/ui/surfaces';
@@ -33,33 +33,24 @@ export function ChangePasswordForm() {
         {state.ok && state.message && <Alert tone="ok">{state.message}</Alert>}
 
         <Field label="Mật khẩu hiện tại *" error={errors.currentPassword}>
-          <TextInput
-            block
+          <PasswordToggleInput
             name="currentPassword"
-            type="password"
             autoComplete="current-password"
-            leadingVisual={LockIcon}
-            validationStatus={errors.currentPassword ? 'error' : undefined}
+            error={Boolean(errors.currentPassword)}
           />
         </Field>
         <Field label="Mật khẩu mới *" error={errors.newPassword} hint="Ít nhất 10 ký tự">
-          <TextInput
-            block
+          <PasswordToggleInput
             name="newPassword"
-            type="password"
             autoComplete="new-password"
-            leadingVisual={KeyIcon}
-            validationStatus={errors.newPassword ? 'error' : undefined}
+            error={Boolean(errors.newPassword)}
           />
         </Field>
         <Field label="Nhập lại mật khẩu mới *" error={errors.confirmPassword}>
-          <TextInput
-            block
+          <PasswordToggleInput
             name="confirmPassword"
-            type="password"
             autoComplete="new-password"
-            leadingVisual={KeyIcon}
-            validationStatus={errors.confirmPassword ? 'error' : undefined}
+            error={Boolean(errors.confirmPassword)}
           />
         </Field>
 

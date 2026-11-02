@@ -3,11 +3,11 @@
 import { useActionState, useState, useTransition, startTransition, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { cancelSessionAction, restoreSessionAction, updateSessionAction } from '@/app/(app)/lich-hoc/actions';
+import { ComboBox, DateInput, TextAreaAutoHeight, TextInput, TimeInput24h } from '@/components-ui';
 import type { SessionRow } from '@/lib/queries/sessions';
 import type { ActionResult } from '@/lib/validation/student';
 import { Btn } from '@/components/ui/Btn';
-import { Field, inputClass } from '@/components/ui/Field';
-import { SelectPanel } from '@/components/ui/SelectPanel';
+import { Field } from '@/components/ui/Field';
 import { Modal } from '@/components/ui/Modal';
 import { Toast, useToast } from '@/components/ui/Toast';
 import { Pill, Alert } from '@/components/ui/primitives';
@@ -108,29 +108,44 @@ function EditSessionForm({ session, teachers, onDone }: { session: SessionRow; t
         <Alert className="col-span-full">{state.message}</Alert>
       )}
       <Field label="Ngày học *" error={errors.date}>
-        <input name="date" type="date" defaultValue={session.dateKey} className={inputClass(errors.date)} />
+        <DateInput name="date" defaultValue={session.dateKey} aria-label="Ngày học *" error={Boolean(errors.date)} />
       </Field>
       <Field label="Giáo viên *" error={errors.teacherId}>
-        <SelectPanel
+        <ComboBox
           name="teacherId"
           label="Giáo viên *"
           defaultValue={String(session.teacherId)}
           options={teachers.map((t) => ({ value: String(t.id), label: `${t.name} · ${t.subject}` }))}
-          error={!!errors.teacherId}
+          error={Boolean(errors.teacherId)}
           block
         />
       </Field>
       <Field label="Giờ bắt đầu *" error={errors.startTime}>
-        <input name="startTime" type="time" defaultValue={start} className={inputClass(errors.startTime)} />
+        <TimeInput24h name="startTime" ariaLabel="Giờ bắt đầu *" defaultValue={start} error={Boolean(errors.startTime)} />
       </Field>
       <Field label="Giờ kết thúc *" error={errors.endTime}>
-        <input name="endTime" type="time" defaultValue={end} className={inputClass(errors.endTime)} />
+        <TimeInput24h name="endTime" ariaLabel="Giờ kết thúc *" defaultValue={end} error={Boolean(errors.endTime)} />
       </Field>
       <Field label="Phòng" error={errors.room}>
-        <input name="room" defaultValue={session.room} className={inputClass(errors.room)} />
+        <TextInput
+          name="room"
+          defaultValue={session.room}
+          autoComplete="off"
+          aria-label="Phòng"
+          block
+          validationStatus={errors.room ? 'error' : undefined}
+        />
       </Field>
       <Field label="Chủ đề buổi học" error={errors.topic}>
-        <input name="topic" defaultValue={session.topic} placeholder="VD: Writing Task 2" className={inputClass(errors.topic)} />
+        <TextInput
+          name="topic"
+          defaultValue={session.topic}
+          placeholder="VD: Writing Task 2"
+          autoComplete="off"
+          aria-label="Chủ đề buổi học"
+          block
+          validationStatus={errors.topic ? 'error' : undefined}
+        />
       </Field>
       <div className="col-span-full flex justify-end">
         <Btn type="submit" variant="primary" disabled={pending}>{pending ? 'Đang lưu…' : 'Lưu buổi học'}</Btn>
@@ -159,11 +174,12 @@ function CancelSessionForm({ id, onDone }: { id: number; onDone: (m: string) => 
     <div className="flex flex-col gap-2.5 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] px-3 py-3">
       <label className="flex flex-col gap-1.5 text-sm font-normal text-[var(--fgColor-default)]">
         Huỷ buổi này (ghi lý do)
-        <input
+        <TextAreaAutoHeight
+          rows={2}
           value={reason}
           onChange={(e) => setReason(e.target.value)}
           placeholder="VD: Giáo viên nghỉ đột xuất"
-          className={inputClass(error ?? undefined)}
+          error={Boolean(error)}
         />
         {error && <span className="text-sm font-semibold text-blush-ink">{error}</span>}
       </label>

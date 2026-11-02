@@ -112,41 +112,40 @@ export function ItemGradingView({
         }
       />
 
-      {assignment.description && <Notice className="mb-4 whitespace-pre-line">{assignment.description}</Notice>}
-
-      <p className="mb-3 text-sm text-[var(--fgColor-muted)]">
-        {items.length} câu hỏi · Chưa nộp <b className="font-normal text-[var(--fgColor-default)]">{counts.not_submitted}</b> · Đã nộp <b className="font-normal text-[var(--fgColor-default)]">{counts.submitted}</b> · Đã chấm{' '}
-        <b className="font-normal text-[var(--fgColor-default)]">{counts.graded}</b>
-      </p>
+      {assignment.description && <Notice className="mb-2.5 whitespace-pre-line">{assignment.description}</Notice>}
 
       {rows.length === 0 ? (
         <EmptyPanel title="Lớp chưa có học sinh đang học" hint="Thêm học sinh vào lớp để chấm bài." />
       ) : (
-        <>
-          {/* Điện thoại: thẻ của DataGrid, mỗi học sinh một thẻ với tổng điểm và nút Chấm bài */}
-          <DataGrid
-            label="Chấm bài theo câu"
-            columns={COLUMNS}
-            rows={rows}
-            rowKey={(r) => r.studentId}
-            cell={cell}
-            from="md"
-            card={(r) => (
-              <Card>
-                <div className="flex items-start justify-between gap-2">
-                  <b className="min-w-0 truncate text-base text-[var(--fgColor-default)]">{r.fullName}</b>
-                  <SubmissionPill status={r.status} />
-                </div>
-                <small className="block text-sm text-[var(--fgColor-muted)]">Điểm {scoreText(r)}</small>
-                {hasFlaggedMark(r) && <Pill tone="blush">Chấm chéo lệch</Pill>}
-                {skillText(r) && <small className="block text-sm text-[var(--fgColor-muted)]">{skillText(r)}</small>}
-                <Btn block variant="ghost" onClick={() => setOpenId(r.studentId)}>
-                  {canManage ? 'Chấm bài' : 'Xem bài'}
-                </Btn>
-              </Card>
-            )}
-          />
-        </>
+        <DataGrid
+          label="Chấm bài theo câu"
+          columns={COLUMNS}
+          rows={rows}
+          rowKey={(r) => r.studentId}
+          cell={cell}
+          from="md"
+          searchEnable
+          title={
+            <span className="text-xs text-[var(--fgColor-muted)]">
+              {items.length} câu hỏi · Chưa nộp <b className="font-semibold text-[var(--fgColor-default)]">{counts.not_submitted}</b> · Đã nộp <b className="font-semibold text-[var(--fgColor-default)]">{counts.submitted}</b> · Đã chấm{' '}
+              <b className="font-semibold text-[var(--fgColor-default)]">{counts.graded}</b>
+            </span>
+          }
+          card={(r) => (
+            <Card>
+              <div className="flex items-start justify-between gap-2">
+                <b className="min-w-0 truncate text-base text-[var(--fgColor-default)]">{r.fullName}</b>
+                <SubmissionPill status={r.status} />
+              </div>
+              <small className="block text-sm text-[var(--fgColor-muted)]">Điểm {scoreText(r)}</small>
+              {hasFlaggedMark(r) && <Pill tone="blush">Chấm chéo lệch</Pill>}
+              {skillText(r) && <small className="block text-sm text-[var(--fgColor-muted)]">{skillText(r)}</small>}
+              <Btn block variant="ghost" onClick={() => setOpenId(r.studentId)}>
+                {canManage ? 'Chấm bài' : 'Xem bài'}
+              </Btn>
+            </Card>
+          )}
+        />
       )}
 
       <Modal

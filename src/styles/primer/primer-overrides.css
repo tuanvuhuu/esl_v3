@@ -1,7 +1,7 @@
 /* Ghi đè và bổ sung cho component Primer v38 (từ dự án 01. TSUKUBA + chuẩn ESL Center) */
 
 #__primerPortalRoot__ {
-  z-index: 1600;
+  z-index: 1600 !important;
 }
 
 /* ActionList/NavList.LeadingVisual & TrailingVisual: v38 mặc định pointer-events: none → bật lại cho nút con */

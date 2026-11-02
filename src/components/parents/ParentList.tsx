@@ -29,8 +29,9 @@ import { RowMenu, type RowMenuItem } from '@/components/ui/RowMenu';
 import { Card, EmptyPanel } from '@/components/ui/surfaces';
 import { Toast, useToast } from '@/components/ui/Toast';
 import { DataGrid, type GridColumn, type GridSort } from '@/components/ui/datagrid';
+import { TextInput } from '@/components-ui';
 import { Btn } from '@/components/ui/Btn';
-import { Pagination, TextInput } from '@/components/ui/controls';
+import { Pagination } from '@/components/ui/controls';
 import { ZaloLink } from '@/components/ui/ZaloLink';
 import { ChildEditor } from './ChildEditor';
 import { InlineText } from './InlineText';
@@ -287,61 +288,50 @@ export function ParentList(props: { parents: ParentRow[]; students?: StudentChoi
   const editRow = childEdit ? parents.find((p) => p.id === childEdit.parentId) : undefined;
   const editChild = childEdit ? editRow?.children.find((c) => c.studentId === childEdit.studentId) : undefined;
 
+  const toolbarActions = (
+    <>
+      <div className="w-60 max-w-full">
+        <label htmlFor="parent-search" className="sr-only">
+          Tìm phụ huynh
+        </label>
+        <TextInput
+          block
+          id="parent-search"
+          type="search"
+          leadingVisual={SearchIcon}
+          value={q}
+          onChange={(e) => {
+            setQ(e.target.value);
+            setPage(1);
+            setPhoneCount(PAGE_SIZE);
+          }}
+          placeholder="Tìm tên, SĐT hoặc tên con…"
+          autoComplete="off"
+          className="[&::-webkit-search-cancel-button]:hidden"
+        />
+      </div>
+      {canManage && (
+        <Btn variant="primary" leadingVisual={PlusIcon} onClick={() => setCreating(true)} className="shrink-0">
+          Thêm phụ huynh
+        </Btn>
+      )}
+    </>
+  );
+
   return (
     <section className="flex flex-col min-[1200px]:min-h-0 min-[1200px]:flex-1">
-      <header className="mb-4 flex flex-wrap items-end justify-between gap-4 max-[767px]:mb-3">
-        <div className="min-w-0">
-          <PageCrumbs crumbs={['Đào tạo', 'Phụ huynh']} />
-          <h1 className="text-h1 font-extrabold leading-tight tracking-tight text-[var(--fgColor-default)] min-[768px]:sr-only">Phụ huynh</h1>
-          <p className="mt-1 text-sm text-[var(--fgColor-muted)] max-[767px]:mt-1.5">
-            {parents.length} phụ huynh. Xoá phụ huynh chỉ gỡ liên kết, học sinh vẫn được giữ lại.
-          </p>
-        </div>
-      </header>
+      <PageCrumbs crumbs={['Đào tạo', 'Phụ huynh']} />
+      <h1 className="mb-1 text-lg font-bold text-[var(--fgColor-default)] min-[768px]:sr-only">Phụ huynh</h1>
 
-      <div className="mb-4 flex flex-col gap-3">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex min-w-0 flex-1 items-center gap-3">
-            <div className="relative min-w-0 flex-1 min-[768px]:max-w-sm">
-              <label htmlFor="parent-search" className="sr-only">
-                Tìm phụ huynh
-              </label>
-              <TextInput
-                id="parent-search"
-                type="search"
-                leadingVisual={SearchIcon}
-                value={q}
-                onChange={(e) => {
-                  setQ(e.target.value);
-                  setPage(1);
-                  setPhoneCount(PAGE_SIZE);
-                }}
-                placeholder="Tìm theo tên, SĐT hoặc tên con"
-                autoComplete="off"
-                className="[&::-webkit-search-cancel-button]:hidden"
-              />
-            </div>
-            <span className="hidden whitespace-nowrap text-sm text-[var(--fgColor-muted)] min-[768px]:inline">
-              Đang hiển thị {sorted.length === 0 ? 0 : `${(currentPage - 1) * PAGE_SIZE + 1}–${Math.min(currentPage * PAGE_SIZE, sorted.length)}`} trên {sorted.length} phụ huynh
-            </span>
-          </div>
-
-          {canManage && (
-            <Btn variant="primary" leadingVisual={PlusIcon} onClick={() => setCreating(true)} className="shrink-0">
-              Thêm phụ huynh
-            </Btn>
-          )}
-        </div>
-
-        <p className="text-sm text-[var(--fgColor-muted)] min-[768px]:hidden">
+      <div className="mb-2.5 flex flex-col gap-2 min-[768px]:hidden">
+        <div className="flex items-center gap-2">{toolbarActions}</div>
+        <p className="text-xs text-[var(--fgColor-muted)]">
           {sorted.length === 0 ? 'Không có phụ huynh phù hợp.' : `Đang hiển thị ${phoneRows.length} trên ${sorted.length} phụ huynh`}
         </p>
       </div>
 
-      {/* Từ 1200px: bảng, thân tự cuộn, cột Thao tác dính mép phải. 768–1199px: thẻ theo trang. */}
-      {sorted.length === 0 ? (
-        <div className="hidden min-[768px]:block">{empty}</div>
-      ) : (
+      {/* Từ 1200px: DataGrid tích hợp 1 dòng công cụ gọn (tiêu đề + tìm kiếm & Thêm phụ huynh trong actionComponent). */}
+      <div className="hidden min-[768px]:flex min-[768px]:min-h-0 min-[768px]:flex-1 min-[768px]:flex-col">
         <DataGrid
           label="Danh sách phụ huynh"
           columns={columns}
@@ -355,15 +345,21 @@ export function ParentList(props: { parents: ParentRow[]; students?: StudentChoi
           stickyEnd
           sort={sort}
           onSort={handleSort}
+          title={
+            <div className="flex items-baseline gap-2">
+              <span className="text-base font-bold text-[var(--fgColor-default)]">Phụ huynh</span>
+              <span className="text-xs text-[var(--fgColor-muted)]">({sorted.length})</span>
+            </div>
+          }
+          actionComponent={toolbarActions}
+          empty={empty}
           footer={
             pageCount > 1 ? (
-              <div className="hidden min-[768px]:block">
-                <Pagination page={currentPage} pageCount={pageCount} onPage={setPage} label="Phân trang" />
-              </div>
+              <Pagination page={currentPage} pageCount={pageCount} totalCount={sorted.length} onPage={setPage} label="Phân trang" />
             ) : undefined
           }
         />
-      )}
+      </div>
 
       {/* Điện thoại: thẻ, bấm Xem thêm để tiếp */}
       <div className="flex flex-col gap-3 min-[768px]:hidden">

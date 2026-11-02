@@ -12,7 +12,7 @@ import { Btn, BTN_BASE, BTN_PRIMARY } from '@/components/ui/Btn';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { DataGrid, type GridColumn } from '@/components/ui/datagrid';
 import { Modal } from '@/components/ui/Modal';
-import { PageHeader } from '@/components/ui/PageHeader';
+import { PageCrumbs } from '@/components/shell/PageCrumbs';
 import { RowMenu, type RowMenuItem } from '@/components/ui/RowMenu';
 import { Card, EmptyPanel } from '@/components/ui/surfaces';
 import { Toast, useToast } from '@/components/ui/Toast';
@@ -124,18 +124,7 @@ export function WordListsView({ lists, classes, lessons, canManage }: { lists: W
 
   return (
     <section className="flex flex-col">
-      <PageHeader
-        crumbs={['Đào tạo', 'Danh sách từ']}
-        title="Danh sách từ"
-        subtitle="Bộ từ (tranh, âm thanh, nghĩa) gắn với lớp hoặc bài giảng, dùng lại cho các trò chơi từ vựng."
-        actions={
-          canManage ? (
-            <Btn variant="primary" leadingVisual={PlusIcon} onClick={() => setCreating(true)}>
-              Thêm danh sách
-            </Btn>
-          ) : null
-        }
-      />
+      <PageCrumbs crumbs={['Đào tạo', 'Danh sách từ']} />
 
       <DataGrid
         label="Danh sách từ"
@@ -145,6 +134,20 @@ export function WordListsView({ lists, classes, lessons, canManage }: { lists: W
         cell={cell}
         card={card}
         from="md"
+        searchEnable
+        title={
+          <div className="flex items-baseline gap-2">
+            <h1 className="m-0 text-base font-bold text-[var(--fgColor-default)]">Danh sách từ</h1>
+            <span className="text-xs text-[var(--fgColor-muted)]">({lists.length})</span>
+          </div>
+        }
+        actionComponent={
+          canManage ? (
+            <Btn variant="primary" leadingVisual={PlusIcon} onClick={() => setCreating(true)}>
+              Thêm danh sách
+            </Btn>
+          ) : null
+        }
         empty={<EmptyPanel title="Chưa có danh sách từ" hint={canManage ? 'Bấm Thêm danh sách, gõ từ hoặc lấy từ kho từ vựng.' : 'Giáo viên tạo danh sách từ để dùng cho trò chơi.'} />}
       />
 

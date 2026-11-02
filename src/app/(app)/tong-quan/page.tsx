@@ -6,10 +6,11 @@ import {
   TasklistIcon,
   type Icon,
 } from '@primer/octicons-react';
-import { CounterLabel, LinkButton, SkeletonBox } from '@primer/react';
+import { CounterLabel, SkeletonBox } from '@primer/react';
 import Link from 'next/link';
 import { connection } from 'next/server';
 import { Suspense } from 'react';
+import { BTN_BASE, BTN_GHOST, BTN_PRIMARY } from '@/components/ui/Btn';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { EmptyState, Pill, ProgressBar, type Tone } from '@/components/ui/primitives';
 import { Panel } from '@/components/ui/surfaces';
@@ -87,13 +88,15 @@ async function DashboardData() {
           canStudents ? (
             <div className="flex flex-wrap gap-2">
               {canAttendance && (
-                <LinkButton as={Link} href="/diem-danh" leadingVisual={TasklistIcon}>
+                <Link href="/diem-danh" className={`${BTN_BASE} ${BTN_GHOST}`}>
+                  <TasklistIcon size={16} aria-hidden />
                   Điểm danh
-                </LinkButton>
+                </Link>
               )}
-              <LinkButton as={Link} href="/lich-hoc" variant="primary" leadingVisual={CalendarIcon}>
+              <Link href="/lich-hoc" className={`${BTN_BASE} ${BTN_PRIMARY}`}>
+                <CalendarIcon size={16} aria-hidden />
                 Lịch tuần
-              </LinkButton>
+              </Link>
             </div>
           ) : undefined
         }

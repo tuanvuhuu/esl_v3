@@ -10,12 +10,12 @@ import type { VocabWord } from '@/lib/queries/vocab';
 import type { WordListItem } from '@/lib/queries/word-lists';
 import { uploadAsStaff } from '@/lib/upload-client';
 import { AUDIO_ACCEPT, IMAGE_ACCEPT } from '@/lib/upload-types';
+import { ComboBox, TextInput } from '@/components-ui';
 import { VocabPicker } from '@/components/assignments/VocabPicker';
 import { ActIcon } from '@/components/ui/ActIcon';
 import { Btn, BTN_BASE, BTN_GHOST } from '@/components/ui/Btn';
-import { Field, FormFooter, inputClass } from '@/components/ui/Field';
+import { Field, FormFooter } from '@/components/ui/Field';
 import { Alert } from '@/components/ui/primitives';
-import { SelectPanel } from '@/components/ui/SelectPanel';
 
 type Row = WordListItem & { key: number };
 let nextKey = 1;
@@ -97,13 +97,32 @@ export function WordListForm({
       {error && <Alert>{error}</Alert>}
       <div className="grid grid-cols-1 gap-3.5 min-[768px]:grid-cols-3 min-[768px]:gap-x-4">
         <Field label="Tên danh sách *">
-          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="VD: Starters Unit 3 · Animals" autoComplete="off" className={inputClass()} />
+          <TextInput
+            aria-label="Tên danh sách *"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="VD: Starters Unit 3 · Animals"
+            autoComplete="off"
+            block
+          />
         </Field>
         <Field label="Lớp" hint="Không bắt buộc">
-          <SelectPanel label="Lớp của danh sách" block value={classId} onChange={setClassId} options={[{ value: '', label: 'Không gắn lớp' }, ...classes.map((c) => ({ value: String(c.id), label: c.name }))]} />
+          <ComboBox
+            label="Lớp của danh sách"
+            block
+            value={classId}
+            onChange={setClassId}
+            options={[{ value: '', label: 'Không gắn lớp' }, ...classes.map((c) => ({ value: String(c.id), label: c.name }))]}
+          />
         </Field>
         <Field label="Bài giảng" hint="Không bắt buộc">
-          <SelectPanel label="Bài giảng của danh sách" block value={lessonId} onChange={setLessonId} options={[{ value: '', label: 'Không gắn bài giảng' }, ...lessons.map((l) => ({ value: String(l.id), label: l.title }))]} />
+          <ComboBox
+            label="Bài giảng của danh sách"
+            block
+            value={lessonId}
+            onChange={setLessonId}
+            options={[{ value: '', label: 'Không gắn bài giảng' }, ...lessons.map((l) => ({ value: String(l.id), label: l.title }))]}
+          />
         </Field>
       </div>
 
@@ -122,11 +141,43 @@ export function WordListForm({
       <ol className="flex flex-col gap-2.5" aria-label="Các từ trong danh sách">
         {rows.map((r, idx) => (
           <li key={r.key} className="grid grid-cols-[4.5rem_minmax(0,1fr)_minmax(0,1fr)_auto] gap-2 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-2.5 min-[768px]:grid-cols-[minmax(0,1.2fr)_minmax(0,1.2fr)_4.5rem_auto_auto_auto] min-[768px]:items-center">
-            <input value={r.word} onChange={(e) => patch(r.key, { word: e.target.value })} placeholder="Từ tiếng Anh" aria-label={`Từ ${idx + 1}`} autoComplete="off" className={`${inputClass()} max-[767px]:col-span-3`} />
-            <input value={r.sentence} onChange={(e) => patch(r.key, { sentence: e.target.value })} placeholder="Câu mẫu (cho trò Xây câu), VD: The cat is on the mat." aria-label={`Câu mẫu từ ${idx + 1}`} autoComplete="off" className={`${inputClass()} col-span-full min-[768px]:order-[10000]`} />
+            <TextInput
+              value={r.word}
+              onChange={(e) => patch(r.key, { word: e.target.value })}
+              placeholder="Từ tiếng Anh"
+              aria-label={`Từ ${idx + 1}`}
+              autoComplete="off"
+              block
+              className="!min-w-0 max-[767px]:col-span-3"
+            />
+            <TextInput
+              value={r.sentence}
+              onChange={(e) => patch(r.key, { sentence: e.target.value })}
+              placeholder="Câu mẫu (cho trò Xây câu), VD: The cat is on the mat."
+              aria-label={`Câu mẫu từ ${idx + 1}`}
+              autoComplete="off"
+              block
+              className="!min-w-0 col-span-full min-[768px]:order-[10000]"
+            />
             <ActIcon label={`Bỏ từ ${idx + 1}`} icon={XIcon} danger onClick={() => remove(r.key)} className="max-[767px]:col-start-4 max-[767px]:row-start-1 min-[768px]:order-last" />
-            <input value={r.meaningVi} onChange={(e) => patch(r.key, { meaningVi: e.target.value })} placeholder="Nghĩa tiếng Việt" aria-label={`Nghĩa từ ${idx + 1}`} autoComplete="off" className={`${inputClass()} max-[767px]:col-span-4`} />
-            <input value={r.emoji} onChange={(e) => patch(r.key, { emoji: e.target.value })} placeholder="🐱" aria-label={`Emoji từ ${idx + 1}`} autoComplete="off" className={`${inputClass()} text-center`} />
+            <TextInput
+              value={r.meaningVi}
+              onChange={(e) => patch(r.key, { meaningVi: e.target.value })}
+              placeholder="Nghĩa tiếng Việt"
+              aria-label={`Nghĩa từ ${idx + 1}`}
+              autoComplete="off"
+              block
+              className="!min-w-0 max-[767px]:col-span-4"
+            />
+            <TextInput
+              value={r.emoji}
+              onChange={(e) => patch(r.key, { emoji: e.target.value })}
+              placeholder="🐱"
+              aria-label={`Emoji từ ${idx + 1}`}
+              autoComplete="off"
+              block
+              className="!min-w-0 [&_input]:text-center"
+            />
             <div className="min-w-0">
               {r.imageFileId ? (
                 <div className="flex items-center gap-2">

@@ -11,7 +11,7 @@ import { formatPhone } from '@/lib/text';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Btn } from '@/components/ui/Btn';
 import { Modal } from '@/components/ui/Modal';
-import { PageHeader } from '@/components/ui/PageHeader';
+import { PageCrumbs } from '@/components/shell/PageCrumbs';
 import { RowMenu, type RowMenuItem } from '@/components/ui/RowMenu';
 import { Avatar, EmptyState, Pill, type Tone } from '@/components/ui/primitives';
 import { Toast, useToast } from '@/components/ui/Toast';
@@ -191,18 +191,7 @@ export function TeacherList({
 
   return (
     <section className="flex flex-col">
-      <PageHeader
-        crumbs={['Đào tạo', 'Giáo viên']}
-        title="Giáo viên"
-        subtitle={`${teachers.length} giáo viên, ${teaching} đang dạy. Đổi tên giáo viên sẽ cập nhật ở các lớp.`}
-        actions={
-          canManage && (
-            <Btn variant="primary" leadingVisual={PlusIcon} onClick={() => setCreating(true)}>
-              Thêm giáo viên
-            </Btn>
-          )
-        }
-      />
+      <PageCrumbs crumbs={['Đào tạo', 'Giáo viên']} />
 
       <DataGrid
         label="Danh sách giáo viên"
@@ -212,6 +201,22 @@ export function TeacherList({
         cell={cell}
         card={card}
         from="md"
+        searchEnable
+        title={
+          <div className="flex items-baseline gap-2">
+            <h1 className="m-0 text-base font-bold text-[var(--fgColor-default)]">Giáo viên</h1>
+            <span className="text-xs text-[var(--fgColor-muted)]">
+              ({teachers.length} giáo viên · {teaching} đang dạy)
+            </span>
+          </div>
+        }
+        actionComponent={
+          canManage && (
+            <Btn variant="primary" leadingVisual={PlusIcon} onClick={() => setCreating(true)}>
+              Thêm giáo viên
+            </Btn>
+          )
+        }
         empty={
           <Panel padded={false}>
             <EmptyState title="Chưa có giáo viên nào" hint="Thêm giáo viên trước khi tạo lớp học." />

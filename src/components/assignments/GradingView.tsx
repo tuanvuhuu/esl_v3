@@ -8,11 +8,10 @@ import type { GradingRow } from '@/lib/queries/assignments';
 import type { BankQuestion } from '@/lib/queries/question-bank';
 import { vnDateTimeLabel } from '@/lib/datetime';
 import { SUBMISSION_LABELS, SUBMISSION_STATUSES } from '@/lib/validation/assignment';
+import { SelectBox, TextAreaAutoHeight, TextInput, TextInputNumber } from '@/components-ui';
 import { ActIcon } from '@/components/ui/ActIcon';
 import { Btn } from '@/components/ui/Btn';
 import { DataGrid, type GridColumn } from '@/components/ui/datagrid';
-import { TextInput } from '@/components/ui/controls';
-import { SelectPanel } from '@/components/ui/SelectPanel';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Avatar } from '@/components/ui/primitives';
 import { Card, EmptyPanel, Notice } from '@/components/ui/surfaces';
@@ -112,7 +111,7 @@ export function GradingView({
         );
       case 'status':
         return (
-          <SelectPanel
+          <SelectBox
             label={`Trạng thái của ${r.fullName}`}
             value={d.status}
             onChange={(v) => setStatus(r.studentId, v as Status)}
@@ -123,15 +122,17 @@ export function GradingView({
         );
       case 'score':
         return (
-          <TextInput
+          <TextInputNumber
             aria-label={`Điểm của ${r.fullName}`}
-            type="number"
-            inputMode="numeric"
-            min={0}
-            max={assignment.maxScore}
-            step={1}
+            thousandSeparator={false}
+            decimalScale={0}
             value={d.score}
-            onChange={(e) => patch(r.studentId, { score: e.target.value, status: e.target.value !== '' && d.status === 'not_submitted' ? 'graded' : d.status })}
+            onTextChange={(raw) =>
+              patch(r.studentId, {
+                score: raw,
+                status: raw !== '' && d.status === 'not_submitted' ? 'graded' : d.status,
+              })
+            }
             disabled={!canManage || d.status !== 'graded'}
           />
         );
@@ -143,6 +144,8 @@ export function GradingView({
             onChange={(e) => patch(r.studentId, { feedback: e.target.value })}
             disabled={!canManage}
             placeholder="Nhận xét ngắn"
+            block
+            className="!min-w-0"
           />
         );
       default:
@@ -170,16 +173,25 @@ export function GradingView({
         }
       />
 
-      {assignment.description && <Notice className="mb-4 whitespace-pre-line">{assignment.description}</Notice>}
+      {assignment.description && <Notice className="mb-2.5 whitespace-pre-line">{assignment.description}</Notice>}
 
-      <div className="mb-3 flex flex-wrap gap-3 text-sm text-[var(--fgColor-muted)]">
-        <span>Chưa nộp <b className="font-normal text-[var(--fgColor-default)]">{counts.not_submitted}</b></span>
-        <span>Đã nộp <b className="font-normal text-[var(--fgColor-default)]">{counts.submitted}</b></span>
-        <span>Đã chấm <b className="font-normal text-[var(--fgColor-default)]">{counts.graded}</b></span>
-      </div>
-
-      {/* Máy tính bảng và máy tính: bảng nhập nhanh */}
-      <DataGrid label="Chấm điểm bài tập" columns={COLUMNS} rows={rows} rowKey={(r) => r.studentId} cell={cell} from="md" />
+      {/* Máy tính bảng và máy tính: bảng nhập nhanh kèm thống kê gọn trên thanh công cụ DataGrid */}
+      <DataGrid
+        label="Chấm điểm bài tập"
+        columns={COLUMNS}
+        rows={rows}
+        rowKey={(r) => r.studentId}
+        cell={cell}
+        from="md"
+        searchEnable
+        title={
+          <div className="flex flex-wrap gap-3 text-xs text-[var(--fgColor-muted)]">
+            <span>Chưa nộp <b className="font-semibold text-[var(--fgColor-default)]">{counts.not_submitted}</b></span>
+            <span>Đã nộp <b className="font-semibold text-[var(--fgColor-default)]">{counts.submitted}</b></span>
+            <span>Đã chấm <b className="font-semibold text-[var(--fgColor-default)]">{counts.graded}</b></span>
+          </div>
+        }
+      />
 
       {/* Điện thoại: từng học sinh một */}
       <div className="flex flex-col gap-3 min-[768px]:hidden">
@@ -206,15 +218,29 @@ export function GradingView({
             ))}
           </div>
 
-          <label className="flex flex-col gap-1.5 text-sm font-normal text-[var(--fgColor-muted)]">
-            Điểm (tối đa {assignment.maxScore})
-            <TextInput type="number" inputMode="numeric" min={0} max={assignment.maxScore} step={1} value={currentDraft.score} disabled={!canManage || currentDraft.status !== 'graded'} onChange={(e) => patch(current.studentId, { score: e.target.value })} />
-          </label>
+          <div className="flex flex-col gap-1.5 text-sm font-normal text-[var(--fgColor-muted)]">
+            <span>Điểm (tối đa {assignment.maxScore})</span>
+            <TextInputNumber
+              aria-label={`Điểm của ${current.fullName}`}
+              thousandSeparator={false}
+              decimalScale={0}
+              value={currentDraft.score}
+              disabled={!canManage || currentDraft.status !== 'graded'}
+              onTextChange={(raw) => patch(current.studentId, { score: raw })}
+            />
+          </div>
 
-          <label className="flex flex-col gap-1.5 text-sm font-normal text-[var(--fgColor-muted)]">
-            Nhận xét
-            <TextInput value={currentDraft.feedback} disabled={!canManage} onChange={(e) => patch(current.studentId, { feedback: e.target.value })} placeholder="Nhận xét ngắn" />
-          </label>
+          <div className="flex flex-col gap-1.5 text-sm font-normal text-[var(--fgColor-muted)]">
+            <span>Nhận xét</span>
+            <TextAreaAutoHeight
+              aria-label={`Nhận xét cho ${current.fullName}`}
+              rows={2}
+              value={currentDraft.feedback}
+              disabled={!canManage}
+              onChange={(e) => patch(current.studentId, { feedback: e.target.value })}
+              placeholder="Nhận xét ngắn"
+            />
+          </div>
         </Card>
       </div>
 

@@ -14,6 +14,7 @@ import { formatVND, formatVNDShort } from '@/lib/money';
 import { hasPermission } from '@/lib/permissions';
 import { getRevenueReport } from '@/lib/queries/tuition';
 import { getCurrentPermissions } from '@/lib/session';
+import { ReportMonthFilter } from './ReportMonthFilter';
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -72,15 +73,16 @@ async function ReportData({ searchParams }: { searchParams: Promise<SearchParams
         title="Báo cáo doanh thu"
         subtitle={`Tổng hợp từ sổ thu học phí, tháng ${monthLabel(month)}.`}
         actions={
-          <div className="flex items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-1.5">
             <Link href={href(shiftMonth(month, -1))} aria-label="Tháng trước" className={navBtn}>
               <ChevronLeftIcon size={16} aria-hidden />
             </Link>
-            <Link href={href(current)} className={`${BTN_BASE} ${BTN_GHOST}`}>
-              Tháng này
-            </Link>
+            <ReportMonthFilter month={month} />
             <Link href={href(shiftMonth(month, 1))} aria-label="Tháng sau" className={navBtn}>
               <ChevronRightIcon size={16} aria-hidden />
+            </Link>
+            <Link href={href(current)} className={`${BTN_BASE} ${BTN_GHOST}`}>
+              Tháng này
             </Link>
           </div>
         }

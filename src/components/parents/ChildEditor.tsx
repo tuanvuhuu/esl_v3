@@ -7,9 +7,9 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, useTransition } from 'react';
 import { createPortal } from 'react-dom';
 import { setLinkRelationAction, setPrimaryParentAction, unlinkParentAction } from '@/app/(app)/phu-huynh/actions';
+import { SelectBox } from '@/components-ui';
 import { Btn } from '@/components/ui/Btn';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { SelectPanel } from '@/components/ui/SelectPanel';
 import { PARENT_RELATION_LABELS } from '@/lib/parent-labels';
 import type { ParentRow } from '@/lib/queries/parents';
 import { PARENT_RELATIONS } from '@/lib/validation/student';
@@ -46,6 +46,8 @@ export function ChildEditor({
   useEffect(() => {
     const onDown = (e: MouseEvent) => {
       if (confirmUnlink) return;
+      const target = e.target as Element | null;
+      if (target?.closest?.('[role="listbox"], [role="menu"]')) return;
       if (!panelRef.current?.contains(e.target as Node)) onClose();
     };
     const onKey = (e: KeyboardEvent) => {
@@ -118,7 +120,7 @@ export function ChildEditor({
         <small className="block truncate text-xs text-[var(--fgColor-muted)]">Phụ huynh: {parentName}</small>
       </div>
 
-      <SelectPanel
+      <SelectBox
         label="Quan hệ với học sinh"
         value={relation}
         onChange={chooseRelation}

@@ -7,12 +7,12 @@ import { useRef, useState, useTransition } from 'react';
 import { deleteSpeakingMarkAction, saveSpeakingMarkAction } from '@/app/(app)/bai-tap/speaking-actions';
 import { formatMs, SPEAKING_ERRORS, type SpeakingErrorType, type SpeakingMark } from '@/lib/speaking';
 import { vnDateTimeLabel } from '@/lib/datetime';
+import { SelectBox, TextInput } from '@/components-ui';
 import { ActIcon } from '@/components/ui/ActIcon';
 import { Btn } from '@/components/ui/Btn';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Field, inputClass } from '@/components/ui/Field';
 import { Alert, Pill } from '@/components/ui/primitives';
-import { SelectPanel } from '@/components/ui/SelectPanel';
 import { MiniRecorder } from './MiniRecorder';
 
 type Draft = { id: number | null; atMs: number; errorType: SpeakingErrorType; correctText: string; note: string; redo: boolean; modelFileId: number | null };
@@ -165,13 +165,33 @@ export function SpeakingMarks({
               </div>
             </Field>
             <Field label="Loại lỗi *">
-              <SelectPanel label="Loại lỗi" block value={draft.errorType} onChange={(v) => setDraft({ ...draft, errorType: v as SpeakingErrorType })} options={ERROR_OPTIONS} />
+              <SelectBox
+                label="Loại lỗi"
+                block
+                value={draft.errorType}
+                onChange={(v) => setDraft({ ...draft, errorType: v as SpeakingErrorType })}
+                options={ERROR_OPTIONS}
+              />
             </Field>
             <Field label="Nói đúng là">
-              <input value={draft.correctText} onChange={(e) => setDraft({ ...draft, correctText: e.target.value })} maxLength={200} placeholder="VD: three /θriː/" aria-label="Nói đúng là" className={inputClass()} />
+              <TextInput
+                value={draft.correctText}
+                onChange={(e) => setDraft({ ...draft, correctText: e.target.value.slice(0, 200) })}
+                maxLength={200}
+                placeholder="VD: three /θriː/"
+                aria-label="Nói đúng là"
+                block
+              />
             </Field>
             <Field label="Ghi chú">
-              <input value={draft.note} onChange={(e) => setDraft({ ...draft, note: e.target.value })} maxLength={300} placeholder="VD: đặt lưỡi giữa hai hàm răng" aria-label="Ghi chú lỗi" className={inputClass()} />
+              <TextInput
+                value={draft.note}
+                onChange={(e) => setDraft({ ...draft, note: e.target.value.slice(0, 300) })}
+                maxLength={300}
+                placeholder="VD: đặt lưỡi giữa hai hàm răng"
+                aria-label="Ghi chú lỗi"
+                block
+              />
             </Field>
             <div className="col-span-full">
               <MiniRecorder fileId={draft.modelFileId} label="Ghi giọng mẫu" disabled={pending} onChange={(fileId) => setDraft({ ...draft, modelFileId: fileId })} />

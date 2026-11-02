@@ -5,9 +5,9 @@ import { useRouter } from 'next/navigation';
 import { setStudentLevelAction } from '@/app/(app)/hoc-sinh/level-actions';
 import { SKILL_LABELS, type Skill } from '@/lib/assignment-scoring';
 import type { LevelCheck, LevelRow } from '@/lib/level-rule';
+import { SelectBox } from '@/components-ui';
 import { Btn } from '@/components/ui/Btn';
 import { Modal } from '@/components/ui/Modal';
-import { SelectPanel } from '@/components/ui/SelectPanel';
 import { Pill, Alert } from '@/components/ui/primitives';
 import { Toast, useToast } from '@/components/ui/Toast';
 import { FormFooter } from '@/components/ui/Field';
@@ -100,7 +100,7 @@ export function LevelPanel({
 
         <Modal open={changing} title="Đổi trình độ" subtitle="Chọn trình độ mới. Mỗi lần đổi được ghi vào lịch sử học tập." onClose={() => setChanging(false)} labelledBy="level-change-title">
           <div className="flex flex-col gap-4">
-            <SelectPanel
+            <SelectBox
               label="Trình độ"
               value={choice}
               onChange={setChoice}

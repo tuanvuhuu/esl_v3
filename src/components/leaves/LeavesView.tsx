@@ -12,12 +12,12 @@ import type { LeaveFilter, LeaveListRow, LeaveStatus } from '@/lib/queries/leave
 import { Btn } from '@/components/ui/Btn';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Chip, ChipGroup } from '@/components/ui/controls';
+import { ComboBox, TextInput } from '@/components-ui';
 import { DataGrid, type GridColumn } from '@/components/ui/datagrid';
-import { Field, FormFooter, inputClass } from '@/components/ui/Field';
+import { Field, FormFooter } from '@/components/ui/Field';
 import { Modal } from '@/components/ui/Modal';
-import { PageHeader } from '@/components/ui/PageHeader';
+import { PageCrumbs } from '@/components/shell/PageCrumbs';
 import { Alert, Pill, type Tone } from '@/components/ui/primitives';
-import { SelectPanel } from '@/components/ui/SelectPanel';
 import { Card, EmptyPanel } from '@/components/ui/surfaces';
 import { Toast, useToast } from '@/components/ui/Toast';
 
@@ -217,33 +217,8 @@ export function LeavesView({
 
   return (
     <section className="flex flex-col">
-      <PageHeader
-        crumbs={['Đào tạo', 'Đơn nghỉ']}
-        title="Đơn nghỉ"
-        subtitle="Đơn phụ huynh gửi qua Telegram. Duyệt thì ghi vắng có phép vào điểm danh và báo lại phụ huynh."
-        actions={
-          <Btn variant="primary" leadingVisual={PlusIcon} onClick={() => setAdding(true)}>
-            Ghi đơn nghỉ
-          </Btn>
-        }
-      />
-
-      <div className="mb-4 flex flex-wrap items-center gap-2">
-        <ChipGroup label="Lọc đơn nghỉ">
-          {FILTERS.map((f) => (
-            <Chip key={f.key} selected={filter === f.key} count={counts[f.key]} onClick={() => go({ f: f.key })}>
-              {f.label}
-            </Chip>
-          ))}
-        </ChipGroup>
-        <SelectPanel
-          label="Lớp"
-          auto
-          value={classId ? String(classId) : ''}
-          onChange={(v) => go({ cls: v ? Number(v) : null })}
-          options={[{ value: '', label: 'Tất cả lớp' }, ...classes.map((c) => ({ value: String(c.id), label: c.name }))]}
-        />
-      </div>
+      <PageCrumbs crumbs={['Đào tạo', 'Đơn nghỉ']} />
+      <h1 className="sr-only">Đơn nghỉ</h1>
 
       <DataGrid
         label="Đơn nghỉ"
@@ -253,6 +228,30 @@ export function LeavesView({
         cell={cell}
         card={card}
         from="md"
+        title={
+          <ChipGroup label="Lọc đơn nghỉ">
+            {FILTERS.map((f) => (
+              <Chip key={f.key} selected={filter === f.key} count={counts[f.key]} onClick={() => go({ f: f.key })}>
+                {f.label}
+              </Chip>
+            ))}
+          </ChipGroup>
+        }
+        actionComponent={
+          <>
+            <ComboBox
+              label="Lớp"
+              auto
+              variant="bar"
+              value={classId ? String(classId) : ''}
+              onChange={(v) => go({ cls: v ? Number(v) : null })}
+              options={[{ value: '', label: 'Tất cả lớp' }, ...classes.map((c) => ({ value: String(c.id), label: c.name }))]}
+            />
+            <Btn variant="primary" leadingVisual={PlusIcon} onClick={() => setAdding(true)}>
+              Ghi đơn nghỉ
+            </Btn>
+          </>
+        }
         empty={<EmptyPanel title={filter === 'pending' ? 'Không có đơn nào chờ duyệt.' : 'Không có đơn phù hợp với bộ lọc này.'} />}
       />
 
@@ -363,32 +362,52 @@ function AddLeaveDialog({ classes, defaultClassId, onClose, onDone }: {
       >
         {(error.message || loadError) && <Alert className="col-span-full">{error.message ?? loadError}</Alert>}
         <Field label="Lớp *">
-          <SelectPanel label="Lớp của học sinh" block value={classId} onChange={chooseClass} options={classes.map((c) => ({ value: String(c.id), label: c.name }))} />
+          <ComboBox
+            label="Lớp của học sinh"
+            block
+            value={classId}
+            onChange={(next) => {
+              if (next) chooseClass(next);
+            }}
+            options={classes.map((c) => ({ value: String(c.id), label: c.name }))}
+          />
         </Field>
         <Field label="Học sinh *" error={errors.studentId} hint={options && options.students.length === 0 ? 'Lớp chưa có học sinh đang học' : undefined}>
-          <SelectPanel
+          <ComboBox
             label="Học sinh nghỉ"
             block
             value={studentId}
-            onChange={setStudentId}
+            onChange={(val) => {
+              if (val) setStudentId(val);
+            }}
             disabled={!options || options.students.length === 0}
             options={(options?.students ?? []).map((s) => ({ value: String(s.id), label: s.name }))}
-            error={!!errors.studentId}
+            error={Boolean(errors.studentId)}
           />
         </Field>
         <Field label="Buổi nghỉ *" error={errors.sessionId} hint={options && options.sessions.length === 0 ? 'Lớp không còn buổi sắp tới' : undefined}>
-          <SelectPanel
+          <ComboBox
             label="Buổi nghỉ"
             block
             value={sessionId}
-            onChange={setSessionId}
+            onChange={(val) => {
+              if (val) setSessionId(val);
+            }}
             disabled={!options || options.sessions.length === 0}
             options={(options?.sessions ?? []).map((s) => ({ value: String(s.id), label: sessionLabel(new Date(s.startsAt), new Date(s.endsAt)) }))}
-            error={!!errors.sessionId}
+            error={Boolean(errors.sessionId)}
           />
         </Field>
         <Field label="Lý do">
-          <input value={reason} onChange={(e) => setReason(e.target.value)} maxLength={200} placeholder="VD: Ốm, phụ huynh gọi điện báo" autoComplete="off" className={inputClass()} />
+          <TextInput
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            maxLength={200}
+            placeholder="VD: Ốm, phụ huynh gọi điện báo"
+            autoComplete="off"
+            aria-label="Lý do"
+            block
+          />
         </Field>
         <FormFooter className="col-span-full">
           <Btn onClick={onClose}>Huỷ</Btn>

@@ -1,9 +1,10 @@
 'use client';
 
-import { GearIcon, IdBadgeIcon, KeyIcon, PersonIcon, SignOutIcon } from '@primer/octicons-react';
-import { ActionList, ActionMenu, IconButton } from '@primer/react';
+import { GearIcon, IdBadgeIcon, KeyIcon, SignOutIcon } from '@primer/octicons-react';
+import { ActionList, ActionMenu } from '@primer/react';
 import Link from 'next/link';
 import { useRef } from 'react';
+import UserAvatar from '@/components-ui/user-avatar';
 
 export function UserMenu({
   name,
@@ -18,32 +19,22 @@ export function UserMenu({
 }) {
   const logoutFormRef = useRef<HTMLFormElement>(null);
 
-  const initials = name
-    .trim()
-    .split(/\s+/)
-    .slice(-2)
-    .map((w) => w[0])
-    .join('')
-    .toUpperCase();
-
   return (
     <div className="relative shrink-0">
       <form ref={logoutFormRef} method="post" action="/logout" className="hidden" />
       <ActionMenu>
         <ActionMenu.Anchor>
-          <IconButton
-            icon={PersonIcon}
-            variant="invisible"
-            unsafeDisableTooltip
+          <button
+            type="button"
             aria-label="Tài khoản"
-            className="!size-[var(--icon-h)] max-[767px]:!size-[var(--icon-h-touch)]"
-          />
+            className="inline-flex size-[var(--icon-h)] items-center justify-center rounded-full outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-[var(--focus-outlineColor)] max-[767px]:size-[var(--icon-h-touch)]"
+          >
+            <UserAvatar fullName={name} size="medium" />
+          </button>
         </ActionMenu.Anchor>
         <ActionMenu.Overlay align="end" width="medium">
           <div className="flex items-center gap-3 border-b border-[var(--borderColor-muted)] px-3.5 py-3">
-            <span className="grid size-9 shrink-0 place-items-center rounded-full bg-[var(--bgColor-accent-muted)] text-sm font-bold text-[var(--fgColor-accent)]">
-              {initials}
-            </span>
+            <UserAvatar fullName={name} size="large" />
             <div className="min-w-0">
               <b className="block truncate text-sm font-bold text-[var(--fgColor-default)]">{name}</b>
               <small className="block truncate text-xs text-[var(--fgColor-muted)]">

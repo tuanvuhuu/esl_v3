@@ -34,9 +34,9 @@ import { AccountForm, type TeacherOption } from './AccountForm';
 import type { CampusOption } from '@/lib/campus';
 import { Toast } from '@/components/ui/Toast';
 import { EmptyPanel, Panel, Card } from '@/components/ui/surfaces';
+import { SelectBox, TextInput } from '@/components-ui';
 import { Btn } from '@/components/ui/Btn';
-import { Chip, ChipGroup, TextInput } from '@/components/ui/controls';
-import { SelectPanel } from '@/components/ui/SelectPanel';
+import { Chip, ChipGroup } from '@/components/ui/controls';
 
 export type TabKey = 'nguoi-dung' | 'phan-quyen' | 'nhat-ky';
 
@@ -236,41 +236,7 @@ function UsersTab({ accounts, total, filters, teachers, campuses, canManage }: {
   );
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center gap-3">
-        <form method="get" action="/tai-khoan" role="search" className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
-          <div className="min-w-[200px] flex-1">
-            <TextInput name="q" type="search" leadingVisual={SearchIcon} defaultValue={filters.q} placeholder="Tìm theo tên hoặc email" />
-          </div>
-          <SelectPanel
-            name="role"
-            label="Vai trò"
-            auto
-            defaultValue={filters.role}
-            options={[{ value: '', label: 'Mọi vai trò' }, ...ROLE_CODES.map((r) => ({ value: r, label: ROLE_LABELS[r] }))]}
-          />
-          <SelectPanel
-            name="status"
-            label="Trạng thái"
-            auto
-            defaultValue={filters.status}
-            options={[
-              { value: '', label: 'Mọi trạng thái' },
-              { value: 'active', label: 'Hoạt động' },
-              { value: 'locked', label: 'Tạm khoá' },
-            ]}
-          />
-          <Btn type="submit" variant="ghost">Lọc</Btn>
-        </form>
-        {canManage && (
-          <Btn variant="primary" leadingVisual={PlusIcon} onClick={() => setCreating(true)}>
-            Mời thành viên
-          </Btn>
-        )}
-      </div>
-
-      <p className="text-sm text-[var(--fgColor-muted)]">{accounts.length} trên {total} tài khoản</p>
-
+    <div className="flex flex-col gap-2">
       <DataGrid
         label="Danh sách tài khoản"
         columns={ACCOUNT_COLUMNS}
@@ -279,6 +245,49 @@ function UsersTab({ accounts, total, filters, teachers, campuses, canManage }: {
         cell={accountCell}
         card={accountCard}
         from="md"
+        title={
+          <div className="flex items-baseline gap-2">
+            <span className="text-base font-bold text-[var(--fgColor-default)]">Tài khoản</span>
+            <span className="text-xs text-[var(--fgColor-muted)]">
+              ({accounts.length}/{total})
+            </span>
+          </div>
+        }
+        actionComponent={
+          <>
+            <form method="get" action="/tai-khoan" role="search" className="flex flex-wrap items-center gap-1.5">
+              <div className="w-48 max-w-full">
+                <TextInput block name="q" type="search" leadingVisual={SearchIcon} defaultValue={filters.q} placeholder="Tìm tên hoặc email…" />
+              </div>
+              <SelectBox
+                name="role"
+                label="Vai trò"
+                auto
+                variant="bar"
+                defaultValue={filters.role}
+                options={[{ value: '', label: 'Mọi vai trò' }, ...ROLE_CODES.map((r) => ({ value: r, label: ROLE_LABELS[r] }))]}
+              />
+              <SelectBox
+                name="status"
+                label="Trạng thái"
+                auto
+                variant="bar"
+                defaultValue={filters.status}
+                options={[
+                  { value: '', label: 'Mọi trạng thái' },
+                  { value: 'active', label: 'Hoạt động' },
+                  { value: 'locked', label: 'Tạm khoá' },
+                ]}
+              />
+              <Btn type="submit" variant="ghost">Lọc</Btn>
+            </form>
+            {canManage && (
+              <Btn variant="primary" leadingVisual={PlusIcon} onClick={() => setCreating(true)}>
+                Mời thành viên
+              </Btn>
+            )}
+          </>
+        }
         empty={
           <EmptyPanel title="Không có tài khoản phù hợp" hint="Thử đổi bộ lọc hoặc từ khoá." />
         }
@@ -480,6 +489,8 @@ function AuditTab({ audit }: { audit: AuditRow[] }) {
       cell={cell}
       card={card}
       from="md"
+      searchEnable
+      title="Nhật ký hoạt động"
       empty={
         <Panel padded={false}>
           <EmptyState title="Chưa có hoạt động nào" />

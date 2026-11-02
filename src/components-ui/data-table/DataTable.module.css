@@ -35,12 +35,12 @@
     border-bottom-right-radius: 8px;
 }
 
-.pagingContainer :global([class*="prc-Pagination-"]) {
+.pagingContainer [class*="prc-Pagination-"] {
     /* background-color: red; */
     margin: 0px;
 }
 
-.pagingContainer :global([class*="prc-Pagination-"]) a {
+.pagingContainer [class*="prc-Pagination-"] a {
     line-height: 1.5;
 }
 

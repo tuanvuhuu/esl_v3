@@ -1,23 +1,28 @@
-.htmlView :global(.dx-htmleditor.dx-htmleditor-outlined) {
-    box-shadow: none !important;
+.htmlView [class~="dx-htmleditor"][class~="dx-htmleditor-outlined"] {
+  box-shadow: none !important;
 }
 
-.htmlView :global(.dx-htmleditor-content) {
-    padding: 0px!important;
+.htmlView [class~="dx-htmleditor-content"] {
+  padding: 0px !important;
 }
-.htmlView table{
-    width: 100%;
+
+.htmlView table {
+  width: 100%;
 }
+
 .htmlView {
-    white-space: pre-wrap;
-    word-wrap: break-word;
+  white-space: pre-wrap;
+  word-wrap: break-word;
 }
+
 .htmlView p {
-    margin: 0.5em 0;
+  margin: 0.5em 0;
 }
+
 .htmlView p:first-child {
-    margin-top: 0;
+  margin-top: 0;
 }
+
 .htmlView p:last-child {
-    margin-bottom: 0;
+  margin-bottom: 0;
 }

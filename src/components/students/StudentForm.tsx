@@ -14,9 +14,9 @@ import { dateKeyLabel } from '@/lib/datetime';
 import { formatVND } from '@/lib/money';
 import { TUITION_PER_SESSION } from '@/lib/tuition';
 import { todayIsoVN, type ActionResult } from '@/lib/validation/student';
+import { ComboBox, DateInput, SelectBox, TextAreaAutoHeight, TextInput } from '@/components-ui';
 import { Btn } from '@/components/ui/Btn';
-import { Field, inputClass, textareaClass, FormFooter } from '@/components/ui/Field';
-import { SelectPanel } from '@/components/ui/SelectPanel';
+import { Field, FormFooter } from '@/components/ui/Field';
 import { Alert } from '@/components/ui/primitives';
 import { Callout } from '@/components/ui/surfaces';
 
@@ -121,6 +121,7 @@ export function StudentForm({
 
   // Đổi cơ sở thì bỏ lớp không thuộc cơ sở mới, để không lưu nhầm lớp của cơ sở khác
   function chooseCampus(next: string) {
+    if (!next) return;
     const id = Number(next);
     setCampusId(id);
     if (selectedClass && selectedClass.campusId !== id) setClassId(0);
@@ -174,28 +175,36 @@ export function StudentForm({
       {/* Thông tin học sinh trước, rồi nơi học và học phí, cuối cùng là phụ huynh */}
       <FormSection>Học sinh</FormSection>
       <Field label="Họ và tên *" error={errors.fullName} wide>
-        <input name="fullName" defaultValue={values.fullName} placeholder="VD: Nguyễn Minh Anh" autoComplete="off" className={inputClass(errors.fullName)} />
+        <TextInput
+          block
+          name="fullName"
+          defaultValue={values.fullName}
+          placeholder="VD: Nguyễn Minh Anh"
+          autoComplete="off"
+          validationStatus={errors.fullName ? 'error' : undefined}
+        />
       </Field>
       {mode === 'create' && (
         <Field label="Mã HS" error={errors.code ?? codeTaken ?? undefined} hint="Để trống thì hệ thống tự cấp mã tiếp theo.">
-          <input
+          <TextInput
+            block
             name="code"
             value={code}
             onChange={(e) => { setCode(e.target.value); setCodeTaken(null); }}
             onBlur={() => void checkCode()}
             placeholder="HS-00001"
             autoComplete="off"
-            className={inputClass(errors.code ?? codeTaken ?? undefined)}
+            validationStatus={errors.code || codeTaken ? 'error' : undefined}
           />
         </Field>
       )}
 
       <Field label="Ngày sinh" error={errors.dob} hint="Để trống nếu chưa biết">
-        <input name="dob" type="date" defaultValue={values.dob} className={inputClass(errors.dob)} />
+        <DateInput name="dob" defaultValue={values.dob} error={Boolean(errors.dob)} />
       </Field>
 
       <Field label="Giới tính">
-        <SelectPanel
+        <SelectBox
           name="gender"
           label="Giới tính"
           defaultValue={values.gender}
@@ -208,12 +217,12 @@ export function StudentForm({
       </Field>
 
       <Field label="Trạng thái">
-        <SelectPanel name="status" label="Trạng thái" defaultValue={values.status} options={STATUS_OPTIONS} block />
+        <SelectBox name="status" label="Trạng thái" defaultValue={values.status} options={STATUS_OPTIONS} block />
       </Field>
 
       <FormSection>Lớp và học phí</FormSection>
       <Field label="Cơ sở *">
-        <SelectPanel
+        <ComboBox
           label="Cơ sở *"
           value={String(campusId)}
           onChange={chooseCampus}
@@ -227,16 +236,17 @@ export function StudentForm({
         error={errors.classId}
         hint={campusClasses.length === 0 ? 'Cơ sở này chưa có lớp học. Tạo lớp ở màn Lớp học trước.' : undefined}
       >
-        <SelectPanel
+        <ComboBox
           name="classId"
           label="Lớp học *"
           value={String(classId)}
-          onChange={(v) => setClassId(Number(v))}
+          onChange={(v) => setClassId(v ? Number(v) : 0)}
           options={[
             { value: '0', label: 'Chọn lớp', disabled: true },
             ...campusClasses.map((c) => ({ value: String(c.id), label: `${c.name} — ${c.course}` })),
           ]}
-          error={!!errors.classId}
+          placeholder="Chọn lớp"
+          error={Boolean(errors.classId)}
           block
         />
       </Field>
@@ -246,15 +256,14 @@ export function StudentForm({
         error={errors.startDate}
         hint={shownPreview?.firstKey ? `Lớp khai giảng ${dateKeyLabel(shownPreview.firstKey)}. Vào giữa khoá thì chọn ngày học buổi đầu.` : 'Ngày học sinh bắt đầu vào lớp'}
       >
-        <input
+        <DateInput
           name="startDate"
-          type="date"
           value={startDate}
-          onChange={(e) => {
-            setStartDate(e.target.value);
+          onIsoChange={(iso) => {
+            setStartDate(iso);
             setStartEdited(true);
           }}
-          className={inputClass(errors.startDate)}
+          error={Boolean(errors.startDate)}
         />
       </Field>
 
@@ -271,7 +280,7 @@ export function StudentForm({
 
       <FormSection>Phụ huynh</FormSection>
       <Field label="Phụ huynh *" error={errors.parentId} wide hint="Chọn người đã có trong danh sách, hoặc để 'Thêm phụ huynh mới' và nhập bên dưới.">
-        <SelectPanel
+        <ComboBox
           name="parentId"
           label="Phụ huynh *"
           value={parentId}
@@ -280,7 +289,7 @@ export function StudentForm({
             { value: '', label: 'Thêm phụ huynh mới' },
             ...parents.map((p) => ({ value: String(p.id), label: `${p.fullName} · ${p.phone}` })),
           ]}
-          error={!!errors.parentId}
+          error={Boolean(errors.parentId)}
           block
         />
       </Field>
@@ -288,16 +297,32 @@ export function StudentForm({
       {!usingExistingParent && (
         <>
           <Field label="Tên phụ huynh *" error={errors.parentName}>
-            <input name="parentName" defaultValue={values.parentName} placeholder="Họ tên phụ huynh" autoComplete="off" className={inputClass(errors.parentName)} />
+            <TextInput
+              block
+              name="parentName"
+              defaultValue={values.parentName}
+              placeholder="Họ tên phụ huynh"
+              autoComplete="off"
+              validationStatus={errors.parentName ? 'error' : undefined}
+            />
           </Field>
           <Field label="SĐT phụ huynh *" error={errors.parentPhone}>
-            <input name="parentPhone" type="tel" inputMode="tel" defaultValue={values.parentPhone} placeholder="09xx xxx xxx" autoComplete="off" className={inputClass(errors.parentPhone)} />
+            <TextInput
+              block
+              name="parentPhone"
+              type="tel"
+              inputMode="tel"
+              defaultValue={values.parentPhone}
+              placeholder="09xx xxx xxx"
+              autoComplete="off"
+              validationStatus={errors.parentPhone ? 'error' : undefined}
+            />
           </Field>
         </>
       )}
 
       <Field label="Quan hệ">
-        <SelectPanel name="parentRelation" label="Quan hệ" defaultValue={values.parentRelation} options={RELATION_OPTIONS} block />
+        <SelectBox name="parentRelation" label="Quan hệ" defaultValue={values.parentRelation} options={RELATION_OPTIONS} block />
       </Field>
 
       <label className="flex min-w-0 items-center gap-2.5 self-end pb-2 text-sm font-normal text-[var(--fgColor-default)]">
@@ -306,7 +331,13 @@ export function StudentForm({
       </label>
 
       <Field label="Ghi chú" error={errors.note} wide>
-        <textarea name="note" defaultValue={values.note} rows={3} placeholder="Mục tiêu, nhu cầu đặc biệt, lịch rảnh…" className={textareaClass(errors.note)} />
+        <TextAreaAutoHeight
+          name="note"
+          defaultValue={values.note}
+          rows={3}
+          placeholder="Mục tiêu, nhu cầu đặc biệt, lịch rảnh…"
+          error={Boolean(errors.note)}
+        />
       </Field>
 
       <FormFooter className="col-span-full">

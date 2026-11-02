@@ -7,9 +7,9 @@ import { addLearningEventAction } from '@/app/(app)/lich-su-hoc-tap/actions';
 import { LEARNING_EVENT_LABELS, LEARNING_EVENT_TYPES } from '@/lib/validation/learning';
 import { todayKeyVN } from '@/lib/datetime';
 import type { ActionResult } from '@/lib/validation/student';
+import { DateInput, SelectBox, TextAreaAutoHeight, TextInput } from '@/components-ui';
 import { Btn } from '@/components/ui/Btn';
-import { Field, inputClass, textareaClass, FormFooter } from '@/components/ui/Field';
-import { SelectPanel } from '@/components/ui/SelectPanel';
+import { Field, FormFooter } from '@/components/ui/Field';
 import { Modal } from '@/components/ui/Modal';
 import { Toast, useToast } from '@/components/ui/Toast';
 import { Alert } from '@/components/ui/primitives';
@@ -57,23 +57,30 @@ function EventDialog({ studentId, studentName, onClose, onDone }: { studentId: n
           <Alert className="col-span-full">{state.message}</Alert>
         )}
         <Field label="Loại *" error={errors.eventType}>
-          <SelectPanel
+          <SelectBox
             name="eventType"
             label="Loại *"
             defaultValue="note"
             options={LEARNING_EVENT_TYPES.map((t) => ({ value: t, label: LEARNING_EVENT_LABELS[t] }))}
-            error={!!errors.eventType}
+            error={Boolean(errors.eventType)}
             block
           />
         </Field>
         <Field label="Ngày *" error={errors.occurredDate}>
-          <input name="occurredDate" type="date" defaultValue={todayKeyVN()} className={inputClass(errors.occurredDate)} />
+          <DateInput name="occurredDate" defaultValue={todayKeyVN()} aria-label="Ngày *" error={Boolean(errors.occurredDate)} />
         </Field>
         <Field label="Tiêu đề *" error={errors.title} wide>
-          <input name="title" placeholder="VD: Lên Band 6.0 · Ghi chú: cần luyện phát âm" autoComplete="off" className={inputClass(errors.title)} />
+          <TextInput
+            name="title"
+            placeholder="VD: Lên Band 6.0 · Ghi chú: cần luyện phát âm"
+            autoComplete="off"
+            aria-label="Tiêu đề *"
+            block
+            validationStatus={errors.title ? 'error' : undefined}
+          />
         </Field>
         <Field label="Chi tiết" error={errors.detail} wide>
-          <textarea name="detail" rows={3} className={textareaClass(errors.detail)} />
+          <TextAreaAutoHeight name="detail" rows={3} aria-label="Chi tiết" error={Boolean(errors.detail)} />
         </Field>
         <FormFooter className="col-span-full">
           <Btn onClick={onClose}>Huỷ</Btn>

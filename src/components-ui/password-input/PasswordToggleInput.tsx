@@ -1,7 +1,8 @@
 'use client';
 
 import { EyeClosedIcon, EyeIcon } from "@primer/octicons-react";
-import { IconButton } from "@primer/react";
+import { TextInput } from "@primer/react";
+import clsx from "clsx";
 import {
   CSSProperties,
   ForwardedRef,
@@ -9,52 +10,40 @@ import {
   forwardRef,
   useState,
 } from "react";
-import styles from './password-input.module.css';
 
-interface PasswordToggleInputProps
-  extends Omit<InputHTMLAttributes<HTMLInputElement>, "type"> {
+export interface PasswordToggleInputProps
+  extends Omit<InputHTMLAttributes<HTMLInputElement>, "type" | "size"> {
   containerStyle?: CSSProperties;
+  error?: boolean;
 }
 
 const PasswordToggleInput = (
-  { containerStyle, style, ...inputProps }: PasswordToggleInputProps,
-  ref: ForwardedRef<HTMLInputElement>
+  { containerStyle, className, error, ...inputProps }: PasswordToggleInputProps,
+  ref: ForwardedRef<HTMLInputElement>,
 ) => {
   const [isVisible, setIsVisible] = useState(false);
 
   return (
-    <div
-      style={{
-        position: "relative",
-        width: "100%",
-        ...containerStyle,
-      }}
-    >
-      <input
+    <div style={{ width: "100%", ...containerStyle }}>
+      <TextInput
         {...inputProps}
         ref={ref}
         type={isVisible ? "text" : "password"}
-        style={{
-          width: "100%",
-          padding: "5px 36px 5px 12px",
-          fontSize: "14px",
-          borderRadius: "6px",
-          border: "1px solid #d0d7de",
-          ...style,
-        }}
-      />
-      <IconButton
-        icon={isVisible ? EyeClosedIcon : EyeIcon}
-        aria-label={isVisible ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
-        onClick={() => setIsVisible((prev) => !prev)}
-        variant="invisible"
-        className={styles.passwordToggleInput_iconButton}
+        block
+        validationStatus={error ? "error" : undefined}
+        className={clsx("!min-w-0", className)}
+        trailingAction={
+          <TextInput.Action
+            onClick={() => setIsVisible((prev) => !prev)}
+            icon={isVisible ? EyeClosedIcon : EyeIcon}
+            aria-label={isVisible ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+          />
+        }
       />
     </div>
   );
 };
 
 export default forwardRef<HTMLInputElement, PasswordToggleInputProps>(
-  PasswordToggleInput
+  PasswordToggleInput,
 );
-

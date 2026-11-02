@@ -14,9 +14,9 @@ import { TUITION_PER_SESSION } from '@/lib/tuition';
 import { MAX_SLOTS_PER_DAY, WEEKDAY_CODES, WEEKDAY_CODE_LABELS, type WeekdayCode } from '@/lib/validation/class';
 import type { StaffRole } from '@/lib/validation/teacher';
 import type { ActionResult } from '@/lib/validation/student';
-import { Field, inputClass, FormFooter } from '@/components/ui/Field';
+import { ComboBox, DateInput, TextInput, TextInputNumber } from '@/components-ui';
+import { Field, FormFooter } from '@/components/ui/Field';
 import { Btn } from '@/components/ui/Btn';
-import { SelectPanel } from '@/components/ui/SelectPanel';
 import { Alert } from '@/components/ui/primitives';
 import { Notice } from '@/components/ui/surfaces';
 import { DayTimeRows, type DaySlots, type SlotDraft, type SlotPos } from '@/components/classes/DayTimeRows';
@@ -228,77 +228,127 @@ export function ClassForm({
         <>
           <SectionTitle>Thông tin lớp</SectionTitle>
           <Field label="Cơ sở *" error={errors.campusId} hint="Mỗi lớp thuộc đúng một cơ sở">
-            <SelectPanel
+            <ComboBox
               name="campusId"
               label="Cơ sở *"
               value={campusId}
-              onChange={chooseCampus}
+              onChange={(next) => {
+                if (!next) return;
+                chooseCampus(next);
+                setBump((n) => n + 1);
+              }}
               options={campuses.map((c) => ({ value: String(c.id), label: c.name }))}
-              error={!!errors.campusId}
+              error={Boolean(errors.campusId)}
               block
             />
           </Field>
           <Field label="Mã lớp *" error={errors.name} hint="VD: IELTS-K15">
-            <input name="name" defaultValue={values.name} autoComplete="off" className={inputClass(errors.name)} />
+            <TextInput
+              name="name"
+              defaultValue={values.name}
+              autoComplete="off"
+              aria-label="Mã lớp *"
+              block
+              validationStatus={errors.name ? 'error' : undefined}
+              onChange={() => setBump((n) => n + 1)}
+            />
           </Field>
           <Field label="Khoá học *" error={errors.course}>
-            <input name="course" defaultValue={values.course} placeholder="VD: IELTS Foundation 6.0" autoComplete="off" className={inputClass(errors.course)} />
+            <TextInput
+              name="course"
+              defaultValue={values.course}
+              placeholder="VD: IELTS Foundation 6.0"
+              autoComplete="off"
+              aria-label="Khoá học *"
+              block
+              validationStatus={errors.course ? 'error' : undefined}
+              onChange={() => setBump((n) => n + 1)}
+            />
           </Field>
           <Field label="Trình độ CEFR" error={errors.levelId} hint="Khung tham chiếu Châu Âu (A1–C2), để trống nếu không áp dụng">
-            <SelectPanel
+            <ComboBox
               name="levelId"
               label="Trình độ CEFR"
               value={levelId}
-              onChange={setLevelId}
+              onChange={(val) => {
+                setLevelId(val);
+                setBump((n) => n + 1);
+              }}
               options={[
                 { value: '', label: 'Không áp dụng (để trống)' },
                 ...levels.map((l) => ({ value: String(l.id), label: `${l.code} · ${l.name}` })),
               ]}
-              error={!!errors.levelId}
+              error={Boolean(errors.levelId)}
               block
             />
           </Field>
           <SectionTitle>Giáo viên và phòng</SectionTitle>
           <Field label="Giáo viên chủ nhiệm *" error={errors.teacherId} hint={teacherOptions.length === 0 ? 'Cơ sở này chưa có giáo viên. Thêm ở màn Giáo viên.' : undefined}>
-            <SelectPanel
+            <ComboBox
               name="teacherId"
               label="Giáo viên chủ nhiệm *"
               value={teacherId}
-              onChange={setTeacherId}
+              onChange={(val) => {
+                setTeacherId(val);
+                setBump((n) => n + 1);
+              }}
               options={[{ value: '', label: 'Chọn giáo viên' }, ...teacherOptions.map((t) => ({ value: String(t.id), label: `${t.name} · ${t.subject}` }))]}
-              error={!!errors.teacherId}
+              error={Boolean(errors.teacherId)}
               block
             />
           </Field>
           <Field label="Trợ giảng" error={errors.assistantId} hint={assistantOptions.length === 0 ? 'Cơ sở này chưa có trợ giảng. Thêm ở màn Giáo viên, chọn vai trò Trợ giảng.' : undefined}>
-            <SelectPanel
+            <ComboBox
               name="assistantId"
               label="Trợ giảng"
               value={assistantId}
-              onChange={setAssistantId}
+              onChange={(val) => {
+                setAssistantId(val);
+                setBump((n) => n + 1);
+              }}
               options={[{ value: '', label: 'Chưa có trợ giảng' }, ...assistantOptions.map((t) => ({ value: String(t.id), label: `${t.name} · ${t.subject}` }))]}
-              error={!!errors.assistantId}
+              error={Boolean(errors.assistantId)}
               block
             />
           </Field>
           <Field label="Giáo viên nước ngoài" error={errors.foreignTeacherId} hint={foreignOptions.length === 0 ? 'Cơ sở này chưa có giáo viên nước ngoài. Thêm ở màn Giáo viên, chọn vai trò Giáo viên nước ngoài.' : undefined}>
-            <SelectPanel
+            <ComboBox
               name="foreignTeacherId"
               label="Giáo viên nước ngoài"
               value={foreignTeacherId}
-              onChange={setForeignTeacherId}
+              onChange={(val) => {
+                setForeignTeacherId(val);
+                setBump((n) => n + 1);
+              }}
               options={[{ value: '', label: 'Chưa có giáo viên nước ngoài' }, ...foreignOptions.map((t) => ({ value: String(t.id), label: `${t.name} · ${t.subject}` }))]}
-              error={!!errors.foreignTeacherId}
+              error={Boolean(errors.foreignTeacherId)}
               block
             />
           </Field>
           <Field label="Phòng" error={errors.room}>
-            <input name="room" defaultValue={values.room} placeholder="VD: P.201" autoComplete="off" className={inputClass(errors.room)} />
+            <TextInput
+              name="room"
+              defaultValue={values.room}
+              placeholder="VD: P.201"
+              autoComplete="off"
+              aria-label="Phòng"
+              block
+              validationStatus={errors.room ? 'error' : undefined}
+              onChange={() => setBump((n) => n + 1)}
+            />
           </Field>
           <SectionTitle>Sĩ số</SectionTitle>
           <input type="hidden" name="fee" value={fee} />
           <Field label="Sĩ số tối đa *" error={errors.capacity}>
-            <input name="capacity" type="number" inputMode="numeric" min={1} max={100} step={1} defaultValue={values.capacity} className={inputClass(errors.capacity)} />
+            <TextInputNumber
+              name="capacity"
+              defaultValue={values.capacity}
+              min={1}
+              max={100}
+              thousandSeparator={false}
+              aria-label="Sĩ số tối đa *"
+              error={Boolean(errors.capacity)}
+            />
           </Field>
         </>
       )}
@@ -347,10 +397,28 @@ export function ClassForm({
             error={errors.startDate}
             hint={isReschedule && kept > 0 ? 'Buổi chưa học đầu tiên diễn ra vào ngày này hoặc ngày học gần nhất' : 'Buổi đầu tiên diễn ra vào ngày này hoặc ngày học gần nhất'}
           >
-            <input name="startDate" type="date" defaultValue={isReschedule ? (values.nextDate ?? defaultStartDate) : defaultStartDate} className={inputClass(errors.startDate)} />
+            <DateInput
+              name="startDate"
+              defaultValue={isReschedule ? (values.nextDate ?? defaultStartDate) : defaultStartDate}
+              aria-label={isReschedule && kept > 0 ? 'Xếp lại từ ngày *' : 'Ngày khai giảng *'}
+              onIsoChange={() => setBump((n) => n + 1)}
+              error={Boolean(errors.startDate)}
+            />
           </Field>
           <Field label={isReschedule ? 'Tổng số buổi của khoá *' : 'Số buổi *'} error={errors.sessionsTotal} hint={isReschedule && kept > 0 ? `Tính cả ${kept} buổi đã học` : undefined}>
-            <input name="sessionsTotal" type="number" inputMode="numeric" min={1} max={200} step={1} value={sessionsText} onChange={(e) => changeSessions(e.target.value)} className={inputClass(errors.sessionsTotal)} />
+            <TextInputNumber
+              name="sessionsTotal"
+              value={sessionsText}
+              min={1}
+              max={200}
+              thousandSeparator={false}
+              aria-label={isReschedule ? 'Tổng số buổi của khoá *' : 'Số buổi *'}
+              onTextChange={(raw) => {
+                changeSessions(raw);
+                setBump((n) => n + 1);
+              }}
+              error={Boolean(errors.sessionsTotal)}
+            />
           </Field>
           <PreviewBox preview={preview} />
         </>

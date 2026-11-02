@@ -13,11 +13,11 @@ import {
   type ItemType,
   type Skill,
 } from '@/lib/assignment-scoring';
+import { SelectBox, TextAreaAutoHeight, TextInput, TextInputNumber } from '@/components-ui';
 import { ActIcon } from '@/components/ui/ActIcon';
 import { Btn } from '@/components/ui/Btn';
-import { Field, inputClass, textareaClass, FileInput } from '@/components/ui/Field';
+import { Field, FileInput } from '@/components/ui/Field';
 import { Pill } from '@/components/ui/primitives';
-import { SelectPanel } from '@/components/ui/SelectPanel';
 import { KaraokeTimingEditor } from './KaraokeTimingEditor';
 import { MiniRecorder } from './MiniRecorder';
 import { criteriaTotal, MAX_OPTIONS, MAX_PAIRS, newKey, type Draft } from './item-draft';
@@ -258,7 +258,7 @@ export function ItemDraftCard({
       {/* 2. Cài đặt cơ bản: Kỹ năng & Điểm */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <Field label="Kỹ năng *">
-          <SelectPanel
+          <SelectBox
             label={`Kỹ năng của câu ${n}`}
             value={d.skill}
             onChange={(v) => patch({ skill: v as Skill })}
@@ -267,27 +267,24 @@ export function ItemDraftCard({
           />
         </Field>
         <Field label="Điểm *" hint={hasCriteria ? 'Tổng điểm các tiêu chí' : 'Từ 1 đến 100'}>
-          <input
-            type="number"
-            inputMode="numeric"
+          <TextInputNumber
+            thousandSeparator={false}
+            decimalScale={0}
             min={1}
             max={100}
-            step={1}
             value={hasCriteria ? String(criteriaTotal(d)) : d.points}
-            onChange={(e) => patch({ points: e.target.value })}
-            readOnly={hasCriteria}
+            onTextChange={(raw) => patch({ points: raw })}
+            disabled={hasCriteria}
             aria-label={`Điểm của câu ${n}`}
-            className={inputClass()}
           />
         </Field>
         <Field label="Nguồn và giấy phép">
-          <input
-            type="text"
+          <TextInput
             value={d.sourceLicense}
             onChange={(e) => patch({ sourceLicense: e.target.value })}
             aria-label={`Nguồn và giấy phép của câu ${n}`}
             placeholder="VD: Tranh tự vẽ · ESL Center"
-            className={inputClass()}
+            block
           />
         </Field>
       </div>
@@ -295,23 +292,21 @@ export function ItemDraftCard({
       {/* 3. Lời hướng dẫn tiếng Anh & tiếng Việt */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Field label="Lời hướng dẫn tiếng Anh *">
-          <input
-            type="text"
+          <TextInput
             value={d.prompt}
             onChange={(e) => patch({ prompt: e.target.value })}
             aria-label={`Nội dung câu ${n}`}
             placeholder="VD: Listen and touch the correct picture"
-            className={inputClass()}
+            block
           />
         </Field>
         <Field label="Hướng dẫn tiếng Việt (dành cho trẻ nhỏ)">
-          <input
-            type="text"
+          <TextInput
             value={d.promptVi}
             onChange={(e) => patch({ promptVi: e.target.value })}
             aria-label={`Hướng dẫn tiếng Việt của câu ${n}`}
             placeholder="VD: Nghe và chạm vào tranh đúng"
-            className={inputClass()}
+            block
           />
         </Field>
       </div>
@@ -319,12 +314,11 @@ export function ItemDraftCard({
       {/* Đoạn đọc cho câu trắc nghiệm, viết, nộp tệp (bài đọc hiểu, đề viết dài) */}
       {(d.itemType === 'choice' || d.itemType === 'text' || d.itemType === 'file') && (
         <Field label="Đoạn đọc hoặc lời nhắc (không bắt buộc)">
-          <textarea
+          <TextAreaAutoHeight
             value={d.passage}
             onChange={(e) => patch({ passage: e.target.value })}
             rows={3}
             aria-label={`Đoạn đọc của câu ${n}`}
-            className={textareaClass()}
           />
         </Field>
       )}
@@ -372,12 +366,13 @@ export function ItemDraftCard({
                   )}
                 </div>
                 <div className="flex min-w-0 flex-1 flex-col gap-1">
-                  <input
-                    type="text"
+                  <TextInput
+                    size="small"
                     value={opt.label}
                     onChange={(e) => patchOption(opt.key, { label: e.target.value })}
                     placeholder={`Tên tranh / từ ${oi + 1}`}
-                    className={`${inputClass()} !h-8 text-xs`}
+                    block
+                    className="!min-w-0"
                   />
                   <div className="flex items-center gap-1.5">
                     <label className="cursor-pointer text-[11px] font-semibold text-[var(--fgColor-accent)] hover:underline">
@@ -424,20 +419,20 @@ export function ItemDraftCard({
             {d.pairs.map((p, pi) => (
               <div key={p.key} className="flex items-center gap-2">
                 <span className="w-5 text-center text-xs font-bold text-[var(--fgColor-muted)]">{pi + 1}.</span>
-                <input
-                  type="text"
+                <TextInput
                   value={p.leftLabel}
                   onChange={(e) => patchPair(p.key, { leftLabel: e.target.value })}
                   placeholder="Vế trái (VD: mother)"
-                  className={`${inputClass()} flex-1`}
+                  block
+                  className="!min-w-0 flex-1"
                 />
                 <span className="font-bold text-[var(--fgColor-muted)]">⇄</span>
-                <input
-                  type="text"
+                <TextInput
                   value={p.rightLabel}
                   onChange={(e) => patchPair(p.key, { rightLabel: e.target.value })}
                   placeholder="Vế phải (VD: mẹ)"
-                  className={`${inputClass()} flex-1`}
+                  block
+                  className="!min-w-0 flex-1"
                 />
                 <ActIcon label={`Xoá cặp ${pi + 1}`} danger icon={TrashIcon} onClick={() => removePair(p.key)} disabled={d.pairs.length <= 2} />
               </div>
@@ -455,12 +450,11 @@ export function ItemDraftCard({
       {d.itemType === 'order' && (
         <div className="flex flex-col gap-2">
           <Field label="Câu chuẩn xác (hệ thống sẽ tự động tách các từ và đảo thứ tự cho học sinh ghép) *">
-            <input
-              type="text"
+            <TextInput
               value={d.referenceText}
               onChange={(e) => patch({ referenceText: e.target.value })}
               placeholder="VD: My father can cook."
-              className={inputClass()}
+              block
             />
           </Field>
           {d.referenceText && (
@@ -480,21 +474,19 @@ export function ItemDraftCard({
       {d.itemType === 'gap_fill' && (
         <div className="flex flex-col gap-3">
           <Field label="Đoạn văn hoặc câu có chỗ trống (đặt từ cần điền trong ngoặc vuông [từ])">
-            <textarea
+            <TextAreaAutoHeight
               value={d.passage}
               onChange={(e) => patch({ passage: e.target.value })}
               rows={3}
               placeholder="VD: This is my [brother]. He is [three] years old."
-              className={textareaClass()}
             />
           </Field>
           <Field label="Các đáp án đúng được chấp nhận (phân cách bằng dấu gạch đứng | hoặc dấu phẩy)">
-            <input
-              type="text"
+            <TextInput
               value={d.referenceText}
               onChange={(e) => patch({ referenceText: e.target.value })}
               placeholder="VD: brother | bro"
-              className={inputClass()}
+              block
             />
           </Field>
         </div>
@@ -504,12 +496,11 @@ export function ItemDraftCard({
       {(d.itemType === 'speak_repeat' || d.itemType === 'speak_read' || d.itemType === 'speak_picture') && (
         <div className="flex flex-col gap-3">
           <Field label="Câu mẫu / Đoạn văn học sinh cần nói hoặc đọc to *">
-            <textarea
+            <TextAreaAutoHeight
               value={d.referenceText}
               onChange={(e) => patch({ referenceText: e.target.value })}
               rows={2}
               placeholder="VD: This is my brother. He is three."
-              className={textareaClass()}
             />
           </Field>
           <div className="flex flex-col gap-2 rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] p-3">
@@ -528,13 +519,14 @@ export function ItemDraftCard({
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="Thời gian ghi âm tối đa (giây)">
-              <input
-                type="number"
+              <TextInputNumber
+                aria-label={`Thời gian ghi âm tối đa câu ${n}`}
+                thousandSeparator={false}
+                decimalScale={0}
                 min={5}
                 max={120}
                 value={d.maxSeconds}
-                onChange={(e) => patch({ maxSeconds: e.target.value })}
-                className={inputClass()}
+                onTextChange={(raw) => patch({ maxSeconds: raw })}
               />
             </Field>
             {d.itemType === 'speak_picture' && (
@@ -571,13 +563,13 @@ export function ItemDraftCard({
                 aria-label={`Đáp án ${oi + 1} là đáp án đúng`}
                 className="size-4 shrink-0 accent-[var(--control-checked-bgColor-rest,var(--fgColor-accent))]"
               />
-              <input
-                type="text"
+              <TextInput
                 value={o.label}
                 onChange={(e) => patchOption(o.key, { label: e.target.value })}
                 placeholder={`Đáp án ${oi + 1}`}
                 aria-label={`Nội dung đáp án ${oi + 1} của câu ${n}`}
-                className={inputClass()}
+                block
+                className="!min-w-0 flex-1"
               />
               <ActIcon label={`Xoá đáp án ${oi + 1} của câu ${n}`} danger icon={TrashIcon} onClick={() => removeOption(o.key)} disabled={d.options.length <= 2} />
             </div>
@@ -598,25 +590,25 @@ export function ItemDraftCard({
           </legend>
           {d.criteria.map((c, ci) => (
             <div key={c.key} className="flex items-center gap-2">
-              <input
-                type="text"
+              <TextInput
                 value={c.name}
                 onChange={(e) => patchCriterion(c.key, { name: e.target.value })}
                 placeholder={`Tiêu chí ${ci + 1}`}
                 aria-label={`Tên tiêu chí ${ci + 1} của câu ${n}`}
-                className={`${inputClass()} min-w-0 flex-1`}
+                block
+                className="!min-w-0 flex-1"
               />
-              <input
-                type="number"
-                inputMode="numeric"
-                min={1}
-                max={CRITERION_MAX_POINTS}
-                step={1}
-                value={c.maxPoints}
-                onChange={(e) => patchCriterion(c.key, { maxPoints: e.target.value })}
-                aria-label={`Điểm tối đa tiêu chí ${ci + 1} của câu ${n}`}
-                className={`${inputClass()} w-20 shrink-0`}
-              />
+              <div className="w-20 shrink-0">
+                <TextInputNumber
+                  thousandSeparator={false}
+                  decimalScale={0}
+                  min={1}
+                  max={CRITERION_MAX_POINTS}
+                  value={c.maxPoints}
+                  onTextChange={(raw) => patchCriterion(c.key, { maxPoints: raw })}
+                  aria-label={`Điểm tối đa tiêu chí ${ci + 1} của câu ${n}`}
+                />
+              </div>
               <ActIcon label={`Xoá tiêu chí ${ci + 1} của câu ${n}`} danger icon={TrashIcon} onClick={() => removeCriterion(c.key)} />
             </div>
           ))}

@@ -4,9 +4,9 @@ import { startTransition, useActionState, type FormEvent } from 'react';
 import { createTeacherAction, updateTeacherAction, type TeacherFormValues } from '@/app/(app)/giao-vien/actions';
 import { STAFF_ROLES, STAFF_ROLE_LABELS, TEACHER_STATUSES, TEACHER_STATUS_LABELS } from '@/lib/validation/teacher';
 import type { ActionResult } from '@/lib/validation/student';
+import { ComboBox, SelectBox, TextInput, TextInputNumber } from '@/components-ui';
 import { Btn } from '@/components/ui/Btn';
-import { Field, inputClass, FormFooter } from '@/components/ui/Field';
-import { SelectPanel } from '@/components/ui/SelectPanel';
+import { Field, FormFooter } from '@/components/ui/Field';
 import { Alert } from '@/components/ui/primitives';
 
 export type CampusChoice = { id: number; name: string };
@@ -57,45 +57,75 @@ export function TeacherForm({
       )}
 
       <Field label="Họ và tên *" error={errors.name} wide>
-        <input name="name" defaultValue={values.name} placeholder="VD: Cô Thu Hà" autoComplete="off" className={inputClass(errors.name)} />
+        <TextInput
+          block
+          name="name"
+          defaultValue={values.name}
+          placeholder="VD: Cô Thu Hà"
+          autoComplete="off"
+          validationStatus={errors.name ? 'error' : undefined}
+        />
       </Field>
       <Field label="Môn dạy *" error={errors.subject}>
-        <input name="subject" defaultValue={values.subject} placeholder="VD: IELTS" autoComplete="off" className={inputClass(errors.subject)} />
+        <TextInput
+          block
+          name="subject"
+          defaultValue={values.subject}
+          placeholder="VD: IELTS"
+          autoComplete="off"
+          validationStatus={errors.subject ? 'error' : undefined}
+        />
       </Field>
       <Field label="Số điện thoại *" error={errors.phone}>
-        <input name="phone" type="tel" inputMode="tel" defaultValue={values.phone} placeholder="09xx xxx xxx" autoComplete="off" className={inputClass(errors.phone)} />
+        <TextInput
+          block
+          name="phone"
+          type="tel"
+          inputMode="tel"
+          defaultValue={values.phone}
+          placeholder="09xx xxx xxx"
+          autoComplete="off"
+          validationStatus={errors.phone ? 'error' : undefined}
+        />
       </Field>
       <Field label="Số năm kinh nghiệm" error={errors.years}>
-        <input name="years" type="number" inputMode="numeric" min={0} max={60} defaultValue={values.years} className={inputClass(errors.years)} />
+        <TextInputNumber
+          name="years"
+          min={0}
+          max={60}
+          thousandSeparator={false}
+          defaultValue={values.years}
+          error={Boolean(errors.years)}
+        />
       </Field>
       <Field label="Vai trò *" error={errors.staffRole} hint="Trợ giảng và giáo viên nước ngoài chỉ được chọn cho đúng vị trí của lớp">
-        <SelectPanel
+        <SelectBox
           name="staffRole"
           label="Vai trò *"
           defaultValue={values.staffRole}
           options={STAFF_ROLES.map((r) => ({ value: r, label: STAFF_ROLE_LABELS[r] }))}
-          error={!!errors.staffRole}
+          error={Boolean(errors.staffRole)}
           block
         />
       </Field>
       <Field label="Trạng thái" error={errors.status}>
-        <SelectPanel
+        <SelectBox
           name="status"
           label="Trạng thái"
           defaultValue={values.status}
           options={TEACHER_STATUSES.map((s) => ({ value: s, label: TEACHER_STATUS_LABELS[s] }))}
-          error={!!errors.status}
+          error={Boolean(errors.status)}
           block
         />
       </Field>
       <Field label="Cơ sở dạy *" error={errors.campusIds} wide hint="Có thể dạy ở một hoặc nhiều cơ sở">
-        <SelectPanel
+        <ComboBox
           name="campusIds"
           label="Cơ sở dạy *"
           multiple
           defaultValues={values.campusIds.length > 0 ? values.campusIds : [String(defaultCampusId)]}
           options={campuses.map((c) => ({ value: String(c.id), label: c.name }))}
-          error={!!errors.campusIds}
+          error={Boolean(errors.campusIds)}
           block
         />
       </Field>
