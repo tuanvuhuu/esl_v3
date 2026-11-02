@@ -7,3 +7,4 @@ export const BTN_GHOST =
   'border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] font-normal text-[var(--fgColor-default)] shadow-[0_1px_0_rgba(31,35,40,0.03)] hover:bg-[var(--bgColor-muted)]';
 export const BTN_DANGER =
   'border border-[var(--borderColor-danger-emphasis)] bg-[var(--bgColor-default)] text-[var(--fgColor-danger)] hover:bg-[var(--bgColor-danger-muted)]';
+

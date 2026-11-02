@@ -80,7 +80,7 @@ const TABS: { key: TabKey; label: string; icon: typeof PeopleIcon }[] = [
 
 export function AccountsView({ tab, accounts, total, filters, teachers, campuses, matrix, audit, canManage, isAdmin }: Props) {
   return (
-    <section className="flex flex-col gap-5">
+    <section className="flex flex-col gap-2.5">
       {/* Dùng chung PageHeader như mọi màn: từ 768px tên trang nằm ở thanh trên cùng */}
       <PageHeader crumbs={['Hệ thống', 'Tài khoản & quyền']} title="Tài khoản & quyền" subtitle="Ai được truy cập những gì trong hệ thống." />
 
@@ -182,10 +182,10 @@ function UsersTab({ accounts, total, filters, teachers, campuses, canManage }: {
     switch (key) {
       case 'name':
         return (
-          <div className="flex min-w-0 items-center gap-3">
-            <Avatar name={row.fullName} seed={row.id} />
-            <div className="min-w-0">
-              <b className="block truncate text-base text-[var(--fgColor-default)]">{row.fullName}</b>
+          <div className="flex min-w-0 items-center gap-2.5">
+            <Avatar name={row.fullName} seed={row.id} size="sm" />
+            <div className="min-w-0 leading-tight">
+              <span className="block truncate text-sm font-medium text-[var(--fgColor-default)]">{row.fullName}</span>
               <small className="block truncate text-xs text-[var(--fgColor-muted)]">{row.email}</small>
             </div>
           </div>
@@ -460,7 +460,7 @@ function AuditTab({ audit }: { audit: AuditRow[] }) {
       case 'action':
         return <Pill tone="stone">{ACTION_LABEL[a.action] ?? a.action}</Pill>;
       case 'summary':
-        return <div className="min-w-0 text-base text-[var(--fgColor-default)]">{a.summary}</div>;
+        return <div className="min-w-0 truncate text-sm text-[var(--fgColor-default)]" title={a.summary}>{a.summary}</div>;
       case 'actor':
         return <div className="min-w-0 truncate text-sm text-[var(--fgColor-muted)]">{a.accountName ?? 'Hệ thống'}</div>;
       default:

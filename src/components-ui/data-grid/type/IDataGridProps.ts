@@ -23,7 +23,9 @@ export interface IDataGridProps<T = DataGridRowRecord> {
   actionComponent?: React.ReactNode;
   searchEnable?: boolean;
   subToolbarElement?: ReactNode | ((filterData: T[]) => ReactNode);
-  height?: number;
+  height?: number | string;
+  maxHeight?: number | string;
+  footerElement?: ReactNode;
   isShowRowIdx?: boolean;
   selection?: IDataGridSelectionProps;
   exportConfig?: IExportConfig;

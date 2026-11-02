@@ -41,7 +41,7 @@ export function Avatar({
 }: {
   name: string;
   seed: number;
-  size?: 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg';
   quiet?: boolean;
 }) {
   void _seed;
@@ -53,7 +53,7 @@ export function Avatar({
       .map((w) => w[0])
       .join('')
       .toUpperCase();
-    const dims = size === 'lg' ? 'size-12 text-base' : 'size-8 text-xs';
+    const dims = size === 'lg' ? 'size-12 text-base' : size === 'sm' ? 'size-6 text-[11px]' : 'size-8 text-xs';
     return (
       <span
         className={clsx(
@@ -66,13 +66,17 @@ export function Avatar({
       </span>
     );
   }
-  return <UserAvatar fullName={name} size={size === 'lg' ? 'xlarge' : 'large'} />;
+  return <UserAvatar fullName={name} size={size === 'lg' ? 'xlarge' : size === 'sm' ? 'medium' : 'large'} />;
 }
 
 export function ProgressBar({ value, max, className = '' }: { value: number; max: number; className?: string }) {
   const percent = max <= 0 ? 0 : Math.min(100, Math.round((value / max) * 100));
   const bg = percent >= 100 ? 'success.emphasis' : 'accent.emphasis';
-  return <ProgressBarView progress={percent} bg={bg} barSize="default" className={clsx('w-full', className)} aria-valuenow={percent} />;
+  return (
+    <div className={clsx(className || 'w-full')}>
+      <ProgressBarView progress={percent} bg={bg} barSize="default" className="w-full" aria-valuenow={percent} />
+    </div>
+  );
 }
 
 export function Alert({

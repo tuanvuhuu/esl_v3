@@ -41,16 +41,16 @@ const LOW_SESSIONS = 2;
 const needsPay = (r: InvoiceRow) => r.debt > 0 || (r.sessionsLeft <= LOW_SESSIONS && (r.status === 'active' || r.status === 'trial'));
 
 const COLUMNS: GridColumn<InvoiceRow>[] = [
-  { key: 'fullName', label: 'Học sinh', width: 'minmax(168px,1.65fr)' },
-  { key: 'paid', label: 'Đã nộp', width: 'minmax(98px,0.88fr)' },
-  { key: 'discount', label: 'Giảm trừ', width: 'minmax(82px,0.7fr)' },
-  { key: 'bought', label: 'Buổi đã mua', width: 'minmax(86px,0.72fr)', sortValue: (r) => r.sessionsBought },
-  { key: 'done', label: 'Đã học', width: 'minmax(70px,0.6fr)', sortValue: (r) => r.sessionsDone },
-  { key: 'left', label: 'Còn lại', width: 'minmax(92px,0.8fr)', sortValue: (r) => r.sessionsLeft },
-  { key: 'balance', label: 'Tiền trước/nợ', width: 'minmax(132px,1.18fr)', sortValue: (r) => r.balance },
-  { key: 'status', label: 'Trạng thái', width: 'minmax(102px,0.9fr)', sortValue: (r) => r.state },
+  { key: 'fullName', label: 'Học sinh', width: 'minmax(190px,1.9fr)' },
+  { key: 'paid', label: 'Đã nộp', width: '104px' },
+  { key: 'discount', label: 'Giảm trừ', width: '92px' },
+  { key: 'bought', label: 'Buổi đã mua', width: '108px', sortValue: (r) => r.sessionsBought },
+  { key: 'done', label: 'Đã học', width: '82px', sortValue: (r) => r.sessionsDone },
+  { key: 'left', label: 'Còn lại', width: '92px', sortValue: (r) => r.sessionsLeft },
+  { key: 'balance', label: 'Tiền trước/nợ', width: '138px', sortValue: (r) => r.balance },
+  { key: 'status', label: 'Trạng thái', width: '158px', sortValue: (r) => r.state },
   // Đủ chỗ cho hai nút có chữ "Ghi thu", "Hoàn số dư" trên một dòng không tràn cột
-  { key: 'actions', label: 'Thao tác', width: '176px', align: 'end', srOnly: true },
+  { key: 'actions', label: 'Thao tác', width: '164px', align: 'end', srOnly: true },
 ];
 
 // Cột chọn dòng để ghi thu nhiều học sinh cùng lúc (chỉ hiện với người có quyền thu)
@@ -136,12 +136,12 @@ export function TuitionView({
         );
       case 'fullName':
         return (
-          <div className="min-w-0">
-            <Link href={`/hoc-sinh/${r.id}`} className="text-sm font-medium text-[var(--fgColor-link)] underline underline-offset-2">
+          <div className="flex min-w-0 items-baseline justify-between gap-2" title={`${r.fullName} · ${r.code} · ${r.className}`}>
+            <Link href={`/hoc-sinh/${r.id}`} data-link="true" className="min-w-0 truncate text-sm font-normal text-[var(--fgColor-link)] hover:underline">
               {r.fullName}
             </Link>
-            <small className="block truncate text-xs text-[var(--fgColor-muted)]">
-              {r.code} · {r.className}
+            <small className="shrink-0 text-xs text-[var(--fgColor-muted)]">
+              {r.className}
             </small>
           </div>
         );
@@ -159,7 +159,7 @@ export function TuitionView({
         return <BalanceText balance={r.balance} />;
       case 'status':
         return (
-          <div className="flex flex-wrap gap-1">
+          <div className="flex items-center gap-1 whitespace-nowrap">
             <Pill tone={STATE_META[r.state].tone}>{STATE_META[r.state].label}</Pill>
             {r.overdue && <Pill tone="blush">Quá hạn</Pill>}
           </div>
@@ -314,7 +314,7 @@ export function TuitionView({
       />
 
       {canManage && pickedRows.length > 0 && !bulkOpen && !paying && !refunding && (
-        <div className="pointer-events-none sticky bottom-0 z-40 h-20 w-full [&>*]:pointer-events-auto">
+        <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 h-20 min-[1200px]:left-[232px] [&>*]:pointer-events-auto">
           <BulkActionBar
             count={pickedRows.length}
             itemLabel="học sinh"
@@ -385,11 +385,11 @@ function TotalsStrip({ totals }: { totals: InvoiceTotals }) {
     },
   ];
   return (
-    <dl className="mb-2.5 grid grid-cols-2 gap-2 min-[768px]:grid-cols-4" aria-label="Tổng học phí">
+    <dl className="mb-2 grid grid-cols-2 gap-2 min-[768px]:grid-cols-4" aria-label="Tổng học phí">
       {items.map((it) => (
         <div
           key={it.label}
-          className="flex items-baseline justify-between gap-2 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-3 py-2"
+          className="flex items-baseline justify-between gap-2 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-3 py-1.5"
         >
           <dt className="text-xs text-[var(--fgColor-muted)]">{it.label}</dt>
           <dd className={`m-0 text-sm font-medium tabular-nums ${it.tone}`}>{it.value}</dd>
@@ -412,9 +412,9 @@ function SessionsLeft({ row }: { row: InvoiceRow }) {
 
 // Tiền trước (dương) hay nợ (âm) của một học sinh, có chữ để không chỉ dựa vào màu
 function BalanceText({ balance }: { balance: number }) {
-  if (balance < 0) return <span className="text-sm font-semibold tabular-nums text-[var(--fgColor-danger)]">Nợ {formatVND(-balance)}</span>;
-  if (balance > 0) return <span className="text-sm font-semibold tabular-nums text-[var(--fgColor-success)]">Trước {formatVND(balance)}</span>;
-  return <span className="text-sm tabular-nums text-[var(--fgColor-muted)]">{formatVND(0)}</span>;
+  if (balance < 0) return <span className="whitespace-nowrap text-sm font-semibold tabular-nums text-[var(--fgColor-danger)]">Nợ {formatVND(-balance)}</span>;
+  if (balance > 0) return <span className="whitespace-nowrap text-sm font-semibold tabular-nums text-[var(--fgColor-success)]">Trước {formatVND(balance)}</span>;
+  return <span className="whitespace-nowrap text-sm tabular-nums text-[var(--fgColor-muted)]">{formatVND(0)}</span>;
 }
 
 // Ô tiền: hiện "2.500.000", gửi số nguyên qua ô ẩn cùng tên

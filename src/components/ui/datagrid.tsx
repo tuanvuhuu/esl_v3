@@ -7,7 +7,17 @@ import { FilterIcon } from '@primer/octicons-react';
 import { IconButton } from '@primer/react';
 import clsx from 'clsx';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { isValidElement, useCallback, useMemo, useState, type ReactElement, type ReactNode } from 'react';
+import {
+  isValidElement,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactElement,
+  type ReactNode,
+} from 'react';
 import UiDataGrid from '@/components-ui/data-grid';
 import type {
   DataGridRowRecord,
@@ -117,6 +127,8 @@ function slugKey(str: string): string {
     .toLowerCase();
 }
 
+const useIsoLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
+
 export function DataGrid<T>({
   label,
   columns,
@@ -126,7 +138,7 @@ export function DataGrid<T>({
   card,
   cardsFrom = 'all',
   from = 'xl',
-  fill = false,
+  fill = true,
   stickyEnd = false,
   footer,
   empty,
@@ -200,7 +212,7 @@ export function DataGrid<T>({
         __raw: row,
       };
       for (const col of columns) {
-        if (col.key === 'actions' || col.key === 'select' || col.srOnly) continue;
+        if (col.key === 'select' || col.srOnly) continue;
         if (col.sortValue) {
           const sv = col.sortValue(row);
           if (typeof sv === 'string' || typeof sv === 'number') {
@@ -218,7 +230,7 @@ export function DataGrid<T>({
   const gridColumns: IDataGridColumn<DataGridRowRecord>[] = useMemo(() => {
     return columns.map((col, idx) => {
       const isLast = idx === columns.length - 1;
-      const isActionCol = col.key === 'actions' || col.key === 'action' || col.srOnly;
+      const isActionCol = Boolean(col.srOnly);
       const isSelectCol = col.key === 'select';
       const dims = parseColumnWidth(col.width);
       const canSortCol = sortable && col.sortable !== false && !isActionCol && !isSelectCol;
@@ -246,12 +258,78 @@ export function DataGrid<T>({
     });
   }, [columns, sortable, stickyEnd, cell]);
 
-  void fill;
+  const gridWrapRef = useRef<HTMLDivElement>(null);
+  const [autoMaxHeight, setAutoMaxHeight] = useState<number | string>('calc(100dvh - 96px)');
+
+  useIsoLayoutEffect(() => {
+    if (!fill) return;
+    const measure = () => {
+      const el = gridWrapRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      if (rect.width === 0 && rect.height === 0) return;
+      const docTop = rect.top + window.scrollY;
+      let bottomSpace = 0;
+      let node: HTMLElement | null = el.parentElement;
+      while (node && node !== document.body) {
+        const cs = window.getComputedStyle(node);
+        bottomSpace +=
+          (parseFloat(cs.paddingBottom) || 0) +
+          (parseFloat(cs.borderBottomWidth) || 0) +
+          (parseFloat(cs.marginBottom) || 0);
+        if (node.tagName === 'MAIN') break;
+        node = node.parentElement;
+      }
+      const available = Math.max(260, Math.floor(window.innerHeight - docTop - Math.max(8, bottomSpace) - 2));
+      setAutoMaxHeight((prev) => (prev === available ? prev : available));
+    };
+
+    measure();
+    const rafId = window.requestAnimationFrame(measure);
+    window.addEventListener('resize', measure);
+    const mainEl = gridWrapRef.current?.closest('main');
+    let ro: ResizeObserver | undefined;
+    let mo: MutationObserver | undefined;
+    const observeSiblings = () => {
+      if (!ro || !mainEl) return;
+      ro.disconnect();
+      for (const child of Array.from(mainEl.children)) {
+        if (!child.contains(gridWrapRef.current)) {
+          ro.observe(child);
+        }
+      }
+    };
+    if (typeof ResizeObserver !== 'undefined' && mainEl) {
+      ro = new ResizeObserver(() => measure());
+      observeSiblings();
+    }
+    if (typeof MutationObserver !== 'undefined' && mainEl) {
+      mo = new MutationObserver(() => {
+        observeSiblings();
+        measure();
+      });
+      mo.observe(mainEl, { childList: true });
+    }
+    return () => {
+      window.cancelAnimationFrame(rafId);
+      window.removeEventListener('resize', measure);
+      ro?.disconnect();
+      mo?.disconnect();
+    };
+  }, [fill, pathname]);
+
   const frame = TABLE_SHOW[from];
   const hasSelectCol = columns.some((c) => c.key === 'select' || c.key === 'stt' || c.key === 'idx');
   const showToolbar = toolbar ?? columns.length >= 4;
   const cacheKey = `esl-dg-cols-${slugKey(pathname || 'app')}-${slugKey(label)}`;
   const hasCustomHeader = Boolean(title || subTitle || actionComponent || subToolbarElement);
+  const resolvedPaging: IDataGridPaging | undefined = useMemo(() => {
+    if (paging !== undefined) return paging;
+    if (fill && !footer && dataSource.length > 15) {
+      return { enable: true, pageSize: 15, pageSizeItems: [15, 30, 50, 100] };
+    }
+    return undefined;
+  }, [paging, fill, footer, dataSource.length]);
 
   const mergedActionComponent =
     actionComponent || (showToolbar && rows.length > 0) ? (
@@ -302,11 +380,13 @@ export function DataGrid<T>({
 
   return (
     <>
-      <div className={clsx('min-w-0', frame)} aria-label={label}>
+      <div ref={gridWrapRef} className={clsx('min-w-0', frame)} aria-label={label}>
         <UiDataGrid
           keyExpr="id"
           dataSource={dataSource}
           columns={gridColumns}
+          maxHeight={fill ? autoMaxHeight : undefined}
+          footerElement={footer}
           title={title}
           subTitle={subTitle}
           actionComponent={mergedActionComponent}
@@ -321,7 +401,7 @@ export function DataGrid<T>({
             mode: activeSort?.direction,
             onValueChanged: (field, mode) => handleSort(field, mode),
           }}
-          paging={paging}
+          paging={resolvedPaging}
           selection={selection}
           exportConfig={
             showToolbar && rows.length > 0
@@ -364,7 +444,7 @@ export function DataGrid<T>({
         </div>
       )}
 
-      {footer && <div className="mt-2">{footer}</div>}
+      {footer && <div className={clsx('mt-2', CARDS_HIDE_ABOVE[from])}>{footer}</div>}
     </>
   );
 }

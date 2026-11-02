@@ -33,7 +33,7 @@ function ShellBreadcrumbs() {
   const crumbs = useCrumbs();
   if (!crumbs || crumbs.length === 0) return null;
   return (
-    <div className="mb-1.5 max-[767px]:hidden">
+    <div className="mb-1 max-[767px]:hidden">
       <Breadcrumbs>
         {crumbs.map((c, i) => (
           <Breadcrumbs.Item key={`${i}-${c}`} as="span" selected={i === crumbs.length - 1}>
@@ -106,7 +106,7 @@ export function ShellFrame({
 
         <main
           key={pathname}
-          className="w-full min-w-0 px-4 py-2.5 max-[767px]:px-3.5 max-[767px]:pb-[calc(112px+var(--safe-b))]"
+          className="w-full min-w-0 px-4 py-2 max-[767px]:px-3.5 max-[767px]:pb-[calc(112px+var(--safe-b))]"
         >
           <ShellBreadcrumbs />
           {children}

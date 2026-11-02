@@ -129,6 +129,7 @@ async function ReportData({ searchParams }: { searchParams: Promise<SearchParams
               rows={report.byClass}
               rowKey={(c) => c.classId}
               from="md"
+              fill={false}
               cell={(c, key) => {
                 switch (key) {
                   case 'name':

@@ -184,6 +184,7 @@ export function GradingView({
         cell={cell}
         from="md"
         searchEnable
+        paging={{ enable: false }}
         title={
           <div className="flex flex-wrap gap-3 text-xs text-[var(--fgColor-muted)]">
             <span>Chưa nộp <b className="font-semibold text-[var(--fgColor-default)]">{counts.not_submitted}</b></span>

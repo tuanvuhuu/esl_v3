@@ -41,10 +41,15 @@ export const DataGridContainerContext = createContext(
 
 const DataGrid = <T = DataGridRowRecord,>(props: IDataGridProps<T>) => {
   const normalizedProps = props as unknown as IDataGridProps<DataGridRowRecord>;
-  const { height, dataSource, columnChooserConfig } = normalizedProps;
+  const { height, maxHeight, footerElement, dataSource, columnChooserConfig } = normalizedProps;
   const logicOperator: ILogicOperator = "and";
 
   const [_paging, _setPaging] = useState(normalizedProps.paging);
+  const [prevPagingEnable, setPrevPagingEnable] = useState(normalizedProps.paging?.enable);
+  if (normalizedProps.paging?.enable !== prevPagingEnable) {
+    setPrevPagingEnable(normalizedProps.paging?.enable);
+    _setPaging(normalizedProps.paging);
+  }
   const [_searchKeyDelayed, _setSearchKeyDelayed] = useState("");
   const [_sorting, _setSorting] = useState(normalizedProps.sorting);
   const [_conditions, _setConditions] = useState<ICondition[]>([]);
@@ -119,15 +124,19 @@ const DataGrid = <T = DataGridRowRecord,>(props: IDataGridProps<T>) => {
     return c;
   }, [filterdData.length, _pageSize]);
 
+  const safePageIndex = useMemo(() => {
+    return Math.min(_pageIndex, Math.max(0, _pageCount - 1));
+  }, [_pageIndex, _pageCount]);
+
   const _pagedData = useMemo(() => {
     if (_paging?.enable === true) {
       return filterdData.slice(
-        _pageSize * _pageIndex,
-        _pageSize * _pageIndex + _pageSize,
+        _pageSize * safePageIndex,
+        _pageSize * safePageIndex + _pageSize,
       );
     }
     return filterdData;
-  }, [filterdData, _pageIndex, _pageSize, _paging?.enable]);
+  }, [filterdData, safePageIndex, _pageSize, _paging?.enable]);
 
   const keyField = normalizedProps.keyExpr ?? "id";
 
@@ -286,13 +295,17 @@ const DataGrid = <T = DataGridRowRecord,>(props: IDataGridProps<T>) => {
     grouping: normalizedProps.grouping,
   };
 
+  const isConstrained = height !== undefined || maxHeight !== undefined;
+  const showBuiltInPaging = _paging?.enable === true && _pageCount > 0;
+  const hasFooterArea = showBuiltInPaging || Boolean(footerElement);
+
   return (
     <DataGridContainerContext.Provider value={contextValue}>
       <div
-        style={{ height: height }}
+        style={{ height: height, maxHeight: maxHeight }}
         className={clsx(
           styles.container,
-          height !== undefined && styles.fixedHeight,
+          isConstrained && styles.fixedHeight,
           normalizedProps.isLoading &&
             normalizedProps.showLoadingMode === "popup" &&
             styles.grayscale,
@@ -316,6 +329,7 @@ const DataGrid = <T = DataGridRowRecord,>(props: IDataGridProps<T>) => {
             dataColumn={dataColumn}
             stickyOffsets={stickyOffsets}
             height={height !== undefined ? "100%" : undefined}
+            maxHeight={maxHeight !== undefined && height === undefined ? "100%" : undefined}
             sorting={_sorting}
             onSortingChanged={(value) => {
               if (_sorting?.enable !== false) {
@@ -330,25 +344,28 @@ const DataGrid = <T = DataGridRowRecord,>(props: IDataGridProps<T>) => {
             filterdData={filterdData}
           />
         </div>
-        <div className={clsx(styles.pagingArea, "pt-1")}>
-          {normalizedProps.paging?.enable === true && _pageCount > 0 && (
-            <Paging
-              pageSizeItems={normalizedProps.paging.pageSizeItems}
-              pageCount={_pageCount}
-              pageIndex={_pageIndex}
-              pageSize={_pageSize}
-              totalCount={filterdData.length}
-              onPagingChanged={(pageIndex, pageSize) => {
-                _setPaging({
-                  enable: _paging?.enable ?? true,
-                  pageSizeItems: _paging?.pageSizeItems,
-                  pageIndex,
-                  pageSize,
-                });
-              }}
-            />
-          )}
-        </div>
+        {hasFooterArea && (
+          <div className={clsx(styles.pagingArea, "pt-1.5")}>
+            {showBuiltInPaging && (
+              <Paging
+                pageSizeItems={_paging?.pageSizeItems}
+                pageCount={_pageCount}
+                pageIndex={safePageIndex}
+                pageSize={_pageSize}
+                totalCount={filterdData.length}
+                onPagingChanged={(pageIndex, pageSize) => {
+                  _setPaging({
+                    enable: _paging?.enable ?? true,
+                    pageSizeItems: _paging?.pageSizeItems,
+                    pageIndex,
+                    pageSize,
+                  });
+                }}
+              />
+            )}
+            {footerElement}
+          </div>
+        )}
         {normalizedProps.isLoading &&
           normalizedProps.showLoadingMode === "popup" && (
             <div id="loading-overlay" className={styles.loadingOverlay}>

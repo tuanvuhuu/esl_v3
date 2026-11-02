@@ -20,6 +20,7 @@ interface ITableProps {
   dataColumn: IDataGridColumn[];
   stickyOffsets: IStickyOffsets;
   height?: number | string;
+  maxHeight?: number | string;
   sorting?: IDataGridSort;
   onSortingChanged?: (sorting: IDataGridSort) => void;
   isLoading?: boolean;
@@ -35,7 +36,7 @@ interface ITableProps {
 
 const Table = (props: ITableProps) => {
   const _wrapperRefTable = useRef<HTMLDivElement>(null);
-  const { dataColumn, height, stickyOffsets, sorting, onSortingChanged, filterdData } =
+  const { dataColumn, height, maxHeight, stickyOffsets, sorting, onSortingChanged, filterdData } =
     props;
 
   const visibleCols = dataColumn.filter((x) => x.isVisible === true);
@@ -52,7 +53,7 @@ const Table = (props: ITableProps) => {
     <div
       ref={_wrapperRefTable}
       className={styles.tableWrapper}
-      style={{ height: height }}
+      style={{ height: height, maxHeight: maxHeight }}
     >
       <table
         className={styles.table}

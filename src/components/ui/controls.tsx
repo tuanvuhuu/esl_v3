@@ -283,7 +283,7 @@ export function Pagination(props: PaginationProps) {
 
   if (!('hrefFor' in props)) {
     return (
-      <nav aria-label={label ?? 'Phân trang'} className="border-t border-[var(--borderColor-muted)] pt-2">
+      <nav aria-label={label ?? 'Phân trang'} className="py-0.5 [&_[class*='prc-Pagination-']]:!m-0 [&_a]:!h-7 [&_a]:!min-w-7 [&_a]:!leading-none">
         <UiPaging
           data={{
             page_index: Math.max(0, page - 1),
@@ -298,7 +298,10 @@ export function Pagination(props: PaginationProps) {
   }
 
   return (
-    <nav aria-label={label ?? 'Phân trang'} className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--borderColor-muted)] pt-3 text-xs text-[var(--fgColor-muted)]">
+    <nav
+      aria-label={label ?? 'Phân trang'}
+      className="flex flex-wrap items-center justify-between gap-2 py-0.5 text-xs text-[var(--fgColor-muted)] [&_[class*='prc-Pagination-']]:!m-0 [&_a]:!h-7 [&_a]:!min-w-7 [&_a]:!leading-none"
+    >
       <span>{infoText}</span>
       <PrimerPagination
         pageCount={pageCount}

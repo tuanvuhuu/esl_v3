@@ -21,7 +21,7 @@ import { StudentFilters, StudentStatusTabs, StudentToolbarActions, type FilterSt
 import { StudentForm, type CampusChoice, type ClassOption, type ParentChoice } from './StudentForm';
 import { Toast } from '@/components/ui/Toast';
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 15;
 
 const STATUS_META: Record<StudentRow['status'], { label: string; tone: Tone }> = {
   active: { label: 'Đang học', tone: 'mint' },
@@ -38,14 +38,14 @@ const TUITION_META: Record<StudentRow['tuition'], { label: string; tone: Tone }>
 
 // Cột của bảng máy tính, mỗi thông tin một cột riêng (không avatar). Độ rộng là lưới CSS, dùng chung cho tiêu đề và mọi dòng.
 const COLUMNS: GridColumn[] = [
-  { key: 'name', label: 'Họ tên', width: 'minmax(132px,1.35fr)', sortable: true },
-  { key: 'code', label: 'Mã HS', width: 'minmax(74px,0.62fr)', sortable: true },
-  { key: 'gender', label: 'Giới tính', width: 'minmax(62px,0.52fr)', sortable: true },
-  { key: 'class', label: 'Lớp & giáo viên', width: 'minmax(116px,1.1fr)', sortable: true },
-  { key: 'progress', label: 'Tiến độ', width: 'minmax(108px,1.1fr)', sortable: true },
-  { key: 'attendance', label: 'Chuyên cần', width: 'minmax(82px,0.65fr)', sortable: true },
-  { key: 'tuition', label: 'Học phí', width: 'minmax(160px,1.7fr)', sortable: true },
-  { key: 'status', label: 'Trạng thái', width: 'minmax(94px,0.82fr)', sortable: true },
+  { key: 'name', label: 'Họ tên', width: 'minmax(140px,1.25fr)', sortable: true },
+  { key: 'code', label: 'Mã HS', width: '92px', sortable: true },
+  { key: 'gender', label: 'Giới tính', width: '94px', sortable: true },
+  { key: 'class', label: 'Lớp & giáo viên', width: 'minmax(148px,1.35fr)', sortable: true },
+  { key: 'progress', label: 'Tiến độ', width: 'minmax(136px,1.15fr)', sortable: true },
+  { key: 'attendance', label: 'Chuyên cần', width: '110px', sortable: true },
+  { key: 'tuition', label: 'Học phí', width: 'minmax(176px,1.55fr)', sortable: true },
+  { key: 'status', label: 'Trạng thái', width: '104px', sortable: true },
   { key: 'actions', label: 'Thao tác', width: '40px', align: 'end', srOnly: true },
 ];
 
@@ -152,17 +152,19 @@ export function StudentList({
         return <span className="block truncate text-sm text-[var(--fgColor-muted)]">{row.gender === 'female' ? 'Nữ' : 'Nam'}</span>;
       case 'class':
         return (
-          <>
-            <span className="block truncate text-sm text-[var(--fgColor-default)]">{row.className}</span>
-            <small className="block truncate text-xs text-[var(--fgColor-muted)]">{row.teacherName}</small>
-          </>
+          <div className="truncate text-xs" title={row.teacherName ? `${row.className} · ${row.teacherName}` : row.className}>
+            <span className="text-sm text-[var(--fgColor-default)]">{row.className}</span>
+            {row.teacherName && <span className="text-[var(--fgColor-muted)]"> · {row.teacherName}</span>}
+          </div>
         );
       case 'progress':
         return (
-          <>
-            <ProgressBar value={row.sessionsDone} max={row.sessionsTotal} className="max-w-[130px]" />
-            <small className="mt-1 block truncate text-xs text-[var(--fgColor-muted)]">Đã học {row.sessionsDone}/{row.sessionsTotal} buổi</small>
-          </>
+          <div className="flex min-w-0 items-center gap-2">
+            <ProgressBar value={row.sessionsDone} max={row.sessionsTotal} className="w-16 shrink-0" />
+            <span className="truncate text-xs tabular-nums text-[var(--fgColor-muted)]">
+              {row.sessionsDone}/{row.sessionsTotal} buổi
+            </span>
+          </div>
         );
       case 'attendance':
         return (
@@ -170,17 +172,24 @@ export function StudentList({
             {row.attendanceRate}%
           </span>
         );
-      case 'tuition':
+      case 'tuition': {
+        const summary = [
+          row.sessionsLeft >= 0 ? `Còn ${row.sessionsLeft}/${row.sessionsBought} buổi đã đóng` : `Nợ ${-row.sessionsLeft} buổi`,
+          row.debt > 0 ? `Thiếu ${formatVND(row.debt)}` : '',
+          row.discount > 0 ? `Giảm trừ ${formatVND(row.discount)}` : '',
+        ]
+          .filter(Boolean)
+          .join(' · ');
         return (
-          <>
+          <div className="flex min-w-0 items-center gap-1.5" title={summary}>
             <Pill tone={TUITION_META[row.tuition].tone}>{TUITION_META[row.tuition].label}</Pill>
-            <small className="mt-1 block truncate text-xs text-[var(--fgColor-default)]">
-              {row.sessionsLeft >= 0 ? `Còn ${row.sessionsLeft}/${row.sessionsBought} buổi đã đóng` : `Nợ ${-row.sessionsLeft} buổi`}
-            </small>
-            {row.debt > 0 && <small className="block truncate text-xs text-[var(--fgColor-muted)]">Thiếu {formatVND(row.debt)}</small>}
-            {row.discount > 0 && <small className="block truncate text-xs text-[var(--fgColor-muted)]">Giảm trừ {formatVND(row.discount)}</small>}
-          </>
+            <span className="truncate text-xs tabular-nums text-[var(--fgColor-muted)]">
+              {row.sessionsLeft >= 0 ? `${row.sessionsLeft}/${row.sessionsBought} buổi` : `Nợ ${-row.sessionsLeft} buổi`}
+              {row.debt > 0 ? ` · -${formatVNDShort(row.debt)}` : ''}
+            </span>
+          </div>
         );
+      }
       case 'status':
         return <Pill tone={STATUS_META[row.status].tone}>{STATUS_META[row.status].label}</Pill>;
       case 'actions':
@@ -229,7 +238,7 @@ export function StudentList({
             <StudentCard row={row} viewHref={profileHref(row.id)} canEdit={canEdit} canDelete={canDelete} onEdit={() => openEdit(row)} onDelete={() => setToDelete(row)} />
           )}
           footer={
-            <Pagination page={page} pageCount={pageCount} totalCount={total} hrefFor={(p) => studentsHref({ ...filters, p })} label="Phân trang" />
+            <Pagination page={page} pageCount={pageCount} pageSize={PAGE_SIZE} totalCount={total} hrefFor={(p) => studentsHref({ ...filters, p })} label="Phân trang" />
           }
         />
       </div>

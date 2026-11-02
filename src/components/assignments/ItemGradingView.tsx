@@ -125,6 +125,7 @@ export function ItemGradingView({
           cell={cell}
           from="md"
           searchEnable
+          paging={{ enable: false }}
           title={
             <span className="text-xs text-[var(--fgColor-muted)]">
               {items.length} câu hỏi · Chưa nộp <b className="font-semibold text-[var(--fgColor-default)]">{counts.not_submitted}</b> · Đã nộp <b className="font-semibold text-[var(--fgColor-default)]">{counts.submitted}</b> · Đã chấm{' '}

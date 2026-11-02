@@ -151,28 +151,28 @@ export function LeavesView({
     switch (key) {
       case 'student':
         return (
-          <div className="min-w-0">
-            <Link href={`/hoc-sinh/${r.studentId}`} data-link="true" className="text-base font-normal text-[var(--fgColor-accent)] underline underline-offset-2">{r.studentName}</Link>
-            <small className="block text-xs text-[var(--fgColor-muted)]">{r.className}</small>
+          <div className="flex min-w-0 items-baseline gap-1.5" title={`${r.studentName} · ${r.className}`}>
+            <Link href={`/hoc-sinh/${r.studentId}`} data-link="true" className="truncate text-sm font-normal text-[var(--fgColor-accent)] hover:underline">{r.studentName}</Link>
+            <small className="truncate text-xs text-[var(--fgColor-muted)]">{r.className}</small>
           </div>
         );
       case 'session':
-        return <span className="text-base tabular-nums text-[var(--fgColor-default)]">{sessionLabel(r.startsAt, r.endsAt)}</span>;
+        return <span className="text-sm tabular-nums text-[var(--fgColor-default)]">{sessionLabel(r.startsAt, r.endsAt)}</span>;
       case 'reason':
-        return <span className="text-base text-[var(--fgColor-muted)]">{r.reason}</span>;
+        return <span className="block truncate text-sm text-[var(--fgColor-muted)]" title={r.reason ?? ''}>{r.reason}</span>;
       case 'parent':
         return r.parentName ? (
-          <div className="min-w-0">
-            <span className="block text-base text-[var(--fgColor-default)]">{r.parentName}</span>
+          <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
+            <span className="truncate text-sm text-[var(--fgColor-default)]">{r.parentName}</span>
             {r.parentPhone && (
-              <span className="flex flex-wrap items-center gap-2">
-                <a href={`tel:${r.parentPhone}`} data-link="true" className="text-sm font-normal text-[var(--fgColor-accent)] underline underline-offset-2">{r.parentPhone}</a>
+              <span className="inline-flex items-center gap-1.5">
+                <a href={`tel:${r.parentPhone}`} data-link="true" className="text-xs font-normal text-[var(--fgColor-accent)] hover:underline">{r.parentPhone}</a>
                 <ZaloLink phone={r.parentPhone} name={r.parentName} variant="link" />
               </span>
             )}
           </div>
         ) : (
-          <span className="text-sm text-[var(--fgColor-muted)]">Giáo vụ ghi</span>
+          <span className="text-xs text-[var(--fgColor-muted)]">Giáo vụ ghi</span>
         );
       case 'status':
         return statusCell(r);
