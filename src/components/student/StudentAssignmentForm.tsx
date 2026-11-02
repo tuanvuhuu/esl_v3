@@ -84,14 +84,14 @@ export function StudentAssignmentForm({ view }: { view: StudentAssignmentView })
     return (
       <div className="flex flex-col gap-4 py-2">
         <div className="mx-auto flex w-full max-w-[420px] items-center justify-between text-xs">
-          <Link href="/cua-toi" data-link="true" className="inline-flex items-center gap-1 font-bold text-[var(--fgColor-default)] underline">
+          <Link href="/cua-toi" data-link="true" className="inline-flex items-center gap-1 font-medium text-[var(--fgColor-default)] underline">
             <ArrowLeftIcon size={14} aria-hidden /> Danh sách bài
           </Link>
           <button
             type="button"
             data-link="true"
             onClick={() => setIsInteractive(false)}
-            className="font-bold text-[var(--fgColor-muted)] underline hover:text-[var(--fgColor-default)]"
+            className="font-medium text-[var(--fgColor-muted)] underline hover:text-[var(--fgColor-default)]"
           >
             📋 Chuyển sang dạng danh sách
           </button>
@@ -150,7 +150,7 @@ export function StudentAssignmentForm({ view }: { view: StudentAssignmentView })
                 </span>
               </header>
 
-              {item.prompt && <p className="whitespace-pre-line text-base font-bold text-[var(--fgColor-default)]">{item.prompt}</p>}
+              {item.prompt && <p className="whitespace-pre-line text-base font-medium text-[var(--fgColor-default)]">{item.prompt}</p>}
               {item.promptVi && <p className="text-xs text-[var(--fgColor-muted)]">🇻🇳 {item.promptVi}</p>}
               {item.passage && <Notice className="whitespace-pre-line">{item.passage}</Notice>}
               {item.audioFileId !== null && (
@@ -194,7 +194,7 @@ export function StudentAssignmentForm({ view }: { view: StudentAssignmentView })
                           key={o.id}
                           className={`flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 p-3 text-center transition-all ${
                             isSel
-                              ? 'border-[var(--bgColor-success-emphasis)] bg-mint font-bold text-mint-ink'
+                              ? 'border-[var(--bgColor-success-emphasis)] bg-mint font-medium text-mint-ink'
                               : 'border-[var(--borderColor-default)] bg-[var(--bgColor-default)] text-[var(--fgColor-default)] hover:bg-[var(--bgColor-muted)]'
                           }`}
                         >
@@ -213,7 +213,7 @@ export function StudentAssignmentForm({ view }: { view: StudentAssignmentView })
                             <span className="text-4xl">🖼️</span>
                           )}
                           <span className="mt-1 max-w-full truncate text-xs">{o.label}</span>
-                          {isSel && <span className="mt-1 text-xs font-bold text-[var(--fgColor-success)]">✓ Đã chọn</span>}
+                          {isSel && <span className="mt-1 text-xs font-medium text-[var(--fgColor-success)]">✓ Đã chọn</span>}
                         </label>
                       );
                     })}
@@ -227,7 +227,7 @@ export function StudentAssignmentForm({ view }: { view: StudentAssignmentView })
                   {item.orderWords.map((w, k) => (
                     <span
                       key={k}
-                      className="rounded-[var(--borderRadius-small)] border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]/60 px-2 py-1 text-sm font-bold text-[var(--fgColor-default)]"
+                      className="rounded-[var(--borderRadius-small)] border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]/60 px-2 py-1 text-sm font-medium text-[var(--fgColor-default)]"
                     >
                       {w}
                     </span>
@@ -250,14 +250,14 @@ export function StudentAssignmentForm({ view }: { view: StudentAssignmentView })
               {/* Ghép đôi */}
               {item.itemType === 'match' && (
                 <div className="flex flex-col gap-2">
-                  <span className="text-xs font-bold text-[var(--fgColor-muted)]">Ghép mỗi ô bên trái với một ô bên phải:</span>
+                  <span className="text-xs font-medium text-[var(--fgColor-muted)]">Ghép mỗi ô bên trái với một ô bên phải:</span>
                   {/* Hai cột xáo riêng theo từng học sinh, không hiện sẵn cặp đúng */}
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <ul className="flex flex-col gap-1.5" aria-label={`Cột trái câu ${item.position}`}>
                       {item.matchLeft.map((s, k) => (
                         <li
                           key={k}
-                          className="rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]/60 p-2 font-bold text-[var(--fgColor-default)]"
+                          className="rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]/60 p-2 font-medium text-[var(--fgColor-default)]"
                         >
                           {k + 1}. {s.label}
                         </li>
@@ -267,7 +267,7 @@ export function StudentAssignmentForm({ view }: { view: StudentAssignmentView })
                       {item.matchRight.map((s, k) => (
                         <li
                           key={k}
-                          className="rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]/60 p-2 font-bold text-[var(--fgColor-default)]"
+                          className="rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]/60 p-2 font-medium text-[var(--fgColor-default)]"
                         >
                           {String.fromCharCode(65 + k)}. {s.label}
                         </li>

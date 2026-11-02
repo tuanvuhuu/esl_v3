@@ -190,7 +190,7 @@ async function DashboardData() {
                             {r.className} · hạn {dateKeyLabel(r.dueDate)}
                           </small>
                         </div>
-                        <b className="shrink-0 text-sm font-bold tabular-nums text-[var(--fgColor-danger)]">{formatVND(r.debt)}</b>
+                        <b className="shrink-0 text-sm font-medium tabular-nums text-[var(--fgColor-danger)]">{formatVND(r.debt)}</b>
                       </Link>
                     </li>
                   ))}
@@ -245,7 +245,7 @@ async function DashboardData() {
                         isNext ? '-mx-2 rounded-[var(--borderRadius-medium)] border-t-transparent bg-[var(--bgColor-accent-muted)] px-2' : ''
                       }`}
                     >
-                      <time className={`text-sm font-bold tabular-nums ${classTone(s.classId).text}`}>
+                      <time className={`text-sm font-medium tabular-nums ${classTone(s.classId).text}`}>
                         {s.timeLabel.split('–')[0]}
                       </time>
                       <div className="min-w-0">
@@ -382,7 +382,7 @@ function Lane({
         <b className="block text-sm font-semibold text-[var(--fgColor-default)]">{title}</b>
         <small className="block truncate text-xs text-[var(--fgColor-muted)]">{hint}</small>
       </span>
-      <b className="text-lg font-bold tabular-nums text-[var(--fgColor-default)]">{count}</b>
+      <b className="text-lg font-medium tabular-nums text-[var(--fgColor-default)]">{count}</b>
     </Link>
   );
 }

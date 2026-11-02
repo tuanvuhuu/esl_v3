@@ -96,7 +96,7 @@ function InitialAvatar({ fullName, size }: InitialAvatarProps) {
         style={{
           color: "#fff",
           fontSize: `${fontSize}px`,
-          fontWeight: 700,
+          fontWeight: 600,
           lineHeight: 1,
           letterSpacing: "-0.01em",
         }}

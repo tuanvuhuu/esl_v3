@@ -201,13 +201,13 @@ export function QuickCompose({ open, levelCode, onClose, onAdd }: { open: boolea
                   onClick={() => goTo(n)}
                   disabled={n > 1 && !hasInput}
                   aria-current={current ? 'step' : undefined}
-                  className={`inline-flex h-9 items-center gap-2 rounded-full border pl-1.5 pr-3.5 text-sm font-bold transition-colors max-[767px]:h-11 disabled:opacity-40 ${
+                  className={`inline-flex h-9 items-center gap-2 rounded-full border pl-1.5 pr-3.5 text-sm font-medium transition-colors max-[767px]:h-11 disabled:opacity-40 ${
                     current
                       ? 'border-[var(--fgColor-accent)] bg-[var(--bgColor-accent-muted,var(--color-primary-soft))] text-[var(--fgColor-default)]'
                       : 'border-[var(--borderColor-default)] bg-[var(--bgColor-default)] text-[var(--fgColor-muted)] hover:bg-[var(--bgColor-muted)]'
                   }`}
                 >
-                  <span className={`grid size-6 place-items-center rounded-full text-sm font-bold ${done ? 'bg-accent text-white' : current ? 'bg-[var(--button-primary-bgColor-rest,var(--color-primary))] text-[var(--button-primary-fgColor-rest,var(--color-on-primary))]' : 'bg-[var(--bgColor-muted)] text-[var(--fgColor-muted)]'}`}>
+                  <span className={`grid size-6 place-items-center rounded-full text-sm font-medium ${done ? 'bg-accent text-white' : current ? 'bg-[var(--button-primary-bgColor-rest,var(--color-primary))] text-[var(--button-primary-fgColor-rest,var(--color-on-primary))]' : 'bg-[var(--bgColor-muted)] text-[var(--fgColor-muted)]'}`}>
                     {done ? <CheckIcon size={14} aria-hidden /> : n}
                   </span>
                   {name}
@@ -320,11 +320,11 @@ export function QuickCompose({ open, levelCode, onClose, onAdd }: { open: boolea
                     </span>
                     {can === true && (
                       <span className="mt-auto inline-flex items-center gap-1" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
-                        <button type="button" aria-label={`Bớt một câu ${t.label}`} onClick={() => setCount(t.id, count - 1)} disabled={count === 0} className="grid size-8 place-items-center rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] font-extrabold disabled:opacity-40 max-[767px]:size-9">
+                        <button type="button" aria-label={`Bớt một câu ${t.label}`} onClick={() => setCount(t.id, count - 1)} disabled={count === 0} className="grid size-8 place-items-center rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] font-semibold disabled:opacity-40 max-[767px]:size-9">
                           −
                         </button>
-                        <span className="min-w-7 text-center font-bold tabular-nums" aria-live="polite">{count}</span>
-                        <button type="button" aria-label={`Thêm một câu ${t.label}`} onClick={() => setCount(t.id, count + 1)} disabled={count >= maxCount(t.id, words, sentences, level)} className="grid size-8 place-items-center rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] font-extrabold disabled:opacity-40 max-[767px]:size-9">
+                        <span className="min-w-7 text-center font-medium tabular-nums" aria-live="polite">{count}</span>
+                        <button type="button" aria-label={`Thêm một câu ${t.label}`} onClick={() => setCount(t.id, count + 1)} disabled={count >= maxCount(t.id, words, sentences, level)} className="grid size-8 place-items-center rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] font-semibold disabled:opacity-40 max-[767px]:size-9">
                           +
                         </button>
                       </span>
@@ -336,7 +336,7 @@ export function QuickCompose({ open, levelCode, onClose, onAdd }: { open: boolea
 
             <section aria-label="Độ khó theo trình độ" className="flex flex-col gap-2">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <h3 className="text-lg font-extrabold text-[var(--fgColor-default)]">Độ khó theo trình độ</h3>
+                <h3 className="text-lg font-semibold text-[var(--fgColor-default)]">Độ khó theo trình độ</h3>
                 <SegmentedSwitch
                   label="Trình độ"
                   value={level.code}
@@ -373,7 +373,7 @@ export function QuickCompose({ open, levelCode, onClose, onAdd }: { open: boolea
                   [new Set(items.map((x) => x.quickType)).size, 'dạng'],
                 ].map(([v, k]) => (
                   <div key={k} className="flex flex-col">
-                    <dd className="text-2xl font-extrabold leading-tight text-[var(--fgColor-default)]">{v}</dd>
+                    <dd className="text-2xl font-semibold leading-tight text-[var(--fgColor-default)]">{v}</dd>
                     <dt className="text-sm text-[var(--fgColor-muted)]">{k}</dt>
                   </div>
                 ))}
@@ -406,7 +406,7 @@ export function QuickCompose({ open, levelCode, onClose, onAdd }: { open: boolea
                   ];
                   return (
                     <li key={it.key} aria-label={`Câu ${i + 1}`} className="grid grid-cols-[28px_minmax(0,1fr)] gap-x-3 gap-y-2 border-b border-[var(--borderColor-muted)] py-3 min-[768px]:grid-cols-[28px_minmax(0,1fr)_minmax(0,300px)_auto] min-[768px]:items-center">
-                      <span className="pt-0.5 text-center font-extrabold tabular-nums text-[var(--fgColor-muted)]">{i + 1}</span>
+                      <span className="pt-0.5 text-center font-semibold tabular-nums text-[var(--fgColor-muted)]">{i + 1}</span>
                       <div className="min-w-0">
                         <b className="block text-md text-[var(--fgColor-default)]">{it.input.prompt}</b>
                         <span className="mt-1 flex flex-wrap items-center gap-1.5 text-sm text-[var(--fgColor-muted)]">
@@ -476,7 +476,7 @@ function ParsedWords({ words, levelCode }: { words: QuickWord[]; levelCode: stri
   return (
     <section aria-label="Từ đã nhận" className="flex min-w-0 flex-col gap-2">
       <div className="flex items-baseline justify-between gap-2">
-        <h3 className="text-lg font-extrabold text-[var(--fgColor-default)]">{words.length} từ đã nhận</h3>
+        <h3 className="text-lg font-semibold text-[var(--fgColor-default)]">{words.length} từ đã nhận</h3>
         {missing > 0 && <span className="text-sm text-[var(--fgColor-muted)]">{missing} từ chưa có nghĩa</span>}
       </div>
       {words.length === 0 ? (
@@ -533,7 +533,7 @@ function SentencePreview({ sentences, words, level, known }: { sentences: string
             <p className="text-md leading-relaxed text-[var(--fgColor-default)]">
               {s.split(/\s+/).map((t, k) => {
                 const bare = t.toLowerCase().replace(/[^a-z'-]/g, '');
-                const cls = k === gap ? 'rounded bg-[var(--bgColor-accent-muted,var(--color-primary-soft))] px-0.5 font-bold text-[var(--fgColor-default)]' : known.has(bare) ? 'underline decoration-accent decoration-2 underline-offset-4' : '';
+                const cls = k === gap ? 'rounded bg-[var(--bgColor-accent-muted,var(--color-primary-soft))] px-0.5 font-medium text-[var(--fgColor-default)]' : known.has(bare) ? 'underline decoration-accent decoration-2 underline-offset-4' : '';
                 return (
                   <span key={k}>
                     <span className={cls}>{t}</span>{' '}
@@ -555,7 +555,7 @@ function SentencePreview({ sentences, words, level, known }: { sentences: string
 // Xem trước gọn của một câu: tranh, đáp án, cặp ghép hoặc câu chuẩn; đáp án đúng tô xanh
 function MiniPreview({ item }: { item: GeneratedItem }) {
   const { input, quickType } = item;
-  const box = 'inline-flex min-h-10 items-center justify-center rounded-[var(--borderRadius-medium)] border-2 px-2 text-base font-bold';
+  const box = 'inline-flex min-h-10 items-center justify-center rounded-[var(--borderRadius-medium)] border-2 px-2 text-base font-medium';
   if (quickType === 'picture') {
     return (
       <div className="flex flex-wrap gap-1.5">

@@ -48,11 +48,11 @@ export function ReviewSession({ due, others }: { due: BoxWord[]; others: BoxWord
       <Link
         href="/cua-toi"
         data-link="true"
-        className="inline-flex items-center gap-1 self-start text-sm font-bold text-[var(--fgColor-default)] underline underline-offset-4 hover:text-[var(--fgColor-link)]"
+        className="inline-flex items-center gap-1 self-start text-sm font-medium text-[var(--fgColor-default)] underline underline-offset-4 hover:text-[var(--fgColor-link)]"
       >
         <ArrowLeftIcon size={16} aria-hidden /> Bài của tôi
       </Link>
-      <h1 className="text-2xl font-extrabold text-[var(--fgColor-default)]">Ôn từ hôm nay</h1>
+      <h1 className="text-2xl font-semibold text-[var(--fgColor-default)]">Ôn từ hôm nay</h1>
 
       {done ? (
         <div
@@ -63,7 +63,7 @@ export function ReviewSession({ due, others }: { due: BoxWord[]; others: BoxWord
           <span className="text-5xl" aria-label={`${gameStars(score, questions.length)} sao`}>
             {'⭐'.repeat(gameStars(score, questions.length))}
           </span>
-          <b className="text-2xl font-extrabold text-[var(--fgColor-default)]">
+          <b className="text-2xl font-semibold text-[var(--fgColor-default)]">
             Con nhớ {score}/{questions.length} từ
           </b>
           <p className="text-base text-[var(--fgColor-muted)]">
@@ -82,7 +82,7 @@ export function ReviewSession({ due, others }: { due: BoxWord[]; others: BoxWord
           <div className="flex min-h-36 flex-col items-center justify-center gap-2 rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-4 shadow-[var(--shadow-resting-small,0_1px_2px_rgba(0,0,0,0.04))]">
             <Picture w={q.target} size="lg" />
             {(q.target.imageFileId || q.target.emoji) && q.target.meaningVi && (
-              <span className="text-base font-bold text-[var(--fgColor-muted)]">{q.target.meaningVi}</span>
+              <span className="text-base font-medium text-[var(--fgColor-muted)]">{q.target.meaningVi}</span>
             )}
           </div>
           <ul className="flex flex-col gap-2" aria-label="Chọn từ đúng">
@@ -102,7 +102,7 @@ export function ReviewSession({ due, others }: { due: BoxWord[]; others: BoxWord
                     data-card="true"
                     onClick={() => choose(o.key)}
                     data-word={o.word}
-                    className={`flex min-h-14 w-full items-center justify-center rounded-xl border-2 px-4 text-xl font-extrabold text-[var(--fgColor-default)] transition-all active:scale-95 ${state}`}
+                    className={`flex min-h-14 w-full items-center justify-center rounded-xl border-2 px-4 text-xl font-semibold text-[var(--fgColor-default)] transition-all active:scale-95 ${state}`}
                   >
                     {o.word}
                   </button>
@@ -110,7 +110,7 @@ export function ReviewSession({ due, others }: { due: BoxWord[]; others: BoxWord
               );
             })}
           </ul>
-          <p className="min-h-6 text-center text-sm font-bold text-[var(--fgColor-muted)]" aria-live="polite">
+          <p className="min-h-6 text-center text-sm font-medium text-[var(--fgColor-muted)]" aria-live="polite">
             {nextLabel}
           </p>
         </div>

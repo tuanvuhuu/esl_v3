@@ -352,5 +352,5 @@ export function StudentForm({
 
 // Tiêu đề nhóm trong form học sinh: chia form dài thành ba phần dễ dò
 function FormSection({ children }: { children: string }) {
-  return <h3 className="col-span-full mt-2 border-b border-[var(--borderColor-muted)] pb-1.5 text-sm font-bold text-[var(--fgColor-default)] first:mt-0">{children}</h3>;
+  return <h3 className="col-span-full mt-2 border-b border-[var(--borderColor-muted)] pb-1.5 text-sm font-semibold text-[var(--fgColor-default)] first:mt-0">{children}</h3>;
 }

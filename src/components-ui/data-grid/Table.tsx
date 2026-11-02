@@ -38,6 +38,16 @@ const Table = (props: ITableProps) => {
   const { dataColumn, height, stickyOffsets, sorting, onSortingChanged, filterdData } =
     props;
 
+  const visibleCols = dataColumn.filter((x) => x.isVisible === true);
+  const fixedSum = visibleCols.reduce(
+    (sum, col) => sum + (typeof col.width === "number" ? col.width : 0),
+    0,
+  );
+  const flexSum = visibleCols.reduce(
+    (sum, col) => sum + (typeof col.width === "number" ? 0 : (col.flex ?? 1)),
+    0,
+  );
+
   return (
     <div
       ref={_wrapperRefTable}
@@ -52,11 +62,15 @@ const Table = (props: ITableProps) => {
         }}
       >
         <colgroup>
-          {dataColumn
-            .filter((x) => x.isVisible === true)
-            .map((col, idx) => (
-              <col key={idx} style={col.width !== undefined ? { width: col.width } : undefined} />
-            ))}
+          {visibleCols.map((col, idx) => {
+            const colWidth =
+              typeof col.width === "number"
+                ? `${col.width}px`
+                : flexSum > 0
+                  ? `calc((100% - ${fixedSum}px) * ${((col.flex ?? 1) / flexSum).toFixed(5)})`
+                  : undefined;
+            return <col key={col.uuid ?? idx} style={colWidth ? { width: colWidth } : undefined} />;
+          })}
         </colgroup>
         <Header
           stickyOffsets={stickyOffsets}

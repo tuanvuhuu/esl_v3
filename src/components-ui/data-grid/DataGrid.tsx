@@ -150,7 +150,7 @@ const DataGrid = <T = DataGridRowRecord,>(props: IDataGridProps<T>) => {
     const selectionCfg = normalizedProps.selection;
     return {
       id: "selection",
-      width: 40,
+      width: 36,
       align: "center",
       caption: "#",
       fixed: "left",
@@ -220,7 +220,7 @@ const DataGrid = <T = DataGridRowRecord,>(props: IDataGridProps<T>) => {
     if (normalizedProps.isShowRowIdx === false) return null;
     return {
       id: "col_idx",
-      width: 50,
+      width: 36,
       align: "center",
       caption: "#",
       fixed: "left",

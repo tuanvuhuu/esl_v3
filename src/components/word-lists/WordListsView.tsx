@@ -137,7 +137,7 @@ export function WordListsView({ lists, classes, lessons, canManage }: { lists: W
         searchEnable
         title={
           <div className="flex items-baseline gap-2">
-            <h1 className="m-0 text-base font-bold text-[var(--fgColor-default)]">Danh sách từ</h1>
+            <h1 className="m-0 text-base font-semibold text-[var(--fgColor-default)]">Danh sách từ</h1>
             <span className="text-xs text-[var(--fgColor-muted)]">({lists.length})</span>
           </div>
         }

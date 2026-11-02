@@ -25,7 +25,7 @@ export function PageHeader({
     <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2 border-b border-[var(--borderColor-muted)] pb-2 max-[767px]:mb-2">
       <PageCrumbs crumbs={crumbs} />
       <div className="flex min-w-0 flex-wrap items-baseline gap-x-2.5 gap-y-0.5">
-        <h1 className="m-0 text-base font-bold leading-snug text-[var(--fgColor-default)]">{title}</h1>
+        <h1 className="m-0 text-base font-semibold leading-snug text-[var(--fgColor-default)]">{title}</h1>
         {code && (
           <Label variant="secondary" className="font-mono !font-normal">
             {code}

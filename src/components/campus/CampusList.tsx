@@ -93,7 +93,7 @@ export function CampusList({ campuses, canManage, canAddRemove = true }: { campu
             <Card key={row.id}>
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <b className="block truncate text-lg font-extrabold text-[var(--fgColor-default)]">{row.name}</b>
+                  <b className="block truncate text-lg font-semibold text-[var(--fgColor-default)]">{row.name}</b>
                   <small className="block truncate text-sm text-[var(--fgColor-muted)]">{row.address || 'Chưa có địa chỉ'}</small>
                 </div>
                 <div className="hidden min-[768px]:block">
@@ -102,7 +102,7 @@ export function CampusList({ campuses, canManage, canAddRemove = true }: { campu
               </div>
 
               <div className="rounded-[var(--borderRadius-medium)] bg-[var(--bgColor-muted)] px-3 py-2.5 text-sm">
-                <span className="font-bold text-[var(--fgColor-default)]">{row.classCount} lớp</span>
+                <span className="font-medium text-[var(--fgColor-default)]">{row.classCount} lớp</span>
                 <span className="text-[var(--fgColor-muted)]">{row.classCount > 0 ? ' · đang có lớp học' : ' · chưa có lớp'}</span>
               </div>
 

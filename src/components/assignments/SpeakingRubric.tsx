@@ -66,7 +66,7 @@ export function SpeakingRubric({
                       aria-pressed={value === n}
                       aria-label={`${SPEAKING_CRITERIA[k]} ${n} điểm`}
                       onClick={() => setScore(k, n)}
-                      className={`grid size-[var(--icon-h)] place-items-center rounded-[var(--borderRadius-medium)] border text-sm font-bold tabular-nums max-[767px]:size-[var(--icon-h-touch)] disabled:opacity-40 ${
+                      className={`grid size-[var(--icon-h)] place-items-center rounded-[var(--borderRadius-medium)] border text-sm font-medium tabular-nums max-[767px]:size-[var(--icon-h-touch)] disabled:opacity-40 ${
                         value === n
                           ? 'border-[var(--button-primary-borderColor-rest,transparent)] bg-[var(--button-primary-bgColor-rest,var(--color-primary))] text-[var(--button-primary-fgColor-rest,var(--color-on-primary))]'
                           : 'border-[var(--borderColor-default)] bg-[var(--bgColor-default)] text-[var(--fgColor-muted)] hover:bg-[var(--bgColor-muted)]'

@@ -1,15 +1,6 @@
 import type { Metadata, Viewport } from 'next';
-import { Be_Vietnam_Pro } from 'next/font/google';
 import { PrimerProvider } from '@/components/primer/PrimerProvider';
 import './globals.css';
-
-// Font chính: thiết kế riêng cho tiếng Việt, chữ đậm và rõ hơn ở cỡ nhỏ (đã chọn ngày 2026-10-14).
-const beVietnam = Be_Vietnam_Pro({
-  variable: '--font-be-vietnam',
-  subsets: ['latin', 'vietnamese'],
-  weight: ['400', '500', '600', '700', '800'],
-  display: 'swap',
-});
 
 export const metadata: Metadata = {
   title: 'ESL Center',
@@ -29,11 +20,11 @@ const themeScript = `(function(){try{var r=document.documentElement;var p=localS
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="vi" data-color-mode="auto" data-light-theme="light" data-dark-theme="dark" className={`${beVietnam.variable} h-full`} suppressHydrationWarning>
+    <html lang="vi" data-color-mode="auto" data-light-theme="light" data-dark-theme="dark" className="h-full" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
-      <body className="min-h-full bg-bg font-sans text-ink">
+      <body className="min-h-full bg-bg font-sans font-normal text-ink antialiased">
         <PrimerProvider>{children}</PrimerProvider>
       </body>
     </html>

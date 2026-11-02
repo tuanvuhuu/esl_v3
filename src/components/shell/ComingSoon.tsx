@@ -2,7 +2,7 @@
 export function ComingSoon({ title, task }: { title: string; task: string }) {
   return (
     <section className="flex flex-col gap-2">
-      <h1 className="text-h1 font-extrabold leading-tight tracking-tight text-[var(--fgColor-default)]">{title}</h1>
+      <h1 className="text-h1 font-semibold leading-tight tracking-tight text-[var(--fgColor-default)]">{title}</h1>
       <p className="text-base text-[var(--fgColor-muted)]">Màn hình này sẽ làm ở task {task} trong PLAN.md.</p>
     </section>
   );

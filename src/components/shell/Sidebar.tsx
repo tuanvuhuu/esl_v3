@@ -67,10 +67,10 @@ export function Sidebar({
       id="side"
       aria-label="Menu chính"
       className={clsx(
-        'scroll-quiet flex flex-col gap-2 overflow-y-auto bg-[var(--bgColor-default)] px-2 py-3',
+        'scroll-quiet flex flex-col gap-1.5 overflow-y-auto bg-[var(--bgColor-default)] px-2 py-2.5',
         'max-[767px]:hidden',
-        'min-[1200px]:sticky min-[1200px]:top-[52px] min-[1200px]:h-[calc(100vh-52px)] min-[1200px]:w-[248px] min-[1200px]:border-r min-[1200px]:border-[var(--borderColor-default)]',
-        'max-[1199px]:fixed max-[1199px]:inset-y-0 max-[1199px]:left-0 max-[1199px]:z-[56] max-[1199px]:w-[min(272px,86vw)] max-[1199px]:border-r max-[1199px]:border-[var(--borderColor-default)] max-[1199px]:shadow-[var(--shadow-floating-large,var(--lift))] max-[1199px]:transition-transform max-[1199px]:duration-200',
+        'min-[1200px]:sticky min-[1200px]:top-[52px] min-[1200px]:h-[calc(100vh-52px)] min-[1200px]:w-[232px] min-[1200px]:border-r min-[1200px]:border-[var(--borderColor-default)]',
+        'max-[1199px]:fixed max-[1199px]:inset-y-0 max-[1199px]:left-0 max-[1199px]:z-[56] max-[1199px]:w-[min(264px,86vw)] max-[1199px]:border-r max-[1199px]:border-[var(--borderColor-default)] max-[1199px]:shadow-[var(--shadow-floating-large,var(--lift))] max-[1199px]:transition-transform max-[1199px]:duration-200',
         open ? 'max-[1199px]:translate-x-0' : 'max-[1199px]:-translate-x-[104%]',
       )}
     >
@@ -107,7 +107,7 @@ export function Sidebar({
                 aria-expanded={!isCollapsed}
                 disabled={searching}
                 onClick={() => toggle(group.id)}
-                className="flex h-8 w-full items-center justify-between gap-2 rounded-[var(--borderRadius-medium)] px-2 text-left text-xs font-semibold text-[var(--fgColor-muted)] transition-colors hover:bg-[var(--bgColor-neutral-muted)] hover:text-[var(--fgColor-default)] disabled:cursor-default disabled:hover:bg-transparent"
+                className="flex h-8 w-full items-center justify-between gap-2 rounded-[var(--borderRadius-medium)] px-2 text-left text-xs font-medium text-[var(--fgColor-muted)] transition-colors hover:bg-[var(--bgColor-neutral-muted)] hover:text-[var(--fgColor-default)] disabled:cursor-default disabled:hover:bg-transparent"
               >
                 <span className="flex-1 truncate uppercase tracking-wider">{group.title}</span>
                 {isCollapsed && hasActive && (

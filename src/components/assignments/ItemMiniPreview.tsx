@@ -8,7 +8,7 @@ export function ItemMiniPreview({ draft: d }: { draft: Draft }) {
   return (
     <div className="flex flex-col gap-2 rounded-2xl border-4 border-[var(--fgColor-default)]/80 bg-[var(--bgColor-default)] p-3 text-[var(--fgColor-default)] shadow-md">
       <div className="flex items-center justify-between border-b border-[var(--borderColor-muted)] pb-1.5 text-xs text-[var(--fgColor-muted)]">
-        <span className="font-bold text-[var(--fgColor-default)]">Xem trước học sinh</span>
+        <span className="font-medium text-[var(--fgColor-default)]">Xem trước học sinh</span>
         <Pill tone="stone">Điện thoại</Pill>
       </div>
 
@@ -22,7 +22,7 @@ export function ItemMiniPreview({ draft: d }: { draft: Draft }) {
           <UnmuteIcon size={20} aria-hidden />
         </button>
         <div className="min-w-0">
-          <div className="text-sm font-extrabold leading-tight text-[var(--fgColor-default)]">{d.prompt || 'Chưa có câu hỏi'}</div>
+          <div className="text-sm font-semibold leading-tight text-[var(--fgColor-default)]">{d.prompt || 'Chưa có câu hỏi'}</div>
           {d.promptVi && <div className="text-xs text-[var(--fgColor-muted)]">🇻🇳 {d.promptVi}</div>}
         </div>
       </div>
@@ -35,7 +35,7 @@ export function ItemMiniPreview({ draft: d }: { draft: Draft }) {
               key={opt.key || i}
               className={`relative flex aspect-square flex-col items-center justify-center rounded-xl border-2 p-2 text-center transition-all ${
                 opt.isCorrect
-                  ? 'border-[var(--accent)] bg-mint font-bold text-mint-ink'
+                  ? 'border-[var(--accent)] bg-mint font-medium text-mint-ink'
                   : 'border-[var(--borderColor-default)] bg-[var(--bgColor-default)] text-[var(--fgColor-default)] hover:bg-[var(--bgColor-muted)]'
               }`}
             >
@@ -51,7 +51,7 @@ export function ItemMiniPreview({ draft: d }: { draft: Draft }) {
               )}
               <span className="mt-1 max-w-full truncate text-xs">{opt.label || `Tranh ${i + 1}`}</span>
               {opt.isCorrect && (
-                <span className="absolute right-1 top-1 flex size-4 items-center justify-center rounded-full bg-[var(--accent)] text-[10px] font-bold text-white">
+                <span className="absolute right-1 top-1 flex size-4 items-center justify-center rounded-full bg-[var(--accent)] text-[10px] font-medium text-white">
                   ✓
                 </span>
               )}
@@ -65,10 +65,10 @@ export function ItemMiniPreview({ draft: d }: { draft: Draft }) {
         <div className="grid grid-cols-2 gap-2 pt-1">
           {d.pairs.slice(0, 4).map((p, i) => (
             <div key={p.key || i} className="contents">
-              <div className="flex h-10 items-center justify-center rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-1.5 text-xs font-bold">
+              <div className="flex h-10 items-center justify-center rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-1.5 text-xs font-medium">
                 {p.leftLabel || `Vế ${i + 1}`}
               </div>
-              <div className="flex h-10 items-center justify-center rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-accent-muted,var(--color-primary-soft))] p-1.5 text-xs font-bold text-[var(--fgColor-default)]">
+              <div className="flex h-10 items-center justify-center rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-accent-muted,var(--color-primary-soft))] p-1.5 text-xs font-medium text-[var(--fgColor-default)]">
                 {p.rightLabel || `Cặp ${i + 1}`}
               </div>
             </div>
@@ -82,7 +82,7 @@ export function ItemMiniPreview({ draft: d }: { draft: Draft }) {
           <div className="flex min-h-10 flex-wrap items-center gap-1.5 rounded-[var(--borderRadius-medium)] border-2 border-dashed border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] p-2 text-xs text-[var(--fgColor-muted)]">
             {d.referenceText ? (
               d.referenceText.split(/\s+/).map((w, wi) => (
-                <span key={wi} className="rounded-[var(--borderRadius-small)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-2 py-1 font-bold text-[var(--fgColor-default)]">
+                <span key={wi} className="rounded-[var(--borderRadius-small)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-2 py-1 font-medium text-[var(--fgColor-default)]">
                   {w}
                 </span>
               ))
@@ -103,7 +103,7 @@ export function ItemMiniPreview({ draft: d }: { draft: Draft }) {
       {/* Dạng Nói / Ghi âm */}
       {(d.itemType === 'speak_repeat' || d.itemType === 'speak_read' || d.itemType === 'speak_picture') && (
         <div className="flex flex-col items-center gap-2 py-2">
-          {d.referenceText && <div className="text-center text-xs font-bold text-[var(--fgColor-default)]">“{d.referenceText}”</div>}
+          {d.referenceText && <div className="text-center text-xs font-medium text-[var(--fgColor-default)]">“{d.referenceText}”</div>}
           <div className="flex size-14 items-center justify-center rounded-full bg-blush-ink text-white shadow-md">
             <span className="text-lg">🎤</span>
           </div>
@@ -119,13 +119,13 @@ export function ItemMiniPreview({ draft: d }: { draft: Draft }) {
               key={opt.key || i}
               className={`flex items-center gap-2 rounded-[var(--borderRadius-medium)] border px-2.5 py-1.5 text-xs ${
                 opt.isCorrect
-                  ? 'border-[var(--accent)] bg-mint font-bold text-mint-ink'
+                  ? 'border-[var(--accent)] bg-mint font-medium text-mint-ink'
                   : 'border-[var(--borderColor-default)] bg-[var(--bgColor-default)] text-[var(--fgColor-default)]'
               }`}
             >
               <span>{String.fromCharCode(65 + i)}.</span>
               <span className="flex-1 truncate">{opt.label || `Lựa chọn ${i + 1}`}</span>
-              {opt.isCorrect && <span className="font-bold text-[var(--accent)]">✓</span>}
+              {opt.isCorrect && <span className="font-medium text-[var(--accent)]">✓</span>}
             </div>
           ))}
         </div>

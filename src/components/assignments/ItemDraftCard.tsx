@@ -226,7 +226,7 @@ export function ItemDraftCard({
 
       {/* 1. Chọn dạng câu hỏi */}
       <div>
-        <p className="mb-2 block text-xs font-bold uppercase tracking-wider text-[var(--fgColor-muted)]">Dạng bài tập</p>
+        <p className="mb-2 block text-xs font-medium uppercase tracking-wider text-[var(--fgColor-muted)]">Dạng bài tập</p>
         <div role="radiogroup" aria-label={`Loại của câu ${n}`} className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {EXERCISE_TYPES.map((et) => {
             const active = d.itemType === et.type;
@@ -245,7 +245,7 @@ export function ItemDraftCard({
                     : 'border-[var(--borderColor-default)] bg-[var(--bgColor-default)] hover:bg-[var(--bgColor-muted)]'
                 }`}
               >
-                <span className="text-sm font-bold text-[var(--fgColor-default)]">
+                <span className="text-sm font-medium text-[var(--fgColor-default)]">
                   {et.icon} {et.title}
                 </span>
                 <span className="text-xs text-[var(--fgColor-muted)]">{et.hint}</span>
@@ -325,7 +325,7 @@ export function ItemDraftCard({
 
       {/* 4. Âm thanh câu hỏi */}
       <div className="flex flex-col gap-2 rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] p-3">
-        <span className="text-xs font-bold uppercase tracking-wider text-[var(--fgColor-muted)]">Âm thanh câu hỏi / Giọng đọc mẫu</span>
+        <span className="text-xs font-medium uppercase tracking-wider text-[var(--fgColor-muted)]">Âm thanh câu hỏi / Giọng đọc mẫu</span>
         {d.audioFileId !== null ? (
           <div className="flex flex-wrap items-center gap-2">
             <span className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--fgColor-default)]">
@@ -343,7 +343,7 @@ export function ItemDraftCard({
       {/* 5. Dạng Nghe / Chọn tranh (picture_choice) */}
       {d.itemType === 'picture_choice' && (
         <fieldset className="flex flex-col gap-3 rounded-xl border border-[var(--borderColor-default)] p-3">
-          <legend className="px-1 text-xs font-bold uppercase tracking-wider text-[var(--fgColor-muted)]">
+          <legend className="px-1 text-xs font-medium uppercase tracking-wider text-[var(--fgColor-muted)]">
             Các tranh lựa chọn (chọn 1 đáp án đúng bằng nút tròn)
           </legend>
           <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
@@ -412,13 +412,13 @@ export function ItemDraftCard({
       {/* 6. Dạng Ghép đôi (match) */}
       {d.itemType === 'match' && (
         <fieldset className="flex flex-col gap-3 rounded-xl border border-[var(--borderColor-default)] p-3">
-          <legend className="px-1 text-xs font-bold uppercase tracking-wider text-[var(--fgColor-muted)]">
+          <legend className="px-1 text-xs font-medium uppercase tracking-wider text-[var(--fgColor-muted)]">
             Các cặp ghép đôi (Vế trái ghép với Vế phải tương ứng)
           </legend>
           <div className="flex flex-col gap-2">
             {d.pairs.map((p, pi) => (
               <div key={p.key} className="flex items-center gap-2">
-                <span className="w-5 text-center text-xs font-bold text-[var(--fgColor-muted)]">{pi + 1}.</span>
+                <span className="w-5 text-center text-xs font-medium text-[var(--fgColor-muted)]">{pi + 1}.</span>
                 <TextInput
                   value={p.leftLabel}
                   onChange={(e) => patchPair(p.key, { leftLabel: e.target.value })}
@@ -426,7 +426,7 @@ export function ItemDraftCard({
                   block
                   className="!min-w-0 flex-1"
                 />
-                <span className="font-bold text-[var(--fgColor-muted)]">⇄</span>
+                <span className="font-medium text-[var(--fgColor-muted)]">⇄</span>
                 <TextInput
                   value={p.rightLabel}
                   onChange={(e) => patchPair(p.key, { rightLabel: e.target.value })}
@@ -461,7 +461,7 @@ export function ItemDraftCard({
             <div className="flex flex-wrap items-center gap-1.5 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] p-2.5">
               <span className="text-xs text-[var(--fgColor-muted)]">Các từ sẽ xuất hiện:</span>
               {d.referenceText.split(/\s+/).filter(Boolean).map((w, wi) => (
-                <span key={wi} className="rounded-[var(--borderRadius-small)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-2 py-0.5 text-xs font-bold text-[var(--fgColor-default)]">
+                <span key={wi} className="rounded-[var(--borderRadius-small)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-2 py-0.5 text-xs font-medium text-[var(--fgColor-default)]">
                   {w}
                 </span>
               ))}
@@ -504,7 +504,7 @@ export function ItemDraftCard({
             />
           </Field>
           <div className="flex flex-col gap-2 rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] p-3">
-            <span className="text-xs font-bold uppercase tracking-wider text-[var(--fgColor-muted)]">Giọng mẫu của Thầy/Cô (học sinh bấm Nghe mẫu)</span>
+            <span className="text-xs font-medium uppercase tracking-wider text-[var(--fgColor-muted)]">Giọng mẫu của Thầy/Cô (học sinh bấm Nghe mẫu)</span>
             <MiniRecorder
               fileId={d.modelAudioFileId}
               label={`Ghi giọng mẫu câu ${n}`}
@@ -531,7 +531,7 @@ export function ItemDraftCard({
             </Field>
             {d.itemType === 'speak_picture' && (
               <div className="flex flex-col gap-1.5">
-                <span className="text-xs font-bold uppercase tracking-wider text-[var(--fgColor-muted)]">Tranh gợi ý khi nói</span>
+                <span className="text-xs font-medium uppercase tracking-wider text-[var(--fgColor-muted)]">Tranh gợi ý khi nói</span>
                 {d.imageFileId ? (
                   <div className="flex items-center gap-2">
                     {/* eslint-disable-next-line @next/next/no-img-element */}

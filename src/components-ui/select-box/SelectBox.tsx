@@ -87,7 +87,7 @@ export function SelectBox({
         >
           <span className="inline-flex min-w-0 items-center gap-1.5">
             {icon}
-            <span className={clsx('min-w-0 truncate', bar && 'max-[1199px]:hidden font-medium text-[var(--fgColor-default)]')}>
+            <span className={clsx('min-w-0 truncate', bar && 'max-[1199px]:hidden font-normal text-[var(--fgColor-default)]')}>
               {shown}
             </span>
           </span>

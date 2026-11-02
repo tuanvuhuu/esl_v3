@@ -443,7 +443,7 @@ export function ClassForm({
 
 // Tiêu đề nhóm trong form lớp: chia form dài thành bốn phần dễ dò
 function SectionTitle({ children }: { children: string }) {
-  return <h3 className="col-span-full mt-2 border-b border-[var(--borderColor-muted)] pb-1.5 text-sm font-bold text-[var(--fgColor-default)] first:mt-0">{children}</h3>;
+  return <h3 className="col-span-full mt-2 border-b border-[var(--borderColor-muted)] pb-1.5 text-sm font-semibold text-[var(--fgColor-default)] first:mt-0">{children}</h3>;
 }
 
 // "T5 22/10/2026 08:00"
@@ -462,7 +462,7 @@ function PreviewBox({ preview }: { preview: SchedulePreview | null }) {
       className="col-span-full flex flex-col gap-2 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-accent-muted)] bg-[var(--bgColor-accent-muted)] p-3"
     >
       <p className="text-sm text-[var(--fgColor-default)]">
-        <b className="font-bold">{preview.kept ? `${preview.total} buổi mới` : `${preview.total} buổi`}</b> · từ {whenLabel(preview.firstStartsAt)} đến {whenLabel(preview.lastStartsAt)}
+        <b className="font-medium">{preview.kept ? `${preview.total} buổi mới` : `${preview.total} buổi`}</b> · từ {whenLabel(preview.firstStartsAt)} đến {whenLabel(preview.lastStartsAt)}
         {preview.kept ? ` · giữ ${preview.kept} buổi đã học` : ''}
       </p>
       <ul className="flex flex-wrap gap-1.5">

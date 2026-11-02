@@ -47,13 +47,13 @@ export function LoginForm({
       <section className="flex w-[min(420px,100%)] flex-col gap-5 rounded-2xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-6 shadow-[var(--shadow-floating-large,var(--lift))] max-[767px]:p-5">
         <header className="flex flex-col items-center gap-2.5 text-center">
           <span
-            className="grid size-13 place-items-center rounded-xl bg-[var(--button-primary-bgColor-rest)] text-xl font-extrabold text-[var(--button-primary-fgColor-rest)]"
+            className="grid size-13 place-items-center rounded-xl bg-[var(--button-primary-bgColor-rest)] text-xl font-semibold text-[var(--button-primary-fgColor-rest)]"
             aria-hidden
           >
             E
           </span>
           <div>
-            <h1 className="text-xl font-bold text-[var(--fgColor-default)]">ESL Center</h1>
+            <h1 className="text-xl font-semibold text-[var(--fgColor-default)]">ESL Center</h1>
             <p className="mt-0.5 text-sm text-[var(--fgColor-muted)]">Đăng nhập hệ thống quản lý trung tâm</p>
           </div>
         </header>

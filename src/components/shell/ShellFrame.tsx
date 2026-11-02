@@ -101,12 +101,12 @@ export function ShellFrame({
 
       {navOpen && <div className="fixed inset-0 z-[55] bg-scrim min-[1200px]:hidden" onClick={() => setNavOpen(false)} aria-hidden />}
 
-      <div className="grid min-h-0 min-[1200px]:grid-cols-[248px_minmax(0,1fr)]">
+      <div className="grid min-h-0 min-[1200px]:grid-cols-[232px_minmax(0,1fr)]">
         <Sidebar groups={groups} badges={badgeCounts} open={navOpen} onNavigate={() => setNavOpen(false)} />
 
         <main
           key={pathname}
-          className="mx-auto w-full min-w-0 max-w-[1440px] px-5 py-3 max-[1199px]:px-4 max-[767px]:px-3.5 max-[767px]:pb-[calc(112px+var(--safe-b))] min-[1200px]:flex min-[1200px]:min-h-0 min-[1200px]:flex-col min-[1680px]:max-w-[1680px]"
+          className="w-full min-w-0 px-4 py-2.5 max-[767px]:px-3.5 max-[767px]:pb-[calc(112px+var(--safe-b))]"
         >
           <ShellBreadcrumbs />
           {children}

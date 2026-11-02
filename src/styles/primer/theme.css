@@ -9,6 +9,14 @@
 [data-component='BaseStyles'] {
   --BaseStyles-fontFamily: var(--font-normal);
   --BaseStyles-lineHeight: var(--lh-default);
+  --fontStack-system: var(--font-normal);
+  --fontStack-sansSerif: var(--font-normal);
+
+  /* Hạ độ đậm mặc định của các thành phần Primer (Button, NavList, Label, UnderlineNav, Dialog) cho thanh thoát */
+  --base-text-weight-light: 300;
+  --base-text-weight-normal: 400;
+  --base-text-weight-medium: 400;
+  --base-text-weight-semibold: 500;
 
   /* Bo góc chuẩn Primer / 01. TSUKUBA: 6px / 8px / 12px */
   --borderRadius-small: var(--radius-1);

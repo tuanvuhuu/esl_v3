@@ -102,7 +102,7 @@ export function InteractiveExercisePlayer({
             type="button"
             data-link="true"
             onClick={onExit}
-            className="mt-4 text-sm font-bold text-[var(--fgColor-link)] underline"
+            className="mt-4 text-sm font-medium text-[var(--fgColor-link)] underline"
           >
             Quay lại
           </button>
@@ -140,7 +140,7 @@ export function InteractiveExercisePlayer({
         </div>
 
         {view.mode === 'practice' && <Pill tone="mint">Luyện tập</Pill>}
-        <span className="text-xs font-extrabold tabular-nums text-[var(--fgColor-muted)]">
+        <span className="text-xs font-semibold tabular-nums text-[var(--fgColor-muted)]">
           {currentIndex + 1}/{total}
         </span>
       </div>
@@ -344,14 +344,14 @@ function ExerciseItem({
             type="button"
             data-link="true"
             onClick={onNext}
-            className="text-sm font-bold text-[var(--fgColor-default)] underline underline-offset-4"
+            className="text-sm font-medium text-[var(--fgColor-default)] underline underline-offset-4"
           >
             Bỏ qua câu này
           </button>
         </div>
       )}
       {checkError && (
-        <p role="alert" className="mb-2 text-center text-sm font-bold text-blush-ink">
+        <p role="alert" className="mb-2 text-center text-sm font-medium text-blush-ink">
           {checkError}
         </p>
       )}
@@ -432,7 +432,7 @@ function PictureChoiceQuestion({
       </div>
 
       {feedback && (
-        <div className="rounded-xl border border-[var(--borderColor-success-muted)] bg-mint p-2.5 text-center text-xs font-bold text-mint-ink">
+        <div className="rounded-xl border border-[var(--borderColor-success-muted)] bg-mint p-2.5 text-center text-xs font-medium text-mint-ink">
           {feedback}
         </div>
       )}
@@ -489,12 +489,12 @@ function MatchQuestion({
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between text-xs text-[var(--fgColor-muted)]">
-        <span className="font-bold">Chạm vế trái rồi chạm vế phải để nối</span>
+        <span className="font-medium">Chạm vế trái rồi chạm vế phải để nối</span>
         <button
           type="button"
           data-link="true"
           onClick={resetPairs}
-          className="inline-flex items-center gap-1 font-bold text-[var(--fgColor-link)] underline"
+          className="inline-flex items-center gap-1 font-medium text-[var(--fgColor-link)] underline"
         >
           <SyncIcon size={12} aria-hidden /> Nối lại
         </button>
@@ -551,7 +551,7 @@ function MatchQuestion({
         </div>
       </div>
 
-      <div className="text-center text-xs font-bold text-[var(--fgColor-muted)]">
+      <div className="text-center text-xs font-medium text-[var(--fgColor-muted)]">
         Đã ghép: {paired.length}/{item.matchLeft.length} cặp {paired.length === item.matchLeft.length && '🎉 Giỏi quá!'}
       </div>
     </div>
@@ -642,7 +642,7 @@ function OrderQuestion({
               data-card="true"
               onClick={() => addWord(w)}
               disabled={isUsed}
-              className={`flex h-11 items-center justify-center rounded-xl border-2 px-3.5 text-base font-extrabold transition-all active:scale-95 ${
+              className={`flex h-11 items-center justify-center rounded-xl border-2 px-3.5 text-base font-semibold transition-all active:scale-95 ${
                 isUsed
                   ? 'invisible opacity-0'
                   : 'border-[var(--borderColor-default)] bg-[var(--bgColor-default)] text-[var(--fgColor-default)] shadow-[0_3px_0_var(--borderColor-default)] hover:bg-[var(--bgColor-muted)]'
@@ -659,7 +659,7 @@ function OrderQuestion({
           type="button"
           data-link="true"
           onClick={reset}
-          className="inline-flex items-center gap-1 text-xs font-bold text-[var(--fgColor-muted)] underline hover:text-[var(--fgColor-default)]"
+          className="inline-flex items-center gap-1 text-xs font-medium text-[var(--fgColor-muted)] underline hover:text-[var(--fgColor-default)]"
         >
           <SyncIcon size={14} aria-hidden /> Xếp lại
         </button>
@@ -689,7 +689,7 @@ function PlacedWord({ id, word, onRemove }: { id: string; word: string; onRemove
       aria-label={`${word} (kéo để đổi chỗ, bấm để bỏ ra)`}
       data-placed={word}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={`flex h-10 touch-none items-center justify-center rounded-xl border-2 border-[var(--borderColor-accent-emphasis)] bg-[var(--bgColor-accent-muted)] px-3 text-sm font-extrabold text-[var(--fgColor-default)] shadow-xs ${
+      className={`flex h-10 touch-none items-center justify-center rounded-xl border-2 border-[var(--borderColor-accent-emphasis)] bg-[var(--bgColor-accent-muted)] px-3 text-sm font-semibold text-[var(--fgColor-default)] shadow-xs ${
         isDragging ? 'z-10 scale-110 shadow-lg' : 'active:scale-95'
       }`}
     >
@@ -719,14 +719,14 @@ function GapFillQuestion({
 }) {
   return (
     <div className="flex flex-col gap-3">
-      <label className="text-xs font-bold text-[var(--fgColor-muted)]">Gõ từ còn thiếu vào ô:</label>
+      <label className="text-xs font-medium text-[var(--fgColor-muted)]">Gõ từ còn thiếu vào ô:</label>
       <input
         type="text"
         data-card="true"
         value={answer?.answerText || ''}
         onChange={(e) => onChange({ answerText: e.target.value })}
         placeholder="Gõ từ của bạn…"
-        className="h-14 w-full rounded-xl border-2 border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-4 text-lg font-bold text-[var(--fgColor-default)] outline-none placeholder:text-[var(--fgColor-muted)] focus:border-[var(--focus-outlineColor)]"
+        className="h-14 w-full rounded-xl border-2 border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-4 text-lg font-medium text-[var(--fgColor-default)] outline-none placeholder:text-[var(--fgColor-muted)] focus:border-[var(--focus-outlineColor)]"
       />
     </div>
   );
@@ -744,7 +744,7 @@ function VoiceGate({ needsChild, referenceText }: { needsChild: boolean; referen
   return (
     <div className="flex flex-col items-center gap-4 py-2 text-center">
       {referenceText && (
-        <div className="rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]/60 p-3 text-lg font-extrabold leading-relaxed text-[var(--fgColor-default)]">
+        <div className="rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]/60 p-3 text-lg font-semibold leading-relaxed text-[var(--fgColor-default)]">
           “{referenceText}”
         </div>
       )}
@@ -753,7 +753,7 @@ function VoiceGate({ needsChild, referenceText }: { needsChild: boolean; referen
           <span className="text-5xl" aria-hidden>
             🎤
           </span>
-          <p className="text-lg font-extrabold leading-snug text-[var(--fgColor-default)]">
+          <p className="text-lg font-semibold leading-snug text-[var(--fgColor-default)]">
             Cô giáo muốn nghe giọng con để chấm bài nói. Con có đồng ý ghi âm không?
           </p>
           <p className="text-sm font-semibold text-[var(--fgColor-muted)]">
@@ -770,7 +770,7 @@ function VoiceGate({ needsChild, referenceText }: { needsChild: boolean; referen
                 if (r.ok) router.refresh();
               })
             }
-            className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-[var(--bgColor-success-emphasis)] text-lg font-extrabold text-white shadow-[0_4px_0_#0e7445] disabled:opacity-60"
+            className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-[var(--bgColor-success-emphasis)] text-lg font-semibold text-white shadow-[0_4px_0_#0e7445] disabled:opacity-60"
           >
             <CheckIcon size={20} aria-hidden />
             Con đồng ý
@@ -780,11 +780,11 @@ function VoiceGate({ needsChild, referenceText }: { needsChild: boolean; referen
           </span>
         </>
       ) : (
-        <p role="note" className="w-full rounded-xl border border-[var(--borderColor-attention-muted)] bg-butter p-4 text-base font-bold leading-relaxed text-butter-ink">
+        <p role="note" className="w-full rounded-xl border border-[var(--borderColor-attention-muted)] bg-butter p-4 text-base font-medium leading-relaxed text-butter-ink">
           Câu này cần ghi âm, mà bố mẹ con chưa đồng ý cho con ghi âm. Con bấm Tiếp tục để làm câu khác nhé. Cô giáo sẽ hỏi bố mẹ.
         </p>
       )}
-      {msg && <p className="text-sm font-bold text-[var(--fgColor-muted)]">{msg}</p>}
+      {msg && <p className="text-sm font-medium text-[var(--fgColor-muted)]">{msg}</p>}
     </div>
   );
 }
@@ -934,7 +934,7 @@ export function SpeakQuestion({
         <KaraokeText text={item.referenceText} audioFileId={item.modelAudioFileId ?? item.audioFileId} wordTimings={item.wordTimings} disabled={recording} />
       ) : (
         item.referenceText && (
-          <div className="rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]/60 p-3 text-center text-lg font-extrabold leading-relaxed text-[var(--fgColor-default)]">
+          <div className="rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]/60 p-3 text-center text-lg font-semibold leading-relaxed text-[var(--fgColor-default)]">
             “{item.referenceText}”
           </div>
         )
@@ -945,7 +945,7 @@ export function SpeakQuestion({
           data-card="true"
           onClick={() => playModel(item)}
           disabled={recording}
-          className="inline-flex min-h-11 items-center gap-2 rounded-full border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-4 text-base font-extrabold text-[var(--fgColor-default)] shadow-[var(--shadow-resting-small,0_1px_2px_rgba(0,0,0,0.04))] transition-colors hover:bg-[var(--bgColor-muted)] active:scale-95 disabled:opacity-40"
+          className="inline-flex min-h-11 items-center gap-2 rounded-full border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-4 text-base font-semibold text-[var(--fgColor-default)] shadow-[var(--shadow-resting-small,0_1px_2px_rgba(0,0,0,0.04))] transition-colors hover:bg-[var(--bgColor-muted)] active:scale-95 disabled:opacity-40"
         >
           <UnmuteIcon size={20} aria-hidden /> Nghe mẫu
         </button>
@@ -966,7 +966,7 @@ export function SpeakQuestion({
           </button>
           {recording ? (
             <>
-              <span className="text-2xl font-extrabold tabular-nums text-[var(--fgColor-default)]" aria-live="polite">
+              <span className="text-2xl font-semibold tabular-nums text-[var(--fgColor-default)]" aria-live="polite">
                 {clock(seconds)} / {clock(maxSec)}
               </span>
               <span className="flex h-8 items-center gap-1" aria-hidden>
@@ -978,17 +978,17 @@ export function SpeakQuestion({
                   />
                 ))}
               </span>
-              <span className="text-sm font-bold text-[var(--fgColor-muted)]">Bấm ô vuông để dừng</span>
+              <span className="text-sm font-medium text-[var(--fgColor-muted)]">Bấm ô vuông để dừng</span>
             </>
           ) : (
-            <span className="text-base font-extrabold text-[var(--fgColor-default)]">{answer?.fileId ? 'Bấm để nói lại' : 'Bấm để nói'}</span>
+            <span className="text-base font-semibold text-[var(--fgColor-default)]">{answer?.fileId ? 'Bấm để nói lại' : 'Bấm để nói'}</span>
           )}
         </div>
       )}
 
       {(phase === 'review' || phase === 'uploading') && preview && (
         <div className="flex w-full flex-col items-center gap-3">
-          <span className="text-base font-extrabold text-[var(--fgColor-default)]">Nghe lại bài nói của con</span>
+          <span className="text-base font-semibold text-[var(--fgColor-default)]">Nghe lại bài nói của con</span>
           <audio controls src={preview.url} className="w-full" aria-label="Nghe lại bản vừa ghi" />
           <div className="grid w-full grid-cols-2 gap-2">
             <button
@@ -996,7 +996,7 @@ export function SpeakQuestion({
               data-card="true"
               onClick={redo}
               disabled={phase === 'uploading'}
-              className="flex h-14 items-center justify-center gap-2 rounded-2xl border-2 border-[var(--borderColor-default)] bg-[var(--bgColor-default)] text-base font-extrabold text-[var(--fgColor-default)] transition-colors hover:bg-[var(--bgColor-muted)] disabled:opacity-50"
+              className="flex h-14 items-center justify-center gap-2 rounded-2xl border-2 border-[var(--borderColor-default)] bg-[var(--bgColor-default)] text-base font-semibold text-[var(--fgColor-default)] transition-colors hover:bg-[var(--bgColor-muted)] disabled:opacity-50"
             >
               <SyncIcon size={18} aria-hidden />
               Nói lại
@@ -1006,7 +1006,7 @@ export function SpeakQuestion({
               data-card="true"
               onClick={keepRecording}
               disabled={phase === 'uploading'}
-              className="flex h-14 items-center justify-center gap-2 rounded-2xl bg-[var(--bgColor-success-emphasis)] text-base font-extrabold text-white shadow-[0_4px_0_#0e7445] disabled:opacity-60"
+              className="flex h-14 items-center justify-center gap-2 rounded-2xl bg-[var(--bgColor-success-emphasis)] text-base font-semibold text-white shadow-[0_4px_0_#0e7445] disabled:opacity-60"
             >
               <CheckIcon size={18} aria-hidden />
               {phase === 'uploading' ? 'Đang lưu…' : 'Dùng bản này'}
@@ -1017,7 +1017,7 @@ export function SpeakQuestion({
 
       {phase === 'idle' && answer?.fileId && (
         <div className="flex w-full flex-col items-center gap-2 rounded-xl border border-[var(--borderColor-success-muted)] bg-mint p-3">
-          <span className="flex items-center gap-1.5 text-sm font-bold text-mint-ink">
+          <span className="flex items-center gap-1.5 text-sm font-medium text-mint-ink">
             <CheckIcon size={16} aria-hidden /> Đã lưu bản ghi âm
           </span>
           <audio controls preload="none" src={`/api/files/${answer.fileId}`} className="w-full" aria-label="Nghe bản đã lưu" />
@@ -1143,7 +1143,7 @@ function CelebrationScreen({
         </div>
         <p className="text-sm font-semibold text-[var(--fgColor-muted)]">Con đã làm xong bài &quot;{view.title}&quot;.</p>
         {score && score.autoMax > 0 && (
-          <p className="text-base font-extrabold text-[var(--fgColor-default)]">
+          <p className="text-base font-semibold text-[var(--fgColor-default)]">
             Đúng {Math.round(score.autoPoints * 10) / 10}/{score.autoMax} điểm phần tự chấm
           </p>
         )}
@@ -1155,7 +1155,7 @@ function CelebrationScreen({
       {/* Sticker mở khóa */}
       <div className="w-full rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]/50 p-4 text-left">
         <div className="mb-2 flex items-center justify-between">
-          <span className="text-xs font-bold uppercase tracking-wider text-[var(--fgColor-muted)]">Sticker của con</span>
+          <span className="text-xs font-medium uppercase tracking-wider text-[var(--fgColor-muted)]">Sticker của con</span>
           <Pill tone="butter">+{stars} sticker</Pill>
         </div>
         <div className="grid grid-cols-4 gap-2">

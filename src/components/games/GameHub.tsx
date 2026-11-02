@@ -67,7 +67,7 @@ export function GameHub({
               setGame(null);
               setResult(null);
             }}
-            className="inline-flex items-center gap-1 font-bold text-[var(--fgColor-default)] underline underline-offset-4 hover:text-[var(--fgColor-link)]"
+            className="inline-flex items-center gap-1 font-medium text-[var(--fgColor-default)] underline underline-offset-4 hover:text-[var(--fgColor-link)]"
           >
             <ArrowLeftIcon size={16} aria-hidden /> Chọn trò khác
           </button>
@@ -75,7 +75,7 @@ export function GameHub({
           <Link
             href={backHref}
             data-link="true"
-            className="inline-flex items-center gap-1 font-bold text-[var(--fgColor-default)] underline underline-offset-4 hover:text-[var(--fgColor-link)]"
+            className="inline-flex items-center gap-1 font-medium text-[var(--fgColor-default)] underline underline-offset-4 hover:text-[var(--fgColor-link)]"
           >
             <ArrowLeftIcon size={16} aria-hidden /> {backLabel}
           </Link>
@@ -85,7 +85,7 @@ export function GameHub({
 
       {!game && (
         <>
-          <h1 className="text-2xl font-extrabold text-[var(--fgColor-default)]">Chọn trò chơi</h1>
+          <h1 className="text-2xl font-semibold text-[var(--fgColor-default)]">Chọn trò chơi</h1>
           {games.length === 0 && <p className="text-base text-[var(--fgColor-muted)]">Danh sách cần ít nhất 2 từ để chơi.</p>}
           <ul className="grid grid-cols-2 gap-3">
             {games.map((g) => (
@@ -100,7 +100,7 @@ export function GameHub({
                   className="flex h-full w-full flex-col items-start gap-1 rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-3.5 text-left shadow-[var(--shadow-resting-small,0_1px_2px_rgba(0,0,0,0.04))] transition-all hover:border-[var(--borderColor-accent-emphasis)] active:scale-95"
                 >
                   <span className="text-3xl" aria-hidden>{GAME_LABELS[g].emoji}</span>
-                  <b className="text-lg font-extrabold text-[var(--fgColor-default)]">{GAME_LABELS[g].name}</b>
+                  <b className="text-lg font-semibold text-[var(--fgColor-default)]">{GAME_LABELS[g].name}</b>
                   <small className="text-sm text-[var(--fgColor-muted)]">{GAME_LABELS[g].hint}</small>
                 </button>
               </li>
@@ -118,11 +118,11 @@ export function GameHub({
           <span className="text-5xl" aria-label={`${gameStars(result.correct, result.total)} sao`}>
             {'⭐'.repeat(gameStars(result.correct, result.total))}
           </span>
-          <b className="text-2xl font-extrabold text-[var(--fgColor-default)]">
+          <b className="text-2xl font-semibold text-[var(--fgColor-default)]">
             {gameStars(result.correct, result.total) === 3 ? 'Giỏi quá!' : 'Cố lên nhé!'}
           </b>
           <p className="text-base text-[var(--fgColor-muted)]">Đúng {result.correct}/{result.total}</p>
-          {saved && <p className="text-sm font-bold text-[var(--fgColor-default)]">Đã cất sao vào bộ sưu tập của con</p>}
+          {saved && <p className="text-sm font-medium text-[var(--fgColor-default)]">Đã cất sao vào bộ sưu tập của con</p>}
           <div className="grid w-full grid-cols-2 gap-2">
             <button type="button" data-card="true" onClick={replay} className={BIG}>
               <SyncIcon size={18} aria-hidden /> Chơi lại
@@ -144,7 +144,7 @@ export function GameHub({
 
       {game && !result && (
         <div key={`${game}-${seed}`}>
-          <h1 className="mb-3 text-xl font-extrabold text-[var(--fgColor-default)]">{GAME_LABELS[game].name}</h1>
+          <h1 className="mb-3 text-xl font-semibold text-[var(--fgColor-default)]">{GAME_LABELS[game].name}</h1>
           {game === 'memory' && <MemoryGame words={words} seed={seed} onFinish={finish} />}
           {game === 'whack' && <WhackGame words={words} seed={seed} onFinish={finish} />}
           {game === 'spell' && <SpellGame words={words} seed={seed} onFinish={finish} />}
@@ -199,7 +199,7 @@ function MemoryGame({ words, seed, onFinish }: GameProps) {
                 onClick={() => flip(c)}
                 data-pair={c.pair}
                 aria-label={shown ? (c.face === 'word' ? c.word.word : `Tranh ${c.word.meaningVi || c.word.word}`) : `Thẻ úp ${c.id + 1}`}
-                className={`flex aspect-square w-full items-center justify-center rounded-xl border-2 p-1 text-lg font-extrabold transition-transform active:scale-95 ${
+                className={`flex aspect-square w-full items-center justify-center rounded-xl border-2 p-1 text-lg font-semibold transition-transform active:scale-95 ${
                   matched.has(c.pair)
                     ? 'border-[var(--bgColor-success-emphasis)] bg-mint'
                     : shown
@@ -338,12 +338,12 @@ function ArrangeRound({
           <span className="text-sm text-[var(--fgColor-muted)]">Chạm các ô bên dưới theo đúng thứ tự</span>
         ) : (
           answer.map((t, i) => (
-            <span key={i} className="rounded-xl bg-[var(--button-primary-bgColor-rest)] px-3 py-2 text-xl font-extrabold text-[var(--button-primary-fgColor-rest)]">
+            <span key={i} className="rounded-xl bg-[var(--button-primary-bgColor-rest)] px-3 py-2 text-xl font-semibold text-[var(--button-primary-fgColor-rest)]">
               {t}
             </span>
           ))
         )}
-        {wrong && <span className="w-full text-sm font-bold text-blush-ink">Chưa đúng, thử từ tiếp theo nhé. Đáp án: {target.join(joiner)}</span>}
+        {wrong && <span className="w-full text-sm font-medium text-blush-ink">Chưa đúng, thử từ tiếp theo nhé. Đáp án: {target.join(joiner)}</span>}
       </div>
       <ul className="flex flex-wrap justify-center gap-2" aria-label="Các ô để xếp">
         {tiles.map((t, k) => (
@@ -354,7 +354,7 @@ function ArrangeRound({
               onClick={() => tap(k)}
               disabled={used.includes(k)}
               data-tile={t}
-              className="min-h-14 min-w-14 rounded-xl border-2 border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-3 text-2xl font-extrabold text-[var(--fgColor-default)] shadow-[var(--shadow-resting-small,0_1px_2px_rgba(0,0,0,0.04))] transition-transform hover:bg-[var(--bgColor-muted)] active:scale-90 disabled:invisible"
+              className="min-h-14 min-w-14 rounded-xl border-2 border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-3 text-2xl font-semibold text-[var(--fgColor-default)] shadow-[var(--shadow-resting-small,0_1px_2px_rgba(0,0,0,0.04))] transition-transform hover:bg-[var(--bgColor-muted)] active:scale-90 disabled:invisible"
             >
               {t}
             </button>
@@ -403,12 +403,12 @@ function SpellGame({ words, seed, onFinish }: GameProps) {
           <div className="flex items-center gap-3 rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-3">
             <Picture w={w} size="lg" />
             <div className="flex flex-col gap-1">
-              {w.meaningVi && <b className="text-lg font-extrabold text-[var(--fgColor-default)]">{w.meaningVi}</b>}
+              {w.meaningVi && <b className="text-lg font-semibold text-[var(--fgColor-default)]">{w.meaningVi}</b>}
               <button
                 type="button"
                 data-link="true"
                 onClick={() => say(w)}
-                className="inline-flex items-center gap-1 text-sm font-bold text-[var(--fgColor-link)] underline underline-offset-2"
+                className="inline-flex items-center gap-1 text-sm font-medium text-[var(--fgColor-link)] underline underline-offset-2"
               >
                 <UnmuteIcon size={16} aria-hidden /> Nghe từ
               </button>

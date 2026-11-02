@@ -104,9 +104,9 @@ export function GradingView({
     switch (key) {
       case 'student':
         return (
-          <div className="flex min-w-0 items-center gap-3">
+          <div className="flex min-w-0 items-center gap-2.5">
             <Avatar name={r.fullName} seed={r.studentId} quiet />
-            <span className="min-w-0 truncate text-base font-bold text-[var(--fgColor-default)]">{r.fullName}</span>
+            <span className="min-w-0 truncate text-sm font-medium text-[var(--fgColor-default)]">{r.fullName}</span>
           </div>
         );
       case 'status':

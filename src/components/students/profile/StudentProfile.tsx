@@ -240,7 +240,7 @@ export function StudentProfile({
     <section className="flex flex-col gap-4">
       {drawerClose ? (
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-base font-bold text-[var(--fgColor-default)]">Hồ sơ học sinh</h2>
+          <h2 className="text-base font-semibold text-[var(--fgColor-default)]">Hồ sơ học sinh</h2>
           <Link
             href={drawerClose}
             aria-label="Đóng hồ sơ"
@@ -263,7 +263,7 @@ export function StudentProfile({
           <Avatar name={student.fullName} seed={student.id} size="lg" />
           <div className="min-w-0 flex-1">
             <small className="block text-xs text-[var(--fgColor-muted)]">{student.code} · {student.gender === 'female' ? 'Nữ' : 'Nam'}</small>
-            <h1 className="mt-0.5 text-h1 font-extrabold leading-tight text-[var(--fgColor-default)] max-[767px]:text-2xl">{student.fullName}</h1>
+            <h1 className="mt-0.5 text-h1 font-semibold leading-tight text-[var(--fgColor-default)] max-[767px]:text-2xl">{student.fullName}</h1>
             <div className="mt-2 flex flex-wrap gap-2">
               <Pill tone={STATUS_META[student.status].tone}>{STATUS_META[student.status].label}</Pill>
               <Pill tone={TUITION_META[student.tuition].tone}>{TUITION_META[student.tuition].label}</Pill>
@@ -300,7 +300,7 @@ export function StudentProfile({
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)] px-3 py-2.5 text-center">
-      <b className="block truncate text-sm font-bold tabular-nums text-[var(--fgColor-default)]">{value}</b>
+      <b className="block truncate text-sm font-medium tabular-nums text-[var(--fgColor-default)]">{value}</b>
       <small className="mt-0.5 block text-xs text-[var(--fgColor-muted)]">{label}</small>
     </div>
   );

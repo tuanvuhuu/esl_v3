@@ -24,9 +24,9 @@ function first(value: string | string[] | undefined): string {
 
 // Cột bảng theo lớp trong tháng
 const CLASS_COLUMNS: GridColumn[] = [
-  { key: 'name', label: 'Lớp', width: 'minmax(0,1fr)' },
-  { key: 'count', label: 'Số khoản', width: '120px', align: 'end' },
-  { key: 'total', label: 'Doanh thu', width: '160px', align: 'end' },
+  { key: 'name', label: 'Lớp', width: 'minmax(180px,2fr)' },
+  { key: 'count', label: 'Số khoản', width: 'minmax(100px,0.7fr)', align: 'end' },
+  { key: 'total', label: 'Doanh thu', width: 'minmax(130px,1fr)', align: 'end' },
 ];
 
 // Báo cáo doanh thu theo tháng: tổng, số khoản thu, theo lớp, xu hướng sáu tháng. Tháng nằm trên URL.
@@ -154,7 +154,7 @@ async function ReportData({ searchParams }: { searchParams: Promise<SearchParams
             {/* Dòng tổng, hiện dưới bảng trên mọi màn hình */}
             <div className="mt-3 flex items-center justify-between gap-3 border-t border-[var(--borderColor-muted)] pt-3">
               <span className="text-sm text-[var(--fgColor-muted)]">Tổng · {report.count} khoản thu</span>
-              <b className="text-base font-bold tabular-nums text-[var(--fgColor-default)]">{formatVND(report.total)}</b>
+              <b className="text-base font-medium tabular-nums text-[var(--fgColor-default)]">{formatVND(report.total)}</b>
             </div>
           </>
         )}
@@ -167,7 +167,7 @@ function Stat({ label, value, strong = false }: { label: string; value: string; 
   return (
     <Panel>
       <small className="block text-xs font-normal text-[var(--fgColor-muted)]">{label}</small>
-      <b className={`mt-1 block tabular-nums ${strong ? 'text-h1 max-[767px]:text-2xl' : 'text-2xl'} font-bold text-[var(--fgColor-default)]`}>
+      <b className={`mt-1 block tabular-nums ${strong ? 'text-h1 max-[767px]:text-2xl' : 'text-2xl'} font-semibold text-[var(--fgColor-default)]`}>
         {value}
       </b>
     </Panel>

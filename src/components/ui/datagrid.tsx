@@ -68,10 +68,6 @@ const TABLE_SHOW = {
   md: 'hidden min-[768px]:block',
   xl: 'hidden min-[1200px]:block',
 } as const;
-const TABLE_SHOW_FILL = {
-  md: 'hidden min-[768px]:flex min-[768px]:min-h-0 min-[768px]:flex-1 min-[768px]:flex-col',
-  xl: 'hidden min-[1200px]:flex min-[1200px]:min-h-0 min-[1200px]:flex-1 min-[1200px]:flex-col',
-} as const;
 const CARDS_HIDE_ABOVE = {
   md: 'min-[768px]:hidden',
   xl: 'min-[1200px]:hidden',
@@ -79,18 +75,24 @@ const CARDS_HIDE_ABOVE = {
 const CARDS_MD_ONLY = 'hidden min-[768px]:flex';
 const CARDS_ALL = 'flex';
 
-function parseColumnWidth(spec: string): { width?: number; minWidth?: number } {
+function parseColumnWidth(spec: string): { width?: number; flex?: number } {
   const trimmed = spec.trim();
   const exactPx = /^(\d+)px$/.exec(trimmed);
   if (exactPx) {
     const px = Number(exactPx[1]);
-    return { width: Math.max(48, px), minWidth: Math.max(48, px) };
+    return { width: Math.max(40, px) };
   }
-  const minMax = /^minmax\((\d+)px/.exec(trimmed);
-  if (minMax) {
-    return { minWidth: Number(minMax[1]) };
+  const minMaxFr = /^minmax\(\s*\d+px\s*,\s*([\d.]+)fr\s*\)$/.exec(trimmed);
+  if (minMaxFr) {
+    const fr = Number(minMaxFr[1]);
+    return { flex: Number.isFinite(fr) && fr > 0 ? fr : 1 };
   }
-  return { minWidth: 100 };
+  const pureFr = /^([\d.]+)fr$/.exec(trimmed);
+  if (pureFr) {
+    const fr = Number(pureFr[1]);
+    return { flex: Number.isFinite(fr) && fr > 0 ? fr : 1 };
+  }
+  return { flex: 1 };
 }
 
 function extractNodeText(node: ReactNode): string {
@@ -220,14 +222,21 @@ export function DataGrid<T>({
       const isSelectCol = col.key === 'select';
       const dims = parseColumnWidth(col.width);
       const canSortCol = sortable && col.sortable !== false && !isActionCol && !isSelectCol;
+      const resolvedWidth = isActionCol
+        ? dims.width && dims.width > 64
+          ? dims.width
+          : 44
+        : isSelectCol
+          ? 38
+          : dims.width;
 
       return {
         id: col.key,
         uuid: `col_${col.key}`,
         dataField: !isActionCol && !isSelectCol ? col.key : undefined,
         caption: col.srOnly ? '' : col.label,
-        width: isActionCol ? Math.max(52, dims.width ?? 52) : isSelectCol ? Math.max(44, dims.width ?? 44) : dims.width,
-        minWidth: dims.minWidth,
+        width: resolvedWidth,
+        flex: resolvedWidth === undefined ? (dims.flex ?? 1) : undefined,
         align: col.align === 'end' ? 'right' : isSelectCol ? 'center' : 'left',
         fixed: (stickyEnd || isActionCol) && isLast ? 'right' : isSelectCol ? 'left' : undefined,
         isAllowSort: canSortCol,
@@ -237,7 +246,8 @@ export function DataGrid<T>({
     });
   }, [columns, sortable, stickyEnd, cell]);
 
-  const frame = fill ? TABLE_SHOW_FILL[from] : TABLE_SHOW[from];
+  void fill;
+  const frame = TABLE_SHOW[from];
   const hasSelectCol = columns.some((c) => c.key === 'select' || c.key === 'stt' || c.key === 'idx');
   const showToolbar = toolbar ?? columns.length >= 4;
   const cacheKey = `esl-dg-cols-${slugKey(pathname || 'app')}-${slugKey(label)}`;
@@ -270,7 +280,7 @@ export function DataGrid<T>({
             {(title || subTitle) && (
               <div className="min-w-0">
                 {typeof title === 'string' ? (
-                  <h2 className="m-0 text-base font-bold text-[var(--fgColor-default)]">{title}</h2>
+                  <h2 className="m-0 text-base font-semibold text-[var(--fgColor-default)]">{title}</h2>
                 ) : (
                   title
                 )}
@@ -333,7 +343,7 @@ export function DataGrid<T>({
               {(title || subTitle) && (
                 <div className="min-w-0">
                   {typeof title === 'string' ? (
-                    <h2 className="m-0 text-base font-bold text-[var(--fgColor-default)]">{title}</h2>
+                    <h2 className="m-0 text-base font-semibold text-[var(--fgColor-default)]">{title}</h2>
                   ) : (
                     title
                   )}

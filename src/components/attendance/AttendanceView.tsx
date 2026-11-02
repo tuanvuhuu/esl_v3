@@ -136,13 +136,13 @@ export function AttendanceView({
               <div className="flex min-w-0 items-center gap-4">
                 <div className="grid size-14 shrink-0 place-items-center rounded-[var(--borderRadius-medium)] bg-[var(--button-primary-bgColor-rest,var(--color-primary))] text-[var(--button-primary-fgColor-rest,var(--color-on-primary))]">
                   <div className="text-center leading-none">
-                    <span className="block text-lg font-extrabold">{session.dateKey.slice(8, 10)}</span>
+                    <span className="block text-lg font-semibold">{session.dateKey.slice(8, 10)}</span>
                     <span className="mt-0.5 block text-xs font-normal">{weekdayLabel(weekdayOfKey(session.dateKey))}</span>
                   </div>
                 </div>
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <b className="text-lg font-extrabold text-[var(--fgColor-default)]">Buổi {session.sessionNo} · {session.timeLabel}</b>
+                    <b className="text-lg font-semibold text-[var(--fgColor-default)]">Buổi {session.sessionNo} · {session.timeLabel}</b>
                     {status && <Pill tone={status.tone}>{status.label}</Pill>}
                   </div>
                   <p className="mt-0.5 truncate text-sm text-[var(--fgColor-muted)]">

@@ -127,7 +127,7 @@ export function WordListForm({
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <b className="text-base font-extrabold text-[var(--fgColor-default)]">Các từ ({rows.filter((r) => r.word.trim()).length})</b>
+        <b className="text-base font-semibold text-[var(--fgColor-default)]">Các từ ({rows.filter((r) => r.word.trim()).length})</b>
         <Btn leadingVisual={BookIcon} onClick={() => setPicking((p) => !p)} aria-expanded={picking}>
           {picking ? 'Ẩn kho từ vựng' : 'Lấy từ kho từ vựng'}
         </Btn>

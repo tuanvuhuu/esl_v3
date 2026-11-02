@@ -53,7 +53,7 @@ function SkillCards({ skills }: { skills: SkillHistory }) {
               <span className="text-xs font-medium text-[var(--fgColor-muted)]">{SKILL_LABELS[s]}</span>
               <SkillScore percent={percent} />
             </div>
-            <b className="text-2xl font-bold tabular-nums text-[var(--fgColor-default)]">{percent === null ? '—' : `${percent}%`}</b>
+            <b className="text-2xl font-semibold tabular-nums text-[var(--fgColor-default)]">{percent === null ? '—' : `${percent}%`}</b>
             <ProgressBar value={percent ?? 0} max={100} />
             <small className="text-xs text-[var(--fgColor-muted)]">
               {total.count === 0 ? 'Chưa có bài' : `${total.count} bài · ${total.raw}/${total.max} điểm`}

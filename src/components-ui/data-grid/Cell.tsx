@@ -41,9 +41,8 @@ const Cell = (props: ICellProps) => {
   const cellStyle: React.CSSProperties = {
     width: column.width,
     minWidth: column.minWidth,
-    fontWeight: column.isMainColumn ? 600 : 400,
+    fontWeight: column.isMainColumn ? 500 : 400,
     padding: column.isNoPadding ? 0 : undefined,
-    whiteSpace: "break-spaces",
     textAlign: column.align,
     ...(rowBgColor ? { color: rowBgColor } : {}),
     position: column.fixed ? "sticky" : "relative",
@@ -84,7 +83,7 @@ const Cell = (props: ICellProps) => {
   if (column.id === "col_idx") {
     return (
       <td style={cellStyle} className={cellClassName}>
-        <div>{rowIndex + 1}</div>
+        <div className="text-xs tabular-nums text-[var(--fgColor-muted)]">{rowIndex + 1}</div>
       </td>
     );
   }

@@ -36,20 +36,21 @@
   --radius-2: 0.5rem;
   --radius-3: 1rem;
 
-  /* fontWeights */
+  /* fontWeights — nhẹ nhàng, thanh thoát theo chuẩn Primer & 01. TSUKUBA */
   --fw-light: 300;
   --fw-normal: 400;
   --fw-semibold: 500;
   --fw-bold: 600;
-  --fw-bolder: 800;
+  --fw-bolder: 600;
 
   /* lineHeights */
   --lh-condensed-ultra: 1;
   --lh-condensed: 1.25;
   --lh-default: 1.5;
 
-  /* fonts — giữ nguyên Be Vietnam Pro của ESL Center */
-  --font-normal: var(--font-be-vietnam), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  /* fonts — đồng bộ bộ font hệ thống sắc mảnh chuẩn GitHub Primer & 01. TSUKUBA */
+  --font-normal: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Roboto, Helvetica, Arial, sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji";
   --font-mono: var(--fontStack-monospace, SFMono-Regular, Consolas, "Liberation Mono", Menlo, Courier, monospace);
 
   /* Ánh xạ màu thương hiệu ESL Center (hỗ trợ cả 5 màu accent Sáng/Tối) */

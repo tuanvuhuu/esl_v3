@@ -142,7 +142,7 @@ export function StudentList({
     switch (key) {
       case 'name':
         return (
-          <Link href={profileHref(row.id)} scroll={false} className="block truncate text-sm font-medium text-[var(--fgColor-link)] underline underline-offset-2">
+          <Link href={profileHref(row.id)} scroll={false} className="block truncate text-sm font-normal text-[var(--fgColor-link)] hover:underline">
             {row.fullName}
           </Link>
         );
@@ -153,20 +153,20 @@ export function StudentList({
       case 'class':
         return (
           <>
-            <b className="block truncate text-sm font-semibold text-[var(--fgColor-default)]">{row.className}</b>
+            <span className="block truncate text-sm text-[var(--fgColor-default)]">{row.className}</span>
             <small className="block truncate text-xs text-[var(--fgColor-muted)]">{row.teacherName}</small>
           </>
         );
       case 'progress':
         return (
           <>
-            <ProgressBar value={row.sessionsDone} max={row.sessionsTotal} className="max-w-[140px]" />
-            <small className="mt-1.5 block text-xs text-[var(--fgColor-muted)]">Đã học {row.sessionsDone}/{row.sessionsTotal} buổi</small>
+            <ProgressBar value={row.sessionsDone} max={row.sessionsTotal} className="max-w-[130px]" />
+            <small className="mt-1 block truncate text-xs text-[var(--fgColor-muted)]">Đã học {row.sessionsDone}/{row.sessionsTotal} buổi</small>
           </>
         );
       case 'attendance':
         return (
-          <span className={`text-sm font-medium tabular-nums ${row.attendanceRate >= 75 ? 'text-[var(--fgColor-default)]' : 'text-[var(--fgColor-danger)]'}`}>
+          <span className={`text-sm font-normal tabular-nums ${row.attendanceRate >= 75 ? 'text-[var(--fgColor-default)]' : 'text-[var(--fgColor-danger)]'}`}>
             {row.attendanceRate}%
           </span>
         );
@@ -174,7 +174,7 @@ export function StudentList({
         return (
           <>
             <Pill tone={TUITION_META[row.tuition].tone}>{TUITION_META[row.tuition].label}</Pill>
-            <small className="mt-1.5 block truncate text-xs text-[var(--fgColor-default)]">
+            <small className="mt-1 block truncate text-xs text-[var(--fgColor-default)]">
               {row.sessionsLeft >= 0 ? `Còn ${row.sessionsLeft}/${row.sessionsBought} buổi đã đóng` : `Nợ ${-row.sessionsLeft} buổi`}
             </small>
             {row.debt > 0 && <small className="block truncate text-xs text-[var(--fgColor-muted)]">Thiếu {formatVND(row.debt)}</small>}
@@ -195,9 +195,9 @@ export function StudentList({
   );
 
   return (
-    <section className="flex flex-col min-[1200px]:min-h-0 min-[1200px]:flex-1">
+    <section className="flex flex-col">
       <PageCrumbs crumbs={['Đào tạo', 'Học sinh']} />
-      <h1 className="mb-1 text-lg font-bold text-[var(--fgColor-default)] min-[768px]:sr-only">Học sinh</h1>
+      <h1 className="mb-1 text-lg font-semibold text-[var(--fgColor-default)] min-[768px]:sr-only">Học sinh</h1>
 
       <StudentFilters current={filters} classes={classes} statusCounts={statusCounts} onAdd={canEdit ? () => setCreating(true) : undefined} />
 
@@ -206,7 +206,7 @@ export function StudentList({
       </p>
 
       {/* Máy tính (từ 1200px): DataGrid tích hợp 1 dòng công cụ gọn (chip trạng thái + bộ lọc & nút Thêm học sinh trong actionComponent). */}
-      <div className="hidden min-[768px]:flex min-[768px]:min-h-0 min-[768px]:flex-1 min-[768px]:flex-col">
+      <div className="hidden min-[768px]:flex min-[768px]:flex-col">
         <DataGrid
           label="Danh sách học sinh"
           columns={COLUMNS}

@@ -328,11 +328,11 @@ export function ScheduleView({
             {days.filter((d) => (byDay.get(d) ?? []).length > 0).map((day) => (
               <section key={day} aria-label={`Buổi học ${dateKeyLabel(day)}`} className="flex flex-col gap-3">
                 <header className="flex items-center gap-3">
-                  <span className="grid size-11 shrink-0 place-items-center rounded-[var(--borderRadius-medium)] bg-[var(--button-primary-bgColor-rest,var(--color-primary))] text-base font-extrabold text-[var(--button-primary-fgColor-rest,var(--color-on-primary))]">
+                  <span className="grid size-11 shrink-0 place-items-center rounded-[var(--borderRadius-medium)] bg-[var(--button-primary-bgColor-rest,var(--color-primary))] text-base font-semibold text-[var(--button-primary-fgColor-rest,var(--color-on-primary))]">
                     {day.slice(8, 10)}
                   </span>
                   <div>
-                    <h2 className="text-base font-bold text-[var(--fgColor-default)]">{weekdayLabel(weekdayOfKey(day))}</h2>
+                    <h2 className="text-base font-semibold text-[var(--fgColor-default)]">{weekdayLabel(weekdayOfKey(day))}</h2>
                     <small className="text-xs text-[var(--fgColor-muted)]">{dateKeyLabel(day)} · {(byDay.get(day) ?? []).length} buổi</small>
                   </div>
                 </header>
@@ -395,8 +395,8 @@ function CalendarBlock({ placed, style, onOpen, canDrag }: { placed: { s: Sessio
       title={`${s.className} · ${s.timeLabel} · ${s.teacherName}${s.room ? ` · ${s.room}` : ''} · ${state.label}`}
       className={`absolute flex flex-col overflow-hidden rounded-[var(--borderRadius-medium)] border-l-4 px-1.5 py-1 text-left leading-tight transition-shadow hover:shadow-sm ${tone.bg} ${tone.edge} ${cancelled ? 'opacity-60' : ''}`}
     >
-      <span className={`block truncate text-2xs font-bold tabular-nums text-[var(--fgColor-default)] ${cancelled ? 'line-through' : ''}`}>{s.timeLabel.split('–')[0]}</span>
-      <span className={`block truncate text-sm font-extrabold leading-tight text-[var(--fgColor-default)] ${cancelled ? 'line-through' : ''}`}>{s.className}</span>
+      <span className={`block truncate text-2xs font-medium tabular-nums text-[var(--fgColor-default)] ${cancelled ? 'line-through' : ''}`}>{s.timeLabel.split('–')[0]}</span>
+      <span className={`block truncate text-sm font-semibold leading-tight text-[var(--fgColor-default)] ${cancelled ? 'line-through' : ''}`}>{s.className}</span>
       <span className="block truncate text-2xs text-[var(--fgColor-muted)]">{shortTeacher(s.teacherName)}{s.room ? ` · ${s.room}` : ''}</span>
       <span className="mt-auto flex items-center gap-1 pt-0.5 whitespace-nowrap text-2xs text-[var(--fgColor-muted)]">
         <span aria-hidden className={`size-1.5 shrink-0 rounded-full ${dot}`} />
@@ -430,10 +430,10 @@ function AgendaCard({ session: s, onOpen }: { session: SessionRow; onOpen: () =>
       className={`flex w-full flex-col gap-1 rounded-[var(--borderRadius-medium)] border-l-4 px-3 py-2.5 text-left transition-colors ${tone.bg} ${tone.edge} ${cancelled ? 'opacity-70' : ''}`}
     >
       <div className="flex items-center justify-between gap-2">
-        <span className={`text-sm font-extrabold tabular-nums text-[var(--fgColor-default)] ${cancelled ? 'line-through' : ''}`}>{s.timeLabel}</span>
+        <span className={`text-sm font-semibold tabular-nums text-[var(--fgColor-default)] ${cancelled ? 'line-through' : ''}`}>{s.timeLabel}</span>
         <Pill tone={state.tone}>{state.label}</Pill>
       </div>
-      <span className={`truncate text-base font-bold text-[var(--fgColor-default)] ${cancelled ? 'line-through' : ''}`}>{s.className}</span>
+      <span className={`truncate text-base font-medium text-[var(--fgColor-default)] ${cancelled ? 'line-through' : ''}`}>{s.className}</span>
       <span className="truncate text-xs text-[var(--fgColor-muted)]">{s.teacherName}{s.room ? ` · ${s.room}` : ''}</span>
       {cancelled && s.cancelReason && <small className="text-xs text-blush-ink">Lý do: {s.cancelReason}</small>}
     </button>

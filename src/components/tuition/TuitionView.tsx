@@ -41,16 +41,16 @@ const LOW_SESSIONS = 2;
 const needsPay = (r: InvoiceRow) => r.debt > 0 || (r.sessionsLeft <= LOW_SESSIONS && (r.status === 'active' || r.status === 'trial'));
 
 const COLUMNS: GridColumn<InvoiceRow>[] = [
-  { key: 'fullName', label: 'Học sinh', width: 'minmax(180px,1.6fr)' },
-  { key: 'paid', label: 'Đã nộp', width: 'minmax(110px,1fr)' },
-  { key: 'discount', label: 'Giảm trừ', width: 'minmax(100px,1fr)' },
-  { key: 'bought', label: 'Buổi đã mua', width: 'minmax(96px,0.8fr)', sortValue: (r) => r.sessionsBought },
-  { key: 'done', label: 'Đã học', width: 'minmax(80px,0.7fr)', sortValue: (r) => r.sessionsDone },
-  { key: 'left', label: 'Còn lại', width: 'minmax(110px,0.9fr)', sortValue: (r) => r.sessionsLeft },
-  { key: 'balance', label: 'Tiền trước/nợ', width: 'minmax(130px,1fr)', sortValue: (r) => r.balance },
-  { key: 'status', label: 'Trạng thái', width: 'minmax(110px,1fr)', sortValue: (r) => r.state },
+  { key: 'fullName', label: 'Học sinh', width: 'minmax(160px,1.5fr)' },
+  { key: 'paid', label: 'Đã nộp', width: 'minmax(100px,0.9fr)' },
+  { key: 'discount', label: 'Giảm trừ', width: 'minmax(90px,0.8fr)' },
+  { key: 'bought', label: 'Buổi đã mua', width: 'minmax(88px,0.75fr)', sortValue: (r) => r.sessionsBought },
+  { key: 'done', label: 'Đã học', width: 'minmax(72px,0.65fr)', sortValue: (r) => r.sessionsDone },
+  { key: 'left', label: 'Còn lại', width: 'minmax(96px,0.85fr)', sortValue: (r) => r.sessionsLeft },
+  { key: 'balance', label: 'Tiền trước/nợ', width: 'minmax(112px,0.95fr)', sortValue: (r) => r.balance },
+  { key: 'status', label: 'Trạng thái', width: 'minmax(104px,0.95fr)', sortValue: (r) => r.state },
   // Đủ chỗ cho hai nút có chữ "Ghi thu", "Nhắc" trên một dòng
-  { key: 'actions', label: 'Thao tác', width: '150px', align: 'end', srOnly: true },
+  { key: 'actions', label: 'Thao tác', width: '140px', align: 'end', srOnly: true },
 ];
 
 // Cột chọn dòng để ghi thu nhiều học sinh cùng lúc (chỉ hiện với người có quyền thu)
@@ -392,7 +392,7 @@ function TotalsStrip({ totals }: { totals: InvoiceTotals }) {
           className="flex items-baseline justify-between gap-2 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-3 py-2"
         >
           <dt className="text-xs text-[var(--fgColor-muted)]">{it.label}</dt>
-          <dd className={`m-0 text-sm font-bold tabular-nums ${it.tone}`}>{it.value}</dd>
+          <dd className={`m-0 text-sm font-medium tabular-nums ${it.tone}`}>{it.value}</dd>
         </div>
       ))}
     </dl>

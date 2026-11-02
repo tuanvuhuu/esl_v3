@@ -38,11 +38,11 @@ export function SkillReportView({
   const cls = classes.find((c) => c.id === classId);
 
   const cell = (r: SkillReportRow, key: string) => {
-    if (key === 'student') return <span className="min-w-0 truncate text-base font-bold text-[var(--fgColor-default)]">{r.fullName}</span>;
-    if (key === 'graded') return <span className="text-base text-[var(--fgColor-default)]">{r.gradedCount} bài</span>;
+    if (key === 'student') return <span className="min-w-0 truncate text-sm font-medium text-[var(--fgColor-default)]">{r.fullName}</span>;
+    if (key === 'graded') return <span className="text-sm text-[var(--fgColor-default)]">{r.gradedCount} bài</span>;
     const percent = totalPercent(r.totals[key as Skill]);
     return (
-      <span className={`inline-flex min-w-[56px] justify-center rounded-[var(--borderRadius-small)] px-2.5 py-1 text-base font-normal ${skillCellClass(percent)}`}>
+      <span className={`inline-flex min-w-[56px] justify-center rounded-[var(--borderRadius-small)] px-2 py-0.5 text-sm font-normal ${skillCellClass(percent)}`}>
         {percent === null ? '—' : `${percent}%`}
       </span>
     );
@@ -61,7 +61,7 @@ export function SkillReportView({
         from="md"
         title={
           <div className="flex flex-wrap items-baseline gap-2">
-            <h1 className="m-0 text-base font-bold text-[var(--fgColor-default)]">Báo cáo kỹ năng</h1>
+            <h1 className="m-0 text-base font-semibold text-[var(--fgColor-default)]">Báo cáo kỹ năng</h1>
             <span className="text-xs text-[var(--fgColor-muted)]">
               ({cls?.name ?? 'Lớp'} · {assignmentCount} bài có câu hỏi)
             </span>

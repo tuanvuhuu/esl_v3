@@ -37,12 +37,12 @@ const FILTERS: { key: LeaveFilter; label: string }[] = [
 ];
 
 const COLUMNS: GridColumn<LeaveListRow>[] = [
-  { key: 'student', label: 'Học sinh', width: 'minmax(170px,1.4fr)', sortValue: (r) => r.studentName },
-  { key: 'session', label: 'Buổi nghỉ', width: 'minmax(150px,1.1fr)', sortValue: (r) => r.startsAt.getTime() },
-  { key: 'reason', label: 'Lý do', width: 'minmax(150px,1.4fr)' },
-  { key: 'parent', label: 'Người gửi', width: 'minmax(140px,1fr)' },
-  { key: 'status', label: 'Trạng thái', width: 'minmax(150px,1fr)', sortValue: (r) => r.status },
-  { key: 'actions', label: 'Thao tác', width: '190px', align: 'end', srOnly: true },
+  { key: 'student', label: 'Học sinh', width: 'minmax(150px,1.4fr)', sortValue: (r) => r.studentName },
+  { key: 'session', label: 'Buổi nghỉ', width: 'minmax(140px,1.1fr)', sortValue: (r) => r.startsAt.getTime() },
+  { key: 'reason', label: 'Lý do', width: 'minmax(140px,1.4fr)' },
+  { key: 'parent', label: 'Người gửi', width: 'minmax(130px,1fr)' },
+  { key: 'status', label: 'Trạng thái', width: 'minmax(130px,1fr)', sortValue: (r) => r.status },
+  { key: 'actions', label: 'Thao tác', width: '164px', align: 'end', srOnly: true },
 ];
 
 // "T3 27/10 16:15–17:30"

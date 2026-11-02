@@ -143,7 +143,7 @@ export function AssignmentsView({
                 <Card key={row.id}>
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <Link href={`/bai-tap/${row.id}`} scroll={false} className="block truncate text-base font-extrabold text-[var(--fgColor-default)] hover:underline">{row.title}</Link>
+                      <Link href={`/bai-tap/${row.id}`} scroll={false} className="block truncate text-base font-semibold text-[var(--fgColor-default)] hover:underline">{row.title}</Link>
                       <small className="block text-sm text-[var(--fgColor-muted)]">Hạn {vnDateTimeLabel(new Date(row.dueAt))} · tối đa {row.maxScore} điểm</small>
                       {row.lessonTitle && <small className="block truncate text-sm text-[var(--fgColor-muted)]">Bài giảng: {row.lessonTitle}</small>}
                     </div>

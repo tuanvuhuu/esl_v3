@@ -11,7 +11,7 @@ import { speakSlide } from './PresentStage';
 import { usePresentSync } from './usePresentSync';
 
 const REMOTE_BTN =
-  'flex min-h-20 items-center justify-center gap-2 rounded-2xl border-2 px-4 text-xl font-extrabold transition-all active:scale-95 disabled:opacity-40';
+  'flex min-h-20 items-center justify-center gap-2 rounded-2xl border-2 px-4 text-xl font-semibold transition-all active:scale-95 disabled:opacity-40';
 
 export function PresentRemote({
   token,
@@ -37,7 +37,7 @@ export function PresentRemote({
     >
       <header className="flex flex-col gap-1">
         <small className="text-sm text-[var(--fgColor-muted)]">Điều khiển trình chiếu</small>
-        <h1 className="text-xl font-extrabold text-[var(--fgColor-default)] [overflow-wrap:anywhere]">{title}</h1>
+        <h1 className="text-xl font-semibold text-[var(--fgColor-default)] [overflow-wrap:anywhere]">{title}</h1>
         {offline && (
           <div className="self-start">
             <Pill tone="blush">Mất kết nối, đang thử lại</Pill>
@@ -49,7 +49,7 @@ export function PresentRemote({
         <b className="text-sm text-[var(--fgColor-muted)]" aria-label="Trang đang chiếu">
           Trang {index + 1}/{slides.length} · {state.revealed ? 'đang hiện đáp án' : 'chưa hiện đáp án'}
         </b>
-        {s.prompt && <p className="text-lg font-bold text-[var(--fgColor-default)] [overflow-wrap:anywhere]">{s.prompt}</p>}
+        {s.prompt && <p className="text-lg font-medium text-[var(--fgColor-default)] [overflow-wrap:anywhere]">{s.prompt}</p>}
         {s.emoji && <span className="text-4xl" aria-hidden>{s.emoji}</span>}
         {answer && (
           <p className="text-base text-[var(--fgColor-muted)]">

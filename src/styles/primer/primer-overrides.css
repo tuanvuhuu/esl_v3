@@ -53,6 +53,30 @@ span[class*='prc-ActionList-VisualWrap-'] {
   color: var(--app-accent-fg);
 }
 
+/* Đồng bộ chữ nhẹ nhàng trên Button, Label, NavList, UnderlineNav của Primer v38 */
+button[class*='prc-Button-ButtonBase-'] {
+  font-weight: 500;
+}
+
+button[class*='prc-Button-ButtonBase-'][data-variant='default'],
+button[class*='prc-Button-ButtonBase-'][data-variant='invisible'] {
+  font-weight: 400;
+}
+
+span[class*='prc-Label-Label-'],
+span[class*='prc-CounterLabel-CounterLabel-'] {
+  font-weight: 400;
+}
+
+a[class*='prc-ActionList-ActionListContent-'],
+button[class*='prc-ActionList-ActionListContent-'] {
+  font-weight: 400;
+}
+
+li[class*='prc-ActionList-ActionListItem-'][aria-current='page'] a[class*='prc-ActionList-ActionListContent-'] {
+  font-weight: 500;
+}
+
 /* Đảm bảo cả khung ngoài lẫn thẻ <input> bên trong TextInput của Primer cao đúng chuẩn 32px (máy tính) / 44px (điện thoại) */
 span[class*='prc-components-TextInputWrapper-'] {
   height: var(--control-medium-size);

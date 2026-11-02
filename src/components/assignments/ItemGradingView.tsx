@@ -68,13 +68,13 @@ export function ItemGradingView({
   const cell = (r: ItemGradingRow, key: string) => {
     switch (key) {
       case 'student':
-        return <span className="min-w-0 truncate text-base font-bold text-[var(--fgColor-default)]">{r.fullName}</span>;
+        return <span className="min-w-0 truncate text-sm font-medium text-[var(--fgColor-default)]">{r.fullName}</span>;
       case 'status':
         return <SubmissionPill status={r.status} />;
       case 'score':
         return (
           <span className="flex flex-wrap items-center gap-2">
-            <span className="text-base text-[var(--fgColor-default)]">{scoreText(r)}</span>
+            <span className="text-sm text-[var(--fgColor-default)]">{scoreText(r)}</span>
             {hasFlaggedMark(r) && <Pill tone="blush">Chấm chéo lệch</Pill>}
           </span>
         );

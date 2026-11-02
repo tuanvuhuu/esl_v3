@@ -80,7 +80,7 @@ export function NotificationBell() {
       {count > 0 && (
         <span
           aria-hidden
-          className="pointer-events-none absolute -right-1.5 -top-1.5 grid h-5 min-w-5 place-items-center rounded-full bg-[var(--bgColor-danger-emphasis,var(--blush-ink))] px-1 text-2xs font-bold text-white"
+          className="pointer-events-none absolute -right-1.5 -top-1.5 grid h-5 min-w-5 place-items-center rounded-full bg-[var(--bgColor-danger-emphasis,var(--blush-ink))] px-1 text-2xs font-medium text-white"
         >
           {count > 99 ? '99+' : count}
         </span>
@@ -96,7 +96,7 @@ export function NotificationBell() {
             className="fixed z-50 flex max-h-[70vh] flex-col rounded-xl border border-[var(--borderColor-default)] bg-[var(--overlay-bgColor)] shadow-[var(--shadow-floating-large,var(--lift))]"
           >
             <div className="shrink-0 border-b border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)]/60 px-4 py-2.5">
-              <b className="text-sm font-bold text-[var(--fgColor-default)]">Thông báo</b>
+              <b className="text-sm font-medium text-[var(--fgColor-default)]">Thông báo</b>
               <span className="ml-2 text-xs text-[var(--fgColor-muted)]">
                 {count > 0 ? `${count} việc cần chú ý` : 'Không có việc cần chú ý'}
               </span>

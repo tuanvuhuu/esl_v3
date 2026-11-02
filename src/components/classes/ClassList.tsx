@@ -70,7 +70,7 @@ export function ClassList({
             <Card key={row.id}>
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <Link href={`/lop-hoc/${row.id}`} scroll={false} className="block truncate text-base font-bold text-[var(--fgColor-link)] hover:underline">
+                  <Link href={`/lop-hoc/${row.id}`} scroll={false} className="block truncate text-base font-medium text-[var(--fgColor-link)] hover:underline">
                     {row.name}
                   </Link>
                   <small className="block truncate text-xs text-[var(--fgColor-muted)]">

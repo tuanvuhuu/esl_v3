@@ -58,17 +58,17 @@ export function SurveyPanel({
         <div className="flex flex-col gap-3">
           <div className="grid grid-cols-3 gap-2 text-center">
             <div className="rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)] px-2 py-2.5">
-              <b className="block text-xl font-bold tabular-nums text-[var(--fgColor-default)]">
+              <b className="block text-xl font-medium tabular-nums text-[var(--fgColor-default)]">
                 {s.average === null ? '' : `${s.average.toLocaleString('vi-VN')}/5`}
               </b>
               <small className="text-xs text-[var(--fgColor-muted)]">Điểm trung bình</small>
             </div>
             <div className="rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)] px-2 py-2.5">
-              <b className="block text-xl font-bold tabular-nums text-[var(--fgColor-default)]">{s.answered}/{s.sent}</b>
+              <b className="block text-xl font-medium tabular-nums text-[var(--fgColor-default)]">{s.answered}/{s.sent}</b>
               <small className="text-xs text-[var(--fgColor-muted)]">Phụ huynh đã chấm</small>
             </div>
             <div className="rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)] px-2 py-2.5">
-              <b className="block text-xl font-bold tabular-nums text-[var(--fgColor-default)]">
+              <b className="block text-xl font-medium tabular-nums text-[var(--fgColor-default)]">
                 {continued ? `${Math.round((s.continueYes / continued) * 100)}%` : ''}
               </b>
               <small className="text-xs text-[var(--fgColor-muted)]">Học tiếp khoá sau</small>

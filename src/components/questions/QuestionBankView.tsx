@@ -24,12 +24,12 @@ import type { BankQuestion } from '@/lib/queries/question-bank';
 
 const COLUMNS: GridColumn[] = [
   { key: 'prompt', label: 'Nội dung', width: 'minmax(220px,2.4fr)' },
-  { key: 'skill', label: 'Kỹ năng', width: 'minmax(110px,0.8fr)' },
-  { key: 'level', label: 'Trình độ', width: 'minmax(110px,0.8fr)' },
-  { key: 'type', label: 'Loại', width: 'minmax(120px,1fr)' },
-  { key: 'points', label: 'Điểm', width: '80px' },
-  { key: 'usage', label: 'Dùng ở', width: 'minmax(110px,1fr)' },
-  { key: 'action', label: 'Thao tác', width: '64px', align: 'end', srOnly: true },
+  { key: 'skill', label: 'Kỹ năng', width: 'minmax(100px,0.8fr)' },
+  { key: 'level', label: 'Trình độ', width: 'minmax(100px,0.8fr)' },
+  { key: 'type', label: 'Loại', width: 'minmax(110px,1fr)' },
+  { key: 'points', label: 'Điểm', width: 'minmax(64px,0.5fr)' },
+  { key: 'usage', label: 'Dùng ở', width: 'minmax(100px,0.8fr)' },
+  { key: 'action', label: 'Thao tác', width: '44px', align: 'end', srOnly: true },
 ];
 
 // Ngân hàng câu hỏi: danh sách có lọc theo kỹ năng, trình độ, chủ đề, dạng câu (P36.6); thêm, sửa, xoá. Bảng trên web, thẻ trên điện thoại.
@@ -126,7 +126,7 @@ export function QuestionBankView({ questions }: { questions: BankQuestion[] }) {
         stickyEnd
         title={
           <div className="flex items-baseline gap-2">
-            <h1 className="m-0 text-base font-bold text-[var(--fgColor-default)]">Ngân hàng câu hỏi</h1>
+            <h1 className="m-0 text-base font-semibold text-[var(--fgColor-default)]">Ngân hàng câu hỏi</h1>
             <span className="text-xs text-[var(--fgColor-muted)]">({shown.length} câu)</span>
           </div>
         }

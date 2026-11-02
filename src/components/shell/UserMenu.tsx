@@ -36,7 +36,7 @@ export function UserMenu({
           <div className="flex items-center gap-3 border-b border-[var(--borderColor-muted)] px-3.5 py-3">
             <UserAvatar fullName={name} size="large" />
             <div className="min-w-0">
-              <b className="block truncate text-sm font-bold text-[var(--fgColor-default)]">{name}</b>
+              <b className="block truncate text-sm font-medium text-[var(--fgColor-default)]">{name}</b>
               <small className="block truncate text-xs text-[var(--fgColor-muted)]">
                 {email} · {role}
               </small>

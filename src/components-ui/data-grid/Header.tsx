@@ -184,7 +184,7 @@ const Header = (props: IHeaderProps) => {
                   >
                     {column.align === "right" && <div className="flex-1">&nbsp;</div>}
                     <div
-                      className="cursor-pointer d-flex gap-1 items-center"
+                      className="flex min-w-0 flex-1 cursor-pointer items-center gap-1"
                       onClick={() => {
                         if (column.dataField && column.isAllowSort !== false) {
                           props.onSortingChanged?.({
@@ -201,14 +201,20 @@ const Header = (props: IHeaderProps) => {
                           ? column.headerRender()
                           : translate(column.caption)}
                       </div>
-                      <div>
-                        {sortMode && (
-                          <>{sortMode === "asc" ? <ArrowUpIcon /> : <ArrowDownIcon />}</>
-                        )}
-                      </div>
+                      {sortMode && (
+                        <div className="shrink-0">
+                          {sortMode === "asc" ? <ArrowUpIcon size={12} /> : <ArrowDownIcon size={12} />}
+                        </div>
+                      )}
                     </div>
                     {column.dataField && !column.isDisableHederFilter && (
-                      <div>
+                      <div
+                        className={clsx(
+                          styles.filterTrigger,
+                          props.conditions.some((c) => c.field === column.dataField) &&
+                            styles.filterTriggerActive,
+                        )}
+                      >
                         <HeaderFilterButton
                           dataSource={props.dataSource}
                           dataColumn={column}
@@ -230,7 +236,10 @@ const Header = (props: IHeaderProps) => {
                       onMouseDown={(e) => {
                         e.persist();
 
-                        const startWidth = column.width ?? 100;
+                        const startWidth =
+                          e.currentTarget.parentElement?.getBoundingClientRect().width ??
+                          column.width ??
+                          120;
                         const startX = e.clientX;
 
                         const onMouseMove = (e2: MouseEvent) => {

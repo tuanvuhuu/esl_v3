@@ -23,7 +23,7 @@ import { PRESENT_MODES, type PresentMode, type Slide } from '@/lib/presentation'
 import { usePresentSync } from './usePresentSync';
 
 const STAGE_BTN =
-  'inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border-2 px-5 text-stage-sm font-extrabold transition-all active:scale-95 disabled:opacity-40';
+  'inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border-2 px-5 text-stage-sm font-semibold transition-all active:scale-95 disabled:opacity-40';
 
 export function speakSlide(s: Slide) {
   if (s.audioFileId) {
@@ -110,7 +110,7 @@ export function PresentStage({
           <Link
             href={backHref}
             data-link="true"
-            className="inline-flex items-center gap-1 font-bold text-[var(--fgColor-default)] underline underline-offset-4 hover:text-[var(--fgColor-link)]"
+            className="inline-flex items-center gap-1 font-medium text-[var(--fgColor-default)] underline underline-offset-4 hover:text-[var(--fgColor-link)]"
           >
             <XIcon size={16} aria-hidden /> Thoát
           </Link>
@@ -137,10 +137,10 @@ export function PresentStage({
       </header>
 
       <main className="relative flex min-h-0 flex-1 flex-col items-center justify-center gap-[2.5vh] overflow-hidden px-[4vw] text-center">
-        <p className="text-stage-sm font-bold text-[var(--fgColor-muted)]" aria-label="Số trang">
+        <p className="text-stage-sm font-semibold text-[var(--fgColor-muted)]" aria-label="Số trang">
           {index + 1} / {slides.length}
         </p>
-        {s.prompt && <h1 className="max-w-[90vw] text-stage font-extrabold leading-tight [overflow-wrap:anywhere]">{s.prompt}</h1>}
+        {s.prompt && <h1 className="max-w-[90vw] text-stage font-semibold leading-tight [overflow-wrap:anywhere]">{s.prompt}</h1>}
         {s.promptVi && <p className="text-stage-sm text-[var(--fgColor-muted)]">{s.promptVi}</p>}
         {s.passage && <p className="max-w-[80vw] whitespace-pre-line text-stage-sm text-[var(--fgColor-muted)]">{s.passage}</p>}
         <StagePicture s={s} />
@@ -155,7 +155,7 @@ export function PresentStage({
               <li
                 key={k}
                 data-correct={o.correct}
-                className={`flex min-h-[12dvh] flex-col items-center justify-center gap-2 rounded-3xl border-4 p-[1vw] text-stage font-extrabold [overflow-wrap:anywhere] ${
+                className={`flex min-h-[12dvh] flex-col items-center justify-center gap-2 rounded-3xl border-4 p-[1vw] text-stage font-semibold [overflow-wrap:anywhere] ${
                   state.revealed
                     ? o.correct
                       ? 'border-[var(--bgColor-success-emphasis)] bg-mint text-mint-ink'
@@ -176,7 +176,7 @@ export function PresentStage({
         <div className="min-h-[14dvh]" aria-live="polite" aria-label="Đáp án">
           {state.revealed && (s.answer || s.answerVi) && s.kind !== 'quiz' && (
             <>
-              {s.answer && <p className="text-stage font-extrabold text-[var(--fgColor-default)]">{s.answer}</p>}
+              {s.answer && <p className="text-stage font-semibold text-[var(--fgColor-default)]">{s.answer}</p>}
               {s.answerVi && <p className="text-stage-sm text-[var(--fgColor-muted)]">{s.answerVi}</p>}
             </>
           )}

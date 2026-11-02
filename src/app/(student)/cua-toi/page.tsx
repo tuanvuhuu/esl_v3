@@ -45,7 +45,7 @@ async function StudentHomeData() {
           <div className="flex min-w-0 items-center gap-3">
             <span className="text-4xl" aria-hidden>🧠</span>
             <div className="min-w-0">
-              <b className="block text-lg font-extrabold text-[var(--fgColor-default)]">
+              <b className="block text-lg font-semibold text-[var(--fgColor-default)]">
                 {box.dueToday > 0 ? `Hôm nay có ${box.dueToday} từ cần ôn` : box.total > 0 ? 'Hôm nay con ôn xong rồi' : 'Hộp từ đang trống'}
               </b>
               <small className="text-sm text-[var(--fgColor-muted)]">
@@ -64,13 +64,13 @@ async function StudentHomeData() {
       )}
 
       <section className="flex flex-col gap-3" aria-labelledby="path-title">
-        <h2 id="path-title" className="text-lg font-extrabold text-[var(--fgColor-default)]">Đường học</h2>
+        <h2 id="path-title" className="text-lg font-semibold text-[var(--fgColor-default)]">Đường học</h2>
         {path.length === 0 ? <EmptyPanel title="Lớp chưa có bài tập" hint="Khi giáo viên giao bài, bài sẽ hiện ở đây." /> : <LearningPath steps={path} />}
       </section>
 
       {games.length > 0 && (
         <section className="flex flex-col gap-3" aria-labelledby="word-games-title">
-          <h2 id="word-games-title" className="text-lg font-extrabold text-[var(--fgColor-default)]">Trò chơi từ vựng</h2>
+          <h2 id="word-games-title" className="text-lg font-semibold text-[var(--fgColor-default)]">Trò chơi từ vựng</h2>
           <ul className="grid grid-cols-1 gap-3 min-[600px]:grid-cols-2">
             {games.map((g) => (
               <li key={g.id}>

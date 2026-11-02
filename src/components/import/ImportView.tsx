@@ -31,7 +31,7 @@ const ACTION_PILL: Record<Action, { label: string; tone: Tone }> = {
 const KIND_LABEL: Record<EntityKind, string> = Object.fromEntries(KINDS.map((k) => [k.kind, k.label])) as Record<EntityKind, string>;
 
 const COLUMNS: GridColumn<RowResult>[] = [
-  { key: 'row', label: 'Dòng', width: '72px', sortValue: (r) => r.rowNumber },
+  { key: 'row', label: 'Dòng', width: '56px', sortValue: (r) => r.rowNumber },
   { key: 'place', label: 'Cơ sở · Lớp', width: 'minmax(160px, 1fr)', sortValue: (r) => `${r.campus} ${r.className}` },
   { key: 'student', label: 'Học sinh', width: 'minmax(150px, 1fr)', sortValue: (r) => r.student },
   { key: 'actions', label: 'Thay đổi', width: 'minmax(260px, 2fr)', sortable: false },

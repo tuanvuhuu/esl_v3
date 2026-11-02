@@ -8,7 +8,7 @@ import { vnDateTimeLabel } from '@/lib/datetime';
 import type { ClassTracking } from '@/lib/queries/class-tracking';
 
 const LINK = 'text-[var(--fgColor-link)] underline underline-offset-2 [overflow-wrap:anywhere]';
-const H3 = 'mb-2 text-sm font-bold text-[var(--fgColor-default)]';
+const H3 = 'mb-2 text-sm font-medium text-[var(--fgColor-default)]';
 
 export function ClassTrackingPanel({ data }: { data: ClassTracking }) {
   const { missing, hard, forgotten, speaking } = data;

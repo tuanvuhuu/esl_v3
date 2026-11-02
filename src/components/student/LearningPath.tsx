@@ -21,7 +21,7 @@ export function LearningPath({ steps }: { steps: PathStep[] }) {
               />
             )}
             <span
-              className={`relative z-[1] flex size-10 shrink-0 items-center justify-center rounded-full border-2 text-base font-extrabold ${
+              className={`relative z-[1] flex size-10 shrink-0 items-center justify-center rounded-full border-2 text-base font-semibold ${
                 done
                   ? 'border-[var(--borderColor-accent-emphasis)] bg-[var(--button-primary-bgColor-rest)] text-[var(--button-primary-fgColor-rest)]'
                   : 'border-[var(--borderColor-default)] bg-[var(--bgColor-default)] text-[var(--fgColor-muted)]'

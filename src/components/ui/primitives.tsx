@@ -27,7 +27,7 @@ const TAG_VARIANT: Record<Tone, NonNullable<LabelColorOptions>> = {
 // Nhãn trạng thái dùng `Tag` của `@/components-ui` (nền mờ + chữ màu ngữ nghĩa Primer).
 export function Pill({ tone, children }: { tone: Tone; children: ReactNode }) {
   return (
-    <UiTag variant={TAG_VARIANT[tone]} size="small" className="!font-medium">
+    <UiTag variant={TAG_VARIANT[tone]} size="small" className="!font-normal">
       {children}
     </UiTag>
   );
@@ -57,7 +57,7 @@ export function Avatar({
     return (
       <span
         className={clsx(
-          'grid shrink-0 place-items-center rounded-full border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] font-bold text-[var(--fgColor-muted)]',
+          'grid shrink-0 place-items-center rounded-full border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] font-medium text-[var(--fgColor-muted)]',
           dims,
         )}
         aria-hidden

@@ -99,10 +99,10 @@ export function TeacherList({
     switch (key) {
       case 'name':
         return (
-          <div className="flex min-w-0 items-center gap-3">
+          <div className="flex min-w-0 items-center gap-2.5">
             <Avatar name={row.name} seed={row.id} />
             <div className="min-w-0">
-              <b className="block truncate text-sm font-semibold text-[var(--fgColor-default)]">{row.name}</b>
+              <span className="block truncate text-sm font-medium text-[var(--fgColor-default)]">{row.name}</span>
               <a href={`tel:${row.phone.replace(/\s/g, '')}`} className={`inline-flex items-center gap-1 text-xs ${LINK}`}>
                 <DeviceMobileIcon size={12} aria-hidden />
                 {formatPhone(row.phone)}
@@ -149,7 +149,7 @@ export function TeacherList({
         <Avatar name={row.name} seed={row.id} size="lg" />
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
-            <b className="min-w-0 truncate text-base font-bold text-[var(--fgColor-default)]">{row.name}</b>
+            <b className="min-w-0 truncate text-base font-medium text-[var(--fgColor-default)]">{row.name}</b>
             <div className="hidden min-[768px]:block">
               <RowMenu label={`Thao tác với ${row.name}`} items={menuItems(row)} />
             </div>
@@ -204,7 +204,7 @@ export function TeacherList({
         searchEnable
         title={
           <div className="flex items-baseline gap-2">
-            <h1 className="m-0 text-base font-bold text-[var(--fgColor-default)]">Giáo viên</h1>
+            <h1 className="m-0 text-base font-semibold text-[var(--fgColor-default)]">Giáo viên</h1>
             <span className="text-xs text-[var(--fgColor-muted)]">
               ({teachers.length} giáo viên · {teaching} đang dạy)
             </span>

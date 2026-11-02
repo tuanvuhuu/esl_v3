@@ -18,11 +18,11 @@ import { LessonForm } from './LessonForm';
 import { MaterialsPanel } from './MaterialsPanel';
 
 const COLUMNS: GridColumn[] = [
-  { key: 'title', label: 'Bài giảng', width: 'minmax(220px,2fr)' },
-  { key: 'campus', label: 'Cơ sở', width: 'minmax(160px,1.2fr)' },
-  { key: 'materials', label: 'Tài liệu', width: '110px' },
-  { key: 'assignments', label: 'Bài tập', width: '110px' },
-  { key: 'action', label: 'Thao tác', width: '64px', align: 'end', srOnly: true },
+  { key: 'title', label: 'Bài giảng', width: 'minmax(220px,2.2fr)' },
+  { key: 'campus', label: 'Cơ sở', width: 'minmax(160px,1.3fr)' },
+  { key: 'materials', label: 'Tài liệu', width: 'minmax(88px,0.7fr)' },
+  { key: 'assignments', label: 'Bài tập', width: 'minmax(88px,0.7fr)' },
+  { key: 'action', label: 'Thao tác', width: '44px', align: 'end', srOnly: true },
 ];
 
 // Bài giảng dùng chung cho các cơ sở đã chọn. Bấm Tài liệu để thêm liên kết hoặc tệp.
@@ -68,13 +68,13 @@ export function LessonsView({
   const cell = (l: LessonRow, key: string) => {
     switch (key) {
       case 'title':
-        return <span className="min-w-0 text-base font-bold text-[var(--fgColor-default)] [overflow-wrap:anywhere]">{l.title}</span>;
+        return <span className="min-w-0 text-sm font-medium text-[var(--fgColor-default)] [overflow-wrap:anywhere]">{l.title}</span>;
       case 'campus':
         return <span className="text-sm text-[var(--fgColor-muted)]">{campusText(l)}</span>;
       case 'materials':
-        return <span className="text-base text-[var(--fgColor-default)]">{l.materials.length} tài liệu</span>;
+        return <span className="text-sm text-[var(--fgColor-default)]">{l.materials.length} tài liệu</span>;
       case 'assignments':
-        return <span className="text-base text-[var(--fgColor-default)]">{l.assignmentCount} bài</span>;
+        return <span className="text-sm text-[var(--fgColor-default)]">{l.assignmentCount} bài</span>;
       case 'action':
         return <RowMenu label={`Thao tác với bài giảng ${l.title}`} items={menuItems(l)} />;
       default:
@@ -97,7 +97,7 @@ export function LessonsView({
         searchEnable
         title={
           <div className="flex items-baseline gap-2">
-            <h1 className="m-0 text-base font-bold text-[var(--fgColor-default)]">Bài giảng</h1>
+            <h1 className="m-0 text-base font-semibold text-[var(--fgColor-default)]">Bài giảng</h1>
             <span className="text-xs text-[var(--fgColor-muted)]">({lessons.length})</span>
           </div>
         }

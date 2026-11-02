@@ -140,7 +140,7 @@ export function SpeakingFeedback({
       )}
       {needRedo && !redone && voiceAllowed && (
         <div className="flex flex-col gap-1 border-t border-[var(--borderColor-muted)] pt-2.5">
-          <b className="text-base font-extrabold text-[var(--fgColor-default)]">Nói lại câu này</b>
+          <b className="text-base font-semibold text-[var(--fgColor-default)]">Nói lại câu này</b>
           <small className="text-sm text-[var(--fgColor-muted)]">Nghe lại chỗ sai ở trên, rồi bấm micro để nói lại. Chỉ cần nói lại câu này.</small>
           <SpeakQuestion item={item} answer={undefined} onChange={(patch) => patch.fileId && saveRedo(patch.fileId)} />
         </div>

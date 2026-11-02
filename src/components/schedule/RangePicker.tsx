@@ -104,9 +104,9 @@ export function RangePicker({ from, to, onPick }: { from: string; to: string; on
     const active = draft !== null ? key === draft : key === from || key === to;
     const between = draft === null && key > from && key < to;
     const state = active
-      ? 'bg-[var(--button-primary-bgColor-rest,var(--color-primary))] font-bold text-[var(--button-primary-fgColor-rest,var(--color-on-primary))]'
+      ? 'bg-[var(--button-primary-bgColor-rest,var(--color-primary))] font-medium text-[var(--button-primary-fgColor-rest,var(--color-on-primary))]'
       : `${between ? 'bg-[var(--bgColor-accent-muted,var(--color-primary-soft))] hover:bg-[var(--bgColor-neutral-muted)]' : 'hover:bg-[var(--bgColor-muted)]'} ${key.startsWith(month) ? 'text-[var(--fgColor-default)]' : 'text-[var(--fgColor-muted)]'}`;
-    const todayRing = key === today && !active ? 'font-bold ring-1 ring-inset ring-[var(--fgColor-accent)]' : '';
+    const todayRing = key === today && !active ? 'font-medium ring-1 ring-inset ring-[var(--fgColor-accent)]' : '';
     return `grid size-[var(--icon-h)] place-items-center rounded-[var(--borderRadius-medium)] text-sm tabular-nums transition-colors ${state} ${todayRing}`;
   }
 

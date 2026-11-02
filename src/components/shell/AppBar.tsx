@@ -79,13 +79,13 @@ export function AppBar({
       <Link
         href="/tong-quan"
         aria-label="ESL Center, về trang Tổng quan"
-        className="flex shrink-0 items-center gap-2 whitespace-nowrap font-bold text-[var(--fgColor-default)]"
+        className="flex shrink-0 items-center gap-2 whitespace-nowrap font-semibold text-[var(--fgColor-default)]"
       >
-        <span className="grid size-7 shrink-0 place-items-center rounded-[6px] bg-[var(--button-primary-bgColor-rest)] text-xs font-extrabold text-[var(--button-primary-fgColor-rest)]">
+        <span className="grid size-7 shrink-0 place-items-center rounded-[6px] bg-[var(--button-primary-bgColor-rest)] text-xs font-semibold text-[var(--button-primary-fgColor-rest)]">
           ESL
         </span>
-        <span className="text-sm font-bold tracking-tight text-[var(--fgColor-default)]">ESL Center</span>
-        <span className="hidden rounded-[var(--borderRadius-small)] border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] px-1.5 py-0.5 text-[11px] font-medium text-[var(--fgColor-muted)] min-[900px]:inline-block">
+        <span className="text-sm font-semibold tracking-tight text-[var(--fgColor-default)]">ESL Center</span>
+        <span className="hidden rounded-[var(--borderRadius-small)] border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] px-1.5 py-0.5 text-[11px] font-normal text-[var(--fgColor-muted)] min-[900px]:inline-block">
           Quản lý trung tâm
         </span>
       </Link>

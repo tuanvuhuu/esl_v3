@@ -26,7 +26,7 @@ async function StudentShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-dvh flex-col bg-[var(--bgColor-inset,var(--bgColor-muted))]">
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-4 py-3">
-        <span className="text-base font-extrabold text-[var(--fgColor-default)]">ESL Center · Khu học sinh</span>
+        <span className="text-base font-semibold text-[var(--fgColor-default)]">ESL Center · Khu học sinh</span>
         <div className="flex items-center gap-3">
           <span className="text-sm text-[var(--fgColor-muted)] max-[767px]:hidden">{account.fullName}</span>
           {/* Tài khoản học thử không có mật khẩu, nên không có đổi mật khẩu */}

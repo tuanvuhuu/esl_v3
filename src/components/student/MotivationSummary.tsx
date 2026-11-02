@@ -13,7 +13,7 @@ export function MotivationSummary({ m }: { m: StudentMotivation }) {
       <div className={`flex items-center gap-3 ${TILE_CARD}`}>
         <span className="text-4xl" aria-hidden>⭐</span>
         <div className="min-w-0">
-          <b className="block text-2xl font-extrabold tabular-nums text-[var(--fgColor-default)]" aria-label={`${m.totalStars} sao`}>
+          <b className="block text-2xl font-semibold tabular-nums text-[var(--fgColor-default)]" aria-label={`${m.totalStars} sao`}>
             {m.totalStars} sao
           </b>
           <small className="text-sm text-[var(--fgColor-muted)]">
@@ -25,7 +25,7 @@ export function MotivationSummary({ m }: { m: StudentMotivation }) {
       <div className={`flex items-center gap-3 ${TILE_CARD}`}>
         <span className="text-4xl" aria-hidden>{m.streak.weeks > 0 ? '🔥' : '🌱'}</span>
         <div className="min-w-0">
-          <b className="block text-lg font-extrabold text-[var(--fgColor-default)]">
+          <b className="block text-lg font-semibold text-[var(--fgColor-default)]">
             {m.streak.weeks > 0 ? `Học ${m.streak.weeks} tuần liền` : 'Bắt đầu chuỗi tuần'}
           </b>
           <small className="text-sm text-[var(--fgColor-muted)]">
@@ -36,7 +36,7 @@ export function MotivationSummary({ m }: { m: StudentMotivation }) {
 
       <div className={`flex flex-col justify-center gap-2 ${TILE_CARD}`}>
         <div className="flex items-baseline justify-between gap-2">
-          <b className="text-base font-extrabold text-[var(--fgColor-default)]">Mục tiêu của lớp</b>
+          <b className="text-base font-semibold text-[var(--fgColor-default)]">Mục tiêu của lớp</b>
           <small className="text-sm text-[var(--fgColor-muted)]">tháng {monthLabel(goal.month)}</small>
         </div>
         <div

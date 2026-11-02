@@ -114,7 +114,7 @@ export function ChildEditor({
       className="fixed z-[60] flex flex-col gap-3 rounded-xl border border-[var(--borderColor-default)] bg-[var(--overlay-bgColor)] p-4 shadow-[var(--shadow-floating-large,var(--lift))]"
     >
       <div className="min-w-0">
-        <Link href={`/hoc-sinh/${child.studentId}`} className="block truncate text-sm font-bold text-[var(--fgColor-link)] hover:underline">
+        <Link href={`/hoc-sinh/${child.studentId}`} className="block truncate text-sm font-medium text-[var(--fgColor-link)] hover:underline">
           {child.studentName}
         </Link>
         <small className="block truncate text-xs text-[var(--fgColor-muted)]">Phụ huynh: {parentName}</small>

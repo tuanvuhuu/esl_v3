@@ -49,10 +49,10 @@ function buildColumns(childColumns: number): GridColumn<ParentRow>[] {
   return [
     { key: 'fullName', label: 'Họ tên', width: 'minmax(140px,1.3fr)', sortable: true },
     { key: 'email', label: 'Email', width: 'minmax(150px,1.3fr)', sortable: true },
-    { key: 'phone', label: 'Số điện thoại', width: '176px', sortable: true },
+    { key: 'phone', label: 'Số điện thoại', width: 'minmax(140px,1.25fr)', sortable: true },
     ...Array.from({ length: childColumns }, (_, i) => ({ key: `child${i}`, label: `Học sinh ${i + 1}`, width: 'minmax(116px,1fr)', sortable: false })),
     { key: 'note', label: 'Ghi chú', width: 'minmax(120px,1fr)', sortable: true },
-    { key: 'actions', label: 'Thao tác', width: '64px', align: 'end', srOnly: true },
+    { key: 'actions', label: 'Thao tác', width: '44px', align: 'end', srOnly: true },
   ];
 }
 
@@ -321,7 +321,7 @@ export function ParentList(props: { parents: ParentRow[]; students?: StudentChoi
   return (
     <section className="flex flex-col min-[1200px]:min-h-0 min-[1200px]:flex-1">
       <PageCrumbs crumbs={['Đào tạo', 'Phụ huynh']} />
-      <h1 className="mb-1 text-lg font-bold text-[var(--fgColor-default)] min-[768px]:sr-only">Phụ huynh</h1>
+      <h1 className="mb-1 text-lg font-semibold text-[var(--fgColor-default)] min-[768px]:sr-only">Phụ huynh</h1>
 
       <div className="mb-2.5 flex flex-col gap-2 min-[768px]:hidden">
         <div className="flex items-center gap-2">{toolbarActions}</div>
@@ -347,7 +347,7 @@ export function ParentList(props: { parents: ParentRow[]; students?: StudentChoi
           onSort={handleSort}
           title={
             <div className="flex items-baseline gap-2">
-              <span className="text-base font-bold text-[var(--fgColor-default)]">Phụ huynh</span>
+              <span className="text-base font-medium text-[var(--fgColor-default)]">Phụ huynh</span>
               <span className="text-xs text-[var(--fgColor-muted)]">({sorted.length})</span>
             </div>
           }

@@ -53,10 +53,10 @@ const ACCOUNT_COLUMNS: GridColumn<AccountRow>[] = [
 ];
 
 const AUDIT_COLUMNS: GridColumn<AuditRow>[] = [
-  { key: 'time', label: 'Thời điểm', width: '136px', sortValue: (a) => a.createdAt },
-  { key: 'action', label: 'Thao tác', width: '112px', sortValue: (a) => a.action },
-  { key: 'summary', label: 'Nội dung', width: 'minmax(0,1fr)' },
-  { key: 'actor', label: 'Người thực hiện', width: '120px', sortValue: (a) => a.accountName ?? '' },
+  { key: 'time', label: 'Thời điểm', width: 'minmax(120px,0.9fr)', sortValue: (a) => a.createdAt },
+  { key: 'action', label: 'Thao tác', width: 'minmax(104px,0.8fr)', sortValue: (a) => a.action },
+  { key: 'summary', label: 'Nội dung', width: 'minmax(200px,2.4fr)' },
+  { key: 'actor', label: 'Người thực hiện', width: 'minmax(112px,0.9fr)', sortValue: (a) => a.accountName ?? '' },
 ];
 
 type Props = {
@@ -247,7 +247,7 @@ function UsersTab({ accounts, total, filters, teachers, campuses, canManage }: {
         from="md"
         title={
           <div className="flex items-baseline gap-2">
-            <span className="text-base font-bold text-[var(--fgColor-default)]">Tài khoản</span>
+            <span className="text-base font-medium text-[var(--fgColor-default)]">Tài khoản</span>
             <span className="text-xs text-[var(--fgColor-muted)]">
               ({accounts.length}/{total})
             </span>

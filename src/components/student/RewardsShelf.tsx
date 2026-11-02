@@ -39,7 +39,7 @@ export function RewardsShelf({ totalStars }: { totalStars: number }) {
               ) : (
                 <>
                   <LockIcon size={18} className="text-[var(--fgColor-muted)]" aria-hidden />
-                  <small className="text-xs font-bold text-[var(--fgColor-muted)]" aria-hidden>{s.need}⭐</small>
+                  <small className="text-xs font-medium text-[var(--fgColor-muted)]" aria-hidden>{s.need}⭐</small>
                 </>
               )}
             </li>
@@ -66,7 +66,7 @@ export function RewardsShelf({ totalStars }: { totalStars: number }) {
                 >
                   <span className="text-3xl" aria-hidden>{open ? st.emoji : '🔒'}</span>
                   <span className="min-w-0">
-                    <b className={`block text-base font-extrabold ${open ? 'text-[var(--fgColor-link)] underline underline-offset-2' : 'text-[var(--fgColor-muted)]'}`}>
+                    <b className={`block text-base font-semibold ${open ? 'text-[var(--fgColor-link)] underline underline-offset-2' : 'text-[var(--fgColor-muted)]'}`}>
                       {st.title}
                     </b>
                     <small className="text-sm text-[var(--fgColor-muted)]">
@@ -87,7 +87,7 @@ export function RewardsShelf({ totalStars }: { totalStars: number }) {
               <li key={k} className="flex items-start gap-3">
                 <ActIcon label={`Nghe câu ${k + 1}`} icon={UnmuteIcon} onClick={() => readAloud(l.en)} className="mt-0.5 !rounded-full" />
                 <span className="min-w-0">
-                  <b className="block text-lg font-extrabold text-[var(--fgColor-default)]">{l.en}</b>
+                  <b className="block text-lg font-semibold text-[var(--fgColor-default)]">{l.en}</b>
                   <small className="text-sm text-[var(--fgColor-muted)]">{l.vi}</small>
                 </span>
               </li>

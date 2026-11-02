@@ -128,6 +128,7 @@ export interface IDataGridColumn<T = DataGridRowRecord> {
   dataType?: IColumnDataType;
 
   width?: number;
+  flex?: number;
   minWidth?: number;
   maxWidth?: number;
 

@@ -5,7 +5,7 @@ import { useState } from 'react';
 import type { GameWord } from '@/lib/games';
 
 export const BIG_BASE =
-  'flex min-h-14 items-center justify-center gap-2 rounded-2xl border-2 px-4 text-lg font-extrabold transition-all active:scale-95 disabled:opacity-50';
+  'flex min-h-14 items-center justify-center gap-2 rounded-2xl border-2 px-4 text-lg font-semibold transition-all active:scale-95 disabled:opacity-50';
 export const BIG = `${BIG_BASE} border-[var(--borderColor-default)] bg-[var(--bgColor-default)] text-[var(--fgColor-default)] hover:bg-[var(--bgColor-muted)]`;
 
 export type GameProps = { words: GameWord[]; seed: number; onFinish: (correct: number, total: number) => void };
@@ -41,5 +41,5 @@ export function Picture({ w, size = 'md' }: { w: GameWord; size?: 'md' | 'lg' })
     );
   }
   if (w.emoji) return <span className={size === 'lg' ? 'text-6xl' : 'text-4xl'} aria-label={w.meaningVi || 'tranh'}>{w.emoji}</span>;
-  return <span className="text-center text-base font-bold text-[var(--fgColor-muted)]">{w.meaningVi || '?'}</span>;
+  return <span className="text-center text-base font-medium text-[var(--fgColor-muted)]">{w.meaningVi || '?'}</span>;
 }

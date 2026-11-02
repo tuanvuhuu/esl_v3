@@ -159,7 +159,7 @@ export function SimonGame({ words, seed, onFinish }: GameProps) {
       <p className="text-sm text-[var(--fgColor-muted)]">
         Lượt {round + 1}/{game.sequences.length} · {seq.length} từ · Đúng {score}
       </p>
-      <p className="rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-3 text-base font-bold text-[var(--fgColor-default)]" aria-live="polite">
+      <p className="rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-3 text-base font-medium text-[var(--fgColor-default)]" aria-live="polite">
         {wrong
           ? `Chưa đúng. Thứ tự là: ${seq.map((w) => w.word).join(', ')}`
           : busy
@@ -228,7 +228,7 @@ export function HangmanGame({ words, seed, onFinish }: GameProps) {
       <div className="flex items-center gap-3 rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-3">
         <Picture w={w} size="lg" />
         <div className="flex min-w-0 flex-col gap-1">
-          {w.meaningVi && <b className="text-lg font-extrabold text-[var(--fgColor-default)]">{w.meaningVi}</b>}
+          {w.meaningVi && <b className="text-lg font-semibold text-[var(--fgColor-default)]">{w.meaningVi}</b>}
           <span className="text-2xl tracking-tight" aria-label={`Còn ${HANGMAN_LIVES - state.wrong} bóng bay`}>
             {Array.from({ length: HANGMAN_LIVES }, (_, k) => (k < HANGMAN_LIVES - state.wrong ? '🎈' : '💥')).join('')}
           </span>
@@ -238,7 +238,7 @@ export function HangmanGame({ words, seed, onFinish }: GameProps) {
         {(state.lost ? [...w.word] : maskWord(w.word, guessed)).map((ch, k) => (
           <span
             key={k}
-            className={`flex h-12 min-w-9 items-center justify-center rounded-xl text-2xl font-extrabold uppercase ${
+            className={`flex h-12 min-w-9 items-center justify-center rounded-xl text-2xl font-semibold uppercase ${
               ch === '_' ? 'border-b-4 border-[var(--fgColor-muted)] text-transparent' : state.lost ? 'bg-blush text-blush-ink' : 'bg-mint text-mint-ink'
             }`}
           >
@@ -246,7 +246,7 @@ export function HangmanGame({ words, seed, onFinish }: GameProps) {
           </span>
         ))}
       </p>
-      {state.lost && <p className="text-center text-base font-bold text-blush-ink">Hết bóng bay rồi. Từ đúng là “{w.word}”.</p>}
+      {state.lost && <p className="text-center text-base font-medium text-blush-ink">Hết bóng bay rồi. Từ đúng là “{w.word}”.</p>}
       <ul className="grid grid-cols-7 gap-1.5" aria-label="Bàn phím chữ cái">
         {KEYS.map((ch) => {
           const used = guessed.has(ch);
@@ -259,7 +259,7 @@ export function HangmanGame({ words, seed, onFinish }: GameProps) {
                 onClick={() => guess(ch)}
                 disabled={used || state.solved || state.lost}
                 data-key={ch}
-                className={`flex h-11 w-full items-center justify-center rounded-xl border-2 text-lg font-extrabold uppercase transition-transform active:scale-90 ${
+                className={`flex h-11 w-full items-center justify-center rounded-xl border-2 text-lg font-semibold uppercase transition-transform active:scale-90 ${
                   hit
                     ? 'border-[var(--bgColor-success-emphasis)] bg-mint text-mint-ink'
                     : used
@@ -359,7 +359,7 @@ export function RaceGame({ words, seed, onFinish }: GameProps) {
                 data-card="true"
                 onClick={() => answer(o.word)}
                 data-word={o.word}
-                className={`flex min-h-14 w-full items-center justify-center rounded-xl border-2 px-4 text-xl font-extrabold text-[var(--fgColor-default)] transition-all active:scale-95 ${state}`}
+                className={`flex min-h-14 w-full items-center justify-center rounded-xl border-2 px-4 text-xl font-semibold text-[var(--fgColor-default)] transition-all active:scale-95 ${state}`}
               >
                 {o.word}
               </button>
@@ -367,7 +367,7 @@ export function RaceGame({ words, seed, onFinish }: GameProps) {
           );
         })}
       </ul>
-      {picked === '' && <p className="text-center text-base font-bold text-blush-ink">Hết giờ! Từ đúng là “{q.target.word}”.</p>}
+      {picked === '' && <p className="text-center text-base font-medium text-blush-ink">Hết giờ! Từ đúng là “{q.target.word}”.</p>}
     </div>
   );
 }

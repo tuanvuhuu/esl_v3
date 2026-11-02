@@ -29,7 +29,7 @@ async function WordReviewData() {
         <Link
           href="/cua-toi"
           data-link="true"
-          className="inline-flex items-center gap-1 self-start text-sm font-bold text-[var(--fgColor-link)] underline underline-offset-2"
+          className="inline-flex items-center gap-1 self-start text-sm font-medium text-[var(--fgColor-link)] underline underline-offset-2"
         >
           <ArrowLeftIcon size={16} aria-hidden /> Về trang của con
         </Link>
