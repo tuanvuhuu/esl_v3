@@ -1,5 +1,5 @@
 :root {
-  ---table-border: color-mix(in srgb, var(--borderColor-default, #dfe4ea) 65%, transparent);
+  ---table-border: var(--borderColor-default, #00000014);
 }
 
 .table {
@@ -7,7 +7,7 @@
   border-spacing: 0;
   table-layout: fixed;
   width: 100%;
-  border-radius: var(--borderRadius-medium, 6px);
+  border-radius: var(--radius-2, 8px);
   background-color: var(--bgColor-default);
 }
 
@@ -18,12 +18,13 @@
 
 .table th {
   border-right: 1px solid var(---table-border);
-  border-bottom: 1px solid var(--borderColor-default);
+  border-bottom: 1px solid var(---table-border);
   padding: 0.375rem 0.625rem;
-  font-size: 0.78125rem;
+  font-size: 0.8125rem;
   font-weight: 500;
   box-sizing: border-box;
   background-color: var(--bgColor-muted);
+  transition: background-color 0.14s ease;
 }
 
 .table .bands th {
@@ -54,6 +55,7 @@
   background-color: var(--bgColor-default);
   color: var(--fgColor-default);
   overflow: hidden;
+  transition: background-color 0.12s ease, box-shadow 0.12s ease;
 }
 
 .table td.right {
@@ -93,9 +95,9 @@
   border-left: 1px solid var(---table-border);
 }
 
-/* Dòng chẵn lẻ & hover theo chuẩn Primer */
+/* Dòng chẵn lẻ & hover kèm vạch nhấn bên trái chuẩn 01. TSUKUBA */
 .table tr.even td {
-  background-color: color-mix(in srgb, var(--bgColor-muted) 45%, var(--bgColor-default));
+  background-color: color-mix(in srgb, var(--bgColor-muted) 65%, var(--bgColor-default));
 }
 
 .table td.fixed {
@@ -103,12 +105,16 @@
 }
 
 .table tr.even td.fixed {
-  background-color: color-mix(in srgb, var(--bgColor-muted) 45%, var(--bgColor-default));
+  background-color: color-mix(in srgb, var(--bgColor-muted) 65%, var(--bgColor-default));
 }
 
 .table tbody tr:hover td,
 .table tbody tr:hover td.fixed {
-  background-color: var(--row-hover, var(--bgColor-muted));
+  background-color: var(--row-hover, var(--bgColor-accent-muted));
+}
+
+.table tbody tr:hover td:first-child {
+  box-shadow: inset 3px 0 0 var(--primary);
 }
 
 .container [class*="prc-Pagination-"] {
@@ -165,8 +171,8 @@
   overflow-x: auto;
   overflow-y: visible;
   position: relative;
-  border-radius: var(--radius-2);
-  border: 1px solid var(--app-border-default);
+  border-radius: var(--radius-2, 8px);
+  border: 1px solid var(--borderColor-default);
   background-color: var(--bgColor-default);
 }
 
@@ -204,8 +210,8 @@
   width: 100%;
   min-width: 0;
   align-items: center;
-  font-weight: 500;
-  font-size: 0.78125rem;
+  font-weight: 600;
+  font-size: 0.8125rem;
   color: var(--fgColor-muted);
 }
 
@@ -297,7 +303,7 @@
 
 .title {
   font-weight: 600;
-  font-size: 0.9375rem;
+  font-size: 1rem;
   line-height: 1.35;
   color: var(--fgColor-default);
 }

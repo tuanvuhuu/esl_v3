@@ -1,6 +1,7 @@
 /*
- * Ánh xạ bảng màu GitHub Primer & Màu chủ đề (data-accent) vào biến CSS của @primer/primitives.
- * Mặc định dùng giao diện Sáng tinh gọn (nền trắng #ffffff, header phụ #f6f8fa, viền mảnh #dfe4ea) giống 01. TSUKUBA.
+ * Ánh xạ bảng màu dự án 01. TSUKUBA & GitHub Primer vào biến CSS của @primer/primitives.
+ * Mặc định dùng giao diện Sáng tinh gọn: mặt thẻ trắng #ffffff, nền phụ #f7f8fa,
+ * viền mảnh #00000014 / rgb(239, 243, 244), màu thương hiệu Tsukuba #d93b0e.
  */
 
 :root[data-color-mode][data-light-theme],
@@ -12,30 +13,30 @@
   --fontStack-system: var(--font-normal);
   --fontStack-sansSerif: var(--font-normal);
 
-  /* Hạ độ đậm mặc định của các thành phần Primer (Button, NavList, Label, UnderlineNav, Dialog) cho thanh thoát */
+  /* Hạ độ đậm mặc định của các thành phần Primer cho thanh thoát giống 01. TSUKUBA */
   --base-text-weight-light: 300;
   --base-text-weight-normal: 400;
   --base-text-weight-medium: 400;
   --base-text-weight-semibold: 500;
 
-  /* Bo góc chuẩn Primer / 01. TSUKUBA: 6px / 6px / 10px */
+  /* Bo góc chuẩn 01. TSUKUBA: 6px (small) / 8px (medium) / 12px (large) */
   --borderRadius-small: var(--radius-1);
   --borderRadius-medium: var(--radius-ctl);
   --borderRadius-large: var(--radius-panel);
 
-  /* Đồng bộ nền, mặt thẻ, viền và chữ */
+  /* Đồng bộ nền, mặt thẻ, viền mảnh (#00000014) và chữ */
   --bgColor-default: var(--surface);
   --bgColor-muted: var(--stone);
-  --bgColor-neutral-muted: color-mix(in srgb, var(--ink) 6%, transparent);
+  --bgColor-neutral-muted: color-mix(in srgb, var(--ink) 5.5%, transparent);
   --bgColor-inset: var(--stone);
   --overlay-bgColor: var(--surface);
   --fgColor-default: var(--ink);
   --fgColor-muted: var(--muted);
   --fgColor-link: var(--link);
   --borderColor-default: var(--line);
-  --borderColor-muted: color-mix(in srgb, var(--line) 60%, var(--surface));
+  --borderColor-muted: var(--line-muted, rgb(239, 243, 244));
 
-  /* Đồng bộ màu nhấn (accent) có độ tương phản cao >= 4.5:1 */
+  /* Đồng bộ màu thương hiệu (accent) */
   --fgColor-accent: var(--primary);
   --focus-outlineColor: var(--primary);
   --borderColor-accent-emphasis: var(--primary);
@@ -50,26 +51,26 @@
   --control-checked-borderColor-rest: var(--primary);
   --underlineNav-borderColor-active: var(--primary);
 
-  /* Nút chính (Button variant="primary"): nền đậm sắc nét, chữ trắng rõ ràng */
+  /* Nút chính (Button variant="primary") */
   --button-primary-bgColor-rest: var(--primary);
   --button-primary-bgColor-hover: var(--primary-deep);
   --button-primary-bgColor-active: var(--primary-deep);
   --button-primary-fgColor-rest: var(--on-primary);
   --button-primary-fgColor-disabled: var(--muted);
   --button-primary-bgColor-disabled: var(--stone);
-  --button-primary-borderColor-rest: rgba(31, 35, 40, 0.12);
-  --button-primary-borderColor-hover: rgba(31, 35, 40, 0.15);
-  --button-primary-borderColor-active: rgba(31, 35, 40, 0.2);
+  --button-primary-borderColor-rest: rgba(31, 35, 40, 0.1);
+  --button-primary-borderColor-hover: rgba(31, 35, 40, 0.14);
+  --button-primary-borderColor-active: rgba(31, 35, 40, 0.18);
   --button-primary-borderColor-disabled: var(--line);
 
-  /* Nút mặc định (Button variant="default") & Nút nguy hiểm (variant="danger") */
+  /* Nút mặc định (Button variant="default") — trắng sạch, viền mảnh #00000014 giống 01. TSUKUBA */
   --button-default-bgColor-rest: var(--surface);
   --button-default-bgColor-hover: var(--stone);
   --button-default-bgColor-active: color-mix(in srgb, var(--stone) 92%, var(--ink));
   --button-default-fgColor-rest: var(--ink);
   --button-default-borderColor-rest: var(--line);
-  --button-default-borderColor-hover: color-mix(in srgb, var(--line) 80%, var(--ink));
-  --button-default-borderColor-active: color-mix(in srgb, var(--line) 65%, var(--ink));
+  --button-default-borderColor-hover: color-mix(in srgb, var(--ink) 16%, transparent);
+  --button-default-borderColor-active: color-mix(in srgb, var(--ink) 22%, transparent);
 
   --button-danger-fgColor-rest: var(--blush-ink);
   --button-danger-fgColor-hover: #ffffff;
@@ -79,21 +80,22 @@
   --button-danger-borderColor-rest: var(--line);
   --button-danger-borderColor-hover: var(--blush-ink);
 
-  /* Trạng thái ngữ nghĩa chuẩn Primer — sáng trong, không đục */
+  /* Trạng thái ngữ nghĩa chuẩn 01. TSUKUBA — sáng trong, dễ nhìn */
   --fgColor-danger: var(--blush-ink);
   --bgColor-danger-muted: var(--blush);
   --bgColor-danger-emphasis: var(--blush-ink);
-  --borderColor-danger-muted: color-mix(in srgb, var(--blush-ink) 22%, var(--surface));
+  --borderColor-danger-muted: color-mix(in srgb, var(--blush-ink) 20%, var(--surface));
   --borderColor-danger-emphasis: var(--blush-ink);
 
   --fgColor-success: var(--mint-ink);
   --bgColor-success-muted: var(--mint);
   --bgColor-success-emphasis: var(--accent);
-  --borderColor-success-muted: color-mix(in srgb, var(--mint-ink) 22%, var(--surface));
+  --borderColor-success-muted: #e7f8ef;
 
   --fgColor-attention: var(--butter-ink);
   --bgColor-attention-muted: var(--butter);
-  --borderColor-attention-muted: color-mix(in srgb, var(--butter-ink) 25%, var(--surface));
+  --bgColor-attention-emphasis: #d29922;
+  --borderColor-attention-muted: color-mix(in srgb, var(--butter-ink) 22%, var(--surface));
 
   /* Kích thước điều khiển chuẩn ESL Center: 32px máy tính */
   --control-medium-size: var(--ctl-h);
@@ -101,6 +103,7 @@
 
 :root[data-theme='dark'] {
   --bgColor-inset: var(--bg);
+  --borderColor-success-muted: color-mix(in srgb, var(--mint-ink) 25%, var(--surface));
 }
 
 /* Điện thoại (< 768px): điều khiển nâng lên 44px (--ctl-h-touch) và chữ ô nhập 16px không tự zoom iOS */

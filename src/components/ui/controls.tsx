@@ -4,7 +4,7 @@
 // - TextInput → `@/components-ui` TextInput (hỗ trợ debounce + trạng thái lỗi Primer)
 // - Tag → `@/components-ui` Tag (nhãn màu pastel sáng theo semantic token)
 // - SegmentedSwitch → `@/components-ui` SegementedControlWraper + `@primer/react` SegmentedControl
-// - ChipGroup / Chip → Thanh lọc phân đoạn (Segmented Filter Pills) gọn sắc chuẩn Primer
+// - ChipGroup / Chip → Thanh lọc phân đoạn trượt mượt bằng framer-motion layoutId (cao chuẩn 32px máy tính)
 // - Pagination → tích hợp `@/components-ui` Paging & `@primer/react` Pagination
 import type { Icon } from '@primer/octicons-react';
 import {
@@ -13,10 +13,12 @@ import {
   UnderlineNav,
 } from '@primer/react';
 import clsx from 'clsx';
+import { motion, useReducedMotion } from 'framer-motion';
 import Link from 'next/link';
 import {
   createContext,
   useContext,
+  useId,
   type ButtonHTMLAttributes,
   type ElementType,
   type InputHTMLAttributes,
@@ -93,8 +95,8 @@ export function SegmentedSwitch<T extends string>({
   );
 }
 
-type ChipMode = 'standalone' | 'segmented' | 'underline';
-const ChipGroupContext = createContext<ChipMode>('standalone');
+type ChipGroupState = { mode: 'standalone' | 'segmented' | 'underline'; groupId: string };
+const ChipGroupContext = createContext<ChipGroupState>({ mode: 'standalone', groupId: 'standalone' });
 
 export function ChipGroup({
   label,
@@ -107,9 +109,10 @@ export function ChipGroup({
   className?: string;
   children: ReactNode;
 }) {
+  const groupId = useId();
   if (tabs) {
     return (
-      <ChipGroupContext.Provider value="underline">
+      <ChipGroupContext.Provider value={{ mode: 'underline', groupId }}>
         <UnderlineNav aria-label={label} className={clsx('!w-auto !border-b-0 !px-0 !py-0', className)}>
           {children}
         </UnderlineNav>
@@ -117,7 +120,7 @@ export function ChipGroup({
     );
   }
   return (
-    <ChipGroupContext.Provider value="segmented">
+    <ChipGroupContext.Provider value={{ mode: 'segmented', groupId }}>
       <div
         role="group"
         aria-label={label}
@@ -142,7 +145,8 @@ export function Chip({
   onClick,
   ...rest
 }: ButtonHTMLAttributes<HTMLButtonElement> & { selected: boolean; count?: number; href?: string; tab?: boolean }) {
-  const mode = useContext(ChipGroupContext);
+  const { mode, groupId } = useContext(ChipGroupContext);
+  const shouldReduceMotion = useReducedMotion();
 
   if (mode === 'underline') {
     if (href) {
@@ -174,25 +178,35 @@ export function Chip({
 
   const segmented = mode === 'segmented';
   const pillCls = clsx(
-    'inline-flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap text-[13px] transition-all select-none',
+    'relative inline-flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap text-[13px] transition-colors select-none',
     segmented
-      ? 'h-[26px] rounded-[calc(var(--borderRadius-medium)-2px)] px-2.5 max-[767px]:h-[34px]'
+      ? 'h-[var(--ctl-h)] rounded-[calc(var(--borderRadius-medium)-2px)] px-2.5 max-[767px]:h-[var(--chip-h-touch)]'
       : 'h-[var(--ctl-h)] rounded-[var(--borderRadius-medium)] border px-3 max-[767px]:h-[var(--chip-h-touch)]',
     segmented
       ? selected
-        ? 'bg-[var(--bgColor-default)] font-medium text-[var(--fgColor-default)] shadow-[0_1px_2px_rgba(31,35,40,0.08),0_0_0_1px_var(--borderColor-default)]'
-        : 'bg-transparent font-normal text-[var(--fgColor-muted)] hover:bg-[var(--bgColor-default)]/60 hover:text-[var(--fgColor-default)]'
+        ? 'font-medium text-[var(--fgColor-default)]'
+        : 'bg-transparent font-normal text-[var(--fgColor-muted)] hover:text-[var(--fgColor-default)]'
       : selected
         ? 'border-[var(--borderColor-accent-emphasis)] bg-[var(--primary-soft)] font-medium text-[var(--primary-deep)]'
         : 'border-[var(--borderColor-default)] bg-[var(--bgColor-default)] font-normal text-[var(--fgColor-muted)] hover:bg-[var(--bgColor-muted)] hover:text-[var(--fgColor-default)]',
     className,
   );
 
+  const slidingBg =
+    segmented && selected ? (
+      <motion.span
+        layoutId={shouldReduceMotion ? undefined : `tsukuba-chip-${groupId}`}
+        transition={{ type: 'spring', stiffness: 520, damping: 38 }}
+        className="pointer-events-none absolute inset-0 rounded-[calc(var(--borderRadius-medium)-2px)] bg-[var(--bgColor-default)] shadow-[0_1px_2px_rgba(31,35,40,0.08),0_0_0_1px_var(--borderColor-default)]"
+        aria-hidden
+      />
+    ) : null;
+
   const counterNode =
     count !== undefined ? (
       <span
         className={clsx(
-          'inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1.5 text-[11px] leading-none tabular-nums',
+          'relative z-[1] inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1.5 text-[11px] leading-none tabular-nums',
           selected
             ? 'bg-[var(--primary-soft)] font-medium text-[var(--primary-deep)]'
             : 'bg-[var(--bgColor-neutral-muted)] font-normal text-[var(--fgColor-muted)]',
@@ -201,6 +215,8 @@ export function Chip({
         {count}
       </span>
     ) : null;
+
+  const labelNode = <span className="relative z-[1] inline-flex items-center gap-1.5">{children}</span>;
 
   if (href) {
     return (
@@ -212,7 +228,8 @@ export function Chip({
         aria-current={!tab && selected ? 'page' : undefined}
         className={pillCls}
       >
-        <span className="inline-flex items-center gap-1.5">{children}</span>
+        {slidingBg}
+        {labelNode}
         {counterNode}
       </Link>
     );
@@ -228,7 +245,8 @@ export function Chip({
       className={pillCls}
       {...rest}
     >
-      <span className="inline-flex items-center gap-1.5">{children}</span>
+      {slidingBg}
+      {labelNode}
       {counterNode}
     </button>
   );

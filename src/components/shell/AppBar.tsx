@@ -1,6 +1,6 @@
 'use client';
 
-// Thanh tiêu đề trải ngang 100% theo chuẩn Primer + KhungUngDung.tsx (01. TSUKUBA).
+// Thanh tiêu đề trải ngang 100% theo chuẩn KhungUngDung.tsx & CaNhanApp.module.css (dự án 01. TSUKUBA).
 import { SearchIcon, ThreeBarsIcon } from '@primer/octicons-react';
 import { IconButton, TextInput } from '@primer/react';
 import { KeybindingHint } from '@primer/react/experimental';
@@ -66,7 +66,7 @@ export function AppBar({
   }
 
   return (
-    <header className="sticky top-0 z-40 flex h-[52px] shrink-0 items-center gap-2.5 border-b border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-4 max-[767px]:h-[56px] max-[767px]:px-3">
+    <header className="sticky top-0 z-40 flex h-[52px] shrink-0 items-center gap-2 border-b border-[var(--borderColor-default)] bg-[color-mix(in_srgb,var(--bgColor-default)_88%,transparent)] px-4 backdrop-blur-md max-[767px]:h-[56px] max-[767px]:px-3">
       <IconButton
         icon={ThreeBarsIcon}
         aria-label="Mở menu"
@@ -79,13 +79,13 @@ export function AppBar({
       <Link
         href="/tong-quan"
         aria-label="ESL Center, về trang Tổng quan"
-        className="flex shrink-0 items-center gap-2 whitespace-nowrap font-semibold text-[var(--fgColor-default)]"
+        className="group flex shrink-0 items-center gap-2 whitespace-nowrap text-[var(--fgColor-default)]"
       >
-        <span className="grid size-7 shrink-0 place-items-center rounded-[6px] bg-[var(--button-primary-bgColor-rest)] text-xs font-semibold text-[var(--button-primary-fgColor-rest)]">
+        <span className="grid size-7 shrink-0 place-items-center rounded-[6px] bg-[var(--primary)] text-xs font-bold tracking-tight text-[var(--on-primary)] transition-transform duration-150 group-hover:scale-[1.04]">
           ESL
         </span>
-        <span className="text-sm font-semibold tracking-tight text-[var(--fgColor-default)]">ESL Center</span>
-        <span className="hidden rounded-[var(--borderRadius-small)] border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] px-1.5 py-0.5 text-[11px] font-normal text-[var(--fgColor-muted)] min-[900px]:inline-block">
+        <span className="text-sm font-bold tracking-tight text-[var(--fgColor-default)]">ESL Center</span>
+        <span className="hidden rounded-[var(--borderRadius-small)] border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] px-1.5 py-0.5 text-[11px] font-normal text-[var(--fgColor-muted)] min-[960px]:inline-block">
           Quản lý trung tâm
         </span>
       </Link>
@@ -109,7 +109,7 @@ export function AppBar({
         />
       </form>
 
-      <div className="flex shrink-0 items-center gap-1.5">
+      <div className="flex shrink-0 items-center gap-1">
         <CampusPicker campuses={campuses} scope={campusScope} allowAll={campusAllowAll} />
         <NotificationBell />
         <ThemeMenu />

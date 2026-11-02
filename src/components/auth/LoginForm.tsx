@@ -1,6 +1,6 @@
 'use client';
 
-// Form đăng nhập theo kiến trúc LoginPage của dự án 01. TSUKUBA trên nền @primer/react v38 + Octicons.
+// Form đăng nhập chuẩn LoginPage.module.css của dự án 01. TSUKUBA trên nền @primer/react v38 + Octicons.
 import { PersonIcon, RocketIcon } from '@primer/octicons-react';
 import { Button } from '@primer/react';
 import { startTransition, useActionState, useState, useTransition, type FormEvent } from 'react';
@@ -43,18 +43,18 @@ export function LoginForm({
   }
 
   return (
-    <main className="grid min-h-dvh place-items-center bg-[var(--bgColor-inset)] px-4 py-10">
-      <section className="flex w-[min(420px,100%)] flex-col gap-5 rounded-2xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-6 shadow-[var(--shadow-floating-large,var(--lift))] max-[767px]:p-5">
-        <header className="flex flex-col items-center gap-2.5 text-center">
+    <main className="grid min-h-dvh place-items-center bg-[var(--bgColor-muted)] px-4 py-8">
+      <section className="tsukuba-rise flex w-[min(460px,100%)] flex-col gap-5 rounded-2xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-6 shadow-[0_8px_30px_rgba(31,35,40,0.06)] max-[767px]:p-5">
+        <header className="flex items-center gap-3.5 border-b border-[var(--borderColor-muted)] pb-4">
           <span
-            className="grid size-13 place-items-center rounded-xl bg-[var(--button-primary-bgColor-rest)] text-xl font-semibold text-[var(--button-primary-fgColor-rest)]"
+            className="grid size-12 shrink-0 place-items-center rounded-xl bg-[var(--primary)] text-base font-bold tracking-tight text-[var(--on-primary)]"
             aria-hidden
           >
-            E
+            ESL
           </span>
-          <div>
-            <h1 className="text-xl font-semibold text-[var(--fgColor-default)]">ESL Center</h1>
-            <p className="mt-0.5 text-sm text-[var(--fgColor-muted)]">Đăng nhập hệ thống quản lý trung tâm</p>
+          <div className="min-w-0">
+            <h1 className="m-0 text-lg font-semibold leading-snug text-[var(--fgColor-default)]">ESL Center · Đăng nhập</h1>
+            <p className="mt-0.5 text-[13px] text-[var(--fgColor-muted)]">Hệ thống quản lý đào tạo &amp; trung tâm tiếng Anh</p>
           </div>
         </header>
 
@@ -62,7 +62,7 @@ export function LoginForm({
           {next && <input type="hidden" name="next" value={next} />}
           {state.message && !state.ok && <Alert>{state.message}</Alert>}
 
-          <Field label="Email" error={errors.email}>
+          <Field label="Email hoặc mã học sinh" error={errors.email}>
             <TextInput
               block
               name="email"
@@ -98,10 +98,10 @@ export function LoginForm({
         {quickLogin && (
           <section
             aria-label="Đăng nhập nhanh theo quyền (tạm thời, chỉ khi phát triển)"
-            className="flex flex-col gap-2.5 border-t border-[var(--borderColor-muted)] pt-4"
+            className="flex flex-col gap-2.5 rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]/65 p-3.5"
           >
-            <p className="text-xs font-medium text-[var(--fgColor-muted)]">
-              Đăng nhập nhanh theo quyền (tạm thời, chỉ khi phát triển)
+            <p className="text-xs font-semibold text-[var(--fgColor-default)]">
+              Đăng nhập nhanh theo vai trò <span className="font-normal text-[var(--fgColor-muted)]">(môi trường phát triển)</span>
             </p>
             <div className="grid grid-cols-2 gap-2">
               {ROLE_CODES.map((role) => (

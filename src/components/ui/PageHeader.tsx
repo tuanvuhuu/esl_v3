@@ -1,7 +1,6 @@
 'use client';
 
-// Tiêu đề trang gọn gàng theo chuẩn Primer + 01. TSUKUBA: 1 dòng duy nhất gồm tiêu đề + nút thao tác bên phải.
-import { Label } from '@primer/react';
+// Tiêu đề trang chuẩn ui.module.css (.pageHeader / .pageTitle / .pageCode / .pageDesc) của dự án 01. TSUKUBA.
 import type { ReactNode } from 'react';
 import { PageCrumbs } from '@/components/shell/PageCrumbs';
 
@@ -22,16 +21,18 @@ export function PageHeader({
 }) {
   void _legacyTitleOnTopbar;
   return (
-    <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2 border-b border-[var(--borderColor-muted)] pb-2 max-[767px]:mb-2">
+    <div className="mb-3 flex flex-wrap items-start justify-between gap-3 max-[767px]:mb-2">
       <PageCrumbs crumbs={crumbs} />
-      <div className="flex min-w-0 flex-wrap items-baseline gap-x-2.5 gap-y-0.5">
-        <h1 className="m-0 text-base font-semibold leading-snug text-[var(--fgColor-default)]">{title}</h1>
-        {code && (
-          <Label variant="secondary" className="font-mono !font-normal">
-            {code}
-          </Label>
-        )}
-        {subtitle && <span className="text-xs text-[var(--fgColor-muted)]">{subtitle}</span>}
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-2">
+          <h1 className="m-0 text-lg font-semibold leading-snug tracking-tight text-[var(--fgColor-default)]">{title}</h1>
+          {code && (
+            <span className="rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] px-1.5 py-0.5 font-mono text-xs text-[var(--fgColor-muted)]">
+              {code}
+            </span>
+          )}
+        </div>
+        {subtitle && <p className="mt-0.5 text-[13px] text-[var(--fgColor-muted)]">{subtitle}</p>}
       </div>
       {actions && <div className="ml-auto flex flex-wrap items-center gap-1.5">{actions}</div>}
     </div>

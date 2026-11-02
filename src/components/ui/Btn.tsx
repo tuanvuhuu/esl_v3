@@ -51,7 +51,7 @@ export function Btn({
       loading={loading}
       leadingVisual={leadingVisual}
       trailingVisual={trailingVisual}
-      className={clsx(className)}
+      className={clsx('transition-transform duration-100 active:scale-[0.985]', className)}
     >
       {children}
     </Button>

@@ -16,7 +16,7 @@ export const viewport: Viewport = {
 
 // Mặc định luôn dùng giao diện Sáng (Light Mode) sắc nét chuẩn Primer & 01. TSUKUBA.
 // Chỉ sang tối khi người dùng chủ động chọn 'dark' (hoặc chọn 'system' trên máy đang bật Dark Mode).
-const themeScript = `(function(){try{var r=document.documentElement;var p=localStorage.getItem('esl-theme');r.setAttribute('data-light-theme','light');r.setAttribute('data-dark-theme','dark');if(p==='dark'){r.setAttribute('data-theme','dark');r.setAttribute('data-color-mode','dark');}else if(p==='system'){r.setAttribute('data-theme','system');r.setAttribute('data-color-mode','auto');}else{r.setAttribute('data-theme','light');r.setAttribute('data-color-mode','light');}var a=localStorage.getItem('esl-primer-accent');if(a&&a!=='blue'){r.setAttribute('data-accent',a);}else{r.removeAttribute('data-accent');}}catch(e){}})();`;
+const themeScript = `(function(){try{var r=document.documentElement;var p=localStorage.getItem('esl-theme');r.setAttribute('data-light-theme','light');r.setAttribute('data-dark-theme','dark');if(p==='dark'){r.setAttribute('data-theme','dark');r.setAttribute('data-color-mode','dark');}else if(p==='system'){r.setAttribute('data-theme','system');r.setAttribute('data-color-mode','auto');}else{r.setAttribute('data-theme','light');r.setAttribute('data-color-mode','light');}var a=localStorage.getItem('esl-accent-v2');if(a&&a!=='tsukuba'){r.setAttribute('data-accent',a);}else{r.removeAttribute('data-accent');}}catch(e){}})();`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

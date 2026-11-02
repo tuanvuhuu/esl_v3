@@ -1,8 +1,10 @@
 'use client';
 
-// Chuông thông báo theo phong cách NutChuong (01. TSUKUBA) trên nền @primer/react v38 + Octicons.
+// Chuông thông báo theo phong cách NutChuong (01. TSUKUBA) kèm hiệu ứng rung chuông & popover mượt.
 import { BellIcon } from '@primer/octicons-react';
 import { IconButton } from '@primer/react';
+import clsx from 'clsx';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
@@ -12,26 +14,38 @@ import type { AttentionGroup } from '@/lib/queries/notifications';
 
 export function NotificationBell() {
   const pathname = usePathname();
+  const shouldReduceMotion = useReducedMotion();
   const rootRef = useRef<HTMLDivElement>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const [groups, setGroups] = useState<AttentionGroup[]>([]);
   const [openPath, setOpenPath] = useState<string | null>(null);
-  const [place, setPlace] = useState({ top: 0, left: 0, width: 300 });
+  const [shaking, setShaking] = useState(false);
+  const [place, setPlace] = useState({ top: 0, left: 0, width: 320 });
+  const prevCountRef = useRef(0);
   const open = openPath === pathname;
   const count = groups.reduce((sum, g) => sum + g.count, 0);
 
   useEffect(() => {
     let alive = true;
+    let shakeTimer: ReturnType<typeof setTimeout> | undefined;
     listNotificationsAction()
       .then((next) => {
-        if (alive) setGroups(next);
+        if (!alive) return;
+        setGroups(next);
+        const total = next.reduce((sum, g) => sum + g.count, 0);
+        if (total > 0 && prevCountRef.current === 0) {
+          setShaking(true);
+          shakeTimer = setTimeout(() => setShaking(false), 650);
+        }
+        prevCountRef.current = total;
       })
       .catch(() => {
         if (alive) setGroups([]);
       });
     return () => {
       alive = false;
+      if (shakeTimer) clearTimeout(shakeTimer);
     };
   }, [pathname]);
 
@@ -65,7 +79,7 @@ export function NotificationBell() {
   }
 
   return (
-    <div ref={rootRef} className="relative inline-flex">
+    <div ref={rootRef} className="relative inline-flex items-center">
       <IconButton
         ref={btnRef}
         icon={BellIcon}
@@ -75,72 +89,83 @@ export function NotificationBell() {
         aria-expanded={open}
         aria-label={count > 0 ? `Thông báo, ${count} việc cần chú ý` : 'Thông báo'}
         onClick={toggle}
-        className="!size-[var(--icon-h)] shrink-0 max-[767px]:!size-[var(--icon-h-touch)]"
+        className={clsx(
+          '!size-[var(--icon-h)] shrink-0 max-[767px]:!size-[var(--icon-h-touch)]',
+          shaking && 'is-shaking-v',
+        )}
       />
       {count > 0 && (
         <span
           aria-hidden
-          className="pointer-events-none absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-[var(--bgColor-danger-emphasis,var(--blush-ink))] px-1 text-[10px] font-medium leading-none text-white ring-2 ring-[var(--bgColor-default)]"
+          className="pointer-events-none absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-[var(--bgColor-danger-emphasis,var(--blush-ink))] px-1 text-[10px] font-semibold leading-none text-white ring-2 ring-[var(--bgColor-default)]"
         >
           {count > 99 ? '99+' : count}
         </span>
       )}
 
-      {open &&
+      {typeof document !== 'undefined' &&
         createPortal(
-          <div
-            ref={panelRef}
-            role="dialog"
-            aria-label="Thông báo"
-            style={{ top: place.top, left: place.left, width: place.width }}
-            className="fixed z-50 flex max-h-[70vh] flex-col rounded-xl border border-[var(--borderColor-default)] bg-[var(--overlay-bgColor)] shadow-[var(--shadow-floating-large,var(--lift))]"
-          >
-            <div className="shrink-0 border-b border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)]/60 px-4 py-2.5">
-              <b className="text-sm font-medium text-[var(--fgColor-default)]">Thông báo</b>
-              <span className="ml-2 text-xs text-[var(--fgColor-muted)]">
-                {count > 0 ? `${count} việc cần chú ý` : 'Không có việc cần chú ý'}
-              </span>
-            </div>
-            <div className="min-h-0 flex-1 overflow-y-auto p-2">
-              {groups.length === 0 ? (
-                <p className="px-3 py-6 text-center text-sm text-[var(--fgColor-muted)]">Hôm nay không có việc gấp.</p>
-              ) : (
-                groups.map((g) => (
-                  <section key={g.key} className="flex flex-col gap-1 p-2">
-                    <h2 className="text-xs font-medium uppercase tracking-wider text-[var(--fgColor-muted)]">
-                      {g.title} ({g.count})
-                    </h2>
-                    <ul className="flex flex-col">
-                      {g.items.map((it) => (
-                        <li key={it.id}>
+          <AnimatePresence>
+            {open && (
+              <motion.div
+                ref={panelRef}
+                role="dialog"
+                aria-label="Thông báo"
+                initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: -6, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -4, scale: 0.98 }}
+                transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
+                style={{ top: place.top, left: place.left, width: place.width }}
+                className="fixed z-50 flex max-h-[70vh] flex-col overflow-hidden rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] bg-[var(--overlay-bgColor)] shadow-[var(--shadow-floating-large,var(--lift))]"
+              >
+                <div className="shrink-0 border-b border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)] px-4 py-2.5">
+                  <b className="text-sm font-semibold text-[var(--fgColor-default)]">Thông báo</b>
+                  <span className="ml-2 text-xs text-[var(--fgColor-muted)]">
+                    {count > 0 ? `${count} việc cần chú ý` : 'Không có việc cần chú ý'}
+                  </span>
+                </div>
+                <div className="min-h-0 flex-1 overflow-y-auto p-2">
+                  {groups.length === 0 ? (
+                    <p className="px-3 py-6 text-center text-sm text-[var(--fgColor-muted)]">Hôm nay không có việc gấp.</p>
+                  ) : (
+                    groups.map((g) => (
+                      <section key={g.key} className="flex flex-col gap-1 p-2">
+                        <h2 className="text-xs font-semibold text-[var(--fgColor-muted)]">
+                          {g.title} ({g.count})
+                        </h2>
+                        <ul className="flex flex-col">
+                          {g.items.map((it) => (
+                            <li key={it.id}>
+                              <Link
+                                href={it.href}
+                                onClick={() => setOpenPath(null)}
+                                className="flex items-center justify-between gap-3 rounded-[var(--borderRadius-medium)] px-2.5 py-2 transition-colors hover:bg-[var(--primary-soft)]/55"
+                              >
+                                <span className="min-w-0">
+                                  <b className="block truncate text-sm font-semibold text-[var(--fgColor-default)]">{it.title}</b>
+                                  <small className="block truncate text-xs text-[var(--fgColor-muted)]">{it.meta}</small>
+                                </span>
+                                <small className="shrink-0 text-xs font-semibold text-[var(--fgColor-danger)]">{it.right}</small>
+                              </Link>
+                            </li>
+                          ))}
+                        </ul>
+                        {g.count > g.items.length && (
                           <Link
-                            href={it.href}
+                            href={g.href}
                             onClick={() => setOpenPath(null)}
-                            className="flex items-center justify-between gap-3 rounded-[var(--borderRadius-medium)] px-2.5 py-2 transition-colors hover:bg-[var(--bgColor-muted)]"
+                            className="px-2.5 pt-1 text-xs font-semibold text-[var(--fgColor-link)] hover:underline"
                           >
-                            <span className="min-w-0">
-                              <b className="block truncate text-sm font-semibold text-[var(--fgColor-default)]">{it.title}</b>
-                              <small className="block truncate text-xs text-[var(--fgColor-muted)]">{it.meta}</small>
-                            </span>
-                            <small className="shrink-0 text-xs font-semibold text-[var(--fgColor-danger)]">{it.right}</small>
+                            Xem tất cả {g.count} mục
                           </Link>
-                        </li>
-                      ))}
-                    </ul>
-                    {g.count > g.items.length && (
-                      <Link
-                        href={g.href}
-                        onClick={() => setOpenPath(null)}
-                        className="px-2.5 pt-1 text-xs font-semibold text-[var(--fgColor-link)] underline underline-offset-4"
-                      >
-                        Xem tất cả {g.count} mục
-                      </Link>
-                    )}
-                  </section>
-                ))
-              )}
-            </div>
-          </div>,
+                        )}
+                      </section>
+                    ))
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>,
           document.body,
         )}
     </div>

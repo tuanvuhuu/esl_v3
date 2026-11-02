@@ -1,6 +1,6 @@
 'use client';
 
-// Menu đổi giao diện Sáng/Tối & Màu chủ đề dùng ActionMenu + ActionList chính gốc của @primer/react v38.
+// Menu đổi giao diện Sáng/Tối & Màu chủ đề chuẩn dự án 01. TSUKUBA trên nền @primer/react v38.
 import {
   BlockedIcon,
   DeviceDesktopIcon,
@@ -18,10 +18,10 @@ import { NATURE_LABEL, NATURE_SCENES } from '@/components/ui/NatureBanner';
 import { useLocalStorage } from '@/lib/use-local-storage';
 
 type Pref = 'light' | 'dark' | 'system';
-type Accent = 'blue' | 'green' | 'rose' | 'violet' | 'honey';
+type Accent = 'tsukuba' | 'blue' | 'green' | 'rose' | 'violet' | 'honey';
 
 const THEME_KEY = 'esl-theme';
-const ACCENT_KEY = 'esl-primer-accent';
+const ACCENT_KEY = 'esl-accent-v2';
 
 const OPTIONS: { value: Pref; label: string; icon: Icon }[] = [
   { value: 'light', label: 'Sáng', icon: SunIcon },
@@ -30,19 +30,29 @@ const OPTIONS: { value: Pref; label: string; icon: Icon }[] = [
 ];
 
 const ACCENTS: { value: Accent; label: string; swatch: string }[] = [
-  { value: 'blue', label: 'Xanh Primer (Mặc định)', swatch: '#0969da' },
+  { value: 'tsukuba', label: 'Cam đỏ Tsukuba (Mặc định)', swatch: '#de3f0f' },
+  { value: 'blue', label: 'Xanh Primer', swatch: '#0969da' },
   { value: 'green', label: 'Xanh lá GitHub', swatch: '#1f883d' },
-  { value: 'rose', label: 'Đỏ cam Tsukuba', swatch: '#cf222e' },
+  { value: 'rose', label: 'Đỏ thẫm', swatch: '#cf222e' },
   { value: 'violet', label: 'Tím Primer', swatch: '#8250df' },
   { value: 'honey', label: 'Hổ phách', swatch: '#b45309' },
 ];
 
 const BG_CHOICES: { value: string; label: string }[] = [
-  { value: 'none', label: 'Không ảnh nền (Chuẩn Primer)' },
+  { value: 'none', label: 'Không ảnh nền (Chuẩn Tsukuba)' },
   { value: 'auto', label: 'Tự đổi theo ngày' },
   ...NATURE_SCENES.map((s) => ({ value: s, label: NATURE_LABEL[s] })),
   { value: 'custom', label: 'Ảnh tải lên' },
 ];
+
+function runWithViewTransition(fn: () => void) {
+  const doc = document as Document & { startViewTransition?: (cb: () => void) => unknown };
+  if (typeof doc.startViewTransition === 'function' && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    doc.startViewTransition(fn);
+  } else {
+    fn();
+  }
+}
 
 function applyTheme(pref: Pref) {
   const root = document.documentElement;
@@ -57,28 +67,32 @@ function applyTheme(pref: Pref) {
 
 function applyAccent(accent: Accent) {
   const root = document.documentElement;
-  if (accent === 'blue') root.removeAttribute('data-accent');
+  if (accent === 'tsukuba') root.removeAttribute('data-accent');
   else root.setAttribute('data-accent', accent);
 }
 
 export function ThemeMenu() {
   const [storedTheme, setStoredTheme] = useLocalStorage(THEME_KEY, 'light');
-  const [storedAccent, setStoredAccent] = useLocalStorage(ACCENT_KEY, 'blue');
+  const [storedAccent, setStoredAccent] = useLocalStorage(ACCENT_KEY, 'tsukuba');
   const pref: Pref = storedTheme === 'dark' || storedTheme === 'system' ? storedTheme : 'light';
-  const accent: Accent = ACCENTS.find((a) => a.value === storedAccent)?.value ?? 'blue';
+  const accent: Accent = ACCENTS.find((a) => a.value === storedAccent)?.value ?? 'tsukuba';
   const [storedBg, setStoredBg] = useLocalStorage(BG_KEY, 'none');
   const [storedCustom, setStoredCustom] = useLocalStorage(BG_CUSTOM_KEY, '');
   const [bgError, setBgError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   function chooseTheme(next: Pref) {
-    setStoredTheme(next);
-    applyTheme(next);
+    runWithViewTransition(() => {
+      setStoredTheme(next);
+      applyTheme(next);
+    });
   }
 
   function chooseAccent(next: Accent) {
-    setStoredAccent(next);
-    applyAccent(next);
+    runWithViewTransition(() => {
+      setStoredAccent(next);
+      applyAccent(next);
+    });
   }
 
   async function uploadBackground(file: File) {

@@ -1,9 +1,10 @@
 'use client';
 
-// Thanh điều hướng bên trái dùng NavList chính gốc của @primer/react v38 + ô lọc chức năng chuẩn KhungUngDung.tsx (01. TSUKUBA).
-import { ChevronDownIcon, ChevronRightIcon, HomeIcon, SearchIcon } from '@primer/octicons-react';
-import { CounterLabel, NavList, TextInput } from '@primer/react';
+// Thanh điều hướng bên trái đồng bộ KhungUngDung.tsx & AppLayout.module.css (01. TSUKUBA) + vạch trượt mượt framer-motion.
+import { ChevronDownIcon, HomeIcon, SearchIcon } from '@primer/octicons-react';
+import { TextInput } from '@primer/react';
 import clsx from 'clsx';
+import { motion, useReducedMotion } from 'framer-motion';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
@@ -42,6 +43,7 @@ export function Sidebar({
   onNavigate: () => void;
 }) {
   const pathname = usePathname();
+  const shouldReduceMotion = useReducedMotion();
   const [storedCollapsed, setStoredCollapsed] = useLocalStorage(COLLAPSE_KEY, '[]');
   const [query, setQuery] = useState('');
   const collapsed = new Set(parseIdList(storedCollapsed));
@@ -67,14 +69,14 @@ export function Sidebar({
       id="side"
       aria-label="Menu chính"
       className={clsx(
-        'scroll-quiet flex flex-col gap-1.5 overflow-y-auto bg-[var(--bgColor-default)] px-2 py-2.5',
+        'scroll-quiet flex flex-col gap-1 overflow-y-auto bg-[var(--bgColor-default)] px-2.5 py-3',
         'max-[767px]:hidden',
-        'min-[1200px]:sticky min-[1200px]:top-[52px] min-[1200px]:h-[calc(100vh-52px)] min-[1200px]:w-[232px] min-[1200px]:border-r min-[1200px]:border-[var(--borderColor-default)]',
-        'max-[1199px]:fixed max-[1199px]:inset-y-0 max-[1199px]:left-0 max-[1199px]:z-[56] max-[1199px]:w-[min(264px,86vw)] max-[1199px]:border-r max-[1199px]:border-[var(--borderColor-default)] max-[1199px]:shadow-[var(--shadow-floating-large,var(--lift))] max-[1199px]:transition-transform max-[1199px]:duration-200',
+        'min-[1200px]:sticky min-[1200px]:top-[52px] min-[1200px]:h-[calc(100vh-52px)] min-[1200px]:w-[244px] min-[1200px]:border-r min-[1200px]:border-[var(--borderColor-default)]',
+        'max-[1199px]:fixed max-[1199px]:inset-y-0 max-[1199px]:left-0 max-[1199px]:z-[56] max-[1199px]:w-[min(268px,86vw)] max-[1199px]:border-r max-[1199px]:border-[var(--borderColor-default)] max-[1199px]:shadow-[var(--shadow-floating-large,var(--lift))] max-[1199px]:transition-transform max-[1199px]:duration-200',
         open ? 'max-[1199px]:translate-x-0' : 'max-[1199px]:-translate-x-[104%]',
       )}
     >
-      <div className="px-1 pb-1">
+      <div className="px-0.5 pb-1.5">
         <TextInput
           block
           type="search"
@@ -87,14 +89,33 @@ export function Sidebar({
         />
       </div>
 
-      <NavList aria-label="Các mục quản lý">
+      <nav aria-label="Các mục quản lý" className="flex flex-col gap-0.5">
         {homeShown && (
-          <NavList.Item as={Link} href={HOME_ITEM.href} onClick={onNavigate} aria-current={homeActive ? 'page' : undefined}>
-            <NavList.LeadingVisual>
-              <HomeIcon size={16} />
-            </NavList.LeadingVisual>
-            {HOME_ITEM.label}
-          </NavList.Item>
+          <Link
+            href={HOME_ITEM.href}
+            onClick={onNavigate}
+            aria-current={homeActive ? 'page' : undefined}
+            className={clsx(
+              'relative flex min-h-8 items-center gap-2.5 rounded-[var(--borderRadius-medium)] px-2.5 py-1.5 text-[13px] transition-colors',
+              homeActive
+                ? 'bg-[var(--primary-soft)] font-semibold text-[var(--primary-deep)]'
+                : 'font-normal text-[var(--fgColor-default)] hover:bg-[var(--bgColor-neutral-muted)]',
+            )}
+          >
+            {homeActive && (
+              <motion.span
+                layoutId={shouldReduceMotion ? undefined : 'tsukuba-sidebar-active-bar'}
+                transition={{ type: 'spring', stiffness: 480, damping: 36 }}
+                className="pointer-events-none absolute -left-1.5 top-1.5 bottom-1.5 w-[3px] rounded-full bg-[var(--primary)]"
+                aria-hidden
+              />
+            )}
+            <HomeIcon
+              size={16}
+              className={clsx('shrink-0 transition-colors', homeActive ? 'text-[var(--primary)]' : 'text-[var(--fgColor-muted)]')}
+            />
+            <span className="min-w-0 flex-1 truncate">{HOME_ITEM.label}</span>
+          </Link>
         )}
 
         {shown.map((group) => {
@@ -107,49 +128,75 @@ export function Sidebar({
                 aria-expanded={!isCollapsed}
                 disabled={searching}
                 onClick={() => toggle(group.id)}
-                className="flex h-8 w-full items-center justify-between gap-2 rounded-[var(--borderRadius-medium)] px-2 text-left text-xs font-medium text-[var(--fgColor-muted)] transition-colors hover:bg-[var(--bgColor-neutral-muted)] hover:text-[var(--fgColor-default)] disabled:cursor-default disabled:hover:bg-transparent"
+                className="flex h-8 w-full items-center justify-between gap-2 rounded-[var(--borderRadius-medium)] px-2 text-left text-[13px] font-semibold text-[var(--fgColor-default)] transition-colors hover:bg-[var(--bgColor-neutral-muted)] disabled:cursor-default disabled:hover:bg-transparent"
               >
-                <span className="flex-1 truncate uppercase tracking-wider">{group.title}</span>
+                <span className="flex-1 truncate">{group.title}</span>
                 {isCollapsed && hasActive && (
                   <span className="size-1.5 rounded-full bg-[var(--primary)]" aria-label="Có mục đang mở" />
                 )}
-                {!searching &&
-                  (isCollapsed ? <ChevronRightIcon size={14} aria-hidden /> : <ChevronDownIcon size={14} aria-hidden />)}
+                {!searching && (
+                  <ChevronDownIcon
+                    size={15}
+                    aria-hidden
+                    className={clsx(
+                      'shrink-0 text-[var(--fgColor-muted)] transition-transform duration-200',
+                      isCollapsed ? '-rotate-90' : 'rotate-0',
+                    )}
+                  />
+                )}
               </button>
 
-              {!isCollapsed &&
-                group.items.map((item) => {
-                  const active = isActivePath(pathname, item.href);
-                  const Icon = NAV_ICONS[item.icon];
-                  const count = badges[item.href] ?? 0;
-                  return (
-                    <NavList.Item
-                      key={item.href}
-                      as={Link}
-                      href={item.href}
-                      onClick={onNavigate}
-                      aria-current={active ? 'page' : undefined}
-                    >
-                      <NavList.LeadingVisual>
-                        <Icon size={16} />
-                      </NavList.LeadingVisual>
-                      {item.label}
-                      {count > 0 && (
-                        <NavList.TrailingVisual>
-                          <CounterLabel scheme="secondary" className="!bg-[var(--bgColor-muted)] !text-[11px] !font-normal !text-[var(--fgColor-muted)]">
+              {!isCollapsed && (
+                <div className="ml-2 mt-0.5 flex flex-col gap-0.5 border-l border-[var(--borderColor-muted)] pl-2">
+                  {group.items.map((item) => {
+                    const active = isActivePath(pathname, item.href);
+                    const Icon = NAV_ICONS[item.icon];
+                    const count = badges[item.href] ?? 0;
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={onNavigate}
+                        aria-current={active ? 'page' : undefined}
+                        className={clsx(
+                          'relative flex min-h-8 items-center gap-2.5 rounded-[var(--borderRadius-medium)] px-2.5 py-1.5 text-[13px] transition-colors',
+                          active
+                            ? 'bg-[var(--primary-soft)] font-semibold text-[var(--primary-deep)]'
+                            : 'font-normal text-[var(--fgColor-default)] hover:bg-[var(--bgColor-neutral-muted)]',
+                        )}
+                      >
+                        {active && (
+                          <motion.span
+                            layoutId={shouldReduceMotion ? undefined : 'tsukuba-sidebar-active-bar'}
+                            transition={{ type: 'spring', stiffness: 480, damping: 36 }}
+                            className="pointer-events-none absolute -left-[9.5px] top-1.5 bottom-1.5 w-[3px] rounded-full bg-[var(--primary)]"
+                            aria-hidden
+                          />
+                        )}
+                        <Icon
+                          size={16}
+                          className={clsx(
+                            'shrink-0 transition-colors',
+                            active ? 'text-[var(--primary)]' : 'text-[var(--fgColor-muted)]',
+                          )}
+                        />
+                        <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                        {count > 0 && (
+                          <span className="inline-flex h-[18px] min-w-5 items-center justify-center rounded-full bg-[var(--bgColor-attention-muted)] px-1.5 text-[11px] font-medium leading-none tabular-nums text-[var(--fgColor-attention)]">
                             {count > 99 ? '99+' : count}
-                          </CounterLabel>
-                        </NavList.TrailingVisual>
-                      )}
-                    </NavList.Item>
-                  );
-                })}
+                          </span>
+                        )}
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           );
         })}
-      </NavList>
+      </nav>
 
-      {nothing && <p className="px-3 py-2 text-xs text-[var(--fgColor-muted)]">Không có chức năng phù hợp.</p>}
+      {nothing && <p className="px-2.5 py-2 text-xs text-[var(--fgColor-muted)]">Không có chức năng phù hợp.</p>}
     </aside>
   );
 }

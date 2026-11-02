@@ -1,6 +1,7 @@
 'use client';
 
 import { EyeIcon, PencilIcon, TrashIcon } from '@primer/octicons-react';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState, useTransition, type ReactNode } from 'react';
@@ -87,6 +88,7 @@ export function StudentList({
   drawer,
 }: Props) {
   const router = useRouter();
+  const shouldReduceMotion = useReducedMotion();
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<{ id: number; values: StudentFormValues } | null>(null);
   const [toDelete, setToDelete] = useState<StudentRow | null>(null);
@@ -128,6 +130,7 @@ export function StudentList({
 
   // Máy tính mở hồ sơ trong ngăn kéo, giữ nguyên bộ lọc và trang. Điện thoại vẫn mở trang riêng (thẻ có nút Xem).
   const profileHref = (id: number) => studentsHref({ ...filters, p: page, n: loadedPages, h: String(id) });
+  const closeDrawerHref = studentsHref({ ...filters, p: page, n: loadedPages, h: '' });
 
   const rowItems = (row: StudentRow): RowMenuItem[] => [
     { kind: 'link', href: profileHref(row.id), label: 'Xem hồ sơ', icon: EyeIcon },
@@ -257,15 +260,34 @@ export function StudentList({
         </Link>
       )}
 
-      {/* Ngăn kéo hồ sơ (máy tính, từ 768px). Nội dung do máy chủ dựng khi có ?h= */}
-      {drawer && (
-        <aside
-          aria-label="Hồ sơ học sinh"
-          className="fixed inset-y-0 right-0 z-[65] hidden w-[min(560px,100%)] overflow-y-auto border-l border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-5 shadow-[var(--shadow-floating-large,var(--lift))] min-[768px]:block"
-        >
-          {drawer}
-        </aside>
-      )}
+      {/* Ngăn kéo hồ sơ trượt mượt kiểu 01. TSUKUBA (máy tính, từ 768px). Nội dung do máy chủ dựng khi có ?h= */}
+      <AnimatePresence>
+        {drawer && (
+          <>
+            <motion.div
+              key="student-drawer-scrim"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.16 }}
+              onClick={() => router.push(closeDrawerHref, { scroll: false })}
+              className="fixed inset-0 z-[64] hidden bg-black/15 backdrop-blur-[1px] min-[768px]:block"
+              aria-hidden
+            />
+            <motion.aside
+              key="student-drawer-panel"
+              aria-label="Hồ sơ học sinh"
+              initial={shouldReduceMotion ? { opacity: 0 } : { x: '100%' }}
+              animate={shouldReduceMotion ? { opacity: 1 } : { x: 0 }}
+              exit={shouldReduceMotion ? { opacity: 0 } : { x: '100%' }}
+              transition={{ type: 'spring', stiffness: 380, damping: 36 }}
+              className="fixed inset-y-0 right-0 z-[65] hidden w-[min(560px,100%)] overflow-y-auto border-l border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-5 shadow-[var(--shadow-floating-large,var(--lift))] min-[768px]:block"
+            >
+              {drawer}
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
 
       <Toast message={message} />
 

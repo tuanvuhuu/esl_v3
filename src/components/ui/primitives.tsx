@@ -3,7 +3,7 @@
 // Thành phần cơ bản dùng trực tiếp bộ `@/components-ui` (01. TSUKUBA) + `@primer/react` v38:
 // - Pill → `@/components-ui` Tag (nhãn trạng thái semantic muted-bg + fg)
 // - Avatar → `@/components-ui` UserAvatar (avatar gradient theo tên)
-// - ProgressBar → `@/components-ui` ProgressBarView
+// - ProgressBar → `@/components-ui` ProgressBarView (màu xanh lá chuẩn .barFill của 01. TSUKUBA)
 // - Alert / EmptyState → `@primer/react` Banner + Blankslate
 import { AlertIcon, CheckCircleIcon, InboxIcon } from '@primer/octicons-react';
 import { Banner, type LabelColorOptions } from '@primer/react';
@@ -24,10 +24,18 @@ const TAG_VARIANT: Record<Tone, NonNullable<LabelColorOptions>> = {
   stone: 'secondary',
 };
 
-// Nhãn trạng thái dùng `Tag` của `@/components-ui` (nền mờ + chữ màu ngữ nghĩa Primer).
+// Nhãn trạng thái dùng `Tag` của `@/components-ui` (nền mờ + chữ màu ngữ nghĩa Primer & 01. TSUKUBA).
 export function Pill({ tone, children }: { tone: Tone; children: ReactNode }) {
+  const lavStyle =
+    tone === 'lav'
+      ? {
+          backgroundColor: 'var(--lav)',
+          color: 'var(--lav-ink)',
+          borderColor: 'color-mix(in srgb, var(--lav-ink) 22%, var(--surface))',
+        }
+      : undefined;
   return (
-    <UiTag variant={TAG_VARIANT[tone]} size="small" className="!font-normal">
+    <UiTag variant={TAG_VARIANT[tone]} size="small" style={lavStyle} className="!font-normal">
       {children}
     </UiTag>
   );
@@ -71,10 +79,9 @@ export function Avatar({
 
 export function ProgressBar({ value, max, className = '' }: { value: number; max: number; className?: string }) {
   const percent = max <= 0 ? 0 : Math.min(100, Math.round((value / max) * 100));
-  const bg = percent >= 100 ? 'success.emphasis' : 'accent.emphasis';
   return (
     <div className={clsx(className || 'w-full')}>
-      <ProgressBarView progress={percent} bg={bg} barSize="default" className="w-full" aria-valuenow={percent} />
+      <ProgressBarView progress={percent} bg="success.emphasis" barSize="default" className="w-full" aria-valuenow={percent} />
     </div>
   );
 }

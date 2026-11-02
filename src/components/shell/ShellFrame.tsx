@@ -1,11 +1,10 @@
 'use client';
 
-// Khung ứng dụng chính đồng bộ kiến trúc KhungUngDung.tsx (01. TSUKUBA) trên nền @primer/react v38:
+// Khung ứng dụng chính đồng bộ KhungUngDung.tsx & AppLayout.module.css (01. TSUKUBA):
 // - Thanh tiêu đề (AppBar) trải ngang 100% ở trên cùng.
-// - Thân dưới chia 2 cột: Sidebar (NavList của Primer) bên trái + Main (Breadcrumbs của Primer + nội dung) bên phải.
-import { Breadcrumbs } from '@primer/react';
+// - Thân dưới chia 2 cột: Sidebar (244px) bên trái + Main (Breadcrumb đóng khung mục hiện tại + nội dung) bên phải.
 import { usePathname } from 'next/navigation';
-import { useEffect, useState, type ReactNode } from 'react';
+import { Fragment, useEffect, useState, type ReactNode } from 'react';
 import { AppBackdrop } from '@/components/shell/AppBackdrop';
 import type { CampusOption, CampusScope } from '@/lib/campus';
 import type { NavGroup, NavItem } from '@/lib/nav';
@@ -33,15 +32,30 @@ function ShellBreadcrumbs() {
   const crumbs = useCrumbs();
   if (!crumbs || crumbs.length === 0) return null;
   return (
-    <div className="mb-1 max-[767px]:hidden">
-      <Breadcrumbs>
-        {crumbs.map((c, i) => (
-          <Breadcrumbs.Item key={`${i}-${c}`} as="span" selected={i === crumbs.length - 1}>
-            {c}
-          </Breadcrumbs.Item>
-        ))}
-      </Breadcrumbs>
-    </div>
+    <nav aria-label="Vị trí hiện tại" className="mb-1.5 flex flex-wrap items-center gap-1.5 text-[13px] max-[767px]:hidden">
+      {crumbs.map((c, i) => {
+        const isLast = i === crumbs.length - 1;
+        return (
+          <Fragment key={`${i}-${c}`}>
+            {i > 0 && (
+              <span className="text-[var(--fgColor-muted)]" aria-hidden>
+                /
+              </span>
+            )}
+            {isLast ? (
+              <span
+                aria-current="page"
+                className="inline-flex items-center rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-accent-emphasis)] bg-[var(--bgColor-default)] px-2.5 py-0.5 text-xs font-medium text-[var(--fgColor-default)]"
+              >
+                {c}
+              </span>
+            ) : (
+              <span className="font-medium text-[var(--primary)]">{c}</span>
+            )}
+          </Fragment>
+        );
+      })}
+    </nav>
   );
 }
 
@@ -101,12 +115,12 @@ export function ShellFrame({
 
       {navOpen && <div className="fixed inset-0 z-[55] bg-scrim min-[1200px]:hidden" onClick={() => setNavOpen(false)} aria-hidden />}
 
-      <div className="grid min-h-0 min-[1200px]:grid-cols-[232px_minmax(0,1fr)]">
+      <div className="grid min-h-0 min-[1200px]:grid-cols-[244px_minmax(0,1fr)]">
         <Sidebar groups={groups} badges={badgeCounts} open={navOpen} onNavigate={() => setNavOpen(false)} />
 
         <main
           key={pathname}
-          className="w-full min-w-0 px-4 py-2 max-[767px]:px-3.5 max-[767px]:pb-[calc(112px+var(--safe-b))]"
+          className="tsukuba-page-enter w-full min-w-0 px-4 py-2 max-[767px]:px-3.5 max-[767px]:pb-[calc(112px+var(--safe-b))]"
         >
           <ShellBreadcrumbs />
           {children}
