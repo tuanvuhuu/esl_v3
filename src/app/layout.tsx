@@ -20,12 +20,12 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
-  themeColor: '#FFFFFF',
+  themeColor: '#f6f8fa',
 };
 
 // Đặt giao diện sáng hoặc tối (kèm data-color-mode cho Primer) trước khi trang vẽ, để không bị nháy.
-// Nếu người dùng chọn "Theo hệ thống" thì không đặt data-theme, đặt data-color-mode="auto".
-const themeScript = `(function(){try{var r=document.documentElement;var p=localStorage.getItem('esl-theme');r.setAttribute('data-light-theme','light');r.setAttribute('data-dark-theme','dark');if(p==='light'||p==='dark'){r.setAttribute('data-theme',p);r.setAttribute('data-color-mode',p);}else{r.setAttribute('data-color-mode','auto');}var a=localStorage.getItem('esl-accent');if(a&&a!=='honey'){r.setAttribute('data-accent',a);}}catch(e){}})();`;
+// Mặc định màu chủ đề là Xanh Primer ('blue' — không đặt data-accent).
+const themeScript = `(function(){try{var r=document.documentElement;var p=localStorage.getItem('esl-theme');r.setAttribute('data-light-theme','light');r.setAttribute('data-dark-theme','dark');if(p==='light'||p==='dark'){r.setAttribute('data-theme',p);r.setAttribute('data-color-mode',p);}else{r.setAttribute('data-color-mode','auto');}var a=localStorage.getItem('esl-primer-accent');if(a&&a!=='blue'){r.setAttribute('data-accent',a);}else{r.removeAttribute('data-accent');}}catch(e){}})();`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

@@ -2,204 +2,218 @@
 @import "../styles/primer/index.css";
 
 /* ============================================================
-   Token thiết kế ESL Center. Nguồn chuẩn: docs/DESIGN.md.
-   Không ghi số cố định cho màu hay cỡ chữ trong component, dùng token ở đây.
+   Bảng màu nền chuẩn GitHub Primer & 01. TSUKUBA cho ESL Center.
+   Tương phản cao (WCAG AA/AAA), nền xám trung tính sạch (#f6f8fa / #0d1117),
+   mặt thẻ trắng (#ffffff / #151b23), chữ than chì sắc nét (#1f2328 / #f0f6fc).
    ============================================================ */
 
-/* ---------- Bảng màu: sáng (mặc định) ---------- */
+/* ---------- Bảng màu: sáng (mặc định — Primer Light + Xanh Primer) ---------- */
 :root {
-  --bg: #FFFFFF;
-  --surface: #FFFFFF;
-  --qr-bg: #FFFFFF; /* nền mã QR: giữ trắng cả ở giao diện tối để app ngân hàng quét được */
-  --ink: #2F2A1F;
-  --ink-2: #4A4538;
-  --muted: #6E6755;
-  --line: #ECE6D8;
-  --stone: #F1ECE0;
-  --stone-ink: #6B6453;
-  --primary: #FFC933;
-  --primary-deep: #EDA400;
-  --primary-soft: #FFF1CC;
-  --on-primary: #2F2A1F;
-  --accent: #159E5E;
-  --mint: #C5F0D6;
-  --mint-ink: #0C7A42;
-  --lav: #D8EEBA;
-  --lav-ink: #44700D;
-  --butter: #FFE59C;
-  --butter-ink: #8A6200;
-  --blush: #FBD2BD;
-  --blush-ink: #B83E18;
-  --row-hover: #FBF8F1;
-  --link: #1D4ED8; /* liên kết: chữ xanh dương có gạch chân, đạt AA trên nền trắng */
-  --relation: #7A5AD6; /* nhãn quan hệ (Bố, Mẹ): tím, khác màu chữ xanh của tên */
-  --bar-bg: rgba(255, 255, 255, 0.92);
-  --glass: rgba(255, 255, 255, 0.94);
-  --scrim: rgba(47, 42, 31, 0.3);
-  --shadow: 0 0 0 1px var(--line), 0 1px 2px rgba(47, 42, 31, 0.04), 0 14px 34px -22px rgba(47, 42, 31, 0.28);
-  --lift: 0 30px 80px -30px rgba(47, 42, 31, 0.45);
+  --bg: #f6f8fa;
+  --surface: #ffffff;
+  --qr-bg: #ffffff; /* nền mã QR: giữ trắng cả ở giao diện tối để app ngân hàng quét được */
+  --ink: #1f2328;
+  --ink-2: #424a53;
+  --muted: #59636e;
+  --line: #d1d9e0;
+  --stone: #eff2f5;
+  --stone-ink: #424a53;
+  --primary: #0969da;
+  --primary-deep: #0550ae;
+  --primary-soft: #ddf4ff;
+  --on-primary: #ffffff;
+  --accent: #1a7f37;
+  --mint: #dafbe1;
+  --mint-ink: #1a7f37;
+  --lav: #ddf4ff;
+  --lav-ink: #0969da;
+  --butter: #fff8c5;
+  --butter-ink: #9a6700;
+  --blush: #ffebe9;
+  --blush-ink: #cf222e;
+  --row-hover: #f6f8fa;
+  --link: #0969da;
+  --relation: #8250df;
+  --bar-bg: rgba(255, 255, 255, 0.94);
+  --glass: rgba(255, 255, 255, 0.96);
+  --scrim: rgba(31, 35, 40, 0.4);
+  --shadow: 0 0 0 1px var(--line), 0 1px 3px rgba(31, 35, 40, 0.06), 0 8px 24px rgba(66, 74, 83, 0.08);
+  --lift: 0 8px 24px rgba(31, 35, 40, 0.16), 0 24px 48px rgba(31, 35, 40, 0.12);
   --safe-b: env(safe-area-inset-bottom, 0px);
   color-scheme: light;
 
-  /* Kích thước chuẩn, lấy từ trang Học sinh (DESIGN mục 8). Mọi nút, ô, chip, nút icon và bo góc đều đọc từ đây. */
+  /* Kích thước điều khiển chuẩn: 32px máy tính, 44px điện thoại; bo góc gọn sắc theo Primer / 01. TSUKUBA */
   --ctl-h: 2rem; /* 32px: nút chữ, ô nhập, ô chọn, chip trên máy tính */
   --ctl-h-touch: 2.75rem; /* 44px: ô và nút trên điện thoại */
   --chip-h-touch: 2.25rem; /* 36px: chip trên điện thoại */
   --icon-h: 2.25rem; /* 36px: nút icon và nút ⋯ trên máy tính */
   --icon-h-touch: 2.75rem; /* 44px: nút icon trên điện thoại */
-  --radius-ctl: 0.75rem; /* 12px: nút, ô nhập, ô chọn */
-  --radius-panel: 1.5rem; /* 24px: thẻ, bảng, khung */
-  --cal-hour-h: 6rem; /* 96px: chiều cao một giờ trên lưới lịch tuần, đủ chỗ cho giờ, lớp, giáo viên và trạng thái khi buổi trùng giờ */
+  --radius-ctl: 0.5rem; /* 8px: nút, ô nhập, ô chọn chuẩn Primer */
+  --radius-panel: 0.75rem; /* 12px: thẻ, bảng, khung chuẩn Primer */
+  --cal-hour-h: 6rem;
 }
 
-/* ---------- Bảng màu: tối ---------- */
+/* ---------- Bảng màu: tối (Primer Dark) ---------- */
 :root[data-theme="dark"] {
-  --bg: #17130E;
-  --surface: #221D16;
-  --ink: #F4EEDF;
-  --ink-2: #CFC6B2;
-  --muted: #9D9580;
-  --line: #3A3328;
-  --stone: #2D281F;
-  --stone-ink: #CFC6B2;
-  --primary: #F5CD62;
-  --primary-deep: #E5B038;
-  --primary-soft: #3B3320;
-  --on-primary: #2A2316;
-  --accent: #6CC39C;
-  --mint: #1F3A2C;
-  --mint-ink: #9EDDBC;
-  --lav: #2A3322;
-  --lav-ink: #C4E0A0;
-  --butter: #3E3517;
-  --butter-ink: #FFDD8A;
-  --blush: #3A2A20;
-  --blush-ink: #F0BFA5;
-  --row-hover: #2A251C;
-  --link: #7DB3FF;
-  --relation: #B8A2F0;
-  --bar-bg: rgba(23, 19, 14, 0.92);
-  --glass: rgba(34, 29, 22, 0.94);
-  --scrim: rgba(0, 0, 0, 0.55);
-  --shadow: 0 0 0 1px var(--line), 0 1px 2px rgba(0, 0, 0, 0.3), 0 14px 34px -22px rgba(0, 0, 0, 0.7);
-  --lift: 0 30px 80px -30px rgba(0, 0, 0, 0.75);
+  --bg: #0d1117;
+  --surface: #151b23;
+  --ink: #f0f6fc;
+  --ink-2: #c9d1d9;
+  --muted: #9198a1;
+  --line: #3d444d;
+  --stone: #212830;
+  --stone-ink: #c9d1d9;
+  --primary: #1f6feb;
+  --primary-deep: #58a6ff;
+  --primary-soft: #122d4f;
+  --on-primary: #ffffff;
+  --accent: #3fb950;
+  --mint: #122d1f;
+  --mint-ink: #3fb950;
+  --lav: #122d4f;
+  --lav-ink: #58a6ff;
+  --butter: #342809;
+  --butter-ink: #d29922;
+  --blush: #3c1618;
+  --blush-ink: #f85149;
+  --row-hover: #1c232d;
+  --link: #58a6ff;
+  --relation: #a371f7;
+  --bar-bg: rgba(21, 27, 35, 0.92);
+  --glass: rgba(21, 27, 35, 0.95);
+  --scrim: rgba(1, 4, 9, 0.65);
+  --shadow: 0 0 0 1px var(--line), 0 1px 3px rgba(1, 4, 9, 0.4), 0 8px 24px rgba(1, 4, 9, 0.5);
+  --lift: 0 16px 36px rgba(1, 4, 9, 0.65), 0 32px 64px rgba(1, 4, 9, 0.55);
   color-scheme: dark;
 }
 
 /* Theo hệ thống, khi người dùng chọn "Theo hệ thống" (data-theme chưa đặt) */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #17130E;
-    --surface: #221D16;
-    --ink: #F4EEDF;
-    --ink-2: #CFC6B2;
-    --muted: #9D9580;
-    --line: #3A3328;
-    --stone: #2D281F;
-    --stone-ink: #CFC6B2;
-    --primary: #F5CD62;
-    --primary-deep: #E5B038;
-    --primary-soft: #3B3320;
-    --on-primary: #2A2316;
-    --row-hover: #2A251C;
-    --link: #7DB3FF;
-    --relation: #B8A2F0;
+    --bg: #0d1117;
+    --surface: #151b23;
+    --ink: #f0f6fc;
+    --ink-2: #c9d1d9;
+    --muted: #9198a1;
+    --line: #3d444d;
+    --stone: #212830;
+    --stone-ink: #c9d1d9;
+    --primary: #1f6feb;
+    --primary-deep: #58a6ff;
+    --primary-soft: #122d4f;
+    --on-primary: #ffffff;
+    --accent: #3fb950;
+    --mint: #122d1f;
+    --mint-ink: #3fb950;
+    --lav: #122d4f;
+    --lav-ink: #58a6ff;
+    --butter: #342809;
+    --butter-ink: #d29922;
+    --blush: #3c1618;
+    --blush-ink: #f85149;
+    --row-hover: #1c232d;
+    --link: #58a6ff;
+    --relation: #a371f7;
+    --bar-bg: rgba(21, 27, 35, 0.92);
+    --glass: rgba(21, 27, 35, 0.95);
+    --scrim: rgba(1, 4, 9, 0.65);
+    --shadow: 0 0 0 1px var(--line), 0 1px 3px rgba(1, 4, 9, 0.4), 0 8px 24px rgba(1, 4, 9, 0.5);
+    --lift: 0 16px 36px rgba(1, 4, 9, 0.65), 0 32px 64px rgba(1, 4, 9, 0.55);
     color-scheme: dark;
   }
 }
 
 /* ============================================================
    Màu chủ đề (accent): đổi màu nhấn toàn app qua data-accent.
-   Mặc định là vàng mật (không có data-accent). Mỗi màu đặt lại
-   --primary, --primary-deep, --primary-soft, --on-primary cho
-   cả chế độ sáng và tối. Chọn ở menu Giao diện (ThemeMenu).
+   Mặc định là Xanh Primer (#0969da, không có data-accent).
+   Mọi màu đều đảm bảo độ tương phản chữ >= 4.5:1 (WCAG AA).
    ============================================================ */
 
-/* Xanh lá */
+/* Xanh lá (Primer Green) */
 :root[data-accent="green"] {
-  --primary: #7FD6A6;
-  --primary-deep: #2E9E68;
-  --primary-soft: #E3F4EC;
-  --on-primary: #15402B;
+  --primary: #1f883d;
+  --primary-deep: #1a7f37;
+  --primary-soft: #dafbe1;
+  --on-primary: #ffffff;
 }
 :root[data-theme="dark"][data-accent="green"] {
-  --primary: #5FC98F;
-  --primary-deep: #4FBF88;
-  --primary-soft: #1F3A2C;
-  --on-primary: #0E2419;
+  --primary: #238636;
+  --primary-deep: #3fb950;
+  --primary-soft: #122d1f;
+  --on-primary: #ffffff;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"])[data-accent="green"] {
-    --primary: #5FC98F;
-    --primary-deep: #4FBF88;
-    --primary-soft: #1F3A2C;
-    --on-primary: #0E2419;
+    --primary: #238636;
+    --primary-deep: #3fb950;
+    --primary-soft: #122d1f;
+    --on-primary: #ffffff;
   }
 }
 
-/* Xanh dương */
-:root[data-accent="blue"] {
-  --primary: #9CC0FB;
-  --primary-deep: #3B7BE0;
-  --primary-soft: #E8F0FD;
-  --on-primary: #16305C;
-}
-:root[data-theme="dark"][data-accent="blue"] {
-  --primary: #6FA2F2;
-  --primary-deep: #5A8CE8;
-  --primary-soft: #1E2C47;
-  --on-primary: #0E1A33;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"])[data-accent="blue"] {
-    --primary: #6FA2F2;
-    --primary-deep: #5A8CE8;
-    --primary-soft: #1E2C47;
-    --on-primary: #0E1A33;
-  }
-}
-
-/* Tím */
-:root[data-accent="violet"] {
-  --primary: #C3AEF2;
-  --primary-deep: #7A5AD6;
-  --primary-soft: #EFEAFB;
-  --on-primary: #2E1D5C;
-}
-:root[data-theme="dark"][data-accent="violet"] {
-  --primary: #A98CEC;
-  --primary-deep: #9070DE;
-  --primary-soft: #2A2342;
-  --on-primary: #170E33;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"])[data-accent="violet"] {
-    --primary: #A98CEC;
-    --primary-deep: #9070DE;
-    --primary-soft: #2A2342;
-    --on-primary: #170E33;
-  }
-}
-
-/* Hồng */
+/* Đỏ cam / Hồng (01. TSUKUBA / Primer Danger-Coral) */
 :root[data-accent="rose"] {
-  --primary: #F3A9C4;
-  --primary-deep: #D1557F;
-  --primary-soft: #FBEAF1;
-  --on-primary: #5C1D37;
+  --primary: #cf222e;
+  --primary-deep: #a40e26;
+  --primary-soft: #ffebe9;
+  --on-primary: #ffffff;
 }
 :root[data-theme="dark"][data-accent="rose"] {
-  --primary: #E88FB2;
-  --primary-deep: #D86E96;
-  --primary-soft: #3A2230;
-  --on-primary: #330E1F;
+  --primary: #da3633;
+  --primary-deep: #f85149;
+  --primary-soft: #3c1618;
+  --on-primary: #ffffff;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"])[data-accent="rose"] {
-    --primary: #E88FB2;
-    --primary-deep: #D86E96;
-    --primary-soft: #3A2230;
-    --on-primary: #330E1F;
+    --primary: #da3633;
+    --primary-deep: #f85149;
+    --primary-soft: #3c1618;
+    --on-primary: #ffffff;
+  }
+}
+
+/* Tím (Primer Done Purple) */
+:root[data-accent="violet"] {
+  --primary: #8250df;
+  --primary-deep: #6639ba;
+  --primary-soft: #fbefff;
+  --on-primary: #ffffff;
+}
+:root[data-theme="dark"][data-accent="violet"] {
+  --primary: #8957e5;
+  --primary-deep: #a371f7;
+  --primary-soft: #271d45;
+  --on-primary: #ffffff;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"])[data-accent="violet"] {
+    --primary: #8957e5;
+    --primary-deep: #a371f7;
+    --primary-soft: #271d45;
+    --on-primary: #ffffff;
+  }
+}
+
+/* Hổ phách (Amber — tương phản đậm #9a6700 trên nền trắng) */
+:root[data-accent="honey"] {
+  --primary: #b45309;
+  --primary-deep: #9a6700;
+  --primary-soft: #fff8c5;
+  --on-primary: #ffffff;
+}
+:root[data-theme="dark"][data-accent="honey"] {
+  --primary: #d29922;
+  --primary-deep: #e3b341;
+  --primary-soft: #342809;
+  --on-primary: #0d1117;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"])[data-accent="honey"] {
+    --primary: #d29922;
+    --primary-deep: #e3b341;
+    --primary-soft: #342809;
+    --on-primary: #0d1117;
   }
 }
 
@@ -329,7 +343,11 @@
     font-variant-numeric: tabular-nums;
     /* Để hệ điều hành tự khử răng cưa (ClearType trên Windows) cho chữ nét hơn.
        Không ép grayscale antialiasing vì làm chữ mảnh và mờ. */
-    transition: background-color 0.3s, color 0.3s;
+    transition: background-color 0.2s, color 0.2s;
+  }
+  a {
+    color: inherit;
+    text-decoration: none;
   }
   button,
   input,
@@ -349,7 +367,7 @@
     }
   }
   :focus-visible {
-    outline: 2px solid var(--primary-deep);
+    outline: 2px solid var(--primary);
     outline-offset: 2px;
   }
   @media (prefers-reduced-motion: reduce) {

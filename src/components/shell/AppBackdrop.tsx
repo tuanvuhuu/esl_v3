@@ -3,14 +3,12 @@
 import { NATURE_SCENES, NatureSvg, natureSceneFor, type NatureScene } from '@/components/ui/NatureBanner';
 import { useLocalStorage } from '@/lib/use-local-storage';
 
-// Lựa chọn ảnh nền lưu trong trình duyệt: "auto" (theo ngày), một cảnh mặc định, "custom" (ảnh tải lên), "none" (không ảnh).
-// Ảnh tải lên (đã thu nhỏ, dạng JPEG) lưu ở khoá riêng.
-export const BG_KEY = 'esl-bg';
+// Lựa chọn ảnh nền lưu trong trình duyệt: mặc định "none" để giữ nền xám trung tính chuẩn Primer (#f6f8fa / #0d1117).
+export const BG_KEY = 'esl-primer-bg';
 export const BG_CUSTOM_KEY = 'esl-bg-custom';
 
-// Nền phủ cả khung nhìn, dưới mọi khung và thanh bên (thanh bên bán trong suốt để nhìn thấy nền).
 export function AppBackdrop() {
-  const [bg] = useLocalStorage(BG_KEY, 'auto');
+  const [bg] = useLocalStorage(BG_KEY, 'none');
   const [custom] = useLocalStorage(BG_CUSTOM_KEY, '');
   if (bg === 'none') return null;
 

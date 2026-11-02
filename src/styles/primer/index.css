@@ -1,6 +1,5 @@
 /* Điểm vào CSS của Primer React v38 cho ESL Center (kết hợp cùng Tailwind CSS v4, không nạp utilities.css cũ) */
 @import "@primer/primitives/dist/css/primitives.css";
-@import "@primer/primitives/dist/css/functional/size/viewport.css";
 @import "@primer/primitives/dist/css/functional/themes/light.css";
 @import "@primer/primitives/dist/css/functional/themes/dark.css";
 @import "./tokens.css";

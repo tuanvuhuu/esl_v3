@@ -96,12 +96,12 @@ export function Sidebar({ groups, open, onNavigate }: { groups: NavGroup[]; open
             className={clsx(
               'relative flex min-h-8 items-center gap-2.5 rounded-[var(--borderRadius-medium)] px-2.5 py-1.5 text-sm transition-colors',
               homeActive
-                ? 'bg-[var(--bgColor-accent-muted)] font-semibold text-[var(--fgColor-default)]'
+                ? 'bg-[var(--bgColor-accent-muted)] font-semibold text-[var(--fgColor-accent)]'
                 : 'font-medium text-[var(--fgColor-default)] hover:bg-[var(--bgColor-muted)]',
             )}
           >
             {homeActive && (
-              <span aria-hidden className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-[var(--primary-deep)]" />
+              <span aria-hidden className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-[var(--primary)]" />
             )}
             <HomeIcon size={16} className={homeActive ? 'shrink-0 text-[var(--fgColor-accent)]' : 'shrink-0 text-[var(--fgColor-muted)]'} aria-hidden />
             <span className="min-w-0 truncate leading-snug">{HOME_ITEM.label}</span>
@@ -138,7 +138,7 @@ export function Sidebar({ groups, open, onNavigate }: { groups: NavGroup[]; open
                         {active && (
                           <span
                             aria-hidden
-                            className="absolute -left-[9px] bottom-1.5 top-1.5 w-[3px] rounded-full bg-[var(--primary-deep)]"
+                            className="absolute -left-[9px] bottom-1.5 top-1.5 w-[3px] rounded-full bg-[var(--primary)]"
                           />
                         )}
                         <Link
@@ -148,7 +148,7 @@ export function Sidebar({ groups, open, onNavigate }: { groups: NavGroup[]; open
                           className={clsx(
                             'flex min-h-8 items-center gap-2 rounded-[var(--borderRadius-medium)] px-2.5 py-1.5 text-sm transition-colors',
                             active
-                              ? 'bg-[var(--bgColor-accent-muted)] font-semibold text-[var(--fgColor-default)]'
+                              ? 'bg-[var(--bgColor-accent-muted)] font-semibold text-[var(--fgColor-accent)]'
                               : 'font-normal text-[var(--fgColor-default)] hover:bg-[var(--bgColor-muted)]',
                           )}
                         >

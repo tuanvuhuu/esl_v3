@@ -18,10 +18,10 @@ import { NATURE_LABEL, NATURE_SCENES, NatureSvg, natureSceneFor } from '@/compon
 import { useLocalStorage } from '@/lib/use-local-storage';
 
 type Pref = 'light' | 'dark' | 'system';
-type Accent = 'honey' | 'green' | 'blue' | 'violet' | 'rose';
+type Accent = 'blue' | 'green' | 'rose' | 'violet' | 'honey';
 
 const THEME_KEY = 'esl-theme';
-const ACCENT_KEY = 'esl-accent';
+const ACCENT_KEY = 'esl-primer-accent';
 
 const OPTIONS: { value: Pref; label: string; icon: Icon }[] = [
   { value: 'light', label: 'Sáng', icon: SunIcon },
@@ -30,11 +30,11 @@ const OPTIONS: { value: Pref; label: string; icon: Icon }[] = [
 ];
 
 const ACCENTS: { value: Accent; label: string; swatch: string }[] = [
-  { value: 'honey', label: 'Vàng mật', swatch: '#F0B73A' },
-  { value: 'green', label: 'Xanh lá', swatch: '#2E9E68' },
-  { value: 'blue', label: 'Xanh dương', swatch: '#3B7BE0' },
-  { value: 'violet', label: 'Tím', swatch: '#7A5AD6' },
-  { value: 'rose', label: 'Hồng', swatch: '#D1557F' },
+  { value: 'blue', label: 'Xanh Primer', swatch: '#0969da' },
+  { value: 'green', label: 'Xanh lá', swatch: '#1f883d' },
+  { value: 'rose', label: 'Đỏ cam', swatch: '#cf222e' },
+  { value: 'violet', label: 'Tím', swatch: '#8250df' },
+  { value: 'honey', label: 'Hổ phách', swatch: '#b45309' },
 ];
 
 const BG_CHOICES: { value: string; label: string }[] = [
@@ -58,16 +58,16 @@ function applyTheme(pref: Pref) {
 
 function applyAccent(accent: Accent) {
   const root = document.documentElement;
-  if (accent === 'honey') root.removeAttribute('data-accent');
+  if (accent === 'blue') root.removeAttribute('data-accent');
   else root.setAttribute('data-accent', accent);
 }
 
 export function ThemeMenu() {
   const [storedTheme, setStoredTheme] = useLocalStorage(THEME_KEY, 'system');
-  const [storedAccent, setStoredAccent] = useLocalStorage(ACCENT_KEY, 'honey');
+  const [storedAccent, setStoredAccent] = useLocalStorage(ACCENT_KEY, 'blue');
   const pref: Pref = storedTheme === 'light' || storedTheme === 'dark' ? storedTheme : 'system';
-  const accent: Accent = ACCENTS.find((a) => a.value === storedAccent)?.value ?? 'honey';
-  const [storedBg, setStoredBg] = useLocalStorage(BG_KEY, 'auto');
+  const accent: Accent = ACCENTS.find((a) => a.value === storedAccent)?.value ?? 'blue';
+  const [storedBg, setStoredBg] = useLocalStorage(BG_KEY, 'none');
   const [storedCustom, setStoredCustom] = useLocalStorage(BG_CUSTOM_KEY, '');
   const [bgError, setBgError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
