@@ -1,8 +1,13 @@
 'use client';
 
-// Thành phần cơ bản dùng chung trên nền @primer/react v38 + @primer/octicons-react (theo mẫu ui.tsx của 01. TSUKUBA).
+// Thành phần cơ bản dùng trực tiếp Core & Experimental của @primer/react v38:
+// - Pill → @primer/react Label
+// - ProgressBar → @primer/react ProgressBar
+// - Alert → @primer/react Banner
+// - EmptyState → @primer/react/experimental Blankslate
 import { AlertIcon, CheckCircleIcon, InboxIcon } from '@primer/octicons-react';
-import { Flash, Label, type LabelColorOptions } from '@primer/react';
+import { Banner, Label, ProgressBar as PrimerProgressBar, type LabelColorOptions } from '@primer/react';
+import { Blankslate } from '@primer/react/experimental';
 import clsx from 'clsx';
 import type { ReactNode } from 'react';
 
@@ -10,7 +15,7 @@ export type Tone = 'mint' | 'lav' | 'butter' | 'blush' | 'stone';
 
 const PRIMER_LABEL_VARIANT: Record<Tone, LabelColorOptions> = {
   mint: 'success',
-  lav: 'done',
+  lav: 'accent',
   butter: 'attention',
   blush: 'danger',
   stone: 'secondary',
@@ -24,11 +29,10 @@ const AVATAR_TONE_CLASS: Record<Tone, string> = {
   stone: 'bg-stone text-stone-ink',
 };
 
-// Nhãn trạng thái dùng Label của @primer/react (giữ font-normal 400 theo chuẩn thiết kế).
+// Nhãn trạng thái dùng Label của @primer/react.
 export function Pill({ tone, children }: { tone: Tone; children: ReactNode }) {
   return (
     <Label variant={PRIMER_LABEL_VARIANT[tone]} size="small" className="!font-normal">
-      <span className="mr-1 inline-block size-1.5 shrink-0 rounded-full bg-current align-middle" aria-hidden />
       {children}
     </Label>
   );
@@ -55,39 +59,31 @@ export function Avatar({
     .join('')
     .toUpperCase();
   const tone = AVATAR_TONES[Math.abs(seed) % AVATAR_TONES.length];
-  const dims = size === 'lg' ? 'size-[68px] text-2xl' : 'size-10 text-sm';
+  const dims = size === 'lg' ? 'size-16 text-xl' : 'size-9 text-xs';
   const color = quiet ? 'bg-[var(--bgColor-muted)] text-[var(--fgColor-muted)]' : AVATAR_TONE_CLASS[tone];
   return (
-    <span className={clsx('grid shrink-0 place-items-center rounded-full font-bold', dims, color)} aria-hidden>
+    <span
+      className={clsx('grid shrink-0 place-items-center rounded-full border border-black/10 font-bold', dims, color)}
+      aria-hidden
+    >
       {initials}
     </span>
   );
 }
 
-// Màu thanh tiến độ theo mốc 25, 50, 75, 100%
-function progressFill(percent: number): string {
-  if (percent < 25) return 'bg-blush-ink';
-  if (percent < 50) return 'bg-butter-ink';
-  if (percent < 75) return 'bg-primary-deep';
-  return 'bg-accent';
-}
-
 export function ProgressBar({ value, max, className = '' }: { value: number; max: number; className?: string }) {
   const percent = max <= 0 ? 0 : Math.min(100, Math.round((value / max) * 100));
-  return (
-    <div
-      className={clsx('h-1.5 w-full overflow-hidden rounded-full bg-[var(--bgColor-neutral-muted)]', className)}
-      role="progressbar"
-      aria-valuenow={percent}
-      aria-valuemin={0}
-      aria-valuemax={100}
-    >
-      <div className={clsx('h-full rounded-full transition-all', progressFill(percent))} style={{ width: `${percent}%` }} />
-    </div>
-  );
+  const bg =
+    percent < 25
+      ? 'danger.emphasis'
+      : percent < 50
+        ? 'attention.emphasis'
+        : percent < 75
+          ? 'accent.emphasis'
+          : 'success.emphasis';
+  return <PrimerProgressBar progress={percent} bg={bg} barSize="default" className={clsx('w-full', className)} aria-valuenow={percent} />;
 }
 
-// Thông báo lỗi hoặc thành công dùng Flash của @primer/react.
 export function Alert({
   children,
   tone = 'error',
@@ -116,21 +112,26 @@ export function Alert({
     );
   }
   return (
-    <Flash role={role} variant={tone === 'error' ? 'danger' : 'success'} className={clsx('!flex items-center gap-2 text-sm font-medium', className)}>
-      {tone === 'error' ? <AlertIcon size={16} aria-hidden /> : <CheckCircleIcon size={16} aria-hidden />}
-      <span>{children}</span>
-    </Flash>
+    <Banner
+      role={role}
+      title={tone === 'error' ? 'Thông báo lỗi' : 'Thành công'}
+      hideTitle
+      variant={tone === 'error' ? 'critical' : 'success'}
+      layout="compact"
+      description={children}
+      className={className}
+    />
   );
 }
 
 export function EmptyState({ title, hint }: { title: string; hint?: string }) {
   return (
-    <div className="flex flex-col items-center gap-2 px-4 py-12 text-center">
-      <span className="grid size-10 place-items-center rounded-full bg-[var(--bgColor-muted)] text-[var(--fgColor-muted)]" aria-hidden>
-        <InboxIcon size={20} />
-      </span>
-      <b className="text-base font-semibold text-[var(--fgColor-default)]">{title}</b>
-      {hint && <p className="max-w-md text-sm text-[var(--fgColor-muted)]">{hint}</p>}
-    </div>
+    <Blankslate spacious>
+      <Blankslate.Visual>
+        <InboxIcon size={24} />
+      </Blankslate.Visual>
+      <Blankslate.Heading as="h3">{title}</Blankslate.Heading>
+      {hint && <Blankslate.Description>{hint}</Blankslate.Description>}
+    </Blankslate>
   );
 }

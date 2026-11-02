@@ -1,8 +1,12 @@
-// Khung bề mặt dùng chung theo kiến trúc Primer + dự án 01. TSUKUBA (Section, Panel, Card, StatCards, KeyValue, Callout, Notice, EmptyPanel).
+'use client';
+
+// Khung bề mặt chuẩn GitHub Primer + dự án 01. TSUKUBA (Section, Panel, Card, StatCards, KeyValue, Callout, Notice, EmptyPanel dùng Blankslate).
+import { InboxIcon } from '@primer/octicons-react';
+import { Banner } from '@primer/react';
+import { Blankslate } from '@primer/react/experimental';
 import clsx from 'clsx';
 import Link from 'next/link';
 import type { HTMLAttributes, ReactNode } from 'react';
-import { EmptyState } from './primitives';
 
 export function Panel({
   title,
@@ -21,13 +25,13 @@ export function Panel({
     <section
       aria-label={title}
       className={clsx(
-        'overflow-hidden rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] shadow-[var(--shadow-resting-small,0_1px_2px_rgba(0,0,0,0.04))]',
+        'overflow-hidden rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)]',
         className,
       )}
     >
       {(title || action) && (
-        <header className="flex items-center justify-between gap-3 border-b border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)]/60 px-4 py-2.5 max-[767px]:px-3.5">
-          {title && <h2 className="text-base font-bold text-[var(--fgColor-default)]">{title}</h2>}
+        <header className="flex items-center justify-between gap-3 border-b border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] px-4 py-2.5 max-[767px]:px-3.5">
+          {title && <h2 className="m-0 text-sm font-semibold text-[var(--fgColor-default)]">{title}</h2>}
           {action && <div className="flex flex-wrap items-center gap-2">{action}</div>}
         </header>
       )}
@@ -36,17 +40,17 @@ export function Panel({
   );
 }
 
-// Tương đương Section bên dự án 01. TSUKUBA
+// Tương đương Section bên dự án 01. TSUKUBA (ui.tsx)
 export function Section(props: { title?: ReactNode; actions?: ReactNode; children: ReactNode; flush?: boolean; className?: string }) {
   return (
     <section
       className={clsx(
-        'mb-3 overflow-hidden rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)]',
+        'mb-3 overflow-hidden rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)]',
         props.className,
       )}
     >
       {(props.title || props.actions) && (
-        <div className="flex items-center justify-between gap-2 border-b border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)] px-4 py-2.5">
+        <div className="flex items-center justify-between gap-2 border-b border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] px-4 py-2.5">
           <h2 className="m-0 text-sm font-semibold text-[var(--fgColor-default)]">{props.title}</h2>
           {props.actions && <div className="flex flex-wrap items-center gap-2">{props.actions}</div>}
         </div>
@@ -67,7 +71,7 @@ export function Card({
     <Tag
       {...rest}
       className={clsx(
-        'flex flex-col gap-3 rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-4 shadow-[var(--shadow-resting-small,0_1px_2px_rgba(0,0,0,0.04))] transition-colors max-[767px]:p-3.5',
+        'flex flex-col gap-3 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-4 transition-colors max-[767px]:p-3.5',
         className,
       )}
     >
@@ -78,26 +82,34 @@ export function Card({
 
 export function Notice({ children, className = '' }: { children: ReactNode; className?: string }) {
   return (
-    <p
-      className={clsx(
-        'rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)] px-3 py-2 text-sm text-[var(--fgColor-muted)]',
-        className,
-      )}
-    >
-      {children}
-    </p>
+    <Banner
+      title="Ghi chú"
+      hideTitle
+      variant="info"
+      layout="compact"
+      description={children}
+      className={className}
+    />
   );
 }
 
 export function Callout(props: { tone?: 'info' | 'warning' | 'danger' | 'success'; children: ReactNode; className?: string }) {
-  const tone = props.tone ?? 'info';
-  const toneCls = {
-    info: 'border-[var(--borderColor-accent-muted)] bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-default)]',
-    warning: 'border-[var(--borderColor-attention-muted)] bg-[var(--bgColor-attention-muted)] text-[var(--fgColor-default)]',
-    danger: 'border-[var(--borderColor-danger-muted)] bg-[var(--bgColor-danger-muted)] text-[var(--fgColor-danger)]',
-    success: 'border-[var(--borderColor-success-muted)] bg-[var(--bgColor-success-muted)] text-[var(--fgColor-success)]',
-  }[tone];
-  return <div className={clsx('rounded-[var(--borderRadius-medium)] border px-3.5 py-2.5 text-sm', toneCls, props.className)}>{props.children}</div>;
+  const variant = {
+    info: 'info' as const,
+    warning: 'warning' as const,
+    danger: 'critical' as const,
+    success: 'success' as const,
+  }[props.tone ?? 'info'];
+  return (
+    <Banner
+      title="Thông báo"
+      hideTitle
+      variant={variant}
+      layout="compact"
+      description={props.children}
+      className={props.className}
+    />
+  );
 }
 
 export function KeyValue(props: { items: Array<[label: string, value: ReactNode]> }) {
@@ -119,15 +131,15 @@ export function StatCards(props: { items: Array<{ label: string; value: ReactNod
       {props.items.map((it) => {
         const inner = (
           <>
-            <div className="text-xs font-normal text-[var(--fgColor-muted)]">{it.label}</div>
-            <div className="mt-0.5 text-2xl font-bold leading-snug text-[var(--fgColor-default)]">{it.value}</div>
-            {it.sub && <div className="mt-0.5 text-xs text-[var(--fgColor-muted)]">{it.sub}</div>}
+            <div className="text-xs font-medium text-[var(--fgColor-muted)]">{it.label}</div>
+            <div className="text-2xl font-semibold leading-tight text-[var(--fgColor-default)]">{it.value}</div>
+            {it.sub && <div className="text-xs text-[var(--fgColor-muted)]">{it.sub}</div>}
           </>
         );
         const cls =
-          'block rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-4 py-3 transition-colors';
+          'block rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-4 py-3 text-[var(--fgColor-default)] transition-colors';
         return it.href ? (
-          <Link key={it.label} href={it.href} data-card="true" className={clsx(cls, 'hover:border-[var(--borderColor-accent-emphasis)]')}>
+          <Link key={it.label} href={it.href} className={clsx(cls, 'hover:border-[var(--borderColor-accent-emphasis)]')}>
             {inner}
           </Link>
         ) : (
@@ -140,10 +152,15 @@ export function StatCards(props: { items: Array<{ label: string; value: ReactNod
   );
 }
 
-export function EmptyPanel({ title, hint }: { title: string; hint?: string }) {
+export function EmptyPanel({ title, hint, action }: { title: string; hint?: string; action?: ReactNode }) {
   return (
-    <Panel padded={false}>
-      <EmptyState title={title} hint={hint} />
-    </Panel>
+    <Blankslate border spacious>
+      <Blankslate.Visual>
+        <InboxIcon size={24} />
+      </Blankslate.Visual>
+      <Blankslate.Heading as="h3">{title}</Blankslate.Heading>
+      {hint && <Blankslate.Description>{hint}</Blankslate.Description>}
+      {action && <div className="mt-3 flex justify-center">{action}</div>}
+    </Blankslate>
   );
 }

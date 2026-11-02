@@ -1,5 +1,9 @@
 'use client';
 
+// Khung ứng dụng chính đồng bộ kiến trúc KhungUngDung.tsx (01. TSUKUBA) trên nền @primer/react v38:
+// - Thanh tiêu đề (AppBar) trải ngang 100% ở trên cùng.
+// - Thân dưới chia 2 cột: Sidebar (NavList của Primer) bên trái + Main (Breadcrumbs của Primer + nội dung) bên phải.
+import { Breadcrumbs } from '@primer/react';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState, type ReactNode } from 'react';
 import { AppBackdrop } from '@/components/shell/AppBackdrop';
@@ -8,6 +12,7 @@ import type { NavGroup, NavItem } from '@/lib/nav';
 import { AppBar } from './AppBar';
 import { FeatureSheet } from './FeatureSheet';
 import { MobileTabBar } from './MobileTabBar';
+import { useCrumbs } from './PageCrumbs';
 import { Sidebar } from './Sidebar';
 
 type Props = {
@@ -24,7 +29,22 @@ type Props = {
   canSettings: boolean;
 };
 
-// Khung ứng dụng chính theo kiến trúc KhungUngDung.tsx (01. TSUKUBA): Sidebar 224px cố định từ 1200px, AppBar dính trên cùng, nội dung cuộn riêng.
+function ShellBreadcrumbs() {
+  const crumbs = useCrumbs();
+  if (!crumbs || crumbs.length === 0) return null;
+  return (
+    <div className="mb-2 max-[767px]:hidden">
+      <Breadcrumbs>
+        {crumbs.map((c, i) => (
+          <Breadcrumbs.Item key={`${i}-${c}`} as="span" selected={i === crumbs.length - 1}>
+            {c}
+          </Breadcrumbs.Item>
+        ))}
+      </Breadcrumbs>
+    </div>
+  );
+}
+
 export function ShellFrame({
   children,
   groups,
@@ -65,27 +85,30 @@ export function ShellFrame({
   }, [navOpen, featOpen]);
 
   return (
-    <div className="grid min-h-screen min-[1200px]:grid-cols-[224px_minmax(0,1fr)]">
+    <div className="grid min-h-screen grid-cols-[minmax(0,1fr)] grid-rows-[auto_1fr]">
       <AppBackdrop />
-      <Sidebar groups={groups} open={navOpen} onNavigate={() => setNavOpen(false)} />
 
-      {navOpen && <div className="fixed inset-0 z-[55] bg-scrim" onClick={() => setNavOpen(false)} aria-hidden />}
+      <AppBar
+        userName={userName}
+        userEmail={userEmail}
+        userRole={userRole}
+        canSettings={canSettings}
+        campuses={campuses}
+        campusScope={campusScope}
+        campusAllowAll={campusAllowAll}
+        onOpenMenu={() => setNavOpen((v) => !v)}
+      />
 
-      <div className="flex min-w-0 flex-col min-[1200px]:h-screen">
-        <AppBar
-          userName={userName}
-          userEmail={userEmail}
-          userRole={userRole}
-          canSettings={canSettings}
-          campuses={campuses}
-          campusScope={campusScope}
-          campusAllowAll={campusAllowAll}
-          onOpenMenu={() => setNavOpen(true)}
-        />
+      {navOpen && <div className="fixed inset-0 z-[55] bg-scrim min-[1200px]:hidden" onClick={() => setNavOpen(false)} aria-hidden />}
+
+      <div className="grid min-h-0 min-[1200px]:grid-cols-[248px_minmax(0,1fr)]">
+        <Sidebar groups={groups} badges={badgeCounts} open={navOpen} onNavigate={() => setNavOpen(false)} />
+
         <main
           key={pathname}
-          className="mx-auto w-full min-w-0 max-w-[1360px] flex-1 px-6 pb-4 pt-3 max-[1199px]:px-5 max-[1199px]:pb-4 max-[1199px]:pt-3 max-[767px]:px-4 max-[767px]:pb-[calc(116px+var(--safe-b))] max-[767px]:pt-4 min-[1200px]:flex min-[1200px]:min-h-0 min-[1200px]:flex-col min-[1200px]:overflow-y-auto min-[1680px]:max-w-[1640px] min-[2240px]:max-w-[1920px]"
+          className="mx-auto w-full min-w-0 max-w-[1440px] px-6 py-4 max-[1199px]:px-5 max-[767px]:px-4 max-[767px]:pb-[calc(112px+var(--safe-b))] min-[1200px]:flex min-[1200px]:min-h-0 min-[1200px]:flex-col min-[1680px]:max-w-[1680px]"
         >
+          <ShellBreadcrumbs />
           {children}
         </main>
       </div>

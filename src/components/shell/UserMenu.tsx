@@ -1,7 +1,6 @@
 'use client';
 
-// Menu tài khoản người dùng trên nền ActionMenu + ActionList của @primer/react v38 + Octicons.
-import { GearIcon, IdBadgeIcon, KeyIcon, PaperAirplaneIcon, PersonIcon, SignOutIcon } from '@primer/octicons-react';
+import { GearIcon, IdBadgeIcon, KeyIcon, PersonIcon, SignOutIcon } from '@primer/octicons-react';
 import { ActionList, ActionMenu, IconButton } from '@primer/react';
 import Link from 'next/link';
 import { useRef } from 'react';
@@ -18,6 +17,7 @@ export function UserMenu({
   canSettings: boolean;
 }) {
   const logoutFormRef = useRef<HTMLFormElement>(null);
+
   const initials = name
     .trim()
     .split(/\s+/)
@@ -33,7 +33,7 @@ export function UserMenu({
         <ActionMenu.Anchor>
           <IconButton
             icon={PersonIcon}
-            variant="default"
+            variant="invisible"
             unsafeDisableTooltip
             aria-label="Tài khoản"
             className="!size-[var(--icon-h)] max-[767px]:!size-[var(--icon-h-touch)]"
@@ -63,7 +63,7 @@ export function UserMenu({
                 <ActionList.LeadingVisual>
                   <GearIcon size={16} aria-hidden />
                 </ActionList.LeadingVisual>
-                Cài đặt
+                Cài đặt hệ thống
               </ActionList.LinkItem>
             )}
             <ActionList.LinkItem as={Link} href="/doi-mat-khau">
@@ -71,12 +71,6 @@ export function UserMenu({
                 <KeyIcon size={16} aria-hidden />
               </ActionList.LeadingVisual>
               Đổi mật khẩu
-            </ActionList.LinkItem>
-            <ActionList.LinkItem as={Link} href="/tin-nhan">
-              <ActionList.LeadingVisual>
-                <PaperAirplaneIcon size={16} aria-hidden />
-              </ActionList.LeadingVisual>
-              Kết nối Telegram
             </ActionList.LinkItem>
             <ActionList.Divider />
             <ActionList.Item variant="danger" onSelect={() => logoutFormRef.current?.requestSubmit()}>

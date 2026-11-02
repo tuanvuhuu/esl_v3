@@ -1,12 +1,32 @@
 'use client';
 
-// Điều khiển dùng chung trên nền @primer/react v38: TextInput, Chip, Tag, ChipGroup và Pagination.
-// Cao đúng chuẩn --ctl-h (32px) trên máy tính, --ctl-h-touch (44px) trên điện thoại.
-import { ChevronLeftIcon, ChevronRightIcon } from '@primer/octicons-react';
-import { CounterLabel, TextInput as PrimerTextInput } from '@primer/react';
+// Bộ điều khiển dùng trực tiếp thành phần Core của @primer/react v38:
+// - TextInput → @primer/react TextInput
+// - ChipGroup (tabs) + Chip → @primer/react UnderlineNav + UnderlineNav.Item
+// - ChipGroup (filter) + Chip → @primer/react Button / LinkButton + CounterLabel
+// - Tag → @primer/react Token
+// - Pagination → @primer/react Pagination
+import {
+  Button,
+  CounterLabel,
+  LinkButton,
+  Pagination as PrimerPagination,
+  TextInput as PrimerTextInput,
+  Token,
+  UnderlineNav,
+} from '@primer/react';
 import clsx from 'clsx';
 import Link from 'next/link';
-import type { ButtonHTMLAttributes, ElementType, InputHTMLAttributes, ReactElement, ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  type ButtonHTMLAttributes,
+  type ElementType,
+  type InputHTMLAttributes,
+  type MouseEvent as ReactMouseEvent,
+  type ReactElement,
+  type ReactNode,
+} from 'react';
 
 const CTL_BOX =
   'h-[var(--ctl-h)] min-w-0 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] text-sm text-[var(--fgColor-default)] outline-none placeholder:text-[var(--fgColor-muted)] focus:border-[var(--focus-outlineColor)] max-[767px]:h-[var(--ctl-h-touch)] max-[767px]:text-input';
@@ -38,76 +58,7 @@ export function TextInput({
   );
 }
 
-// Chip lọc và chip tab. Có href thì là liên kết (lọc qua URL), không thì là nút.
-const CHIP =
-  'inline-flex h-[var(--ctl-h)] shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 text-sm font-medium transition-colors max-[767px]:h-[var(--chip-h-touch)] max-[767px]:text-xs';
-
-export function Chip({
-  selected,
-  count,
-  href,
-  tab = false,
-  className = '',
-  children,
-  ...rest
-}: ButtonHTMLAttributes<HTMLButtonElement> & { selected: boolean; count?: number; href?: string; tab?: boolean }) {
-  const tone = selected
-    ? 'border-[var(--button-primary-borderColor-rest)] bg-[var(--button-primary-bgColor-rest)] text-[var(--button-primary-fgColor-rest)] font-semibold'
-    : 'border-[var(--borderColor-default)] bg-[var(--bgColor-default)] text-[var(--fgColor-muted)] hover:bg-[var(--bgColor-muted)] hover:text-[var(--fgColor-default)]';
-  const body = (
-    <>
-      {children}
-      {count !== undefined && (
-        <CounterLabel className="!font-normal">
-          {count}
-        </CounterLabel>
-      )}
-    </>
-  );
-  if (href) {
-    return (
-      <Link
-        href={href}
-        scroll={false}
-        role={tab ? 'tab' : undefined}
-        aria-selected={tab ? selected : undefined}
-        aria-current={!tab && selected ? 'page' : undefined}
-        className={clsx(CHIP, tone, className)}
-      >
-        {body}
-      </Link>
-    );
-  }
-  return (
-    <button
-      type="button"
-      role={tab ? 'tab' : undefined}
-      aria-selected={tab ? selected : undefined}
-      aria-pressed={tab ? undefined : selected}
-      {...rest}
-      className={clsx(CHIP, tone, className)}
-    >
-      {body}
-    </button>
-  );
-}
-
-// Thẻ nhãn dữ liệu (con của phụ huynh, lớp của giáo viên)
-export function Tag({ href, children, className = '' }: { href?: string; children: ReactNode; className?: string }) {
-  const cls = clsx(
-    'inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-full border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] px-2.5 py-0.5 text-sm font-normal text-[var(--fgColor-default)]',
-    href && 'hover:border-[var(--borderColor-accent-emphasis)] hover:text-[var(--fgColor-link)] hover:underline',
-    className,
-  );
-  if (href) {
-    return (
-      <Link href={href} scroll={false} className={cls}>
-        {children}
-      </Link>
-    );
-  }
-  return <span className={cls}>{children}</span>;
-}
+const UnderlineTabContext = createContext(false);
 
 export function ChipGroup({
   label,
@@ -120,97 +71,182 @@ export function ChipGroup({
   className?: string;
   children: ReactNode;
 }) {
+  if (tabs) {
+    return (
+      <UnderlineTabContext.Provider value={true}>
+        <UnderlineNav aria-label={label} className={clsx('!px-0', className)}>
+          {children}
+        </UnderlineNav>
+      </UnderlineTabContext.Provider>
+    );
+  }
   return (
-    <div role={tabs ? 'tablist' : 'group'} aria-label={label} className={clsx('flex flex-wrap items-center gap-2', className)}>
+    <div role="group" aria-label={label} className={clsx('flex flex-wrap items-center gap-1.5', className)}>
       {children}
     </div>
   );
 }
 
-// Phân trang dùng chung theo chuẩn Primer + 01. TSUKUBA
-const PAGE_BTN =
-  'inline-flex h-[var(--ctl-h)] min-w-[var(--ctl-h)] items-center justify-center rounded-[var(--borderRadius-medium)] border px-2 text-sm font-semibold transition-colors max-[767px]:h-[var(--ctl-h-touch)] max-[767px]:min-w-[var(--ctl-h-touch)]';
-
-type PageTarget = { href: string } | { onClick: () => void };
-
-function PageLink({
-  target,
-  label,
-  current = false,
-  disabled = false,
+export function Chip({
+  selected,
+  count,
+  href,
+  tab = false,
+  className = '',
   children,
-}: {
-  target: PageTarget;
-  label: string;
-  current?: boolean;
-  disabled?: boolean;
-  children: ReactNode;
-}) {
-  if (disabled) {
+  onClick,
+  ...rest
+}: ButtonHTMLAttributes<HTMLButtonElement> & { selected: boolean; count?: number; href?: string; tab?: boolean }) {
+  const inUnderlineNav = useContext(UnderlineTabContext);
+
+  if (inUnderlineNav) {
+    if (href) {
+      return (
+        <UnderlineNav.Item
+          as={Link}
+          href={href}
+          aria-current={selected ? 'page' : undefined}
+          counter={count}
+        >
+          <span className="inline-flex items-center gap-1.5">{children}</span>
+        </UnderlineNav.Item>
+      );
+    }
     return (
-      <span
-        aria-disabled="true"
-        aria-label={label}
-        className={clsx(PAGE_BTN, 'border-[var(--borderColor-default)] bg-[var(--bgColor-default)] text-[var(--fgColor-muted)] opacity-45')}
+      <UnderlineNav.Item
+        as="button"
+        aria-current={selected ? 'page' : undefined}
+        counter={count}
+        onSelect={(e) => {
+          e.preventDefault();
+          onClick?.(e as unknown as ReactMouseEvent<HTMLButtonElement>);
+        }}
       >
-        {children}
-      </span>
+        <span className="inline-flex items-center gap-1.5">{children}</span>
+      </UnderlineNav.Item>
     );
   }
-  const tone = clsx(
-    PAGE_BTN,
-    current
-      ? 'border-[var(--button-primary-borderColor-rest)] bg-[var(--button-primary-bgColor-rest)] text-[var(--button-primary-fgColor-rest)]'
-      : 'border-[var(--borderColor-default)] bg-[var(--bgColor-default)] text-[var(--fgColor-default)] hover:bg-[var(--bgColor-muted)]',
-  );
-  if ('href' in target) {
+
+  if (href) {
     return (
-      <Link href={target.href} scroll={false} aria-label={label} aria-current={current ? 'page' : undefined} className={tone}>
+      <LinkButton
+        as={Link}
+        href={href}
+        variant={selected ? 'primary' : 'default'}
+        role={tab ? 'tab' : undefined}
+        aria-selected={tab ? selected : undefined}
+        aria-current={!tab && selected ? 'page' : undefined}
+        className={className}
+      >
+        <span className="inline-flex items-center gap-1.5">{children}</span>
+        {count !== undefined && (
+          <CounterLabel className="ml-1.5 !font-normal">{count}</CounterLabel>
+        )}
+      </LinkButton>
+    );
+  }
+
+  return (
+    <Button
+      type="button"
+      variant={selected ? 'primary' : 'default'}
+      count={count}
+      role={tab ? 'tab' : undefined}
+      aria-selected={tab ? selected : undefined}
+      aria-pressed={tab ? undefined : selected}
+      onClick={onClick}
+      className={className}
+      {...rest}
+    >
+      <span className="inline-flex items-center gap-1.5">{children}</span>
+    </Button>
+  );
+}
+
+// Thẻ nhãn dữ liệu dùng Token của @primer/react (con của phụ huynh, lớp của giáo viên)
+export function Tag({ href, children, className = '' }: { href?: string; children: ReactNode; className?: string }) {
+  if (typeof children === 'string' || typeof children === 'number') {
+    if (href) {
+      return (
+        <Link href={href} scroll={false} className="inline-flex">
+          <Token as="span" text={String(children)} size="large" className={clsx('cursor-pointer', className)} />
+        </Link>
+      );
+    }
+    return <Token as="span" text={String(children)} size="large" className={className} />;
+  }
+
+  const cls = clsx(
+    'inline-flex min-w-0 max-w-full items-center gap-1 rounded-full border border-[var(--borderColor-default)] bg-[var(--bgColor-neutral-muted)] px-2.5 py-0.5 text-xs font-medium text-[var(--fgColor-default)]',
+    href && 'hover:border-[var(--borderColor-accent-emphasis)] hover:text-[var(--fgColor-link)]',
+    className,
+  );
+  if (href) {
+    return (
+      <Link href={href} scroll={false} className={cls}>
         {children}
       </Link>
     );
   }
-  return (
-    <button type="button" onClick={target.onClick} aria-label={label} aria-current={current ? 'page' : undefined} className={tone}>
-      {children}
-    </button>
-  );
+  return <span className={cls}>{children}</span>;
 }
 
-export function Pagination({
-  page,
-  pageCount,
-  hrefFor,
-  onPage,
-  label = 'Phân trang',
-}: {
+type PaginationProps = {
   page: number;
   pageCount: number;
-  hrefFor?: (p: number) => string;
-  onPage?: (p: number) => void;
   label?: string;
-}) {
-  if (pageCount <= 1) return null;
-  const pages = Array.from({ length: pageCount }, (_, i) => i + 1);
-  const to = (p: number): PageTarget => (hrefFor ? { href: hrefFor(p) } : { onClick: () => onPage?.(p) });
-  return (
-    <nav aria-label={label} className="flex flex-wrap items-center justify-between gap-3 pt-1">
-      <small className="text-sm text-[var(--fgColor-muted)]">
-        Trang {page} / {pageCount}
-      </small>
-      <div className="flex items-center gap-1.5">
-        <PageLink disabled={page <= 1} target={to(page - 1)} label="Trang trước">
-          <ChevronLeftIcon size={16} aria-hidden />
-        </PageLink>
-        {pages.map((p) => (
-          <PageLink key={p} target={to(p)} current={p === page} label={`Trang ${p}`}>
-            {p}
-          </PageLink>
-        ))}
-        <PageLink disabled={page >= pageCount} target={to(page + 1)} label="Trang sau">
-          <ChevronRightIcon size={16} aria-hidden />
-        </PageLink>
+  summary?: string;
+} & (
+  | { hrefFor: (page: number) => string }
+  | { onPage: (page: number) => void }
+  | { onChange: (page: number) => void }
+);
+
+export function Pagination(props: PaginationProps) {
+  const { page, pageCount, label, summary } = props;
+  const infoText = summary ?? `Trang ${page} / ${pageCount}`;
+
+  if (pageCount <= 1) {
+    return summary ? (
+      <div className="flex items-center justify-between text-xs text-[var(--fgColor-muted)]">
+        <span>{summary}</span>
       </div>
+    ) : null;
+  }
+
+  const handleSelect = (n: number) => {
+    if ('onPage' in props) props.onPage(n);
+    else if ('onChange' in props) props.onChange(n);
+  };
+
+  return (
+    <nav aria-label={label ?? 'Phân trang'} className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--borderColor-muted)] pt-3 text-xs text-[var(--fgColor-muted)]">
+      <span>{infoText}</span>
+      {'hrefFor' in props ? (
+        <PrimerPagination
+          pageCount={pageCount}
+          currentPage={page}
+          marginPageCount={1}
+          surroundingPageCount={1}
+          hrefBuilder={(n) => props.hrefFor(n)}
+          renderPage={({ number, children, key, ...pageProps }) => (
+            <Link key={key} {...pageProps} href={props.hrefFor(number)} scroll={false}>
+              {children}
+            </Link>
+          )}
+        />
+      ) : (
+        <PrimerPagination
+          pageCount={pageCount}
+          currentPage={page}
+          marginPageCount={1}
+          surroundingPageCount={1}
+          onPageChange={(e, n) => {
+            e.preventDefault();
+            handleSelect(n);
+          }}
+        />
+      )}
     </nav>
   );
 }

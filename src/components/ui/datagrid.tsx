@@ -1,7 +1,7 @@
 'use client';
 
-// Bảng dữ liệu dùng chung theo phong cách Primer + dự án 01. TSUKUBA.
-// Lưu ý (E-045): mọi lớp theo breakpoint viết nguyên văn trong bảng hằng dưới đây, không ghép chuỗi lúc chạy.
+// Bảng dữ liệu dùng trực tiếp Table / Table.Container của @primer/react/experimental (gridTemplateColumns + Table.Head / Table.Body / Table.Row / Table.Header / Table.Cell).
+import { Table } from '@primer/react/experimental';
 import clsx from 'clsx';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useMemo, useState, type ReactNode } from 'react';
@@ -45,14 +45,6 @@ const TABLE_SHOW = {
 const TABLE_SHOW_FILL = {
   md: 'hidden min-[768px]:flex min-[768px]:min-h-0 min-[768px]:flex-1 min-[768px]:flex-col',
   xl: 'hidden min-[1200px]:flex min-[1200px]:min-h-0 min-[1200px]:flex-1 min-[1200px]:flex-col',
-} as const;
-const BODY_FILL = {
-  md: 'min-[768px]:min-h-0 min-[768px]:flex-1 min-[768px]:overflow-y-auto scroll-quiet',
-  xl: 'min-[1200px]:min-h-0 min-[1200px]:flex-1 min-[1200px]:overflow-y-auto scroll-quiet',
-} as const;
-const BODY_X = {
-  md: 'min-[768px]:overflow-x-auto',
-  xl: 'min-[1200px]:overflow-x-auto',
 } as const;
 const CARDS_HIDE_ABOVE = {
   md: 'min-[768px]:hidden',
@@ -150,84 +142,74 @@ export function DataGrid<T>({
 
   return (
     <>
-      <div
-        className={clsx(
-          'overflow-hidden rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] shadow-[var(--shadow-resting-small,0_1px_2px_rgba(0,0,0,0.04))]',
-          frame,
-        )}
-      >
-        <div role="table" aria-label={label} className={fill ? BODY_FILL[from] : BODY_X[from]}>
-          <div
-            role="row"
-            style={{ gridTemplateColumns: template, minWidth: rowMin }}
-            className={clsx(
-              'sticky top-0 z-10 grid items-center gap-x-3 border-b border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] py-2 text-xs font-normal text-[var(--fgColor-muted)]',
-              stickyEnd ? 'pl-4' : 'px-4',
-            )}
-          >
-            {columns.map((c) => {
-              if (c.srOnly) {
-                return (
-                  <span key={c.key} role="columnheader" className="min-w-0">
-                    <span className="sr-only">{c.label}</span>
-                  </span>
-                );
-              }
-              const isColumnSortable = sortable && c.sortable !== false && c.key !== 'actions';
-              if (isColumnSortable) {
-                const isSorted = activeSort?.column === c.key;
-                const direction = isSorted ? activeSort.direction : undefined;
-                return (
-                  <span
-                    key={c.key}
-                    role="columnheader"
-                    aria-sort={isSorted ? (direction === 'asc' ? 'ascending' : 'descending') : undefined}
-                    className={clsx('min-w-0 font-normal', c.align === 'end' && 'text-right')}
-                  >
-                    <SortHeader
-                      columnKey={c.key}
-                      label={c.label}
-                      align={c.align}
-                      isSorted={isSorted}
-                      direction={direction}
-                      onSort={handleSort}
-                    />
-                  </span>
-                );
-              }
-              return (
-                <span key={c.key} role="columnheader" className={clsx('font-normal', c.align === 'end' && 'text-right')}>
-                  {c.label}
-                </span>
-              );
-            })}
-          </div>
-          {displayRows.map((row) => (
-            <div
-              key={rowKey(row)}
-              role="row"
-              style={{ gridTemplateColumns: template, minWidth: rowMin }}
-              className={clsx(
-                'group grid items-center gap-x-3 border-b border-[var(--borderColor-muted)] py-2 transition-colors last:border-0 hover:bg-[var(--bgColor-accent-muted)]/45',
-                stickyEnd ? 'pl-4' : 'px-4',
-              )}
-            >
-              {columns.map((c, i) => (
-                <div
-                  key={c.key}
-                  role="cell"
-                  className={clsx(
-                    'min-w-0',
-                    c.align === 'end' && 'flex justify-end',
-                    i === pinIndex && 'sticky right-0 z-[1] bg-[var(--bgColor-default)] pr-4 group-hover:bg-[var(--row-hover)]',
-                  )}
+      <div className={clsx('min-w-0', frame)}>
+        <Table.Container className="overflow-hidden rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)]">
+          <Table aria-label={label} gridTemplateColumns={template} cellPadding="normal">
+            <Table.Head>
+              <Table.Row style={rowMin ? { minWidth: rowMin } : undefined}>
+                {columns.map((c) => {
+                  if (c.srOnly) {
+                    return (
+                      <Table.Header key={c.key} className="min-w-0 !font-normal">
+                        <span className="sr-only">{c.label}</span>
+                      </Table.Header>
+                    );
+                  }
+                  const isColumnSortable = sortable && c.sortable !== false && c.key !== 'actions';
+                  if (isColumnSortable) {
+                    const isSorted = activeSort?.column === c.key;
+                    const direction = isSorted ? activeSort.direction : undefined;
+                    return (
+                      <Table.Header
+                        key={c.key}
+                        align={c.align}
+                        aria-sort={isSorted ? (direction === 'asc' ? 'ascending' : 'descending') : undefined}
+                        className="min-w-0 !font-normal"
+                      >
+                        <SortHeader
+                          columnKey={c.key}
+                          label={c.label}
+                          align={c.align}
+                          isSorted={isSorted}
+                          direction={direction}
+                          onSort={handleSort}
+                        />
+                      </Table.Header>
+                    );
+                  }
+                  return (
+                    <Table.Header key={c.key} align={c.align} className="min-w-0 !font-normal">
+                      {c.label}
+                    </Table.Header>
+                  );
+                })}
+              </Table.Row>
+            </Table.Head>
+            <Table.Body>
+              {displayRows.map((row) => (
+                <Table.Row
+                  key={rowKey(row)}
+                  style={rowMin ? { minWidth: rowMin } : undefined}
+                  className="group transition-colors hover:bg-[var(--row-hover)]"
                 >
-                  {cell(row, c.key)}
-                </div>
+                  {columns.map((c, i) => (
+                    <Table.Cell
+                      key={c.key}
+                      align={c.align}
+                      className={clsx(
+                        'min-w-0 items-center',
+                        c.align === 'end' && 'flex justify-end',
+                        i === pinIndex && 'sticky right-0 z-[1] bg-[var(--bgColor-default)] group-hover:bg-[var(--row-hover)]',
+                      )}
+                    >
+                      {cell(row, c.key)}
+                    </Table.Cell>
+                  ))}
+                </Table.Row>
               ))}
-            </div>
-          ))}
-        </div>
+            </Table.Body>
+          </Table>
+        </Table.Container>
       </div>
 
       {card && (

@@ -6,11 +6,10 @@ import {
   TasklistIcon,
   type Icon,
 } from '@primer/octicons-react';
-import { CounterLabel } from '@primer/react';
+import { CounterLabel, LinkButton, SkeletonBox } from '@primer/react';
 import Link from 'next/link';
 import { connection } from 'next/server';
 import { Suspense } from 'react';
-import { BTN_BASE, BTN_GHOST, BTN_PRIMARY } from '@/components/ui/Btn';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { EmptyState, Pill, ProgressBar, type Tone } from '@/components/ui/primitives';
 import { Panel } from '@/components/ui/surfaces';
@@ -37,14 +36,14 @@ export default function DashboardPage() {
 function DashboardSkeleton() {
   return (
     <section aria-busy="true" aria-label="Đang tải tổng quan" className="flex flex-col gap-4">
-      <div className="h-10 w-56 animate-pulse rounded-lg bg-[var(--bgColor-muted)]" />
+      <SkeletonBox height={40} width={224} />
       <div className="grid grid-cols-2 gap-3 min-[768px]:grid-cols-4">
-        <div className="h-24 animate-pulse rounded-xl bg-[var(--bgColor-muted)]" />
-        <div className="h-24 animate-pulse rounded-xl bg-[var(--bgColor-muted)]" />
-        <div className="h-24 animate-pulse rounded-xl bg-[var(--bgColor-muted)]" />
-        <div className="h-24 animate-pulse rounded-xl bg-[var(--bgColor-muted)]" />
+        <SkeletonBox height={96} />
+        <SkeletonBox height={96} />
+        <SkeletonBox height={96} />
+        <SkeletonBox height={96} />
       </div>
-      <div className="h-[220px] animate-pulse rounded-xl bg-[var(--bgColor-muted)]" />
+      <SkeletonBox height={220} />
     </section>
   );
 }
@@ -88,15 +87,13 @@ async function DashboardData() {
           canStudents ? (
             <div className="flex flex-wrap gap-2">
               {canAttendance && (
-                <Link href="/diem-danh" className={`${BTN_BASE} ${BTN_GHOST}`}>
-                  <TasklistIcon size={16} aria-hidden />
+                <LinkButton as={Link} href="/diem-danh" leadingVisual={TasklistIcon}>
                   Điểm danh
-                </Link>
+                </LinkButton>
               )}
-              <Link href="/lich-hoc" className={`${BTN_BASE} ${BTN_PRIMARY}`}>
-                <CalendarIcon size={16} aria-hidden />
+              <LinkButton as={Link} href="/lich-hoc" variant="primary" leadingVisual={CalendarIcon}>
                 Lịch tuần
-              </Link>
+              </LinkButton>
             </div>
           ) : undefined
         }
@@ -336,10 +333,10 @@ function Kpi({
 }) {
   return (
     <div
-      className={`min-w-0 rounded-xl border border-[var(--borderColor-default)] border-t-[3px] bg-[var(--bgColor-default)] px-4 py-3.5 shadow-[var(--shadow-resting-small,0_1px_2px_rgba(0,0,0,0.04))] ${KPI_BAR[tone]}`}
+      className={`min-w-0 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] border-t-[3px] bg-[var(--bgColor-default)] px-4 py-3 ${KPI_BAR[tone]}`}
     >
-      <small className="block truncate text-xs font-normal text-[var(--fgColor-muted)]">{label}</small>
-      <b className="mt-1 block truncate text-xl font-bold tabular-nums text-[var(--fgColor-default)] min-[768px]:text-2xl">
+      <small className="block truncate text-xs font-medium text-[var(--fgColor-muted)]">{label}</small>
+      <b className="mt-1 block truncate text-xl font-semibold tabular-nums text-[var(--fgColor-default)] min-[768px]:text-2xl">
         {value}
       </b>
       {bar !== undefined && <ProgressBar value={bar} max={100} className="mt-2.5" />}
