@@ -1,6 +1,6 @@
 'use client';
 
-import { Download, Upload } from 'lucide-react';
+import { DownloadIcon, UploadIcon } from '@primer/octicons-react';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { commitImportAction, previewImportAction, type PreviewResponse } from '@/app/(app)/nhap-du-lieu/actions';
@@ -38,11 +38,11 @@ const COLUMNS: GridColumn<RowResult>[] = [
 ];
 
 function ActionList({ row }: { row: RowResult }) {
-  if (row.actions.length === 0) return row.errors.length > 0 ? null : <span className="text-sm text-muted">Đã có ở dòng trước</span>;
+  if (row.actions.length === 0) return row.errors.length > 0 ? null : <span className="text-sm text-[var(--fgColor-muted)]">Đã có ở dòng trước</span>;
   return (
     <ul className="flex flex-col gap-1">
       {row.actions.map((a, i) => (
-        <li key={i} className="flex min-w-0 items-center gap-2 text-sm text-ink-2">
+        <li key={i} className="flex min-w-0 items-center gap-2 text-sm text-[var(--fgColor-default)]">
           <Pill tone={ACTION_PILL[a.action].tone}>{ACTION_PILL[a.action].label}</Pill>
           <span className="min-w-0 [overflow-wrap:anywhere]">
             {KIND_LABEL[a.kind]}: {a.label}
@@ -63,7 +63,7 @@ function Issues({ row }: { row: RowResult }) {
         </Alert>
       ))}
       {row.notes.map((n, i) => (
-        <p key={`n${i}`} className="text-sm text-muted">
+        <p key={`n${i}`} className="text-sm text-[var(--fgColor-muted)]">
           {n}
         </p>
       ))}
@@ -78,14 +78,14 @@ function SummaryCards({ summary }: { summary: ImportSummary }) {
         const s = summary[kind];
         return (
           <Card key={kind} as="section" aria-label={label}>
-            <b className="text-sm font-normal text-ink-2">{label}</b>
+            <b className="text-sm font-normal text-[var(--fgColor-muted)]">{label}</b>
             <dl className="grid grid-cols-[1fr_auto] gap-x-2 gap-y-0.5 text-sm">
-              <dt className="text-muted">Thêm</dt>
-              <dd className="font-semibold text-ink">{s.create}</dd>
-              <dt className="text-muted">Cập nhật</dt>
-              <dd className="font-semibold text-ink">{s.update}</dd>
-              <dt className="text-muted">Giữ nguyên</dt>
-              <dd className="font-semibold text-ink">{s.same}</dd>
+              <dt className="text-[var(--fgColor-muted)]">Thêm</dt>
+              <dd className="font-semibold text-[var(--fgColor-default)]">{s.create}</dd>
+              <dt className="text-[var(--fgColor-muted)]">Cập nhật</dt>
+              <dd className="font-semibold text-[var(--fgColor-default)]">{s.update}</dd>
+              <dt className="text-[var(--fgColor-muted)]">Giữ nguyên</dt>
+              <dd className="font-semibold text-[var(--fgColor-default)]">{s.same}</dd>
             </dl>
           </Card>
         );
@@ -156,15 +156,15 @@ export function ImportView() {
     <div className="flex flex-col gap-4">
       <Panel title="1. Tải file mẫu">
         <div className="flex flex-col gap-3">
-          <p className="text-base text-ink-2">
+          <p className="text-base text-[var(--fgColor-default)]">
             Mỗi dòng là một học sinh, kèm cơ sở, lớp, giáo viên chủ nhiệm, trợ giảng, giáo viên nước ngoài và một phụ huynh. Dòng chỉ có lớp (bỏ trống phần học sinh) thì chỉ tạo hoặc cập nhật lớp. Rê chuột vào tiêu đề cột trong Excel để xem cách ghi.
           </p>
-          <p className="text-sm text-muted">
+          <p className="text-sm text-[var(--fgColor-muted)]">
             Bản ghi đã có thì cập nhật, chưa có thì thêm. Cơ sở và lớp nhận theo tên; giáo viên và phụ huynh theo số điện thoại; học sinh theo mã HS, không có mã thì theo họ tên và ngày sinh. Ô trống giữ giá trị cũ. Không xoá bản ghi nào.
           </p>
           <div>
             <a href="/api/nhap-du-lieu/mau" download className={`${BTN_BASE} ${BTN_GHOST}`}>
-              <Download className="size-4" aria-hidden />
+              <DownloadIcon size={16} aria-hidden />
               Tải file mẫu
             </a>
           </div>
@@ -181,7 +181,7 @@ export function ImportView() {
               </Btn>
             )}
           </div>
-          {pending && <p className="text-sm text-muted">Đang xử lý file…</p>}
+          {pending && <p className="text-sm text-[var(--fgColor-muted)]">Đang xử lý file…</p>}
           {error && <Alert>{error}</Alert>}
           {done && <Alert tone="ok">{done}</Alert>}
         </div>
@@ -208,8 +208,7 @@ export function ImportView() {
                   Có lỗi
                 </Chip>
               </ChipGroup>
-              <Btn variant="primary" onClick={commit} disabled={!canCommit} className="max-[767px]:w-full">
-                <Upload className="size-4" aria-hidden />
+              <Btn variant="primary" leadingVisual={UploadIcon} loading={pending} onClick={commit} disabled={!canCommit} className="max-[767px]:w-full">
                 {pending ? 'Đang nhập…' : `Nhập dữ liệu (${preview.rows.length} dòng)`}
               </Btn>
             </div>
@@ -220,21 +219,21 @@ export function ImportView() {
               rows={rows}
               rowKey={(r) => r.rowNumber}
               from="xl"
-              empty={<p className="text-sm text-muted">Không có dòng nào.</p>}
+              empty={<p className="text-sm text-[var(--fgColor-muted)]">Không có dòng nào.</p>}
               cell={(r, k) => {
-                if (k === 'row') return <span className="text-sm text-ink-2">{r.rowNumber}</span>;
-                if (k === 'place') return <span className="text-sm text-ink [overflow-wrap:anywhere]">{r.campus || '—'} · {r.className || '—'}</span>;
-                if (k === 'student') return <span className="text-sm text-ink [overflow-wrap:anywhere]">{r.student}</span>;
+                if (k === 'row') return <span className="text-sm text-[var(--fgColor-muted)]">{r.rowNumber}</span>;
+                if (k === 'place') return <span className="text-sm text-[var(--fgColor-default)] [overflow-wrap:anywhere]">{r.campus || '—'} · {r.className || '—'}</span>;
+                if (k === 'student') return <span className="text-sm text-[var(--fgColor-default)] [overflow-wrap:anywhere]">{r.student}</span>;
                 if (k === 'actions') return <ActionList row={r} />;
                 return <Issues row={r} />;
               }}
               card={(r) => (
                 <Card>
-                  <b className="text-base font-normal text-ink [overflow-wrap:anywhere]">
+                  <b className="text-base font-normal text-[var(--fgColor-default)] [overflow-wrap:anywhere]">
                     Dòng {r.rowNumber}
                     {r.student ? ` · ${r.student}` : ''}
                   </b>
-                  <small className="block text-sm text-ink-2 [overflow-wrap:anywhere]">
+                  <small className="block text-sm text-[var(--fgColor-muted)] [overflow-wrap:anywhere]">
                     {r.campus || '—'} · {r.className || '—'}
                   </small>
                   <ActionList row={r} />

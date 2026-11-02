@@ -1,0 +1,9 @@
+/* Giống span bọc ngoài của Tooltip v1 (.Tooltip { position: relative; display: inline-block }) để giữ nguyên bố cục */
+span.trigger {
+  position: relative;
+  display: inline-block;
+}
+
+span.trigger:focus:not(:focus-visible) {
+  outline: none;
+}

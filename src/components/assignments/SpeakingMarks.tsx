@@ -2,7 +2,7 @@
 
 // Chấm bài nói theo mốc thời gian (35.8): nghe bản ghi, bấm "Đánh dấu lỗi" tại giây đang phát, ghi loại lỗi, chữ đúng,
 // ghi chú và "nói lại câu này". Bấm mốc giây trong danh sách để nghe lại đúng chỗ đó.
-import { Pencil, Play, Plus, Trash2 } from 'lucide-react';
+import { PencilIcon, PlayIcon, PlusIcon, TrashIcon } from '@primer/octicons-react';
 import { useRef, useState, useTransition } from 'react';
 import { deleteSpeakingMarkAction, saveSpeakingMarkAction } from '@/app/(app)/bai-tap/speaking-actions';
 import { formatMs, SPEAKING_ERRORS, type SpeakingErrorType, type SpeakingMark } from '@/lib/speaking';
@@ -91,11 +91,11 @@ export function SpeakingMarks({
     <div className="flex flex-col gap-2.5">
       {previous && (
         <div className="flex flex-col gap-1">
-          <span className="text-sm font-normal text-ink-2">Bản cũ (lần chấm trước, các mốc lỗi bên dưới thuộc bản này)</span>
+          <span className="text-sm font-normal text-[var(--fgColor-muted)]">Bản cũ (lần chấm trước, các mốc lỗi bên dưới thuộc bản này)</span>
           <audio ref={oldAudio} controls preload="metadata" src={`/api/files/${previous.fileId}`} aria-label={`Bản nói cũ câu ${position}`} className="w-full" />
         </div>
       )}
-      <span className="flex flex-wrap items-center gap-2 text-sm font-normal text-ink-2">
+      <span className="flex flex-wrap items-center gap-2 text-sm font-normal text-[var(--fgColor-muted)]">
         {previous ? 'Bản nói lại' : 'Bài nói của học sinh'}
         {previous && <Pill tone="mint">Đã nói lại{previous.redoneAt ? ` ${vnDateTimeLabel(new Date(previous.redoneAt))}` : ''}</Pill>}
       </span>
@@ -109,36 +109,35 @@ export function SpeakingMarks({
         className="w-full"
       />
 
-      <div className="flex flex-col gap-2 rounded-[var(--radius-ctl)] border border-line bg-bg px-3 py-2.5">
+      <div className="flex flex-col gap-2 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] px-3 py-2.5">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <b className="text-sm font-semibold text-ink">Lỗi đã đánh dấu ({marks.length})</b>
+          <b className="text-sm font-semibold text-[var(--fgColor-default)]">Lỗi đã đánh dấu ({marks.length})</b>
           {canManage && !draft && (
-            <Btn onClick={startAdd} disabled={pending}>
-              <Plus className="size-4" aria-hidden />
+            <Btn leadingVisual={PlusIcon} onClick={startAdd} disabled={pending}>
               Đánh dấu lỗi tại {formatMs(nowMs)}
             </Btn>
           )}
         </div>
 
-        {sorted.length === 0 && !draft && <p className="text-sm text-muted">Nghe bản ghi, dừng ở chỗ học sinh nói sai rồi bấm Đánh dấu lỗi.</p>}
+        {sorted.length === 0 && !draft && <p className="text-sm text-[var(--fgColor-muted)]">Nghe bản ghi, dừng ở chỗ học sinh nói sai rồi bấm Đánh dấu lỗi.</p>}
 
         {sorted.length > 0 && (
-          <ul className="flex flex-col divide-y divide-line" aria-label={`Lỗi đã đánh dấu câu ${position}`}>
+          <ul className="flex flex-col divide-y divide-[var(--borderColor-muted)]" aria-label={`Lỗi đã đánh dấu câu ${position}`}>
             {sorted.map((m) => (
               <li key={m.id} className="flex items-start gap-2.5 py-2">
                 <button
                   type="button"
                   onClick={() => seek(m.atMs)}
                   aria-label={`Nghe lại từ ${formatMs(m.atMs)}`}
-                  className="inline-flex shrink-0 items-center gap-1 rounded-full border border-line bg-surface px-2 py-0.5 text-sm tabular-nums text-link"
+                  className="inline-flex h-8 shrink-0 items-center gap-1 rounded-full border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-2.5 text-sm tabular-nums text-[var(--fgColor-accent)] hover:bg-[var(--bgColor-muted)]"
                 >
-                  <Play className="size-3" aria-hidden />
+                  <PlayIcon size={12} aria-hidden />
                   {formatMs(m.atMs)}
                 </button>
                 <div className="min-w-0 flex-1 text-sm">
-                  <span className="font-semibold text-ink">{SPEAKING_ERRORS[m.errorType]}</span>
-                  {m.correctText && <span className="text-ink-2"> · nói đúng: “{m.correctText}”</span>}
-                  {m.note && <span className="block text-muted">{m.note}</span>}
+                  <span className="font-semibold text-[var(--fgColor-default)]">{SPEAKING_ERRORS[m.errorType]}</span>
+                  {m.correctText && <span className="text-[var(--fgColor-muted)]"> · nói đúng: “{m.correctText}”</span>}
+                  {m.note && <span className="block text-[var(--fgColor-muted)]">{m.note}</span>}
                   {m.modelFileId !== null && <audio controls preload="none" src={`/api/files/${m.modelFileId}`} aria-label={`Giọng mẫu lỗi tại ${formatMs(m.atMs)}`} className="mt-1 h-[var(--ctl-h)] max-w-full" />}
                   {m.redo && (
                     <span className="mt-1 block">
@@ -148,12 +147,8 @@ export function SpeakingMarks({
                 </div>
                 {canManage && (
                   <div className="flex shrink-0 gap-1.5">
-                    <ActIcon label={`Sửa lỗi tại ${formatMs(m.atMs)}`} onClick={() => setDraft({ ...m })} disabled={pending}>
-                      <Pencil className="size-4" aria-hidden />
-                    </ActIcon>
-                    <ActIcon label={`Xoá lỗi tại ${formatMs(m.atMs)}`} danger onClick={() => setToDelete(m)} disabled={pending}>
-                      <Trash2 className="size-4" aria-hidden />
-                    </ActIcon>
+                    <ActIcon label={`Sửa lỗi tại ${formatMs(m.atMs)}`} icon={PencilIcon} onClick={() => setDraft({ ...m })} disabled={pending} />
+                    <ActIcon label={`Xoá lỗi tại ${formatMs(m.atMs)}`} danger icon={TrashIcon} onClick={() => setToDelete(m)} disabled={pending} />
                   </div>
                 )}
               </li>
@@ -162,7 +157,7 @@ export function SpeakingMarks({
         )}
 
         {draft && (
-          <div className="grid grid-cols-1 gap-2.5 border-t border-line pt-2.5 min-[768px]:grid-cols-2" role="group" aria-label={draft.id ? 'Sửa lỗi' : 'Thêm lỗi'}>
+          <div className="grid grid-cols-1 gap-2.5 border-t border-[var(--borderColor-default)] pt-2.5 min-[768px]:grid-cols-2" role="group" aria-label={draft.id ? 'Sửa lỗi' : 'Thêm lỗi'}>
             <Field label="Mốc thời gian">
               <div className="flex items-center gap-2">
                 <span className={`${inputClass()} flex items-center tabular-nums`}>{formatMs(draft.atMs)}</span>
@@ -181,8 +176,8 @@ export function SpeakingMarks({
             <div className="col-span-full">
               <MiniRecorder fileId={draft.modelFileId} label="Ghi giọng mẫu" disabled={pending} onChange={(fileId) => setDraft({ ...draft, modelFileId: fileId })} />
             </div>
-            <label className="col-span-full flex items-center gap-2.5 text-sm text-ink-2">
-              <input type="checkbox" checked={draft.redo} onChange={(e) => setDraft({ ...draft, redo: e.target.checked })} className="size-4 accent-[var(--primary-deep)]" />
+            <label className="col-span-full flex items-center gap-2.5 text-sm text-[var(--fgColor-muted)]">
+              <input type="checkbox" checked={draft.redo} onChange={(e) => setDraft({ ...draft, redo: e.target.checked })} className="size-4 accent-[var(--control-checked-bgColor-rest,var(--fgColor-accent))]" />
               Cần nói lại câu này
             </label>
             <div className="col-span-full flex justify-end gap-2">

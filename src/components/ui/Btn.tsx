@@ -1,16 +1,62 @@
-﻿// Nút có chữ dùng chung (docs/DESIGN.md mục 8). Cùng cỡ với ô nhập, ô chọn và chip: 32px trên máy tính, 44px trên điện thoại.
-import type { ButtonHTMLAttributes, Ref } from 'react';
+'use client';
+
+// Nút có chữ dùng chung trên nền @primer/react v38. Cao đúng chuẩn 32px trên máy tính, 44px trên điện thoại.
+import { Button, type ButtonProps } from '@primer/react';
+import clsx from 'clsx';
+import type { ButtonHTMLAttributes, ElementType, ReactElement, Ref } from 'react';
 
 export const BTN_BASE =
-  'inline-flex h-[var(--ctl-h)] shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-[var(--radius-ctl)] px-3 text-sm font-bold transition-colors max-[767px]:h-[var(--ctl-h-touch)] disabled:opacity-40';
-export const BTN_PRIMARY = 'bg-primary text-on-primary';
-export const BTN_GHOST = 'border border-line bg-surface text-ink';
-export const BTN_DANGER = 'border border-blush-ink bg-surface text-blush-ink';
+  'inline-flex h-[var(--ctl-h)] shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-[var(--borderRadius-medium)] px-3 text-sm font-semibold transition-colors max-[767px]:h-[var(--ctl-h-touch)] disabled:opacity-50';
+export const BTN_PRIMARY =
+  'border border-[var(--button-primary-borderColor-rest)] bg-[var(--button-primary-bgColor-rest)] text-[var(--button-primary-fgColor-rest)] hover:bg-[var(--button-primary-bgColor-hover)]';
+export const BTN_GHOST =
+  'border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] text-[var(--fgColor-default)] hover:bg-[var(--bgColor-muted)]';
+export const BTN_DANGER =
+  'border border-[var(--borderColor-danger-emphasis)] bg-[var(--bgColor-default)] text-[var(--fgColor-danger)] hover:bg-[var(--bgColor-danger-muted)]';
 
-type Variant = 'primary' | 'ghost' | 'danger';
+type Variant = 'primary' | 'ghost' | 'danger' | 'invisible';
 
-const VARIANT: Record<Variant, string> = { primary: BTN_PRIMARY, ghost: BTN_GHOST, danger: BTN_DANGER };
+const PRIMER_VARIANT: Record<Variant, ButtonProps['variant']> = {
+  primary: 'primary',
+  ghost: 'default',
+  danger: 'danger',
+  invisible: 'invisible',
+};
 
-export function Btn({ variant = 'ghost', block = false, className = '', ref, ...rest }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant; block?: boolean; ref?: Ref<HTMLButtonElement> }) {
-  return <button ref={ref} type="button" {...rest} className={`${BTN_BASE} ${VARIANT[variant]} ${block ? 'w-full' : ''} ${className}`} />;
+export type BtnProps = ButtonHTMLAttributes<HTMLButtonElement> & {
+  variant?: Variant;
+  block?: boolean;
+  loading?: boolean;
+  leadingVisual?: ElementType | ReactElement | null;
+  trailingVisual?: ElementType | ReactElement | null;
+  ref?: Ref<HTMLButtonElement>;
+};
+
+export function Btn({
+  variant = 'ghost',
+  block = false,
+  loading = false,
+  leadingVisual,
+  trailingVisual,
+  className = '',
+  type = 'button',
+  ref,
+  children,
+  ...rest
+}: BtnProps) {
+  return (
+    <Button
+      {...rest}
+      ref={ref}
+      type={type}
+      variant={PRIMER_VARIANT[variant]}
+      block={block}
+      loading={loading}
+      leadingVisual={leadingVisual}
+      trailingVisual={trailingVisual}
+      className={clsx(className)}
+    >
+      {children}
+    </Button>
+  );
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { ZaloLink } from '@/components/ui/ZaloLink';
-import { CalendarPlus, Check, Plus, X } from 'lucide-react';
+import { CalendarIcon, CheckIcon, PlusIcon, XIcon } from '@primer/octicons-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useTransition } from 'react';
@@ -13,7 +13,7 @@ import { Btn } from '@/components/ui/Btn';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Chip, ChipGroup } from '@/components/ui/controls';
 import { DataGrid, type GridColumn } from '@/components/ui/datagrid';
-import { Field, FormFooter, FORM_BTN_CANCEL, FORM_BTN_SUBMIT, inputClass } from '@/components/ui/Field';
+import { Field, FormFooter, inputClass } from '@/components/ui/Field';
 import { Modal } from '@/components/ui/Modal';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Alert, Pill, type Tone } from '@/components/ui/primitives';
@@ -113,13 +113,13 @@ export function LeavesView({
     const m = makeups[r.id];
     return m ? (
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
-        <span className="text-ink-2">Học bù: lớp {m.className} · {sessionLabel(new Date(m.startsAt), new Date(m.endsAt))}</span>
-        <button type="button" onClick={() => setMakeupFor(r)} className="text-link underline underline-offset-2">Đổi</button>
-        <button type="button" onClick={() => setToUnbook(r)} className="text-blush-ink underline underline-offset-2">Bỏ</button>
+        <span className="text-[var(--fgColor-muted)]">Học bù: lớp {m.className} · {sessionLabel(new Date(m.startsAt), new Date(m.endsAt))}</span>
+        <button type="button" data-link="true" onClick={() => setMakeupFor(r)} className="text-[var(--fgColor-accent)] underline underline-offset-2">Đổi</button>
+        <button type="button" data-link="true" onClick={() => setToUnbook(r)} className="text-blush-ink underline underline-offset-2">Bỏ</button>
       </div>
     ) : (
-      <button type="button" onClick={() => setMakeupFor(r)} className="inline-flex items-center gap-1.5 self-start text-sm text-link underline underline-offset-2">
-        <CalendarPlus className="size-4" aria-hidden />
+      <button type="button" data-link="true" onClick={() => setMakeupFor(r)} className="inline-flex items-center gap-1.5 self-start text-sm text-[var(--fgColor-accent)] underline underline-offset-2">
+        <CalendarIcon size={16} aria-hidden />
         Xếp học bù
       </button>
     );
@@ -131,19 +131,17 @@ export function LeavesView({
       <Pill tone={r.status === 'pending' && r.past ? 'stone' : STATUS_META[r.status].tone}>
         {r.status === 'pending' && r.past ? 'Quá hạn duyệt' : STATUS_META[r.status].label}
       </Pill>
-      {r.decidedBy && <small className="text-xs text-muted">{r.decidedBy}</small>}
+      {r.decidedBy && <small className="text-xs text-[var(--fgColor-muted)]">{r.decidedBy}</small>}
       {withMakeup && makeupLine(r)}
     </div>
   );
 
   const decideButtons = (r: LeaveListRow, block = false) => (
     <>
-      <Btn variant="primary" block={block} onClick={() => decide(r, true)} disabled={pending} aria-label={`Duyệt đơn của ${r.studentName}`}>
-        <Check className="size-4" aria-hidden />
+      <Btn variant="primary" block={block} leadingVisual={CheckIcon} onClick={() => decide(r, true)} disabled={pending} aria-label={`Duyệt đơn của ${r.studentName}`}>
         Duyệt
       </Btn>
-      <Btn variant="danger" block={block} onClick={() => setToDeny(r)} disabled={pending} aria-label={`Từ chối đơn của ${r.studentName}`}>
-        <X className="size-4" aria-hidden />
+      <Btn variant="danger" block={block} leadingVisual={XIcon} onClick={() => setToDeny(r)} disabled={pending} aria-label={`Từ chối đơn của ${r.studentName}`}>
         Từ chối
       </Btn>
     </>
@@ -154,27 +152,27 @@ export function LeavesView({
       case 'student':
         return (
           <div className="min-w-0">
-            <Link href={`/hoc-sinh/${r.studentId}`} className="text-base font-normal text-link underline underline-offset-2">{r.studentName}</Link>
-            <small className="block text-xs text-muted">{r.className}</small>
+            <Link href={`/hoc-sinh/${r.studentId}`} data-link="true" className="text-base font-normal text-[var(--fgColor-accent)] underline underline-offset-2">{r.studentName}</Link>
+            <small className="block text-xs text-[var(--fgColor-muted)]">{r.className}</small>
           </div>
         );
       case 'session':
-        return <span className="text-base text-ink tabular-nums">{sessionLabel(r.startsAt, r.endsAt)}</span>;
+        return <span className="text-base tabular-nums text-[var(--fgColor-default)]">{sessionLabel(r.startsAt, r.endsAt)}</span>;
       case 'reason':
-        return <span className="text-base text-ink-2">{r.reason}</span>;
+        return <span className="text-base text-[var(--fgColor-muted)]">{r.reason}</span>;
       case 'parent':
         return r.parentName ? (
           <div className="min-w-0">
-            <span className="block text-base text-ink">{r.parentName}</span>
+            <span className="block text-base text-[var(--fgColor-default)]">{r.parentName}</span>
             {r.parentPhone && (
               <span className="flex flex-wrap items-center gap-2">
-                <a href={`tel:${r.parentPhone}`} className="text-sm font-normal text-link underline underline-offset-2">{r.parentPhone}</a>
+                <a href={`tel:${r.parentPhone}`} data-link="true" className="text-sm font-normal text-[var(--fgColor-accent)] underline underline-offset-2">{r.parentPhone}</a>
                 <ZaloLink phone={r.parentPhone} name={r.parentName} variant="link" />
               </span>
             )}
           </div>
         ) : (
-          <span className="text-sm text-muted">Giáo vụ ghi</span>
+          <span className="text-sm text-[var(--fgColor-muted)]">Giáo vụ ghi</span>
         );
       case 'status':
         return statusCell(r);
@@ -189,21 +187,21 @@ export function LeavesView({
     <Card>
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <Link href={`/hoc-sinh/${r.studentId}`} className="text-base font-normal text-link underline underline-offset-2">{r.studentName}</Link>
-          <small className="block text-xs text-muted">{r.className} · {sessionLabel(r.startsAt, r.endsAt)}</small>
+          <Link href={`/hoc-sinh/${r.studentId}`} data-link="true" className="text-base font-normal text-[var(--fgColor-accent)] underline underline-offset-2">{r.studentName}</Link>
+          <small className="block text-xs text-[var(--fgColor-muted)]">{r.className} · {sessionLabel(r.startsAt, r.endsAt)}</small>
         </div>
         {statusCell(r, false)}
       </div>
-      {r.reason && <p className="text-base text-ink-2">Lý do: {r.reason}</p>}
+      {r.reason && <p className="text-base text-[var(--fgColor-muted)]">Lý do: {r.reason}</p>}
       {makeupLine(r)}
-      <small className="text-sm text-muted">
+      <small className="text-sm text-[var(--fgColor-muted)]">
         {r.parentName ? (
           <>
             Gửi bởi {r.parentName}
             {r.parentPhone && (
               <>
                 {' · '}
-                <a href={`tel:${r.parentPhone}`} className="text-link underline underline-offset-2">{r.parentPhone}</a>
+                <a href={`tel:${r.parentPhone}`} data-link="true" className="text-[var(--fgColor-accent)] underline underline-offset-2">{r.parentPhone}</a>
                 {' '}
                 <ZaloLink phone={r.parentPhone} name={r.parentName} variant="link" />
               </>
@@ -224,8 +222,7 @@ export function LeavesView({
         title="Đơn nghỉ"
         subtitle="Đơn phụ huynh gửi qua Telegram. Duyệt thì ghi vắng có phép vào điểm danh và báo lại phụ huynh."
         actions={
-          <Btn variant="primary" onClick={() => setAdding(true)}>
-            <Plus className="size-4" aria-hidden />
+          <Btn variant="primary" leadingVisual={PlusIcon} onClick={() => setAdding(true)}>
             Ghi đơn nghỉ
           </Btn>
         }
@@ -394,8 +391,8 @@ function AddLeaveDialog({ classes, defaultClassId, onClose, onDone }: {
           <input value={reason} onChange={(e) => setReason(e.target.value)} maxLength={200} placeholder="VD: Ốm, phụ huynh gọi điện báo" autoComplete="off" className={inputClass()} />
         </Field>
         <FormFooter className="col-span-full">
-          <button type="button" onClick={onClose} className={FORM_BTN_CANCEL}>Huỷ</button>
-          <button type="submit" disabled={saving || !studentId || !sessionId} className={FORM_BTN_SUBMIT}>{saving ? 'Đang ghi…' : 'Ghi đơn nghỉ'}</button>
+          <Btn onClick={onClose}>Huỷ</Btn>
+          <Btn type="submit" variant="primary" disabled={saving || !studentId || !sessionId}>{saving ? 'Đang ghi…' : 'Ghi đơn nghỉ'}</Btn>
         </FormFooter>
       </form>
     </Modal>
@@ -432,15 +429,15 @@ function MakeupDialog({ row, onClose, onDone }: { row: LeaveListRow; onClose: ()
     <Modal open title={`Xếp học bù · ${row.studentName}`} subtitle={`Nghỉ buổi ${sessionLabel(row.startsAt, row.endsAt)} lớp ${row.className}. Chọn một buổi của lớp cùng trình độ.`} onClose={onClose} labelledBy="makeup-title">
       <div className="flex flex-col gap-3 pb-2">
         {error && <Alert>{error}</Alert>}
-        {!list && !error && <p className="text-sm text-muted">Đang tìm buổi phù hợp…</p>}
-        {list && list.length === 0 && <p className="text-sm text-ink-2">Không có buổi phù hợp trong 21 ngày tới (lớp cùng trình độ, cùng cơ sở, còn chỗ, không trùng giờ lớp của em).</p>}
+        {!list && !error && <p className="text-sm text-[var(--fgColor-muted)]">Đang tìm buổi phù hợp…</p>}
+        {list && list.length === 0 && <p className="text-sm text-[var(--fgColor-muted)]">Không có buổi phù hợp trong 21 ngày tới (lớp cùng trình độ, cùng cơ sở, còn chỗ, không trùng giờ lớp của em).</p>}
         {list && list.length > 0 && (
-          <ul className="flex flex-col divide-y divide-line">
+          <ul className="flex flex-col divide-y divide-[var(--borderColor-muted)]">
             {list.map((c) => (
               <li key={c.sessionId} className="flex items-center justify-between gap-3 py-2.5">
                 <div className="min-w-0">
-                  <b className="block text-base text-ink">{sessionLabel(new Date(c.startsAt), new Date(c.endsAt))} · lớp {c.className}</b>
-                  <small className="block text-sm text-muted">{c.teacherName}{c.room ? ` · ${c.room}` : ''} · còn {c.seatsLeft} chỗ</small>
+                  <b className="block text-base text-[var(--fgColor-default)]">{sessionLabel(new Date(c.startsAt), new Date(c.endsAt))} · lớp {c.className}</b>
+                  <small className="block text-sm text-[var(--fgColor-muted)]">{c.teacherName}{c.room ? ` · ${c.room}` : ''} · còn {c.seatsLeft} chỗ</small>
                 </div>
                 <Btn variant="primary" onClick={() => choose(c)} disabled={saving}>Chọn</Btn>
               </li>
@@ -448,7 +445,7 @@ function MakeupDialog({ row, onClose, onDone }: { row: LeaveListRow; onClose: ()
           </ul>
         )}
         <FormFooter>
-          <button type="button" onClick={onClose} className={FORM_BTN_CANCEL}>Đóng</button>
+          <Btn onClick={onClose}>Đóng</Btn>
         </FormFooter>
       </div>
     </Modal>

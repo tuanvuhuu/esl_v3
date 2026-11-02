@@ -28,7 +28,7 @@ export function TelegramSettings({ status, canSetup }: { status: IntegrationStat
     <Panel title="Telegram và lưu tệp">
       <div className="flex flex-col gap-3">
         <dl className="grid grid-cols-1 gap-x-4 gap-y-2 text-sm min-[768px]:grid-cols-[180px_1fr]">
-          <dt className="text-ink-2">Nơi lưu tệp</dt>
+          <dt className="text-[var(--fgColor-muted)]">Nơi lưu tệp</dt>
           <dd>
             {status.storage === 'supabase' ? (
               <Pill tone="mint">Supabase Storage</Pill>
@@ -36,22 +36,22 @@ export function TelegramSettings({ status, canSetup }: { status: IntegrationStat
               <Pill tone="butter">Ổ đĩa máy chủ (chỉ dùng khi chạy thử trên máy)</Pill>
             )}
           </dd>
-          <dt className="text-ink-2">Bot Telegram</dt>
-          <dd className="text-ink">
+          <dt className="text-[var(--fgColor-muted)]">Bot Telegram</dt>
+          <dd className="text-[var(--fgColor-default)]">
             {status.botConfigured ? (status.botUsername ? `@${status.botUsername}` : (status.botError ?? 'Đã có token')) : 'Chưa cấu hình'}
           </dd>
-          <dt className="text-ink-2">Webhook</dt>
-          <dd className="break-all text-ink">{status.webhookUrl || 'Chưa cài'}</dd>
-          <dt className="text-ink-2">Phụ huynh kết nối</dt>
-          <dd className="text-ink">{status.linkedParentsCount} phụ huynh</dd>
-          <dt className="text-ink-2">Nhân sự kết nối</dt>
-          <dd className="text-ink">{status.linkedStaffCount} tài khoản</dd>
-          <dt className="text-ink-2">Tin lỗi gần đây (7 ngày)</dt>
-          <dd className="text-ink">
+          <dt className="text-[var(--fgColor-muted)]">Webhook</dt>
+          <dd className="break-all text-[var(--fgColor-default)]">{status.webhookUrl || 'Chưa cài'}</dd>
+          <dt className="text-[var(--fgColor-muted)]">Phụ huynh kết nối</dt>
+          <dd className="text-[var(--fgColor-default)]">{status.linkedParentsCount} phụ huynh</dd>
+          <dt className="text-[var(--fgColor-muted)]">Nhân sự kết nối</dt>
+          <dd className="text-[var(--fgColor-default)]">{status.linkedStaffCount} tài khoản</dd>
+          <dt className="text-[var(--fgColor-muted)]">Tin lỗi gần đây (7 ngày)</dt>
+          <dd className="text-[var(--fgColor-default)]">
             {status.failedMessagesRecentCount > 0 ? (
-              <span className="font-semibold text-blush-ink">{status.failedMessagesRecentCount} tin chưa gửi được</span>
+              <span className="font-semibold text-[var(--fgColor-danger)]">{status.failedMessagesRecentCount} tin chưa gửi được</span>
             ) : (
-              <span className="text-ink-2">0 tin lỗi</span>
+              <span className="text-[var(--fgColor-muted)]">0 tin lỗi</span>
             )}
           </dd>
         </dl>
@@ -66,6 +66,7 @@ export function TelegramSettings({ status, canSetup }: { status: IntegrationStat
         {canSetup && (
           <div>
             <Btn
+              loading={pending}
               onClick={() => startTransition(async () => setResult(await setupWebhookAction()))}
               disabled={pending || !status.botConfigured || !status.secretConfigured}
             >

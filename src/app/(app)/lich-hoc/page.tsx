@@ -43,9 +43,9 @@ export default function SchedulePage({ searchParams }: { searchParams: Promise<S
 function ScheduleSkeleton() {
   return (
     <section aria-busy="true" aria-label="Đang tải lịch học" className="flex flex-col gap-4">
-      <div className="h-9 w-56 animate-pulse rounded-xl bg-stone" />
-      <div className="h-[var(--ctl-h)] w-full max-w-md animate-pulse rounded-[var(--radius-ctl)] bg-stone" />
-      <div className="h-[420px] w-full animate-pulse rounded-[var(--radius-panel)] bg-stone" />
+      <div className="h-9 w-56 animate-pulse rounded-md bg-[var(--bgColor-muted)]" />
+      <div className="h-[var(--ctl-h)] w-full max-w-md animate-pulse rounded-[var(--borderRadius-medium)] bg-[var(--bgColor-muted)]" />
+      <div className="h-[420px] w-full animate-pulse rounded-xl bg-[var(--bgColor-muted)]" />
     </section>
   );
 }
@@ -100,6 +100,7 @@ async function ScheduleData({ searchParams }: { searchParams: Promise<SearchPara
       filters={{ cls, teacher }}
       canManage={hasPermission(granted, 'classes.manage')}
       prevHref={scheduleHref(addDaysKey(from, -span), addDaysKey(to, -span), cls, teacher)}
-      nextHref={scheduleHref(addDaysKey(from, span), addDaysKey(to, span), cls, teacher)}    />
+      nextHref={scheduleHref(addDaysKey(from, span), addDaysKey(to, span), cls, teacher)}
+    />
   );
 }

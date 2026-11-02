@@ -3,7 +3,7 @@
 // Karaoke đọc theo cho câu đọc to (35.7): bấm nghe mẫu, chữ sáng dần theo giọng mẫu của giáo viên (mốc giáo viên chỉnh,
 // hoặc chia đều theo độ dài). Chưa có giọng mẫu thì máy đọc, chữ sáng theo từng từ máy báo; máy không báo thì theo thời lượng
 // ước lượng. Đọc xong thì nhắc con bấm micro đọc theo.
-import { Volume2 } from 'lucide-react';
+import { UnmuteIcon } from '@primer/octicons-react';
 import { useEffect, useRef, useState } from 'react';
 import { activeWord, estimateDurationMs, evenTimings, karaokeWords, parseTimings, wordIndexAtChar } from '@/lib/karaoke';
 
@@ -91,7 +91,10 @@ export function KaraokeText({ text, audioFileId, wordTimings, disabled }: { text
 
   return (
     <div className="flex w-full flex-col items-center gap-3">
-      <p className="rounded-2xl border border-line bg-stone/40 p-3 text-center text-xl font-extrabold leading-relaxed text-ink" aria-label="Câu đọc theo">
+      <p
+        className="rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]/60 p-3 text-center text-xl font-extrabold leading-relaxed text-[var(--fgColor-default)]"
+        aria-label="Câu đọc theo"
+      >
         {words.map((w, i) => {
           const st = i < active ? 'read' : i === active ? 'active' : 'todo';
           return (
@@ -99,7 +102,13 @@ export function KaraokeText({ text, audioFileId, wordTimings, disabled }: { text
               <span
                 data-state={st}
                 aria-current={st === 'active' ? 'true' : undefined}
-                className={`rounded-lg px-0.5 transition-colors ${st === 'active' ? 'bg-primary text-on-primary' : st === 'read' ? 'text-[var(--accent)]' : ''}`}
+                className={`rounded-lg px-0.5 transition-colors ${
+                  st === 'active'
+                    ? 'bg-[var(--button-primary-bgColor-rest)] text-[var(--button-primary-fgColor-rest)]'
+                    : st === 'read'
+                    ? 'text-[var(--fgColor-success)]'
+                    : ''
+                }`}
               >
                 {w}
               </span>{' '}
@@ -109,13 +118,18 @@ export function KaraokeText({ text, audioFileId, wordTimings, disabled }: { text
       </p>
       <button
         type="button"
+        data-card="true"
         onClick={play}
         disabled={disabled || state === 'playing'}
-        className="inline-flex min-h-11 items-center gap-2 rounded-full border-2 border-line bg-surface px-4 text-base font-extrabold text-ink active:scale-95 disabled:opacity-40"
+        className="inline-flex min-h-11 items-center gap-2 rounded-full border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-4 text-base font-extrabold text-[var(--fgColor-default)] shadow-[var(--shadow-resting-small,0_1px_2px_rgba(0,0,0,0.04))] transition-colors hover:bg-[var(--bgColor-muted)] active:scale-95 disabled:opacity-40"
       >
-        <Volume2 className="size-5" aria-hidden /> {state === 'done' ? 'Nghe lại mẫu' : 'Nghe mẫu và đọc theo'}
+        <UnmuteIcon size={20} aria-hidden /> {state === 'done' ? 'Nghe lại mẫu' : 'Nghe mẫu và đọc theo'}
       </button>
-      {state === 'done' && <p className="text-base font-bold text-ink" role="status">Giờ con bấm micro để đọc theo nhé!</p>}
+      {state === 'done' && (
+        <p className="text-base font-bold text-[var(--fgColor-default)]" role="status">
+          Giờ con bấm micro để đọc theo nhé!
+        </p>
+      )}
     </div>
   );
 }

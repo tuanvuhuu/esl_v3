@@ -1,24 +1,32 @@
 'use client';
 
+import { SearchIcon } from '@primer/octicons-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useActionState, useEffect, useState, useTransition, startTransition, type FormEvent } from 'react';
-import { loadPaymentsAction, recordPaymentAction, recordPaymentsBulkAction, refundSurplusAction, remindTuitionAction, voidPaymentAction } from '@/app/(app)/hoc-phi/actions';
-import type { InvoiceFilter, InvoiceRow, InvoiceTotals, PaymentRow } from '@/lib/queries/tuition';
-import { TUITION_PER_SESSION } from '@/lib/tuition';
-import { formatVND } from '@/lib/money';
-import { dateKeyLabel } from '@/lib/datetime';
-import type { ActionResult } from '@/lib/validation/student';
-import { Field, FORM_BTN_CANCEL, FORM_BTN_SUBMIT, inputClass, FormFooter } from '@/components/ui/Field';
+import { startTransition, useActionState, useEffect, useState, useTransition, type FormEvent } from 'react';
+import {
+  loadPaymentsAction,
+  recordPaymentAction,
+  recordPaymentsBulkAction,
+  refundSurplusAction,
+  remindTuitionAction,
+  voidPaymentAction,
+} from '@/app/(app)/hoc-phi/actions';
+import { Btn } from '@/components/ui/Btn';
+import { Chip, ChipGroup, TextInput } from '@/components/ui/controls';
+import { DataGrid, type GridColumn } from '@/components/ui/datagrid';
+import { Field, FormFooter, inputClass } from '@/components/ui/Field';
 import { Modal } from '@/components/ui/Modal';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { Pill, type Tone, Alert } from '@/components/ui/primitives';
+import { Alert, Pill, type Tone } from '@/components/ui/primitives';
+import { Card, EmptyPanel } from '@/components/ui/surfaces';
 import { Toast, useToast } from '@/components/ui/Toast';
-import { DataGrid, type GridColumn } from '@/components/ui/datagrid';
-import { EmptyPanel, Card } from '@/components/ui/surfaces';
-import { Btn } from '@/components/ui/Btn';
+import { dateKeyLabel } from '@/lib/datetime';
+import { formatVND } from '@/lib/money';
+import type { InvoiceFilter, InvoiceRow, InvoiceTotals, PaymentRow } from '@/lib/queries/tuition';
+import { TUITION_PER_SESSION } from '@/lib/tuition';
+import type { ActionResult } from '@/lib/validation/student';
 import { QrImage } from './QrImage';
-import { Chip, ChipGroup, TextInput } from '@/components/ui/controls';
 
 const STATE_META: Record<InvoiceRow['state'], { label: string; tone: Tone }> = {
   paid: { label: 'Đã đóng', tone: 'mint' },
@@ -115,22 +123,34 @@ export function TuitionView({
   const cell = (r: InvoiceRow, key: string) => {
     switch (key) {
       case 'select':
-        return <input type="checkbox" checked={picked.has(r.id)} onChange={() => togglePick(r.id)} aria-label={`Chọn ${r.fullName} để ghi thu`} className="size-4 accent-[var(--primary-deep)]" />;
+        return (
+          <input
+            type="checkbox"
+            checked={picked.has(r.id)}
+            onChange={() => togglePick(r.id)}
+            aria-label={`Chọn ${r.fullName} để ghi thu`}
+            className="size-4 accent-[var(--control-checked-bgColor-rest)]"
+          />
+        );
       case 'fullName':
         return (
           <div className="min-w-0">
-            <Link href={`/hoc-sinh/${r.id}`} className="text-base font-normal text-link underline underline-offset-2">{r.fullName}</Link>
-            <small className="block truncate text-xs text-muted">{r.code} · {r.className}</small>
+            <Link href={`/hoc-sinh/${r.id}`} className="text-sm font-medium text-[var(--fgColor-link)] underline underline-offset-2">
+              {r.fullName}
+            </Link>
+            <small className="block truncate text-xs text-[var(--fgColor-muted)]">
+              {r.code} · {r.className}
+            </small>
           </div>
         );
       case 'paid':
-        return <span className="text-base text-ink tabular-nums">{formatVND(r.paid)}</span>;
+        return <span className="text-sm tabular-nums text-[var(--fgColor-default)]">{formatVND(r.paid)}</span>;
       case 'discount':
-        return <span className="text-base text-ink tabular-nums">{r.discount ? formatVND(r.discount) : ''}</span>;
+        return <span className="text-sm tabular-nums text-[var(--fgColor-default)]">{r.discount ? formatVND(r.discount) : ''}</span>;
       case 'bought':
-        return <span className="text-base text-ink tabular-nums">{r.sessionsBought} buổi</span>;
+        return <span className="text-sm tabular-nums text-[var(--fgColor-default)]">{r.sessionsBought} buổi</span>;
       case 'done':
-        return <span className="text-base text-ink tabular-nums">{r.sessionsDone} buổi</span>;
+        return <span className="text-sm tabular-nums text-[var(--fgColor-default)]">{r.sessionsDone} buổi</span>;
       case 'left':
         return <SessionsLeft row={r} />;
       case 'balance':
@@ -146,7 +166,11 @@ export function TuitionView({
         return (
           <div className="flex justify-end gap-1.5">
             {canManage && <Btn onClick={() => setPaying(r)}>Ghi thu</Btn>}
-            {canManage && needsPay(r) && <Btn onClick={() => remind(r)} disabled={pending}>Nhắc</Btn>}
+            {canManage && needsPay(r) && (
+              <Btn onClick={() => remind(r)} disabled={pending}>
+                Nhắc
+              </Btn>
+            )}
             {canRefund(r) && <Btn onClick={() => setRefunding(r)}>Hoàn số dư</Btn>}
           </div>
         );
@@ -158,36 +182,73 @@ export function TuitionView({
   const card = (r: InvoiceRow) => (
     <Card>
       {canManage && (
-        <label className="mb-2 flex items-center gap-2 text-sm text-ink-2">
-          <input type="checkbox" checked={picked.has(r.id)} onChange={() => togglePick(r.id)} className="size-4 accent-[var(--primary-deep)]" />
+        <label className="mb-1 flex items-center gap-2 text-sm text-[var(--fgColor-muted)]">
+          <input
+            type="checkbox"
+            checked={picked.has(r.id)}
+            onChange={() => togglePick(r.id)}
+            className="size-4 accent-[var(--control-checked-bgColor-rest)]"
+          />
           Chọn để ghi thu
         </label>
       )}
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <Link href={`/hoc-sinh/${r.id}`} className="text-base font-normal text-link underline underline-offset-2">{r.fullName}</Link>
-          <small className="block truncate text-xs text-muted">{r.code} · {r.className}</small>
+          <Link href={`/hoc-sinh/${r.id}`} className="text-sm font-medium text-[var(--fgColor-link)] underline underline-offset-2">
+            {r.fullName}
+          </Link>
+          <small className="block truncate text-xs text-[var(--fgColor-muted)]">
+            {r.code} · {r.className}
+          </small>
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1">
           <Pill tone={STATE_META[r.state].tone}>{STATE_META[r.state].label}</Pill>
           {r.overdue && <Pill tone="blush">Quá hạn</Pill>}
         </div>
       </div>
-      <div className="grid grid-cols-3 gap-2 rounded-xl bg-bg px-3 py-2.5 text-center">
-        <div><small className="block text-xs text-muted">Đã mua</small><b className="text-sm text-ink">{r.sessionsBought} buổi</b></div>
-        <div><small className="block text-xs text-muted">Đã học</small><b className="text-sm text-ink">{r.sessionsDone} buổi</b></div>
-        <div><small className="block text-xs text-muted">Còn lại</small><SessionsLeft row={r} /></div>
-        <div><small className="block text-xs text-muted">Đã nộp</small><b className="text-sm text-ink">{formatVND(r.paid)}</b></div>
-        <div><small className="block text-xs text-muted">Giảm trừ</small><b className="text-sm text-ink">{formatVND(r.discount)}</b></div>
-        <div><small className="block text-xs text-muted">Tiền trước/nợ</small><BalanceText balance={r.balance} /></div>
+      <div className="grid grid-cols-3 gap-2 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)] px-3 py-2.5 text-center">
+        <div>
+          <small className="block text-xs text-[var(--fgColor-muted)]">Đã mua</small>
+          <b className="text-sm tabular-nums text-[var(--fgColor-default)]">{r.sessionsBought} buổi</b>
+        </div>
+        <div>
+          <small className="block text-xs text-[var(--fgColor-muted)]">Đã học</small>
+          <b className="text-sm tabular-nums text-[var(--fgColor-default)]">{r.sessionsDone} buổi</b>
+        </div>
+        <div>
+          <small className="block text-xs text-[var(--fgColor-muted)]">Còn lại</small>
+          <SessionsLeft row={r} />
+        </div>
+        <div>
+          <small className="block text-xs text-[var(--fgColor-muted)]">Đã nộp</small>
+          <b className="text-sm tabular-nums text-[var(--fgColor-default)]">{formatVND(r.paid)}</b>
+        </div>
+        <div>
+          <small className="block text-xs text-[var(--fgColor-muted)]">Giảm trừ</small>
+          <b className="text-sm tabular-nums text-[var(--fgColor-default)]">{formatVND(r.discount)}</b>
+        </div>
+        <div>
+          <small className="block text-xs text-[var(--fgColor-muted)]">Tiền trước/nợ</small>
+          <BalanceText balance={r.balance} />
+        </div>
       </div>
       {canManage && (
         <div className={`grid gap-2 ${needsPay(r) ? 'grid-cols-2' : 'grid-cols-1'}`}>
-          <Btn block variant="primary" onClick={() => setPaying(r)}>Ghi thu</Btn>
-          {needsPay(r) && <Btn block onClick={() => remind(r)} disabled={pending}>Nhắc đóng</Btn>}
+          <Btn block variant="primary" onClick={() => setPaying(r)}>
+            Ghi thu
+          </Btn>
+          {needsPay(r) && (
+            <Btn block onClick={() => remind(r)} disabled={pending}>
+              Nhắc đóng
+            </Btn>
+          )}
         </div>
       )}
-      {canRefund(r) && <Btn block onClick={() => setRefunding(r)}>Hoàn số dư</Btn>}
+      {canRefund(r) && (
+        <Btn block onClick={() => setRefunding(r)}>
+          Hoàn số dư
+        </Btn>
+      )}
     </Card>
   );
 
@@ -217,12 +278,15 @@ export function TuitionView({
       >
         <TextInput
           type="search"
+          leadingVisual={SearchIcon}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Tìm học sinh theo tên hoặc mã HS-"
-          className="flex-1"
+          className="flex-1 [&::-webkit-search-cancel-button]:hidden"
         />
-        <Btn type="submit" variant="ghost">Tìm</Btn>
+        <Btn type="submit" variant="ghost">
+          Tìm
+        </Btn>
       </form>
 
       <TotalsStrip totals={totals} />
@@ -230,14 +294,21 @@ export function TuitionView({
       {canManage && rows.length > 0 && (
         <div className="mb-3 flex flex-wrap items-center gap-2">
           {pickedRows.length === 0 ? (
-            needRows.length > 0 && <Btn onClick={() => setPicked(new Set(needRows.map((r) => r.id)))}>Chọn tất cả cần đóng ({needRows.length})</Btn>
+            needRows.length > 0 && (
+              <Btn onClick={() => setPicked(new Set(needRows.map((r) => r.id)))}>Chọn tất cả cần đóng ({needRows.length})</Btn>
+            )
           ) : (
             <>
-              <div role="status" className="min-w-0 flex-1 rounded-[var(--radius-ctl)] bg-primary-soft px-3 py-2 text-sm text-ink">
+              <div
+                role="status"
+                className="min-w-0 flex-1 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-accent-muted)] bg-[var(--bgColor-accent-muted)] px-3 py-1.5 text-sm text-[var(--fgColor-default)]"
+              >
                 <b>Đã chọn {pickedRows.length} học sinh</b>
               </div>
               <Btn onClick={() => setPicked(new Set())}>Bỏ chọn</Btn>
-              <Btn variant="primary" onClick={() => setBulkOpen(true)}>Ghi thu cho {pickedRows.length} học sinh</Btn>
+              <Btn variant="primary" onClick={() => setBulkOpen(true)}>
+                Ghi thu cho {pickedRows.length} học sinh
+              </Btn>
             </>
           )}
         </div>
@@ -254,15 +325,41 @@ export function TuitionView({
         empty={<EmptyPanel title="Không có học sinh phù hợp với bộ lọc này." />}
       />
 
-      {paying && <PaymentDialog row={paying} canManage={canManage} onClose={() => setPaying(null)} onDone={(m) => { setPaying(null); notify(m); router.refresh(); }} />}
+      {paying && (
+        <PaymentDialog
+          row={paying}
+          canManage={canManage}
+          onClose={() => setPaying(null)}
+          onDone={(m) => {
+            setPaying(null);
+            notify(m);
+            router.refresh();
+          }}
+        />
+      )}
       {bulkOpen && pickedRows.length > 0 && (
         <BulkPaymentDialog
           rows={pickedRows}
           onClose={() => setBulkOpen(false)}
-          onDone={(m) => { setBulkOpen(false); setPicked(new Set()); notify(m); router.refresh(); }}
+          onDone={(m) => {
+            setBulkOpen(false);
+            setPicked(new Set());
+            notify(m);
+            router.refresh();
+          }}
         />
       )}
-      {refunding && <RefundDialog row={refunding} onClose={() => setRefunding(null)} onDone={(m) => { setRefunding(null); notify(m); router.refresh(); }} />}
+      {refunding && (
+        <RefundDialog
+          row={refunding}
+          onClose={() => setRefunding(null)}
+          onDone={(m) => {
+            setRefunding(null);
+            notify(m);
+            router.refresh();
+          }}
+        />
+      )}
       <Toast message={message} />
     </section>
   );
@@ -272,17 +369,24 @@ export function TuitionView({
 function TotalsStrip({ totals }: { totals: InvoiceTotals }) {
   const label = totals.balance < 0 ? 'Đang nợ' : totals.balance > 0 ? 'Tiền trước' : 'Tiền trước/nợ';
   const items: { label: string; value: string; tone: string }[] = [
-    { label: 'Đã nộp', value: formatVND(totals.paid), tone: 'text-ink' },
-    { label: 'Giảm trừ', value: formatVND(totals.discount), tone: 'text-ink' },
-    { label: 'Buổi đã mua', value: `${totals.sessionsBought.toLocaleString('vi-VN')} buổi`, tone: 'text-ink' },
-    { label, value: formatVND(Math.abs(totals.balance)), tone: totals.balance < 0 ? 'text-blush-ink' : totals.balance > 0 ? 'text-mint-ink' : 'text-muted' },
+    { label: 'Đã nộp', value: formatVND(totals.paid), tone: 'text-[var(--fgColor-default)]' },
+    { label: 'Giảm trừ', value: formatVND(totals.discount), tone: 'text-[var(--fgColor-default)]' },
+    { label: 'Buổi đã mua', value: `${totals.sessionsBought.toLocaleString('vi-VN')} buổi`, tone: 'text-[var(--fgColor-default)]' },
+    {
+      label,
+      value: formatVND(Math.abs(totals.balance)),
+      tone: totals.balance < 0 ? 'text-[var(--fgColor-danger)]' : totals.balance > 0 ? 'text-[var(--fgColor-success)]' : 'text-[var(--fgColor-muted)]',
+    },
   ];
   return (
     <dl className="mb-4 grid grid-cols-2 gap-2.5 min-[768px]:grid-cols-4" aria-label="Tổng học phí">
       {items.map((it) => (
-        <div key={it.label} className="rounded-[var(--radius-panel)] bg-surface p-3.5 shadow-card">
-          <dt className="text-xs text-muted">{it.label}</dt>
-          <dd className={`mt-0.5 text-lg font-extrabold tabular-nums ${it.tone}`}>{it.value}</dd>
+        <div
+          key={it.label}
+          className="rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-4 py-3 shadow-[var(--shadow-resting-small,0_1px_2px_rgba(0,0,0,0.04))]"
+        >
+          <dt className="text-xs text-[var(--fgColor-muted)]">{it.label}</dt>
+          <dd className={`mt-0.5 text-lg font-bold tabular-nums ${it.tone}`}>{it.value}</dd>
         </div>
       ))}
     </dl>
@@ -291,20 +395,36 @@ function TotalsStrip({ totals }: { totals: InvoiceTotals }) {
 
 // Buổi còn lại: âm là học quá số buổi đã mua (đang nợ buổi)
 function SessionsLeft({ row }: { row: InvoiceRow }) {
-  if (row.sessionsLeft < 0) return <b className="text-sm font-bold text-blush-ink">Nợ {-row.sessionsLeft} buổi</b>;
+  if (row.sessionsLeft < 0) return <b className="text-sm font-semibold text-[var(--fgColor-danger)]">Nợ {-row.sessionsLeft} buổi</b>;
   const low = row.sessionsLeft <= LOW_SESSIONS;
-  return <b className={`text-sm tabular-nums ${low ? 'font-bold text-butter-ink' : 'font-normal text-ink'}`}>{row.sessionsLeft} buổi</b>;
+  return (
+    <b className={`text-sm tabular-nums ${low ? 'font-semibold text-[var(--fgColor-attention)]' : 'font-normal text-[var(--fgColor-default)]'}`}>
+      {row.sessionsLeft} buổi
+    </b>
+  );
 }
 
 // Tiền trước (dương) hay nợ (âm) của một học sinh, có chữ để không chỉ dựa vào màu
 function BalanceText({ balance }: { balance: number }) {
-  if (balance < 0) return <span className="text-base font-bold text-blush-ink">Nợ {formatVND(-balance)}</span>;
-  if (balance > 0) return <span className="text-base font-bold text-mint-ink">Trước {formatVND(balance)}</span>;
-  return <span className="text-base text-muted">{formatVND(0)}</span>;
+  if (balance < 0) return <span className="text-sm font-semibold tabular-nums text-[var(--fgColor-danger)]">Nợ {formatVND(-balance)}</span>;
+  if (balance > 0) return <span className="text-sm font-semibold tabular-nums text-[var(--fgColor-success)]">Trước {formatVND(balance)}</span>;
+  return <span className="text-sm tabular-nums text-[var(--fgColor-muted)]">{formatVND(0)}</span>;
 }
 
 // Ô tiền: hiện "2.500.000", gửi số nguyên qua ô ẩn cùng tên
-function MoneyField({ name, value, onChange, invalid, label }: { name: string; value: string; onChange: (digits: string) => void; invalid?: string; label: string }) {
+function MoneyField({
+  name,
+  value,
+  onChange,
+  invalid,
+  label,
+}: {
+  name: string;
+  value: string;
+  onChange: (digits: string) => void;
+  invalid?: string;
+  label: string;
+}) {
   return (
     <>
       <input
@@ -323,7 +443,17 @@ function MoneyField({ name, value, onChange, invalid, label }: { name: string; v
 }
 
 // Hộp thoại ghi thu: số tiền, giảm trừ, số buổi được cộng xem ngay; có lịch sử thu của học sinh
-function PaymentDialog({ row, canManage, onClose, onDone }: { row: InvoiceRow; canManage: boolean; onClose: () => void; onDone: (message: string) => void }) {
+function PaymentDialog({
+  row,
+  canManage,
+  onClose,
+  onDone,
+}: {
+  row: InvoiceRow;
+  canManage: boolean;
+  onClose: () => void;
+  onDone: (message: string) => void;
+}) {
   const [history, setHistory] = useState<PaymentRow[] | null>(null);
   const [historyError, setHistoryError] = useState<string | null>(null);
   const [voidId, setVoidId] = useState<number | null>(null);
@@ -334,11 +464,14 @@ function PaymentDialog({ row, canManage, onClose, onDone }: { row: InvoiceRow; c
   // Học phí của số buổi đăng ký; mặc định bằng số đang nợ. Phụ huynh trả = học phí − giảm trừ.
   const [fee, setFee] = useState(row.debt > 0 ? String(row.debt) : '');
   const [discount, setDiscount] = useState('');
-  const [state, formAction, pending] = useActionState<ActionResult, FormData>(async (prev, formData) => {
-    const result = await recordPaymentAction(Number(row.id), prev, formData);
-    if (result.ok) onDone(result.message ?? 'Đã ghi nhận');
-    return result;
-  }, { ok: false });
+  const [state, formAction, pending] = useActionState<ActionResult, FormData>(
+    async (prev, formData) => {
+      const result = await recordPaymentAction(Number(row.id), prev, formData);
+      if (result.ok) onDone(result.message ?? 'Đã ghi nhận');
+      return result;
+    },
+    { ok: false },
+  );
   const errors = state.fieldErrors ?? {};
 
   // Xem trước: số buổi được cộng theo học phí, tiền phụ huynh trả, số buổi sau khi thu
@@ -382,13 +515,21 @@ function PaymentDialog({ row, canManage, onClose, onDone }: { row: InvoiceRow; c
 
   const now = row.sessionsLeft < 0 ? `đang nợ ${-row.sessionsLeft} buổi` : `còn ${row.sessionsLeft} buổi`;
   return (
-    <Modal open title={`Ghi thu học phí · ${row.fullName}`} subtitle={`${row.className} · đã mua ${row.sessionsBought} buổi, đã học ${row.sessionsDone}, ${now}`} onClose={onClose} labelledBy="payment-title">
+    <Modal
+      open
+      title={`Ghi thu học phí · ${row.fullName}`}
+      subtitle={`${row.className} · đã mua ${row.sessionsBought} buổi, đã học ${row.sessionsDone}, ${now}`}
+      onClose={onClose}
+      labelledBy="payment-title"
+    >
       <div className="flex flex-col gap-4 pb-2">
         <form onSubmit={submit} noValidate className="grid grid-cols-1 gap-3.5 min-[768px]:grid-cols-2 min-[768px]:gap-x-4">
-          {state.message && !state.ok && (
-            <Alert className="col-span-full">{state.message}</Alert>
-          )}
-          <Field label="Học phí (VND)" error={errors.fee} hint={feeValue > 0 ? `${addedSessions} buổi × ${PRICE}` : `${PRICE} một buổi, đăng ký bao nhiêu cũng được`}>
+          {state.message && !state.ok && <Alert className="col-span-full">{state.message}</Alert>}
+          <Field
+            label="Học phí (VND)"
+            error={errors.fee}
+            hint={feeValue > 0 ? `${addedSessions} buổi × ${PRICE}` : `${PRICE} một buổi, đăng ký bao nhiêu cũng được`}
+          >
             <MoneyField name="fee" value={fee} onChange={setFee} invalid={errors.fee} label="Học phí (VND)" />
           </Field>
           <Field label="Giảm trừ (VND)" error={errors.discount} hint="Trừ vào số tiền phụ huynh trả, không đổi số buổi">
@@ -397,45 +538,54 @@ function PaymentDialog({ row, canManage, onClose, onDone }: { row: InvoiceRow; c
           <Field label="Ghi chú" error={errors.note}>
             <input name="note" placeholder="VD: Đóng tiền mặt, đăng ký khoá tiếp" autoComplete="off" className={inputClass(errors.note)} />
           </Field>
-          <p role="status" className="col-span-full rounded-[var(--radius-ctl)] bg-primary-soft px-3 py-2 text-sm text-ink">
-            Phụ huynh trả <b className={pay < 0 ? 'text-blush-ink' : ''}>{formatVND(Math.max(0, pay))}</b>
+          <p
+            role="status"
+            className="col-span-full rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-accent-muted)] bg-[var(--bgColor-accent-muted)] px-3 py-2 text-sm text-[var(--fgColor-default)]"
+          >
+            Phụ huynh trả <b className={pay < 0 ? 'text-[var(--fgColor-danger)]' : ''}>{formatVND(Math.max(0, pay))}</b>
             {discountValue > 0 ? ` (học phí ${formatVND(feeValue)} − giảm trừ ${formatVND(discountValue)})` : ''}. Cộng <b>{addedSessions} buổi</b>.
             <br />
             Sau khi thu: <b>đã mua {boughtAfter} buổi</b>, đã học {row.sessionsDone},{' '}
-            {leftAfter >= 0 ? <b>còn {leftAfter} buổi</b> : <b className="text-blush-ink">còn nợ {-leftAfter} buổi</b>}.
+            {leftAfter >= 0 ? <b>còn {leftAfter} buổi</b> : <b className="text-[var(--fgColor-danger)]">còn nợ {-leftAfter} buổi</b>}.
           </p>
           <FormFooter className="col-span-full">
-            <button type="button" onClick={onClose} className={FORM_BTN_CANCEL}>Huỷ</button>
-            <button type="submit" disabled={pending || feeValue <= 0 || pay < 0} className={FORM_BTN_SUBMIT}>{pending ? 'Đang ghi…' : 'Ghi nhận thu'}</button>
+            <Btn onClick={onClose} disabled={pending}>
+              Huỷ
+            </Btn>
+            <Btn type="submit" variant="primary" loading={pending} disabled={pending || feeValue <= 0 || pay < 0}>
+              {pending ? 'Đang ghi…' : 'Ghi nhận thu'}
+            </Btn>
           </FormFooter>
         </form>
 
         {qr && (
-          <div className="flex items-center gap-3 border-t border-line pt-3 max-[767px]:flex-col max-[767px]:items-start">
+          <div className="flex items-center gap-3 border-t border-[var(--borderColor-muted)] pt-3 max-[767px]:flex-col max-[767px]:items-start">
             <QrImage payload={qr.payload} size={132} label={`Mã QR chuyển khoản học phí của ${row.fullName}`} />
             <div className="min-w-0">
-              <h3 className="mb-1 text-xs font-bold uppercase tracking-wider text-muted">Chuyển khoản</h3>
-              <p className="text-sm text-ink-2">Phụ huynh quét bằng app ngân hàng: nội dung điền sẵn{row.debt > 0 ? ', số tiền đang nợ' : ', số tiền tự nhập'}.</p>
-              <p className="mt-1 break-words text-sm text-ink">{qr.bankLine}</p>
+              <h3 className="mb-1 text-xs font-semibold uppercase tracking-wider text-[var(--fgColor-muted)]">Chuyển khoản</h3>
+              <p className="text-sm text-[var(--fgColor-muted)]">
+                Phụ huynh quét bằng app ngân hàng: nội dung điền sẵn{row.debt > 0 ? ', số tiền đang nợ' : ', số tiền tự nhập'}.
+              </p>
+              <p className="mt-1 break-words text-sm text-[var(--fgColor-default)]">{qr.bankLine}</p>
             </div>
           </div>
         )}
 
-        <div className="border-t border-line pt-3">
-          <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-muted">Lịch sử thu</h3>
-          {historyError && <p className="text-sm text-blush-ink">{historyError}</p>}
-          {!history && !historyError && <p className="text-sm text-muted">Đang tải…</p>}
-          {history && history.length === 0 && <p className="text-sm text-muted">Chưa có khoản thu nào.</p>}
-          {voidError && <p role="alert" className="mb-2 text-sm text-blush-ink">{voidError}</p>}
+        <div className="border-t border-[var(--borderColor-muted)] pt-3">
+          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-[var(--fgColor-muted)]">Lịch sử thu</h3>
+          {historyError && <p className="text-sm text-[var(--fgColor-danger)]">{historyError}</p>}
+          {!history && !historyError && <p className="text-sm text-[var(--fgColor-muted)]">Đang tải…</p>}
+          {history && history.length === 0 && <p className="text-sm text-[var(--fgColor-muted)]">Chưa có khoản thu nào.</p>}
+          {voidError && <Alert className="mb-2">{voidError}</Alert>}
           {history && history.length > 0 && (
             <ul className="flex flex-col gap-2">
               {history.map((p) => {
                 const label = p.kind === 'refund' ? 'Hoàn tiền' : p.kind === 'void' ? 'Huỷ khoản' : '';
-                const struck = p.voided ? 'line-through text-muted' : '';
+                const struck = p.voided ? 'line-through text-[var(--fgColor-muted)]' : '';
                 return (
                   <li key={p.id} className="flex flex-col gap-1.5 text-sm">
                     <div className="flex items-center justify-between gap-3">
-                      <span className={`min-w-0 ${p.voided ? 'text-muted line-through' : 'text-muted'}`}>
+                      <span className={`min-w-0 text-[var(--fgColor-muted)] ${p.voided ? 'line-through' : ''}`}>
                         {dateKeyLabel(p.paidDate)}
                         {label ? ` · ${label}` : ''}
                         {p.discount > 0 ? ` · giảm trừ ${formatVND(p.discount)}` : ''}
@@ -443,9 +593,17 @@ function PaymentDialog({ row, canManage, onClose, onDone }: { row: InvoiceRow; c
                         {p.voided ? ' · đã huỷ' : ''}
                       </span>
                       <span className="flex shrink-0 items-center gap-2">
-                        <b className={struck || 'text-ink'}>{formatVND(p.amount)}</b>
+                        <b className={`tabular-nums ${struck || 'text-[var(--fgColor-default)]'}`}>{formatVND(p.amount)}</b>
                         {canManage && p.kind === 'payment' && !p.voided && voidId !== p.id && (
-                          <Btn onClick={() => { setVoidId(p.id); setVoidReason(''); setVoidError(null); }}>Huỷ</Btn>
+                          <Btn
+                            onClick={() => {
+                              setVoidId(p.id);
+                              setVoidReason('');
+                              setVoidError(null);
+                            }}
+                          >
+                            Huỷ
+                          </Btn>
                         )}
                       </span>
                     </div>
@@ -458,8 +616,12 @@ function PaymentDialog({ row, canManage, onClose, onDone }: { row: InvoiceRow; c
                           aria-label="Lý do huỷ khoản thu"
                           className={`${inputClass()} min-w-0 flex-1`}
                         />
-                        <Btn variant="danger" onClick={() => confirmVoid(p)} disabled={voiding}>Xác nhận huỷ</Btn>
-                        <Btn onClick={() => setVoidId(null)} disabled={voiding}>Không huỷ</Btn>
+                        <Btn variant="danger" loading={voiding} onClick={() => confirmVoid(p)} disabled={voiding}>
+                          Xác nhận huỷ
+                        </Btn>
+                        <Btn onClick={() => setVoidId(null)} disabled={voiding}>
+                          Không huỷ
+                        </Btn>
                       </div>
                     )}
                   </li>
@@ -492,18 +654,45 @@ function RefundDialog({ row, onClose, onDone }: { row: InvoiceRow; onClose: () =
   }
 
   return (
-    <Modal open title={`Hoàn số dư · ${row.fullName}`} subtitle={`Tiền trước ${formatVND(row.balance)} (${row.sessionsLeft} buổi chưa học)`} onClose={onClose} labelledBy="refund-title">
+    <Modal
+      open
+      title={`Hoàn số dư · ${row.fullName}`}
+      subtitle={`Tiền trước ${formatVND(row.balance)} (${row.sessionsLeft} buổi chưa học)`}
+      onClose={onClose}
+      labelledBy="refund-title"
+    >
       <form onSubmit={submit} noValidate className="grid grid-cols-1 gap-3.5 pb-2 min-[768px]:grid-cols-2 min-[768px]:gap-x-4">
         {error && <Alert className="col-span-full">{error}</Alert>}
         <Field label="Số tiền hoàn (VND) *" hint={`Tối đa ${formatVND(max)}`}>
-          <input name="amount" type="number" inputMode="numeric" min={1} max={max} step={1} value={amount} onChange={(e) => setAmount(e.target.value)} className={inputClass()} />
+          <input
+            name="amount"
+            type="number"
+            inputMode="numeric"
+            min={1}
+            max={max}
+            step={1}
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            className={inputClass()}
+          />
         </Field>
         <Field label="Ghi chú">
-          <input name="note" value={note} onChange={(e) => setNote(e.target.value)} placeholder="VD: nghỉ học từ tháng 10" autoComplete="off" className={inputClass()} />
+          <input
+            name="note"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="VD: nghỉ học từ tháng 10"
+            autoComplete="off"
+            className={inputClass()}
+          />
         </Field>
         <FormFooter className="col-span-full">
-          <button type="button" onClick={onClose} className={FORM_BTN_CANCEL}>Huỷ</button>
-          <button type="submit" disabled={pending} className={FORM_BTN_SUBMIT}>{pending ? 'Đang hoàn…' : 'Hoàn tiền'}</button>
+          <Btn onClick={onClose} disabled={pending}>
+            Huỷ
+          </Btn>
+          <Btn type="submit" variant="primary" loading={pending} disabled={pending}>
+            {pending ? 'Đang hoàn…' : 'Hoàn tiền'}
+          </Btn>
         </FormFooter>
       </form>
     </Modal>
@@ -512,7 +701,9 @@ function RefundDialog({ row, onClose, onDone }: { row: InvoiceRow; onClose: () =
 
 // Ghi thu cho nhiều học sinh đã chọn: mỗi người mặc định thu số đang nợ (hoặc để trống), sửa được từng số tiền.
 function BulkPaymentDialog({ rows, onClose, onDone }: { rows: InvoiceRow[]; onClose: () => void; onDone: (message: string) => void }) {
-  const [amounts, setAmounts] = useState<Record<number, string>>(() => Object.fromEntries(rows.map((r) => [r.id, r.debt > 0 ? String(r.debt) : ''])));
+  const [amounts, setAmounts] = useState<Record<number, string>>(() =>
+    Object.fromEntries(rows.map((r) => [r.id, r.debt > 0 ? String(r.debt) : ''])),
+  );
   const [note, setNote] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
@@ -536,17 +727,23 @@ function BulkPaymentDialog({ rows, onClose, onDone }: { rows: InvoiceRow[]; onCl
   }
 
   return (
-    <Modal open title={`Ghi thu cho ${rows.length} học sinh`} subtitle={`Mỗi người mặc định thu số đang nợ. ${PRICE} một buổi, nộp bao nhiêu cũng được.`} onClose={onClose} labelledBy="bulk-payment-title">
+    <Modal
+      open
+      title={`Ghi thu cho ${rows.length} học sinh`}
+      subtitle={`Mỗi người mặc định thu số đang nợ. ${PRICE} một buổi, nộp bao nhiêu cũng được.`}
+      onClose={onClose}
+      labelledBy="bulk-payment-title"
+    >
       <form onSubmit={submit} noValidate className="flex flex-col gap-3.5 pb-2">
         {error && <Alert>{error}</Alert>}
-        <ul className="flex max-h-[50vh] flex-col divide-y divide-line overflow-y-auto">
+        <ul className="flex max-h-[50vh] flex-col divide-y divide-[var(--borderColor-muted)] overflow-y-auto">
           {rows.map((r) => {
             const a = Number(amounts[r.id] || 0);
             return (
               <li key={r.id} className="flex flex-wrap items-center justify-between gap-3 py-2.5">
                 <div className="min-w-0">
-                  <b className="block truncate text-base font-normal text-ink">{r.fullName}</b>
-                  <small className="block truncate text-xs text-muted">
+                  <b className="block truncate text-sm font-medium text-[var(--fgColor-default)]">{r.fullName}</b>
+                  <small className="block truncate text-xs text-[var(--fgColor-muted)]">
                     {r.code} · {r.sessionsLeft < 0 ? `nợ ${-r.sessionsLeft} buổi` : `còn ${r.sessionsLeft} buổi`}
                     {a > 0 ? ` · +${Math.floor(a / TUITION_PER_SESSION)} buổi` : ''}
                   </small>
@@ -558,20 +755,31 @@ function BulkPaymentDialog({ rows, onClose, onDone }: { rows: InvoiceRow[]; onCl
                   autoComplete="off"
                   value={amounts[r.id] ? Number(amounts[r.id]).toLocaleString('vi-VN') : ''}
                   placeholder="0"
-                  onChange={(e) => setAmounts((prev) => ({ ...prev, [r.id]: e.target.value.replace(/\D/g, '').replace(/^0+(?=\d)/, '').slice(0, 10) }))}
-                  className={`${inputClass(badIds.has(r.id) ? 'sai' : undefined)} h-9 w-36 text-right tabular-nums`}
+                  onChange={(e) =>
+                    setAmounts((prev) => ({
+                      ...prev,
+                      [r.id]: e.target.value.replace(/\D/g, '').replace(/^0+(?=\d)/, '').slice(0, 10),
+                    }))
+                  }
+                  className={`${inputClass(badIds.has(r.id) ? 'sai' : undefined)} !w-36 text-right tabular-nums`}
                 />
               </li>
             );
           })}
         </ul>
-        <p className="text-sm text-ink-2">Tổng thu: <b className="text-ink">{formatVND(total)}</b> từ {rows.length} học sinh. Bấm xác nhận là ghi ngay.</p>
+        <p className="text-sm text-[var(--fgColor-muted)]">
+          Tổng thu: <b className="tabular-nums text-[var(--fgColor-default)]">{formatVND(total)}</b> từ {rows.length} học sinh. Bấm xác nhận là ghi ngay.
+        </p>
         <Field label="Ghi chú chung" hint="VD: đóng tiền mặt tại lớp">
           <input value={note} onChange={(e) => setNote(e.target.value)} maxLength={200} autoComplete="off" className={inputClass()} />
         </Field>
         <FormFooter>
-          <button type="button" onClick={onClose} className={FORM_BTN_CANCEL}>Huỷ</button>
-          <button type="submit" disabled={pending || badIds.size > 0} className={FORM_BTN_SUBMIT}>{pending ? 'Đang ghi…' : `Xác nhận đã nộp (${rows.length})`}</button>
+          <Btn onClick={onClose} disabled={pending}>
+            Huỷ
+          </Btn>
+          <Btn type="submit" variant="primary" loading={pending} disabled={pending || badIds.size > 0}>
+            {pending ? 'Đang ghi…' : `Xác nhận đã nộp (${rows.length})`}
+          </Btn>
         </FormFooter>
       </form>
     </Modal>

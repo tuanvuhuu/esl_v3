@@ -1,6 +1,6 @@
 'use client';
 
-import { Send } from 'lucide-react';
+import { PaperAirplaneIcon } from '@primer/octicons-react';
 import { useState, useTransition } from 'react';
 import { broadcastTelegramAction } from '@/app/(app)/tin-nhan/actions';
 import { Btn } from '@/components/ui/Btn';
@@ -114,15 +114,14 @@ export function BroadcastDialog({
 
         <FormFooter>
           <Btn onClick={reset} disabled={pending}>Hủy</Btn>
-          <Btn variant="primary" onClick={handleSend} disabled={pending || !text.trim()}>
-            {pending ? (
-              'Đang gửi…'
-            ) : (
-              <>
-                <Send className="size-4" aria-hidden />
-                Gửi thông báo
-              </>
-            )}
+          <Btn
+            variant="primary"
+            leadingVisual={pending ? undefined : PaperAirplaneIcon}
+            loading={pending}
+            onClick={handleSend}
+            disabled={pending || !text.trim()}
+          >
+            {pending ? 'Đang gửi…' : 'Gửi thông báo'}
           </Btn>
         </FormFooter>
       </div>

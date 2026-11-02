@@ -1,4 +1,4 @@
-﻿import { Suspense } from 'react';
+import { Suspense } from 'react';
 import { AccountsView, type TabKey } from '@/components/accounts/AccountsView';
 import { NoAccess } from '@/components/ui/NoAccess';
 import { getCampusContext } from '@/lib/campus-context';
@@ -27,9 +27,9 @@ export default function AccountsPage({ searchParams }: { searchParams: Promise<S
 function AccountsSkeleton() {
   return (
     <section aria-busy="true" aria-label="Đang tải tài khoản" className="flex flex-col gap-4">
-      <div className="h-9 w-56 animate-pulse rounded-xl bg-stone" />
-      <div className="h-11 w-full animate-pulse rounded-[var(--radius-ctl)] bg-stone" />
-      <div className="h-[360px] w-full animate-pulse rounded-[var(--radius-panel)] bg-stone" />
+      <div className="h-9 w-56 animate-pulse rounded-[var(--borderRadius-medium)] bg-[var(--bgColor-muted)]" />
+      <div className="h-11 w-full animate-pulse rounded-[var(--borderRadius-medium)] bg-[var(--bgColor-muted)]" />
+      <div className="h-[360px] w-full animate-pulse rounded-xl bg-[var(--bgColor-muted)]" />
     </section>
   );
 }

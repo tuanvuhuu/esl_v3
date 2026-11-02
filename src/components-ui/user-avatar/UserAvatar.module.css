@@ -1,0 +1,59 @@
+.avatar {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+  cursor: default;
+}
+
+.editable {
+  cursor: pointer;
+}
+
+/* Kích thước + 2 màu gradient truyền qua biến inline: --avatar-size, --avatar-from, --avatar-to */
+.initial {
+  width: var(--avatar-size);
+  height: var(--avatar-size);
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--avatar-from), var(--avatar-to));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  user-select: none;
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.25);
+}
+
+.editBadge {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  background-color: var(--app-accent-emphasis);
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: 2px solid var(--app-canvas-default);
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.editBadge:hover {
+  background-color: var(--app-accent-fg);
+  transform: scale(1.1);
+}
+
+.uploadPreview {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 300px;
+  padding: var(--space-1);
+}
+
+/* ---- chuyển từ sx (codemod) ---- */
+
+div.avatarUploadModal_modal {
+  width: 400px;
+}

@@ -5,7 +5,8 @@ import { createAccountAction, updateAccountAction, type AccountFormValues } from
 import { ROLE_CODES, ROLE_LABELS } from '@/lib/permissions';
 import type { CampusOption } from '@/lib/campus';
 import type { ActionResult } from '@/lib/validation/student';
-import { Field, FORM_BTN_CANCEL, FORM_BTN_SUBMIT, inputClass, FormFooter } from '@/components/ui/Field';
+import { Btn } from '@/components/ui/Btn';
+import { Field, inputClass, FormFooter } from '@/components/ui/Field';
 import { SelectPanel } from '@/components/ui/SelectPanel';
 import { Alert } from '@/components/ui/primitives';
 
@@ -118,14 +119,14 @@ export function AccountForm({
           />
         </Field>
       ) : (
-        <p className="col-span-full text-sm text-muted">Quản trị làm việc ở mọi cơ sở.</p>
+        <p className="col-span-full text-sm text-[var(--fgColor-muted)]">Quản trị làm việc ở mọi cơ sở.</p>
       )}
 
       <FormFooter className="col-span-full">
-        <button type="button" onClick={onCancel} className={FORM_BTN_CANCEL}>Huỷ</button>
-        <button type="submit" disabled={pending} className={FORM_BTN_SUBMIT}>
+        <Btn onClick={onCancel}>Huỷ</Btn>
+        <Btn type="submit" variant="primary" loading={pending} disabled={pending}>
           {pending ? 'Đang lưu…' : mode === 'edit' ? 'Lưu thay đổi' : 'Gửi lời mời'}
-        </button>
+        </Btn>
       </FormFooter>
     </form>
   );

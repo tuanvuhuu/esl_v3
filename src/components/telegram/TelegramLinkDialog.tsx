@@ -1,6 +1,6 @@
 'use client';
 
-import { Copy, Send } from 'lucide-react';
+import { CheckIcon, CopyIcon, PaperAirplaneIcon } from '@primer/octicons-react';
 import { useState, useTransition } from 'react';
 import type { LinkResult } from '@/app/(app)/tin-nhan/actions';
 import { Btn } from '@/components/ui/Btn';
@@ -59,27 +59,28 @@ export function TelegramLinkDialog({
         {result && !result.ok && <Alert>{result.message}</Alert>}
         {ok ? (
           <>
-            <p className="text-base text-ink-2">Gửi link này qua Zalo, SMS hoặc email. Người nhận mở link, bấm Start trong Telegram là kết nối xong.</p>
-            <code aria-label="Link kết nối Telegram" className="block break-all rounded-[var(--radius-ctl)] bg-stone px-3 py-2.5 text-sm text-ink">
+            <p className="text-sm text-[var(--fgColor-muted)]">Gửi link này qua Zalo, SMS hoặc email. Người nhận mở link, bấm Start trong Telegram là kết nối xong.</p>
+            <code
+              aria-label="Link kết nối Telegram"
+              className="block break-all rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] px-3 py-2.5 font-mono text-sm text-[var(--fgColor-default)]"
+            >
               {shareText}
             </code>
-            <p className="text-sm text-muted">
-              Mã kết nối: <span aria-label="Mã kết nối">{ok.code}</span>. {ok.message}
+            <p className="text-sm text-[var(--fgColor-muted)]">
+              Mã kết nối: <span aria-label="Mã kết nối" className="font-mono text-[var(--fgColor-default)]">{ok.code}</span>. {ok.message}
             </p>
           </>
         ) : (
-          <p className="text-base text-ink-2">Bấm Tạo link để lấy link kết nối dùng một lần, hết hạn sau 7 ngày.</p>
+          <p className="text-sm text-[var(--fgColor-muted)]">Bấm Tạo link để lấy link kết nối dùng một lần, hết hạn sau 7 ngày.</p>
         )}
         <FormFooter>
           <Btn onClick={close}>Đóng</Btn>
           {ok ? (
-            <Btn variant="primary" onClick={() => copy(shareText)}>
-              <Copy className="size-4" aria-hidden />
+            <Btn variant="primary" leadingVisual={copied ? CheckIcon : CopyIcon} onClick={() => copy(shareText)}>
               {copied ? 'Đã chép' : 'Chép link'}
             </Btn>
           ) : (
-            <Btn variant="primary" onClick={run} disabled={pending}>
-              <Send className="size-4" aria-hidden />
+            <Btn variant="primary" leadingVisual={PaperAirplaneIcon} loading={pending} onClick={run} disabled={pending}>
               {pending ? 'Đang tạo…' : 'Tạo link'}
             </Btn>
           )}

@@ -1,0 +1,80 @@
+.row_box2 {
+  padding: 0.4375rem 0.65625rem;
+  border-bottom: 1px solid;
+  border-color: var(--app-border-default);
+}
+
+.row_box2_leftRight {
+  position: sticky;
+  z-index: 1;
+}
+
+.row_box2_isLastCol {
+  border-right: 1px solid var(--app-border-default);
+}
+
+.row_box2_isFocused {
+  outline-offset: -2px;
+}
+
+.row_box4 {
+  display: flex;
+  justify-content: right;
+}
+
+button.row_iconButton.row_iconButton.row_iconButton {
+  margin: calc(-1 * var(--space-1));
+}
+
+.row_box5 {
+  border-bottom: 1px solid;
+  border-color: var(--app-border-default);
+}
+
+.treeList_text {
+  font-weight: bolder;
+  font-size: 24px;
+}
+
+.treeList_text2 {
+  color: var(--app-fg-muted);
+  font-size: 0.7875rem;
+}
+
+.treeList_box2 {
+  border-radius: var(--radius-2);
+  border: 1px solid;
+  border-color: var(--app-border-default);
+  overflow: auto;
+}
+
+.treeList_header {
+  display: grid;
+  position: sticky;
+  top: var(--space-0);
+  z-index: 2;
+}
+
+.treeList_box3 {
+  padding: 0.4375rem 0.65625rem;
+  background-color: #F5F8FA;
+  color: #656d76;
+  font-weight: 600;
+  border-bottom: 1px solid;
+  border-color: var(--app-border-default);
+}
+
+.treeList_box3_leftRight {
+  position: sticky;
+  z-index: 1;
+}
+
+.treeList_box3_isLastCol {
+  border-right: 1px solid var(--app-border-default);
+}
+
+.treeList_box4 {
+  border-top: 1px solid;
+  border-top-color: var(--app-border-default);
+  padding-left: 4px;
+}

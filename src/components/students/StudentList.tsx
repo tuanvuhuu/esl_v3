@@ -1,6 +1,6 @@
 'use client';
 
-import { Eye, Pencil, Trash2 } from 'lucide-react';
+import { EyeIcon, PencilIcon, TrashIcon } from '@primer/octicons-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState, useTransition, type ReactNode } from 'react';
@@ -130,9 +130,9 @@ export function StudentList({
   const profileHref = (id: number) => studentsHref({ ...filters, p: page, n: loadedPages, h: String(id) });
 
   const rowItems = (row: StudentRow): RowMenuItem[] => [
-    { kind: 'link', href: profileHref(row.id), label: 'Xem hồ sơ', icon: Eye },
-    { kind: 'action', label: 'Sửa', icon: Pencil, onSelect: () => openEdit(row), disabled: !canEdit, disabledHint: 'Không có quyền sửa' },
-    { kind: 'action', label: 'Xoá', icon: Trash2, danger: true, onSelect: () => setToDelete(row), disabled: !canDelete, disabledHint: 'Không có quyền xoá' },
+    { kind: 'link', href: profileHref(row.id), label: 'Xem hồ sơ', icon: EyeIcon },
+    { kind: 'action', label: 'Sửa', icon: PencilIcon, onSelect: () => openEdit(row), disabled: !canEdit, disabledHint: 'Không có quyền sửa' },
+    { kind: 'action', label: 'Xoá', icon: TrashIcon, danger: true, onSelect: () => setToDelete(row), disabled: !canDelete, disabledHint: 'Không có quyền xoá' },
   ];
 
   const hasMorePhone = phoneRows.length < total;
@@ -142,37 +142,43 @@ export function StudentList({
     switch (key) {
       case 'name':
         return (
-          <Link href={profileHref(row.id)} scroll={false} className="block truncate text-base text-link underline underline-offset-2">
+          <Link href={profileHref(row.id)} scroll={false} className="block truncate text-sm font-medium text-[var(--fgColor-link)] underline underline-offset-2">
             {row.fullName}
           </Link>
         );
       case 'code':
-        return <span className="block truncate text-sm text-ink-2">{row.code}</span>;
+        return <span className="block truncate text-sm text-[var(--fgColor-muted)]">{row.code}</span>;
       case 'gender':
-        return <span className="block truncate text-sm text-ink-2">{row.gender === 'female' ? 'Nữ' : 'Nam'}</span>;
+        return <span className="block truncate text-sm text-[var(--fgColor-muted)]">{row.gender === 'female' ? 'Nữ' : 'Nam'}</span>;
       case 'class':
         return (
           <>
-            <b className="block truncate text-base text-ink">{row.className}</b>
-            <small className="block truncate text-xs text-muted">{row.teacherName}</small>
+            <b className="block truncate text-sm font-semibold text-[var(--fgColor-default)]">{row.className}</b>
+            <small className="block truncate text-xs text-[var(--fgColor-muted)]">{row.teacherName}</small>
           </>
         );
       case 'progress':
         return (
           <>
             <ProgressBar value={row.sessionsDone} max={row.sessionsTotal} className="max-w-[140px]" />
-            <small className="mt-1.5 block text-xs text-muted">Đã học {row.sessionsDone}/{row.sessionsTotal} buổi</small>
+            <small className="mt-1.5 block text-xs text-[var(--fgColor-muted)]">Đã học {row.sessionsDone}/{row.sessionsTotal} buổi</small>
           </>
         );
       case 'attendance':
-        return <span className={`text-md font-normal ${row.attendanceRate >= 75 ? 'text-ink' : 'text-blush-ink'}`}>{row.attendanceRate}%</span>;
+        return (
+          <span className={`text-sm font-medium tabular-nums ${row.attendanceRate >= 75 ? 'text-[var(--fgColor-default)]' : 'text-[var(--fgColor-danger)]'}`}>
+            {row.attendanceRate}%
+          </span>
+        );
       case 'tuition':
         return (
           <>
             <Pill tone={TUITION_META[row.tuition].tone}>{TUITION_META[row.tuition].label}</Pill>
-            <small className="mt-1.5 block truncate text-xs text-ink-2">{row.sessionsLeft >= 0 ? `Còn ${row.sessionsLeft}/${row.sessionsBought} buổi đã đóng` : `Nợ ${-row.sessionsLeft} buổi`}</small>
-            {row.debt > 0 && <small className="block truncate text-xs text-muted">Thiếu {formatVND(row.debt)}</small>}
-            {row.discount > 0 && <small className="block truncate text-xs text-muted">Giảm trừ {formatVND(row.discount)}</small>}
+            <small className="mt-1.5 block truncate text-xs text-[var(--fgColor-default)]">
+              {row.sessionsLeft >= 0 ? `Còn ${row.sessionsLeft}/${row.sessionsBought} buổi đã đóng` : `Nợ ${-row.sessionsLeft} buổi`}
+            </small>
+            {row.debt > 0 && <small className="block truncate text-xs text-[var(--fgColor-muted)]">Thiếu {formatVND(row.debt)}</small>}
+            {row.discount > 0 && <small className="block truncate text-xs text-[var(--fgColor-muted)]">Giảm trừ {formatVND(row.discount)}</small>}
           </>
         );
       case 'status':
@@ -194,14 +200,14 @@ export function StudentList({
         <div className="min-w-0">
           <PageCrumbs crumbs={['Đào tạo', 'Học sinh']} />
           {/* Từ 768px tên trang nằm trên thanh trên cùng (đường dẫn), nên tiêu đề chỉ còn cho trình đọc màn hình */}
-          <h1 className="text-h1 font-extrabold leading-tight tracking-tight text-ink min-[768px]:sr-only">Học sinh</h1>
-          <p className="mt-1 text-base text-muted max-[767px]:mt-1.5 max-[767px]:text-sm">Quản lý hồ sơ, tiến độ học và học phí của từng học viên.</p>
+          <h1 className="text-h1 font-extrabold leading-tight tracking-tight text-[var(--fgColor-default)] min-[768px]:sr-only">Học sinh</h1>
+          <p className="mt-1 text-sm text-[var(--fgColor-muted)] max-[767px]:mt-1.5">Quản lý hồ sơ, tiến độ học và học phí của từng học viên.</p>
         </div>
       </header>
 
       <StudentFilters current={filters} classes={classes} statusCounts={statusCounts} onAdd={canEdit ? () => setCreating(true) : undefined} />
 
-      <p className="mb-3 text-sm text-muted min-[768px]:hidden">
+      <p className="mb-3 text-sm text-[var(--fgColor-muted)] min-[768px]:hidden">
         {total === 0 ? 'Không có học sinh phù hợp.' : `Đang hiển thị ${phoneRows.length} trên ${total} học sinh`}
       </p>
 
@@ -245,7 +251,10 @@ export function StudentList({
 
       {/* Ngăn kéo hồ sơ (máy tính, từ 768px). Nội dung do máy chủ dựng khi có ?h= */}
       {drawer && (
-        <aside aria-label="Hồ sơ học sinh" className="fixed inset-y-0 right-0 z-[65] hidden w-[min(560px,100%)] overflow-y-auto border-l border-line bg-bg p-5 shadow-lift min-[768px]:block">
+        <aside
+          aria-label="Hồ sơ học sinh"
+          className="fixed inset-y-0 right-0 z-[65] hidden w-[min(560px,100%)] overflow-y-auto border-l border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-5 shadow-[var(--shadow-floating-large,var(--lift))] min-[768px]:block"
+        >
           {drawer}
         </aside>
       )}
@@ -294,51 +303,69 @@ export function StudentList({
 }
 
 // Thẻ học sinh (máy tính bảng và điện thoại): tên và trạng thái, lớp, tiến độ, chuyên cần và học phí, hàng nút Xem, Sửa, Xoá
-function StudentCard({ row, viewHref, canEdit, canDelete, onEdit, onDelete }: { row: StudentRow; viewHref: string; canEdit: boolean; canDelete: boolean; onEdit: () => void; onDelete: () => void }) {
+function StudentCard({
+  row,
+  viewHref,
+  canEdit,
+  canDelete,
+  onEdit,
+  onDelete,
+}: {
+  row: StudentRow;
+  viewHref: string;
+  canEdit: boolean;
+  canDelete: boolean;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
   return (
     <Card>
       <div className="min-w-0">
         <div className="flex items-start justify-between gap-2">
-          <Link href={viewHref} scroll={false} className="min-w-0 truncate text-base text-link underline underline-offset-2">{row.fullName}</Link>
+          <Link href={viewHref} scroll={false} className="min-w-0 truncate text-sm font-semibold text-[var(--fgColor-link)] underline underline-offset-2">
+            {row.fullName}
+          </Link>
           <Pill tone={STATUS_META[row.status].tone}>{STATUS_META[row.status].label}</Pill>
         </div>
-        <small className="block truncate text-xs text-muted">{row.code} · {row.gender === 'female' ? 'Nữ' : 'Nam'}</small>
+        <small className="block truncate text-xs text-[var(--fgColor-muted)]">{row.code} · {row.gender === 'female' ? 'Nữ' : 'Nam'}</small>
       </div>
 
-      <div className="flex items-center justify-between gap-2 rounded-[var(--radius-ctl)] bg-bg px-3 py-2">
-        <b className="text-base text-ink">{row.className}</b>
-        <small className="truncate text-xs text-muted">{row.teacherName}</small>
+      <div className="flex items-center justify-between gap-2 rounded-[var(--borderRadius-medium)] bg-[var(--bgColor-muted)] px-3 py-2">
+        <b className="text-sm font-semibold text-[var(--fgColor-default)]">{row.className}</b>
+        <small className="truncate text-xs text-[var(--fgColor-muted)]">{row.teacherName}</small>
       </div>
 
       <div>
         <ProgressBar value={row.sessionsDone} max={row.sessionsTotal} />
-        <small className="mt-1.5 block text-xs text-muted">Đã học {row.sessionsDone}/{row.sessionsTotal} buổi</small>
+        <small className="mt-1.5 block text-xs text-[var(--fgColor-muted)]">Đã học {row.sessionsDone}/{row.sessionsTotal} buổi</small>
       </div>
 
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <span className={`text-md font-normal ${row.attendanceRate >= 75 ? 'text-ink' : 'text-blush-ink'}`}>{row.attendanceRate}%</span>
-          <small className="ml-1.5 text-xs text-muted">chuyên cần</small>
+          <span className={`text-sm font-semibold tabular-nums ${row.attendanceRate >= 75 ? 'text-[var(--fgColor-default)]' : 'text-[var(--fgColor-danger)]'}`}>
+            {row.attendanceRate}%
+          </span>
+          <small className="ml-1.5 text-xs text-[var(--fgColor-muted)]">chuyên cần</small>
         </div>
         <div className="flex flex-col items-end gap-1">
           <Pill tone={TUITION_META[row.tuition].tone}>{TUITION_META[row.tuition].label}</Pill>
-          <small className="text-xs text-ink-2">{row.sessionsLeft >= 0 ? `Còn ${row.sessionsLeft}/${row.sessionsBought} buổi đã đóng` : `Nợ ${-row.sessionsLeft} buổi`}</small>
-          {row.debt > 0 && <small className="text-xs text-muted">Thiếu {formatVNDShort(row.debt)}</small>}
-          {row.discount > 0 && <small className="text-xs text-muted">Giảm trừ {formatVNDShort(row.discount)}</small>}
+          <small className="text-xs text-[var(--fgColor-default)]">
+            {row.sessionsLeft >= 0 ? `Còn ${row.sessionsLeft}/${row.sessionsBought} buổi đã đóng` : `Nợ ${-row.sessionsLeft} buổi`}
+          </small>
+          {row.debt > 0 && <small className="text-xs text-[var(--fgColor-muted)]">Thiếu {formatVNDShort(row.debt)}</small>}
+          {row.discount > 0 && <small className="text-xs text-[var(--fgColor-muted)]">Giảm trừ {formatVNDShort(row.discount)}</small>}
         </div>
       </div>
 
       <div className="grid grid-cols-3 gap-2">
         <Link href={viewHref} scroll={false} className={`${BTN_BASE} ${BTN_GHOST} w-full`}>
-          <Eye className="size-4" aria-hidden />
+          <EyeIcon size={16} aria-hidden />
           Xem
         </Link>
-        <Btn block onClick={onEdit} disabled={!canEdit}>
-          <Pencil className="size-4" aria-hidden />
+        <Btn block leadingVisual={PencilIcon} onClick={onEdit} disabled={!canEdit}>
           Sửa
         </Btn>
-        <Btn block variant="danger" onClick={onDelete} disabled={!canDelete}>
-          <Trash2 className="size-4" aria-hidden />
+        <Btn block variant="danger" leadingVisual={TrashIcon} onClick={onDelete} disabled={!canDelete}>
           Xoá
         </Btn>
       </div>

@@ -20,7 +20,7 @@ import { getCurrentAccount } from '@/lib/session';
 // Dữ liệu đọc trong Suspense (cacheComponents đang bật).
 export default function StudentHomePage() {
   return (
-    <Suspense fallback={<section aria-busy="true" className="h-[240px] animate-pulse rounded-[var(--radius-panel)] bg-stone" />}>
+    <Suspense fallback={<section aria-busy="true" className="h-[240px] animate-pulse rounded-xl bg-[var(--bgColor-muted)]" />}>
       <StudentHomeData />
     </Suspense>
   );
@@ -45,8 +45,10 @@ async function StudentHomeData() {
           <div className="flex min-w-0 items-center gap-3">
             <span className="text-4xl" aria-hidden>🧠</span>
             <div className="min-w-0">
-              <b className="block text-lg font-extrabold text-ink">{box.dueToday > 0 ? `Hôm nay có ${box.dueToday} từ cần ôn` : box.total > 0 ? 'Hôm nay con ôn xong rồi' : 'Hộp từ đang trống'}</b>
-              <small className="text-sm text-muted">
+              <b className="block text-lg font-extrabold text-[var(--fgColor-default)]">
+                {box.dueToday > 0 ? `Hôm nay có ${box.dueToday} từ cần ôn` : box.total > 0 ? 'Hôm nay con ôn xong rồi' : 'Hộp từ đang trống'}
+              </b>
+              <small className="text-sm text-[var(--fgColor-muted)]">
                 {box.total > 0
                   ? `Hộp từ có ${box.total} từ${box.dueToday === 0 && box.nextDue ? ` · lần ôn tới ${vnDateTimeLabel(box.nextDue).slice(0, 10)}` : ''}`
                   : 'Chơi một trò chơi từ vựng để có từ trong hộp.'}
@@ -62,21 +64,25 @@ async function StudentHomeData() {
       )}
 
       <section className="flex flex-col gap-3" aria-labelledby="path-title">
-        <h2 id="path-title" className="text-lg font-extrabold text-ink">Đường học</h2>
+        <h2 id="path-title" className="text-lg font-extrabold text-[var(--fgColor-default)]">Đường học</h2>
         {path.length === 0 ? <EmptyPanel title="Lớp chưa có bài tập" hint="Khi giáo viên giao bài, bài sẽ hiện ở đây." /> : <LearningPath steps={path} />}
       </section>
 
       {games.length > 0 && (
         <section className="flex flex-col gap-3" aria-labelledby="word-games-title">
-          <h2 id="word-games-title" className="text-lg font-extrabold text-ink">Trò chơi từ vựng</h2>
+          <h2 id="word-games-title" className="text-lg font-extrabold text-[var(--fgColor-default)]">Trò chơi từ vựng</h2>
           <ul className="grid grid-cols-1 gap-3 min-[600px]:grid-cols-2">
             {games.map((g) => (
               <li key={g.id}>
                 <Card>
-                  <Link href={`/cua-toi/tro-choi/${g.id}`} className="text-base font-normal text-link underline underline-offset-2 [overflow-wrap:anywhere]">
+                  <Link
+                    href={`/cua-toi/tro-choi/${g.id}`}
+                    data-link="true"
+                    className="text-base font-normal text-[var(--fgColor-link)] underline underline-offset-2 [overflow-wrap:anywhere]"
+                  >
                     {g.name}
                   </Link>
-                  <small className="text-sm text-muted">{g.wordCount} từ · 8 trò chơi: lật thẻ, bingo, đoán chữ, đua xe…</small>
+                  <small className="text-sm text-[var(--fgColor-muted)]">{g.wordCount} từ · 8 trò chơi: lật thẻ, bingo, đoán chữ, đua xe…</small>
                 </Card>
               </li>
             ))}

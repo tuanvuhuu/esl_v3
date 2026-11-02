@@ -1,0 +1,99 @@
+/* ---- chuyển từ styled-components ---- */
+
+.container {
+  display: flex;
+  align-items: center;
+  padding: 8px;
+}
+
+span.displayName {
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+span.displayCode {
+  color: #666;
+  font-size: 14px;
+}
+
+.dropZone {
+  border: 2px dashed #d0d7de;
+  border-radius: 6px;
+  padding: 32px;
+  text-align: center;
+  margin-bottom: 16px;
+  cursor: pointer;
+  background-color: #f6f8fa;
+  transition: background-color 0.2s ease;
+}
+
+.dropZone:hover {
+  background-color: #eaeef2;
+}
+
+.previewImage {
+  max-width: 200px;
+  max-height: 200px;
+  border-radius: 4px;
+}
+
+button.removeButton {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+}
+
+span.uploadText {
+  display: block;
+  margin-top: 8px;
+  color: #57606a;
+}
+
+span.subText {
+  font-size: 12px;
+  color: #57606a;
+  margin-top: 4px;
+}
+
+.buttonContainer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+div.styledDialog {
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  max-width: 90vw;
+  width: 480px !important;
+  margin: 0 !important;
+}
+
+.avatarWrapper {
+  position: relative;
+  width: 50px;
+  height: 50px;
+}
+
+.avatarWrapper:hover .avatar-overlay {
+  opacity: 1;
+}
+
+.avatarOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+  cursor: pointer;
+}

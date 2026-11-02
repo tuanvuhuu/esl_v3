@@ -1,0 +1,81 @@
+/* Chuyển từ sx (codemod). Có thể đổi tên class cho rõ nghĩa hơn khi sửa tới. */
+
+.imageGalleryViewer_box {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 500px;
+  overflow: hidden;
+  padding: var(--space-3);
+}
+
+button.imageGalleryViewer_iconButton.imageGalleryViewer_iconButton {
+  position: absolute;
+  left: 16px;
+  z-index: 1;
+}
+
+.imageGalleryViewer_box2 {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+button.imageGalleryViewer_iconButton2.imageGalleryViewer_iconButton2 {
+  position: absolute;
+  right: 16px;
+  z-index: 1;
+}
+
+.imageGalleryViewer_box3 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 400px;
+  color: var(--app-fg-muted);
+}
+
+.imageGalleryViewer_box4 {
+  display: flex;
+  gap: var(--space-1);
+  justify-content: center;
+  align-items: center;
+  padding: var(--space-2);
+  border-top: 1px solid;
+  border-color: var(--app-border-default);
+  overflow-x: auto;
+}
+
+.imageGalleryViewer_box5 {
+  width: 60px;
+  height: 60px;
+  min-width: 60px;
+  cursor: pointer;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.imageGalleryViewer_box5:hover {
+  opacity: 1;
+  border-color: var(--app-accent-fg);
+}
+
+.imageGalleryViewer_box5_currentIndexIndex {
+  border: 2px solid;
+  border-color: var(--app-accent-fg);
+  opacity: 1;
+}
+
+.imageGalleryViewer_box5_notCurrentIndexIndex {
+  border: 1px solid;
+  border-color: var(--app-border-default);
+  opacity: 0.7;
+}
+
+.imageGalleryViewer_box6 {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}

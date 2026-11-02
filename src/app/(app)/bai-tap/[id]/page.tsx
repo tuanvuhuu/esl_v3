@@ -1,4 +1,4 @@
-﻿import { connection } from 'next/server';
+import { connection } from 'next/server';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import { GradingView } from '@/components/assignments/GradingView';
@@ -24,8 +24,8 @@ export default function GradingPage({ params, searchParams }: { params: Promise<
 function GradingSkeleton() {
   return (
     <section aria-busy="true" aria-label="Đang tải bài tập" className="flex flex-col gap-4">
-      <div className="h-9 w-64 animate-pulse rounded-xl bg-stone" />
-      <div className="h-[380px] animate-pulse rounded-[var(--radius-panel)] bg-stone" />
+      <div className="h-9 w-64 animate-pulse rounded-md bg-[var(--bgColor-muted)]" />
+      <div className="h-[380px] animate-pulse rounded-xl bg-[var(--bgColor-muted)]" />
     </section>
   );
 }

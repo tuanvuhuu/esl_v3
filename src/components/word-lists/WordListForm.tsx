@@ -2,8 +2,8 @@
 
 // Form danh sách từ (35.14): tên, lớp hoặc bài giảng (không bắt buộc), các từ (từ, nghĩa, emoji, tranh, âm thanh).
 // Gõ từng từ, hoặc lấy từ kho từ vựng theo trình độ và chủ đề (VocabPicker). Từ lấy từ kho được chép vào danh sách.
-import { BookOpen, ImagePlus, Plus, Volume2, X } from 'lucide-react';
-import { useState, useTransition } from 'react';
+import { BookIcon, ImageIcon, PlusIcon, UnmuteIcon, XIcon } from '@primer/octicons-react';
+import { useState, useTransition, type ReactNode } from 'react';
 import { createWordListAction, updateWordListAction } from '@/app/(app)/tu-vung/actions';
 import { levelParams } from '@/lib/level-params';
 import type { VocabWord } from '@/lib/queries/vocab';
@@ -13,7 +13,7 @@ import { AUDIO_ACCEPT, IMAGE_ACCEPT } from '@/lib/upload-types';
 import { VocabPicker } from '@/components/assignments/VocabPicker';
 import { ActIcon } from '@/components/ui/ActIcon';
 import { Btn, BTN_BASE, BTN_GHOST } from '@/components/ui/Btn';
-import { Field, FORM_BTN_CANCEL, FORM_BTN_SUBMIT, FormFooter, inputClass } from '@/components/ui/Field';
+import { Field, FormFooter, inputClass } from '@/components/ui/Field';
 import { Alert } from '@/components/ui/primitives';
 import { SelectPanel } from '@/components/ui/SelectPanel';
 
@@ -108,67 +108,63 @@ export function WordListForm({
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <b className="text-base font-extrabold text-ink">Các từ ({rows.filter((r) => r.word.trim()).length})</b>
-        <Btn onClick={() => setPicking((p) => !p)} aria-expanded={picking}>
-          <BookOpen className="size-4" aria-hidden />
+        <b className="text-base font-extrabold text-[var(--fgColor-default)]">Các từ ({rows.filter((r) => r.word.trim()).length})</b>
+        <Btn leadingVisual={BookIcon} onClick={() => setPicking((p) => !p)} aria-expanded={picking}>
           {picking ? 'Ẩn kho từ vựng' : 'Lấy từ kho từ vựng'}
         </Btn>
       </div>
       {picking && (
-        <div className="rounded-[var(--radius-ctl)] border border-line p-3">
+        <div className="rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-3">
           <VocabPicker level={level} onLevel={(code) => setLevel(levelParams(code))} picked={pickedWords} onToggle={toggleVocab} onPickMany={(ws) => ws.forEach(toggleVocab)} />
         </div>
       )}
 
       <ol className="flex flex-col gap-2.5" aria-label="Các từ trong danh sách">
         {rows.map((r, idx) => (
-          <li key={r.key} className="grid grid-cols-[4.5rem_minmax(0,1fr)_minmax(0,1fr)_auto] gap-2 rounded-[var(--radius-ctl)] border border-line p-2.5 min-[768px]:grid-cols-[minmax(0,1.2fr)_minmax(0,1.2fr)_4.5rem_auto_auto_auto] min-[768px]:items-center">
+          <li key={r.key} className="grid grid-cols-[4.5rem_minmax(0,1fr)_minmax(0,1fr)_auto] gap-2 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-2.5 min-[768px]:grid-cols-[minmax(0,1.2fr)_minmax(0,1.2fr)_4.5rem_auto_auto_auto] min-[768px]:items-center">
             <input value={r.word} onChange={(e) => patch(r.key, { word: e.target.value })} placeholder="Từ tiếng Anh" aria-label={`Từ ${idx + 1}`} autoComplete="off" className={`${inputClass()} max-[767px]:col-span-3`} />
             <input value={r.sentence} onChange={(e) => patch(r.key, { sentence: e.target.value })} placeholder="Câu mẫu (cho trò Xây câu), VD: The cat is on the mat." aria-label={`Câu mẫu từ ${idx + 1}`} autoComplete="off" className={`${inputClass()} col-span-full min-[768px]:order-[10000]`} />
-            <ActIcon label={`Bỏ từ ${idx + 1}`} danger onClick={() => remove(r.key)} className="max-[767px]:col-start-4 max-[767px]:row-start-1 min-[768px]:order-last">
-              <X className="size-4" aria-hidden />
-            </ActIcon>
+            <ActIcon label={`Bỏ từ ${idx + 1}`} icon={XIcon} danger onClick={() => remove(r.key)} className="max-[767px]:col-start-4 max-[767px]:row-start-1 min-[768px]:order-last" />
             <input value={r.meaningVi} onChange={(e) => patch(r.key, { meaningVi: e.target.value })} placeholder="Nghĩa tiếng Việt" aria-label={`Nghĩa từ ${idx + 1}`} autoComplete="off" className={`${inputClass()} max-[767px]:col-span-4`} />
             <input value={r.emoji} onChange={(e) => patch(r.key, { emoji: e.target.value })} placeholder="🐱" aria-label={`Emoji từ ${idx + 1}`} autoComplete="off" className={`${inputClass()} text-center`} />
             <div className="min-w-0">
               {r.imageFileId ? (
                 <div className="flex items-center gap-2">
                   {/* eslint-disable-next-line @next/next/no-img-element -- ảnh do giáo viên tải lên, phục vụ qua /api/files */}
-                  <img src={`/api/files/${r.imageFileId}`} alt={`Tranh từ ${r.word}`} className="size-[var(--ctl-h)] rounded-[var(--radius-ctl)] object-cover" />
-                  <button type="button" onClick={() => patch(r.key, { imageFileId: null })} className="text-sm text-blush-ink underline underline-offset-2">Bỏ tranh</button>
+                  <img src={`/api/files/${r.imageFileId}`} alt={`Tranh từ ${r.word}`} className="size-[var(--ctl-h)] rounded-[var(--borderRadius-medium)] object-cover" />
+                  <button type="button" data-link="true" onClick={() => patch(r.key, { imageFileId: null })} className="text-sm text-blush-ink underline underline-offset-2">Bỏ tranh</button>
                 </div>
               ) : (
-                <UploadChip label={`Tranh từ ${idx + 1}`} text="Tranh" icon={<ImagePlus className="size-4" aria-hidden />} accept={IMAGE_ACCEPT} disabled={uploading} onFile={(f) => upload(r.key, 'imageFileId', f)} />
+                <UploadChip label={`Tranh từ ${idx + 1}`} text="Tranh" icon={<ImageIcon size={16} aria-hidden />} accept={IMAGE_ACCEPT} disabled={uploading} onFile={(f) => upload(r.key, 'imageFileId', f)} />
               )}
             </div>
             <div className="min-w-0 max-[767px]:col-span-2">
               {r.audioFileId ? (
                 <div className="flex items-center gap-2">
                   <audio controls preload="none" src={`/api/files/${r.audioFileId}`} aria-label={`Âm thanh từ ${r.word}`} className="h-[var(--ctl-h)] min-w-0 flex-1" />
-                  <button type="button" onClick={() => patch(r.key, { audioFileId: null })} className="shrink-0 text-sm text-blush-ink underline underline-offset-2">Bỏ</button>
+                  <button type="button" data-link="true" onClick={() => patch(r.key, { audioFileId: null })} className="shrink-0 text-sm text-blush-ink underline underline-offset-2">Bỏ</button>
                 </div>
               ) : (
-                <UploadChip label={`Âm thanh từ ${idx + 1}`} text="Âm thanh" icon={<Volume2 className="size-4" aria-hidden />} accept={AUDIO_ACCEPT} disabled={uploading} onFile={(f) => upload(r.key, 'audioFileId', f)} />
+                <UploadChip label={`Âm thanh từ ${idx + 1}`} text="Âm thanh" icon={<UnmuteIcon size={16} aria-hidden />} accept={AUDIO_ACCEPT} disabled={uploading} onFile={(f) => upload(r.key, 'audioFileId', f)} />
               )}
             </div>
           </li>
         ))}
       </ol>
-      <Btn onClick={() => setRows((all) => [...all, blank()])} className="self-start">
-        <Plus className="size-4" aria-hidden />
+      <Btn leadingVisual={PlusIcon} onClick={() => setRows((all) => [...all, blank()])} className="self-start">
         Thêm từ
       </Btn>
 
       <FormFooter>
-        <button type="button" onClick={onCancel} className={FORM_BTN_CANCEL}>Huỷ</button>
-        <button type="submit" disabled={saving || uploading} className={FORM_BTN_SUBMIT}>{saving ? 'Đang lưu…' : mode === 'edit' ? 'Lưu thay đổi' : 'Lưu danh sách'}</button>
+        <Btn onClick={onCancel}>Huỷ</Btn>
+        <Btn type="submit" variant="primary" loading={saving} disabled={saving || uploading}>{saving ? 'Đang lưu…' : mode === 'edit' ? 'Lưu thay đổi' : 'Lưu danh sách'}</Btn>
       </FormFooter>
     </form>
   );
 }
 
 // Nút tải tệp có chữ (thay ô chọn tệp mặc định của trình duyệt, vốn hiện chữ tiếng Anh và không rõ là tệp gì)
-function UploadChip({ label, text, icon, accept, disabled, onFile }: { label: string; text: string; icon: React.ReactNode; accept: string; disabled?: boolean; onFile: (file: File | undefined) => void }) {
+function UploadChip({ label, text, icon, accept, disabled, onFile }: { label: string; text: string; icon: ReactNode; accept: string; disabled?: boolean; onFile: (file: File | undefined) => void }) {
   return (
     <label className={`${BTN_BASE} ${BTN_GHOST} w-full cursor-pointer ${disabled ? 'pointer-events-none opacity-40' : ''}`}>
       <input type="file" accept={accept} aria-label={label} disabled={disabled} onChange={(e) => onFile(e.target.files?.[0])} className="sr-only" />

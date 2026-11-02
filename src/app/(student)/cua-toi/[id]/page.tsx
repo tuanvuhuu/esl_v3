@@ -8,7 +8,7 @@ import { getCurrentAccount } from '@/lib/session';
 // Một bài của học sinh: đề, câu hỏi, ô làm bài và nút nộp. Chỉ bài thuộc lớp của học sinh mới mở được.
 export default function StudentAssignmentPage({ params }: { params: Promise<{ id: string }> }) {
   return (
-    <Suspense fallback={<section aria-busy="true" className="h-[360px] animate-pulse rounded-[var(--radius-panel)] bg-stone" />}>
+    <Suspense fallback={<section aria-busy="true" className="h-[360px] animate-pulse rounded-xl bg-[var(--bgColor-muted)]" />}>
       <StudentAssignmentData params={params} />
     </Suspense>
   );

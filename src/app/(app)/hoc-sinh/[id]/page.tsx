@@ -1,4 +1,4 @@
-﻿import { connection } from 'next/server';
+import { connection } from 'next/server';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import { PROFILE_TABS, StudentProfile, type ProfileTab } from '@/components/students/profile/StudentProfile';
@@ -30,8 +30,8 @@ export default function StudentProfilePage({ params, searchParams }: { params: P
 function ProfileSkeleton() {
   return (
     <section aria-busy="true" aria-label="Đang tải hồ sơ" className="flex flex-col gap-4">
-      <div className="h-10 w-40 animate-pulse rounded-xl bg-stone" />
-      <div className="h-56 w-full animate-pulse rounded-[var(--radius-panel)] bg-stone" />
+      <div className="h-10 w-40 animate-pulse rounded-lg bg-[var(--bgColor-muted)]" />
+      <div className="h-56 w-full animate-pulse rounded-xl bg-[var(--bgColor-muted)]" />
     </section>
   );
 }

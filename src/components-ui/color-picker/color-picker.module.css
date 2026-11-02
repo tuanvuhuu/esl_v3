@@ -1,0 +1,16 @@
+/* Chuyển từ sx (codemod). Có thể đổi tên class cho rõ nghĩa hơn khi sửa tới. */
+
+span.colorPicker_textInput {
+  margin-right: var(--space-0);
+  padding-right: var(--space-0);
+  width: 120px;
+}
+
+.colorPicker_box {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-2);
+  cursor: pointer;
+  border: 1px;
+  border-style: solid;
+}

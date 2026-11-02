@@ -10,7 +10,17 @@ import { Panel } from '@/components/ui/surfaces';
 import { FormFooter } from '@/components/ui/Field';
 
 // Tài khoản học sinh trong hồ sơ: tạo tài khoản, hoặc đặt lại mật khẩu. Mật khẩu tạm chỉ hiện một lần.
-export function StudentAccountPanel({ studentId, code, hasAccount, canManage }: { studentId: number; code: string; hasAccount: boolean; canManage: boolean }) {
+export function StudentAccountPanel({
+  studentId,
+  code,
+  hasAccount,
+  canManage,
+}: {
+  studentId: number;
+  code: string;
+  hasAccount: boolean;
+  canManage: boolean;
+}) {
   const { message, notify } = useToast();
   const [issued, setIssued] = useState<Extract<IssuedPassword, { ok: true }> | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -28,26 +38,26 @@ export function StudentAccountPanel({ studentId, code, hasAccount, canManage }: 
   return (
     <Panel title="Tài khoản học sinh" className="flex flex-col gap-3">
       {hasAccount ? (
-        <p className="text-base text-ink-2">
-          Học sinh đăng nhập bằng mã <b className="font-normal text-ink">{code}</b> và mật khẩu, rồi làm bài ở khu học sinh.
+        <p className="text-sm text-[var(--fgColor-muted)]">
+          Học sinh đăng nhập bằng mã <b className="font-semibold text-[var(--fgColor-default)]">{code}</b> và mật khẩu, rồi làm bài ở khu học sinh.
         </p>
       ) : (
-        <p className="text-base text-ink-2">
+        <p className="text-sm text-[var(--fgColor-muted)]">
           Học sinh chưa có tài khoản. Tạo tài khoản để học sinh vào khu học sinh bằng mã {code} và làm bài trực tuyến.
         </p>
       )}
       {error && (
-        <Alert inline>
+        <Alert inline className="mt-2">
           {error}
         </Alert>
       )}
-      <div>
+      <div className="mt-3">
         {hasAccount ? (
-          <Btn variant="ghost" onClick={() => run('reset')} disabled={!canManage || pending}>
+          <Btn variant="ghost" loading={pending} onClick={() => run('reset')} disabled={!canManage || pending}>
             {pending ? 'Đang đặt lại…' : 'Đặt lại mật khẩu'}
           </Btn>
         ) : (
-          <Btn variant="primary" onClick={() => run('create')} disabled={!canManage || pending}>
+          <Btn variant="primary" loading={pending} onClick={() => run('create')} disabled={!canManage || pending}>
             {pending ? 'Đang tạo…' : 'Tạo tài khoản học sinh'}
           </Btn>
         )}
@@ -65,26 +75,34 @@ export function StudentAccountPanel({ studentId, code, hasAccount, canManage }: 
       >
         {issued && (
           <div className="flex flex-col gap-4">
-            <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-base">
-              <dt className="text-ink-2">Mã đăng nhập</dt>
+            <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
+              <dt className="text-[var(--fgColor-muted)]">Mã đăng nhập</dt>
               <dd>
-                <code className="font-semibold text-ink">{issued.code}</code>
+                <code className="rounded bg-[var(--bgColor-muted)] px-1.5 py-0.5 font-semibold text-[var(--fgColor-default)]">
+                  {issued.code}
+                </code>
               </dd>
-              <dt className="text-ink-2">Mật khẩu tạm</dt>
+              <dt className="text-[var(--fgColor-muted)]">Mật khẩu tạm</dt>
               <dd>
-                <code aria-label="Mật khẩu tạm thời" className="font-semibold text-ink">
+                <code
+                  aria-label="Mật khẩu tạm thời"
+                  className="rounded bg-[var(--bgColor-muted)] px-1.5 py-0.5 font-semibold text-[var(--fgColor-default)]"
+                >
                   {issued.password}
                 </code>
               </dd>
             </dl>
             <FormFooter>
-              <Btn variant="primary" onClick={() => {
-                notify(issued.message);
-                setIssued(null);
-              }}>
+              <Btn
+                variant="primary"
+                onClick={() => {
+                  notify(issued.message);
+                  setIssued(null);
+                }}
+              >
                 Đã ghi lại
               </Btn>
-          </FormFooter>
+            </FormFooter>
           </div>
         )}
       </Modal>

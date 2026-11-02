@@ -1,0 +1,23 @@
+span.cssEditor_textInput {
+  width: 80px;
+}
+
+button.cssEditor_iconButton_isBold.cssEditor_iconButton_isBold {
+  background-color: var(--app-accent-fg);
+}
+
+button.cssEditor_iconButton2_isItalic.cssEditor_iconButton2_isItalic {
+  background-color: var(--app-accent-fg);
+}
+
+button.cssEditor_iconButton3_alignLeft.cssEditor_iconButton3_alignLeft {
+  background-color: var(--app-accent-fg);
+}
+
+button.cssEditor_iconButton4_alignCenter.cssEditor_iconButton4_alignCenter {
+  background-color: var(--app-accent-fg);
+}
+
+button.cssEditor_iconButton5_alignRight.cssEditor_iconButton5_alignRight {
+  background-color: var(--app-accent-fg);
+}

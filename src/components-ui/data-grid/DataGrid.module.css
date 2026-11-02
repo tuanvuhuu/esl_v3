@@ -1,0 +1,293 @@
+:root {
+  /* ---table-border:rgb(239, 243, 244); */
+  /* ---table-border:#d1d9e0; */
+  ---table-border:#00000014;
+}
+
+.table {
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+  width: 100%;
+  border-radius: 8px;
+}
+
+.table thead {
+  font-weight: 500;
+  background-color: #f7f8fa;
+}
+
+.table th {
+  border-right: 1px solid var(---table-border);
+  border-bottom: 1px solid var(---table-border);
+  padding: 0.4375rem 0.65625rem;
+  font-size: 0.875rem;
+  box-sizing: border-box;
+}
+
+.table .bands th {
+  border-right: 1px solid var(---table-border);
+}
+
+.table th:hover {
+  background-color: var(---table-border);
+}
+
+.table th.left.lastFixed {
+  border-right: 1px solid var(---table-border);
+  /* border-right: 1px solid #d1d9e0; */
+}
+
+.table th.fixed {
+  /* background-color: var(---table-border); */
+  background-color: #f7f8fa;
+}
+
+.table td {
+  border-bottom: 1px solid var(---table-border);
+  border-right: 1px solid var(---table-border);
+  padding: 0.4375rem 0.65625rem;
+  font-size: 0.875rem;
+  box-sizing: border-box;
+}
+
+.table td.left.lastFixed {
+  border-right: 1px solid var(---table-border);
+}
+
+.table td.right.lastFixed::before {
+  content: "";
+  position: absolute;
+  left: -1px;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  border-left: 1px solid var(---table-border);
+}
+
+.table th.right.lastFixed::before {
+  content: "";
+  position: absolute;
+  left: -1px;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  border-left: 1px solid var(---table-border);
+}
+
+/*css dòng chẵn lẻ*/
+.table tr.even {
+  background-color: #f7f8fa;
+}
+
+.table td.fixed {
+  background-color: #fff;
+}
+
+.table .even td {
+  background-color: #f7f8fa;
+}
+
+.container :global([class*="prc-Pagination-"]) {
+  margin: 0px;
+}
+
+.container :global([class*="prc-Pagination-"]) a {
+  line-height: 0.875rem;
+  height: 28px !important;
+  min-width: 28px !important;
+}
+
+.focusedCell span{
+  outline: none !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.focusedCell textarea{
+  outline: none !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+/* ---- Khung DataGrid (thay cho sx của Box) ---- */
+.container {
+  overflow: auto;
+  position: relative;
+}
+
+/* Có height cố định: bảng tự chiếm phần còn lại bằng flex, không cần đo bằng JS
+   (tránh nháy scrollbar trong lúc toolbar/paging thay đổi chiều cao) */
+.container.fixedHeight {
+  display: flex;
+  flex-direction: column;
+}
+
+.fixedHeight .toolbarArea,
+.fixedHeight .pagingArea {
+  flex-shrink: 0;
+}
+
+.fixedHeight .tableArea {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.grayscale {
+  filter: grayscale(60%);
+}
+
+.tableWrapper {
+  overflow: auto;
+  position: relative;
+  border-radius: var(--radius-2);
+  border: 1px solid var(--app-border-default);
+}
+
+.loadingOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.loadingBox {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  background-color: rgba(255, 255, 255, 0.4);
+  padding: var(--space-2);
+  border-radius: var(--radius-3);
+  backdrop-filter: blur(0.875rem);
+  box-shadow: rgba(33, 35, 38, 0.1) 0px 10px 10px -10px;
+}
+
+/* ---- Header ---- */
+.headerCell {
+  display: flex;
+  gap: var(--space-1);
+  width: 100%;
+  align-items: center;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: #59636e;
+}
+
+.headerCaption {
+  white-space: pre-wrap;
+}
+
+.resizer {
+  position: absolute;
+  right: 0;
+  top: 0;
+  height: 100%;
+  width: 5px;
+  cursor: col-resize;
+  user-select: none;
+  touch-action: none;
+}
+
+.filterCell {
+  margin: -0.4375rem -0.65625rem;
+}
+
+.filterModeAnchor {
+  color: #656d76;
+  margin: calc(-1 * var(--space-2));
+}
+
+/* Ghi đè TextInput của Primer → lặp class để thắng style gốc (styled-components) */
+.filterInput.filterInput {
+  background-color: transparent;
+  box-shadow: none;
+  border: 0 !important;
+  margin-top: 1px;
+  border-radius: 0 !important;
+}
+
+.filterModeButton.filterModeButton {
+  background-color: transparent;
+  border: 0;
+  outline: 0;
+}
+
+.filterModeList {
+  padding: var(--space-2);
+  width: 250px;
+}
+
+.filterIcon {
+  width: 0.7875rem;
+}
+
+.filterIconActive {
+  color: var(--app-accent-emphasis);
+}
+
+.filterModal {
+  padding: var(--space-3);
+  width: 350px;
+  display: grid;
+  gap: var(--space-2);
+}
+
+.filterModalList {
+  max-height: 300px;
+  overflow: auto;
+}
+
+/* ---- Toolbar ---- */
+.toolbarTitle {
+  flex: 1;
+  display: grid;
+  gap: var(--space-1);
+  min-width: 200px;
+}
+
+.title {
+  font-weight: 800;
+  font-size: 24px;
+}
+
+.columnChooserHeader {
+  padding-bottom: var(--space-2);
+  margin-bottom: var(--space-2);
+  border-bottom: 1px solid var(--app-border-muted);
+  display: grid;
+  gap: var(--space-2);
+  width: 300px;
+}
+
+/* ---- Paging ---- */
+.pagingInfo {
+  width: 100px;
+  text-align: center;
+}
+
+.pagingNav {
+  flex: 1;
+  display: flex;
+  flex-direction: row-reverse;
+}
+
+.pageSizeButton.pageSizeButton {
+  font-weight: 400;
+  color: var(--app-fg-default);
+}
+
+.pageSizeButton.pageSizeSelected {
+  background-color: var(--app-accent-emphasis);
+  color: var(--app-accent-subtle);
+}
+
+/* ---- chuyển từ sx (codemod) ---- */
+
+div.focusedCell_focusedCell {
+  margin: -0.4375rem -0.65625rem;
+}
+div.noPaddingCell{
+ margin: -0.4375rem -0.65625rem;
+}

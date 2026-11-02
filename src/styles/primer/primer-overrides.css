@@ -1,0 +1,72 @@
+/* Ghi đè và bổ sung cho component Primer v38 (từ dự án 01. TSUKUBA + chuẩn ESL Center) */
+
+#__primerPortalRoot__ {
+  z-index: 1600;
+}
+
+/* ActionList/NavList.LeadingVisual & TrailingVisual: v38 mặc định pointer-events: none → bật lại cho nút con */
+span[class*='prc-ActionList-VisualWrap-'] {
+  pointer-events: auto;
+}
+
+/* TextInputNumber */
+.input-align-right input {
+  text-align: right;
+}
+
+/* Ô nhập không viền trong lưới (DataGrid / DataTable Header) */
+.text-input-noborder {
+  outline: none !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.text-input-bold input {
+  font-weight: bolder;
+}
+
+.button-left span {
+  justify-content: start;
+}
+
+.radio-horizontal div[class*="prc-CheckboxOrRadioGroup-Body-"] {
+  flex-direction: row;
+}
+
+.radio-horizontal div[class*="prc-CheckboxOrRadioGroup-Body-"] > div {
+  margin-top: 0;
+  margin-bottom: 0;
+  margin-right: 1rem;
+}
+
+[data-component='Heading']:where(:not([data-variant])) {
+  font-size: var(--fs-3xl);
+}
+
+.w-full-important {
+  width: 100% !important;
+}
+
+.action-list-item-selected button,
+.action-list-item-selected span {
+  background-color: var(--app-accent-subtle);
+  color: var(--app-accent-fg);
+}
+
+/* Đảm bảo cả khung ngoài lẫn thẻ <input> bên trong TextInput của Primer cao đúng chuẩn 32px (máy tính) / 44px (điện thoại) */
+span[class*='prc-components-TextInputWrapper-'] {
+  height: var(--control-medium-size);
+  min-height: var(--control-medium-size);
+}
+
+span[class*='prc-components-TextInputWrapper-'] input {
+  height: var(--control-medium-size);
+  box-sizing: border-box;
+}
+
+/* Ô nhập TextInput của Primer trên điện thoại: giữ chữ 16px không phóng to iOS */
+@media (max-width: 767px) {
+  span[class*='prc-components-TextInputWrapper-'] input {
+    font-size: var(--fs-input);
+  }
+}

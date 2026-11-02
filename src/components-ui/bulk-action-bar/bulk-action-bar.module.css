@@ -1,0 +1,101 @@
+/* Chuyển từ sx (codemod). Có thể đổi tên class cho rõ nghĩa hơn khi sửa tới. */
+
+.bulkActionBar_box {
+  position: absolute;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  z-index: 99999;
+  max-width: calc(100% - 32px);
+}
+
+.bulkActionBar_box2 {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  background-color: #1A1B1E;
+  color: #fff;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+  padding: 6px 10px 6px 16px;
+  max-width: calc(100vw - 32px);
+  overflow-x: auto;
+}
+
+.bulkActionBar_box3 {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+button.bulkActionBar_iconButton.bulkActionBar_iconButton.bulkActionBar_iconButton {
+  color: #fff;
+}
+
+button.bulkActionBar_iconButton.bulkActionBar_iconButton.bulkActionBar_iconButton:hover {
+  background-color: rgba(255,255,255,0.14);
+}
+
+.bulkActionBar_box4 {
+  width: 1px;
+  align-self: stretch;
+  background-color: rgba(255,255,255,0.2);
+}
+
+.bulkActionBar_box5 {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+svg.bulkActionBar_spinner {
+  color: #fff;
+}
+
+.bulkActionBar_box6 {
+  display: flex;
+  align-items: center;
+  padding: 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #fff;
+}
+
+.bulkActionBar_box6:hover {
+  background-color: rgba(255,255,255,0.14);
+}
+
+/* Nút hành động trong thanh (thay itemSx cũ) */
+.bulkActionBar_item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  opacity: 1;
+  color: #fff;
+  user-select: none;
+}
+
+.bulkActionBar_item:not(.bulkActionBar_itemBlocked):hover {
+  background-color: rgba(255, 255, 255, 0.14);
+}
+
+.bulkActionBar_itemBlocked {
+  cursor: not-allowed;
+}
+
+.bulkActionBar_itemDisabled {
+  opacity: 0.5;
+}
+
+.bulkActionBar_itemDanger {
+  color: #F85149;
+}

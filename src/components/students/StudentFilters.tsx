@@ -1,6 +1,7 @@
 'use client';
 
-import { Filter, Plus, Search, SlidersHorizontal } from 'lucide-react';
+import { FilterIcon, PlusIcon, SearchIcon, SlidersIcon } from '@primer/octicons-react';
+import { CounterLabel } from '@primer/react';
 import { useRouter } from 'next/navigation';
 import { startTransition, useOptimistic, useState, type FormEvent } from 'react';
 import { listParam } from '@/lib/list-param';
@@ -41,7 +42,6 @@ function toggleValue(list: string[], value: string): string[] {
 }
 
 // Thanh lọc: chip trạng thái, chọn lớp và học phí (máy tính), ô tìm kiếm và nút Bộ lọc (điện thoại).
-// Dựng từ bộ thành phần chung (chip, ô chọn, nút): đây là chuẩn cho mọi trang (DESIGN mục 8).
 export function StudentFilters({
   current,
   classes,
@@ -106,26 +106,22 @@ export function StudentFilters({
           <TextInput
             id="mobile-search"
             type="search"
+            leadingVisual={SearchIcon}
             value={draftQ}
             onChange={(e) => setDraftQ(e.target.value)}
             placeholder="Tìm học sinh"
             autoComplete="off"
-            className="pl-8 [&::-webkit-search-cancel-button]:hidden"
+            className="[&::-webkit-search-cancel-button]:hidden"
           />
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted" aria-hidden />
         </form>
-        <Btn onClick={openSheet} className="relative shrink-0">
-          <SlidersHorizontal className="size-4" aria-hidden />
+        <Btn onClick={openSheet} leadingVisual={SlidersIcon} className="relative shrink-0">
           Bộ lọc
           {activeFilterCount > 0 && (
-            <span className="absolute -right-1.5 -top-1.5 grid h-5 min-w-5 place-items-center rounded-full bg-primary-deep px-1 text-2xs font-bold text-on-primary">
-              {activeFilterCount}
-            </span>
+            <CounterLabel className="ml-1 !font-normal">{activeFilterCount}</CounterLabel>
           )}
         </Btn>
         {onAdd && (
-          <Btn variant="primary" onClick={onAdd} className="shrink-0">
-            <Plus className="size-4" aria-hidden />
+          <Btn variant="primary" leadingVisual={PlusIcon} onClick={onAdd} className="shrink-0">
             Thêm mới
           </Btn>
         )}
@@ -152,7 +148,7 @@ export function StudentFilters({
           <SelectPanel
             multiple
             label="Lọc theo lớp"
-            icon={<Filter className="size-3.5 text-muted" aria-hidden />}
+            icon={<FilterIcon size={14} className="text-[var(--fgColor-muted)]" aria-hidden />}
             values={listParam(clsView)}
             onChange={(vs) => changeDesktop({ cls: vs.join(',') })}
             options={classes.map((c) => ({ value: String(c.id), label: c.name }))}
@@ -167,8 +163,7 @@ export function StudentFilters({
             placeholder="Mọi học phí"
           />
           {onAdd && (
-            <Btn variant="primary" onClick={onAdd}>
-              <Plus className="size-4" aria-hidden />
+            <Btn variant="primary" leadingVisual={PlusIcon} onClick={onAdd}>
               Thêm học sinh
             </Btn>
           )}
@@ -176,19 +171,25 @@ export function StudentFilters({
       </div>
 
       {/* Điện thoại: bảng Bộ lọc trượt từ đáy (DESIGN mục 3). Lớp và học phí đánh dấu nhiều mục. */}
-      <Sheet open={sheetOpen} title="Bộ lọc" onClose={() => setSheetOpen(false)} labelledBy="filter-title" footer={
-        <div className="flex gap-2.5">
-          <Btn block onClick={() => { setDraftCls([]); setDraftTuition([]); }} className="flex-1">
-            Đặt lại
-          </Btn>
-          <Btn block variant="primary" onClick={applySheet} className="flex-[2]">
-            Xem học sinh
-          </Btn>
-        </div>
-      }>
+      <Sheet
+        open={sheetOpen}
+        title="Bộ lọc"
+        onClose={() => setSheetOpen(false)}
+        labelledBy="filter-title"
+        footer={
+          <div className="flex gap-2.5">
+            <Btn block onClick={() => { setDraftCls([]); setDraftTuition([]); }} className="flex-1">
+              Đặt lại
+            </Btn>
+            <Btn block variant="primary" onClick={applySheet} className="flex-[2]">
+              Xem học sinh
+            </Btn>
+          </div>
+        }
+      >
         <div className="flex flex-col gap-5 pb-2">
           <fieldset className="flex flex-col gap-2">
-            <legend className="mb-1 text-xs font-normal uppercase tracking-wider text-muted">Lớp học</legend>
+            <legend className="mb-1 text-xs font-medium uppercase tracking-wider text-[var(--fgColor-muted)]">Lớp học</legend>
             {classes.map((c) => (
               <OptionCheck
                 key={c.id}
@@ -200,7 +201,7 @@ export function StudentFilters({
             ))}
           </fieldset>
           <fieldset className="flex flex-col gap-2">
-            <legend className="mb-1 text-xs font-normal uppercase tracking-wider text-muted">Học phí</legend>
+            <legend className="mb-1 text-xs font-medium uppercase tracking-wider text-[var(--fgColor-muted)]">Học phí</legend>
             {TUITION_OPTIONS.map((o) => (
               <OptionCheck
                 key={o.value}
@@ -218,11 +219,33 @@ export function StudentFilters({
 }
 
 // Dòng chọn nhiều trong bảng Bộ lọc: ô đánh dấu, không cần chọn xong mới áp dụng
-function OptionCheck({ value, label, checked, onToggle }: { value: string; label: string; checked: boolean; onToggle: (value: string) => void }) {
+function OptionCheck({
+  value,
+  label,
+  checked,
+  onToggle,
+}: {
+  value: string;
+  label: string;
+  checked: boolean;
+  onToggle: (value: string) => void;
+}) {
   return (
-    <label className={`flex min-h-[var(--ctl-h-touch)] cursor-pointer items-center justify-between gap-3 rounded-[var(--radius-ctl)] border px-3 py-2 text-base font-semibold text-ink ${checked ? 'border-primary-deep bg-primary-soft' : 'border-line bg-bg'}`}>
+    <label
+      className={`flex min-h-[var(--ctl-h-touch)] cursor-pointer items-center justify-between gap-3 rounded-[var(--borderRadius-medium)] border px-3 py-2 text-sm font-semibold text-[var(--fgColor-default)] ${
+        checked
+          ? 'border-[var(--borderColor-accent-emphasis)] bg-[var(--bgColor-accent-muted)]'
+          : 'border-[var(--borderColor-default)] bg-[var(--bgColor-default)]'
+      }`}
+    >
       {label}
-      <input type="checkbox" value={value} checked={checked} onChange={() => onToggle(value)} className="size-4 accent-[var(--primary-deep)]" />
+      <input
+        type="checkbox"
+        value={value}
+        checked={checked}
+        onChange={() => onToggle(value)}
+        className="size-4 accent-[var(--control-checked-bgColor-rest)]"
+      />
     </label>
   );
 }

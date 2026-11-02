@@ -1,0 +1,6 @@
+/* Chuyển từ sx (codemod). Có thể đổi tên class cho rõ nghĩa hơn khi sửa tới. */
+
+.pageCaption_text {
+  font-size: 24px;
+  font-weight: 800;
+}

@@ -1,0 +1,73 @@
+/* Chuyển từ sx (codemod). Có thể đổi tên class cho rõ nghĩa hơn khi sửa tới. */
+
+.htmlEditorLite_box {
+  background-color: var(--app-canvas-subtle);
+  padding: var(--space-2);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.htmlEditorLite_box2 {
+  width: 1px;
+  height: 20px;
+  background-color: var(--app-border-muted);
+  margin-left: var(--space-1);
+  margin-right: var(--space-1);
+}
+
+.htmlEditorLite_box3 {
+  overflow: auto;
+}
+
+.htmlEditorLite_box3_isAutoHeightMode {
+  min-height: 100px;
+  overflow: visible;
+}
+
+.htmlEditorLite_box3_notIsAutoHeightMode {
+  overflow: auto;
+}
+
+/* từ system props borderBottom* của Box */
+.toolbarBorder {
+  border-bottom: 1px solid var(--app-border-muted);
+}
+
+/* Nút toolbar editor (IconButton invisible size small). sx cũ của Primer v36 rơi vào
+   [data-size="small"][data-no-visuals] (3 class/attr) → dùng button + 3 class để giữ đúng độ ưu tiên. */
+button.toolbarButton.toolbarButton.toolbarButton {
+  padding: 1.5px;
+  border-radius: var(--radius-2);
+  color: var(--app-fg-muted);
+  background-color: transparent;
+}
+
+button.toolbarButtonActive.toolbarButtonActive.toolbarButtonActive {
+  color: var(--app-accent-fg);
+  background-color: var(--app-neutral-subtle);
+}
+
+button.toolbarButton.toolbarButton.toolbarButton:hover {
+  background-color: var(--app-neutral-muted);
+}
+
+/* Khung editor (thay system props + sx của Box) */
+.editorFrame {
+  border-style: solid;
+  border-color: var(--app-border-default);
+  border-radius: var(--radius-2);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.editorFrameEditable {
+  border-width: 1px;
+  background-color: var(--app-canvas-default);
+}
+
+.editorFrameReadOnly {
+  border-width: 0;
+  background-color: var(--app-canvas-subtle);
+}

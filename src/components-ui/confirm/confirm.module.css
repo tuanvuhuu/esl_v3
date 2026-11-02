@@ -1,0 +1,57 @@
+/* Chuyển từ sx (codemod). Có thể đổi tên class cho rõ nghĩa hơn khi sửa tới. */
+
+.animationConfirm_box {
+  padding: var(--space-3);
+  padding-left: var(--space-3);
+  padding-bottom: var(--space-0);
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.animationConfirm_box2 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  padding-left: var(--space-0);
+  padding-right: var(--space-0);
+}
+
+.animationConfirm_text {
+  font-size: 14px;
+  color: var(--app-fg-muted);
+}
+
+.animationConfirm_box3 {
+  padding: var(--space-0);
+  padding-top: var(--space-3);
+  display: flex;
+  flex-direction: row-reverse;
+}
+
+button.animationConfirm_button.animationConfirm_button {
+  margin-right: var(--space-1);
+}
+
+.defaultConfirm_box {
+  padding: var(--space-3);
+  padding-left: var(--space-4);
+  padding-bottom: var(--space-0);
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.defaultConfirm_box2 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  padding-left: var(--space-2);
+  padding-right: var(--space-2);
+}
+
+.defaultConfirm_box3 {
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: row-reverse;
+}

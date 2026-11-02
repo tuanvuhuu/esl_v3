@@ -18,8 +18,8 @@ export default function QuestionBankPage() {
 function BankSkeleton() {
   return (
     <section aria-busy="true" aria-label="Đang tải ngân hàng câu hỏi" className="flex flex-col gap-4">
-      <div className="h-9 w-64 animate-pulse rounded-xl bg-stone" />
-      <div className="h-[380px] animate-pulse rounded-[var(--radius-panel)] bg-stone" />
+      <div className="h-9 w-64 animate-pulse rounded-[var(--borderRadius-medium)] bg-[var(--bgColor-muted)]" />
+      <div className="h-[380px] animate-pulse rounded-xl bg-[var(--bgColor-muted)]" />
     </section>
   );
 }

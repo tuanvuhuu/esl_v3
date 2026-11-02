@@ -1,4 +1,5 @@
-﻿@import "tailwindcss";
+@import "tailwindcss";
+@import "../styles/primer/index.css";
 
 /* ============================================================
    Token thiết kế ESL Center. Nguồn chuẩn: docs/DESIGN.md.

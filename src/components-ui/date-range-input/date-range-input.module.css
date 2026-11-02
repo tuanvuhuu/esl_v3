@@ -1,0 +1,175 @@
+.calendarPanel_box2 {
+  display: flex;
+  align-items: center;
+  gap: var(--space-0);
+  margin-left: calc(-1 * var(--space-2));
+  margin-right: calc(-1 * var(--space-2));
+}
+
+button.calendarPanel_iconButton_hidePrev.calendarPanel_iconButton_hidePrev.calendarPanel_iconButton_hidePrev {
+  visibility: hidden;
+}
+
+button.calendarPanel_iconButton_notHidePrev.calendarPanel_iconButton_notHidePrev.calendarPanel_iconButton_notHidePrev {
+  visibility: visible;
+}
+
+.calendarPanel_box4 {
+  margin-left: calc(-1 * var(--space-1));
+}
+
+button.calendarPanel_iconButton2_hideNext.calendarPanel_iconButton2_hideNext.calendarPanel_iconButton2_hideNext {
+  visibility: hidden;
+}
+
+button.calendarPanel_iconButton2_notHideNext.calendarPanel_iconButton2_notHideNext.calendarPanel_iconButton2_notHideNext {
+  visibility: visible;
+}
+
+.calendarPanel_box5 {
+  margin-top: calc(-1 * var(--space-2));
+}
+
+.calendarPanel_box6 {
+  display: grid;
+  grid-template-columns: repeat(7, 40px);
+}
+
+.calendarPanel_box7 {
+  color: var(--app-fg-muted);
+  font-weight: 600;
+  font-size: var(--fs-0);
+  display: flex;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+}
+
+.calendarPanel_box8_isStart {
+  border-top-left-radius: var(--radius-2);
+  border-bottom-left-radius: var(--radius-2);
+}
+
+.calendarPanel_box8_isEnd {
+  border-top-right-radius: var(--radius-2);
+  border-bottom-right-radius: var(--radius-2);
+}
+
+button.calendarPanel_button.calendarPanel_button {
+  position: relative;
+  z-index: 1;
+  font-size: 12px;
+  display: flex;
+  justify-content: center;
+  height: 32px;
+  width: 32px;
+  border-radius: var(--radius-2);
+}
+
+button.calendarPanel_button_isCurrentMonth.calendarPanel_button_isCurrentMonth {
+  font-weight: 600;
+}
+
+button.dateRangeInput_button.dateRangeInput_button {
+  border: 0;
+}
+
+.dateRangeInput_box3 {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+  font-size: 12px;
+}
+
+.dateRangeInput_box4_selectingStepFrom {
+  font-weight: 600;
+  color: var(--app-accent-fg);
+}
+
+.dateRangeInput_box4_notSelectingStepFrom {
+  font-weight: 400;
+  color: var(--app-fg-muted);
+}
+
+.dateRangeInput_box6_selectingStepTo {
+  font-weight: 600;
+  color: var(--app-accent-fg);
+}
+
+.dateRangeInput_box6_notSelectingStepTo {
+  font-weight: 400;
+  color: var(--app-fg-muted);
+}
+
+span.dateRangeInput_textInput_isSearch {
+  border: none;
+}
+
+.dateRangeInput_box8 {
+  border: none;
+  background: transparent;
+  padding: var(--space-0);
+  cursor: pointer;
+  color: #656d76;
+}
+
+button.dateRangeInput_iconButton.dateRangeInput_iconButton.dateRangeInput_iconButton {
+  right: 0px;
+  position: absolute;
+}
+
+button.dateRangeInput_iconButton2.dateRangeInput_iconButton2.dateRangeInput_iconButton2 {
+  right: 25px;
+  position: absolute;
+  border-radius: 50%;
+}
+
+.dateRangeInput_box10 {
+  font-size: var(--fs-0);
+  color: var(--app-accent-fg);
+  margin-bottom: var(--space-2);
+}
+
+.dateRangeInput_box10_selectingStepFrom {
+  text-align: left;
+}
+
+.dateRangeInput_box10_notSelectingStepFrom {
+  text-align: right;
+}
+
+span.dateRangeInput_textInput2_selectingStepFrom {
+  outline: 2px solid;
+  outline-color: var(--app-accent-emphasis);
+}
+
+span.dateRangeInput_textInput2_notSelectingStepFrom {
+  outline: none;
+}
+
+.dateRangeInput_box12 {
+  margin-left: calc(-1 * var(--space-1));
+  font-size: var(--fs-0);
+  color: var(--app-fg-muted);
+  white-space: nowrap;
+}
+
+.dateRangeInput_box13 {
+  color: var(--app-fg-muted);
+  font-size: 12px;
+}
+
+span.dateRangeInput_textInput2_selectingStepTo {
+  outline: 2px solid;
+  outline-color: var(--app-accent-emphasis);
+}
+
+span.dateRangeInput_textInput2_notSelectingStepTo {
+  outline: none;
+}
+
+/* Select v36: sx áp lên span bọc ngoài → gắn class qua parentClassNameRef */
+span.monthSelect {
+  width: 110px;
+}

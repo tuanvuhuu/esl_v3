@@ -1,6 +1,6 @@
 'use client';
 
-import { Paperclip, Pencil, Plus, Trash2 } from 'lucide-react';
+import { PaperclipIcon, PencilIcon, PlusIcon, TrashIcon } from '@primer/octicons-react';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { deleteLessonAction } from '@/app/(app)/bai-giang/actions';
@@ -60,21 +60,21 @@ export function LessonsView({
   }
 
   const menuItems = (l: LessonRow): RowMenuItem[] => [
-    { kind: 'action', label: 'Tài liệu', icon: Paperclip, onSelect: () => setMaterialsId(l.id) },
-    { kind: 'action', label: 'Sửa', icon: Pencil, onSelect: () => setEditing(l), disabled: !canManage, disabledHint: 'Không có quyền quản lý bài giảng' },
-    { kind: 'action', label: 'Xoá', icon: Trash2, danger: true, onSelect: () => setToDelete(l), disabled: !canManage, disabledHint: 'Không có quyền quản lý bài giảng' },
+    { kind: 'action', label: 'Tài liệu', icon: PaperclipIcon, onSelect: () => setMaterialsId(l.id) },
+    { kind: 'action', label: 'Sửa', icon: PencilIcon, onSelect: () => setEditing(l), disabled: !canManage, disabledHint: 'Không có quyền quản lý bài giảng' },
+    { kind: 'action', label: 'Xoá', icon: TrashIcon, danger: true, onSelect: () => setToDelete(l), disabled: !canManage, disabledHint: 'Không có quyền quản lý bài giảng' },
   ];
 
   const cell = (l: LessonRow, key: string) => {
     switch (key) {
       case 'title':
-        return <span className="min-w-0 text-base font-bold text-ink [overflow-wrap:anywhere]">{l.title}</span>;
+        return <span className="min-w-0 text-base font-bold text-[var(--fgColor-default)] [overflow-wrap:anywhere]">{l.title}</span>;
       case 'campus':
-        return <span className="text-sm text-ink-2">{campusText(l)}</span>;
+        return <span className="text-sm text-[var(--fgColor-muted)]">{campusText(l)}</span>;
       case 'materials':
-        return <span className="text-base text-ink">{l.materials.length} tài liệu</span>;
+        return <span className="text-base text-[var(--fgColor-default)]">{l.materials.length} tài liệu</span>;
       case 'assignments':
-        return <span className="text-base text-ink">{l.assignmentCount} bài</span>;
+        return <span className="text-base text-[var(--fgColor-default)]">{l.assignmentCount} bài</span>;
       case 'action':
         return <RowMenu label={`Thao tác với bài giảng ${l.title}`} items={menuItems(l)} />;
       default:
@@ -90,8 +90,7 @@ export function LessonsView({
         subtitle="Bài giảng dùng chung cho các cơ sở đã chọn. Bài tập có thể gắn một bài giảng."
         actions={
           canManage && (
-            <Btn variant="primary" onClick={() => setEditing('new')}>
-              <Plus className="size-4" aria-hidden />
+            <Btn variant="primary" leadingVisual={PlusIcon} onClick={() => setEditing('new')}>
               Thêm bài giảng
             </Btn>
           )
@@ -115,21 +114,18 @@ export function LessonsView({
           stickyEnd
           card={(l) => (
             <Card>
-              <b className="text-base font-normal text-ink [overflow-wrap:anywhere]">{l.title}</b>
-              <small className="block text-sm text-ink-2">
+              <b className="text-base font-normal text-[var(--fgColor-default)] [overflow-wrap:anywhere]">{l.title}</b>
+              <small className="block text-sm text-[var(--fgColor-muted)]">
                 {campusText(l)} · {l.materials.length} tài liệu · {l.assignmentCount} bài tập
               </small>
               <div className="grid grid-cols-3 gap-2">
-                <Btn block onClick={() => setMaterialsId(l.id)}>
-                  <Paperclip className="size-4" aria-hidden />
+                <Btn block leadingVisual={PaperclipIcon} onClick={() => setMaterialsId(l.id)}>
                   Tài liệu
                 </Btn>
-                <Btn block onClick={() => setEditing(l)} disabled={!canManage}>
-                  <Pencil className="size-4" aria-hidden />
+                <Btn block leadingVisual={PencilIcon} onClick={() => setEditing(l)} disabled={!canManage}>
                   Sửa
                 </Btn>
-                <Btn block variant="danger" onClick={() => setToDelete(l)} disabled={!canManage}>
-                  <Trash2 className="size-4" aria-hidden />
+                <Btn block variant="danger" leadingVisual={TrashIcon} onClick={() => setToDelete(l)} disabled={!canManage}>
                   Xoá
                 </Btn>
               </div>

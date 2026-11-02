@@ -2,7 +2,8 @@
 
 import { startTransition, useActionState, type FormEvent } from 'react';
 import { createCampusAction, updateCampusAction } from '@/app/(app)/co-so/actions';
-import { Field, FORM_BTN_CANCEL, FORM_BTN_SUBMIT, inputClass, FormFooter } from '@/components/ui/Field';
+import { Btn } from '@/components/ui/Btn';
+import { Field, inputClass, FormFooter } from '@/components/ui/Field';
 import type { ActionResult } from '@/lib/validation/student';
 import { Alert } from '@/components/ui/primitives';
 
@@ -51,10 +52,10 @@ export function CampusForm({
       </Field>
 
       <FormFooter>
-        <button type="button" onClick={onCancel} className={FORM_BTN_CANCEL}>Huỷ</button>
-        <button type="submit" disabled={pending} className={FORM_BTN_SUBMIT}>
+        <Btn onClick={onCancel}>Huỷ</Btn>
+        <Btn type="submit" variant="primary" loading={pending} disabled={pending}>
           {pending ? 'Đang lưu…' : isCreate ? 'Thêm cơ sở' : 'Lưu thay đổi'}
-        </button>
+        </Btn>
       </FormFooter>
     </form>
   );

@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeftIcon, ChevronRightIcon } from '@primer/octicons-react';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { saveSubmissionsAction } from '@/app/(app)/bai-tap/actions';
@@ -22,7 +22,6 @@ import { SubmissionPill } from './SubmissionPill';
 
 type Status = (typeof SUBMISSION_STATUSES)[number];
 type Draft = { status: Status; score: string; feedback: string };
-
 
 // Chấm điểm một bài tập. Web: bảng nhập nhanh. Điện thoại: từng học sinh một, có nút Đã nộp và ô điểm.
 export function GradingView({
@@ -108,7 +107,7 @@ export function GradingView({
         return (
           <div className="flex min-w-0 items-center gap-3">
             <Avatar name={r.fullName} seed={r.studentId} quiet />
-            <span className="min-w-0 truncate text-base font-bold text-ink">{r.fullName}</span>
+            <span className="min-w-0 truncate text-base font-bold text-[var(--fgColor-default)]">{r.fullName}</span>
           </div>
         );
       case 'status':
@@ -173,10 +172,10 @@ export function GradingView({
 
       {assignment.description && <Notice className="mb-4 whitespace-pre-line">{assignment.description}</Notice>}
 
-      <div className="mb-3 flex flex-wrap gap-3 text-sm text-ink-2">
-        <span>Chưa nộp <b className="font-normal text-ink">{counts.not_submitted}</b></span>
-        <span>Đã nộp <b className="font-normal text-ink">{counts.submitted}</b></span>
-        <span>Đã chấm <b className="font-normal text-ink">{counts.graded}</b></span>
+      <div className="mb-3 flex flex-wrap gap-3 text-sm text-[var(--fgColor-muted)]">
+        <span>Chưa nộp <b className="font-normal text-[var(--fgColor-default)]">{counts.not_submitted}</b></span>
+        <span>Đã nộp <b className="font-normal text-[var(--fgColor-default)]">{counts.submitted}</b></span>
+        <span>Đã chấm <b className="font-normal text-[var(--fgColor-default)]">{counts.graded}</b></span>
       </div>
 
       {/* Máy tính bảng và máy tính: bảng nhập nhanh */}
@@ -185,20 +184,16 @@ export function GradingView({
       {/* Điện thoại: từng học sinh một */}
       <div className="flex flex-col gap-3 min-[768px]:hidden">
         <div className="flex items-center justify-between gap-2">
-          <ActIcon label="Học sinh trước" onClick={() => setIndex((i) => Math.max(0, i - 1))} disabled={index === 0}>
-            <ChevronLeft className="size-5" aria-hidden />
-          </ActIcon>
-          <small className="text-sm text-ink-2">{index + 1} / {rows.length}</small>
-          <ActIcon label="Học sinh sau" onClick={() => setIndex((i) => Math.min(rows.length - 1, i + 1))} disabled={index >= rows.length - 1}>
-            <ChevronRight className="size-5" aria-hidden />
-          </ActIcon>
+          <ActIcon label="Học sinh trước" icon={ChevronLeftIcon} onClick={() => setIndex((i) => Math.max(0, i - 1))} disabled={index === 0} />
+          <small className="text-sm text-[var(--fgColor-muted)]">{index + 1} / {rows.length}</small>
+          <ActIcon label="Học sinh sau" icon={ChevronRightIcon} onClick={() => setIndex((i) => Math.min(rows.length - 1, i + 1))} disabled={index >= rows.length - 1} />
         </div>
 
         <Card>
           <div className="flex items-center gap-3">
             <Avatar name={current.fullName} seed={current.studentId} quiet />
             <div className="min-w-0 flex-1">
-              <b className="block truncate text-base text-ink">{current.fullName}</b>
+              <b className="block truncate text-base text-[var(--fgColor-default)]">{current.fullName}</b>
               <SubmissionPill status={currentDraft.status} />
             </div>
           </div>
@@ -211,12 +206,12 @@ export function GradingView({
             ))}
           </div>
 
-          <label className="flex flex-col gap-1.5 text-sm font-normal text-ink-2">
+          <label className="flex flex-col gap-1.5 text-sm font-normal text-[var(--fgColor-muted)]">
             Điểm (tối đa {assignment.maxScore})
             <TextInput type="number" inputMode="numeric" min={0} max={assignment.maxScore} step={1} value={currentDraft.score} disabled={!canManage || currentDraft.status !== 'graded'} onChange={(e) => patch(current.studentId, { score: e.target.value })} />
           </label>
 
-          <label className="flex flex-col gap-1.5 text-sm font-normal text-ink-2">
+          <label className="flex flex-col gap-1.5 text-sm font-normal text-[var(--fgColor-muted)]">
             Nhận xét
             <TextInput value={currentDraft.feedback} disabled={!canManage} onChange={(e) => patch(current.studentId, { feedback: e.target.value })} placeholder="Nhận xét ngắn" />
           </label>

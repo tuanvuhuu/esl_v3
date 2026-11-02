@@ -2,7 +2,8 @@
 
 import { startTransition, useActionState, type FormEvent } from 'react';
 import { assignStudentsAction } from '@/app/(app)/phu-huynh/actions';
-import { Field, FORM_BTN_CANCEL, FORM_BTN_SUBMIT, FormFooter } from '@/components/ui/Field';
+import { Btn } from '@/components/ui/Btn';
+import { Field, FormFooter } from '@/components/ui/Field';
 import { SelectPanel } from '@/components/ui/SelectPanel';
 import { PARENT_RELATION_LABELS } from '@/lib/parent-labels';
 import type { StudentChoice } from '@/lib/queries/parents';
@@ -70,18 +71,16 @@ export function ParentAssignForm({
         />
       </Field>
 
-      <label className="flex min-w-0 items-center gap-2.5 text-sm font-normal text-ink-2">
-        <input name="isPrimary" type="checkbox" className="size-4 accent-[var(--primary-deep)]" />
+      <label className="flex min-w-0 items-center gap-2.5 text-sm font-normal text-[var(--fgColor-default)]">
+        <input name="isPrimary" type="checkbox" className="size-4 accent-[var(--control-checked-bgColor-rest)]" />
         Đặt làm liên hệ chính của các học sinh này
       </label>
 
       <FormFooter>
-        <button type="button" onClick={onCancel} className={FORM_BTN_CANCEL}>
-          Huỷ
-        </button>
-        <button type="submit" disabled={pending} className={FORM_BTN_SUBMIT}>
+        <Btn onClick={onCancel}>Huỷ</Btn>
+        <Btn type="submit" variant="primary" loading={pending} disabled={pending}>
           {pending ? 'Đang gán…' : 'Gán học sinh'}
-        </button>
+        </Btn>
       </FormFooter>
     </form>
   );

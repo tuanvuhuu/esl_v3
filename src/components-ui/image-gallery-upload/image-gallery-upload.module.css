@@ -1,0 +1,136 @@
+/* Chuyển từ sx (codemod). Có thể đổi tên class cho rõ nghĩa hơn khi sửa tới. */
+
+div.imageGalleryUpload_box {
+  text-align: center;
+  border-style: dashed;
+  border-width: 1px;
+  border-radius: var(--radius-2);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--app-fg-muted);
+  padding: var(--space-3);
+  margin-bottom: var(--space-2);
+}
+
+div.imageGalleryUpload_box:hover {
+  border-color: var(--app-accent-fg);
+  color: var(--app-accent-fg);
+  background-color: var(--app-canvas-subtle);
+}
+
+div.imageGalleryUpload_box_isDragActive {
+  border-color: var(--app-accent-fg);
+  background-color: var(--app-canvas-subtle);
+}
+
+div.imageGalleryUpload_box_notIsDragActive {
+  border-color: var(--app-border-default);
+  background-color: transparent;
+}
+
+.imageGalleryUpload_box3 {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+  gap: var(--space-1);
+  margin-bottom: var(--space-2);
+}
+
+.imageGalleryUpload_box4 {
+  position: relative;
+  cursor: pointer;
+}
+
+.imageGalleryUpload_box4:hover {
+  opacity: 0.8;
+}
+
+.imageGalleryUpload_box5 {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid;
+  border-color: var(--app-border-default);
+}
+
+button.imageGalleryUpload_iconButton.imageGalleryUpload_iconButton {
+  position: absolute;
+  top: var(--space-0);
+  right: var(--space-0);
+  width: 24px;
+  height: 24px;
+  background-color: rgba(0, 0, 0, 0.6);
+  color: var(--app-fg-onEmphasis);
+  border-radius: 50%;
+}
+
+button.imageGalleryUpload_iconButton.imageGalleryUpload_iconButton:hover {
+  background-color: rgba(0, 0, 0, 0.8);
+}
+
+.imageGalleryUpload_box6 {
+  aspect-ratio: 1;
+  text-align: center;
+  border: 1px solid;
+  border-color: var(--app-border-default);
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5px;
+  color: var(--app-fg-muted);
+  background-color: var(--app-canvas-subtle);
+}
+
+.imageGalleryUpload_box6:hover {
+  border-color: var(--app-accent-fg);
+  color: var(--app-accent-fg);
+  background-color: var(--app-canvas-default);
+}
+
+div.imageGalleryUpload_box7 {
+  aspect-ratio: 1;
+  text-align: center;
+  border-style: dashed;
+  border-width: 1px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--app-fg-muted);
+}
+
+div.imageGalleryUpload_box7:hover {
+  border-color: var(--app-accent-fg);
+  color: var(--app-accent-fg);
+  background-color: var(--app-canvas-subtle);
+}
+
+div.imageGalleryUpload_box7_isDragActive {
+  border-color: var(--app-accent-fg);
+  background-color: var(--app-canvas-subtle);
+}
+
+div.imageGalleryUpload_box7_notIsDragActive {
+  border-color: var(--app-border-default);
+  background-color: transparent;
+}
+
+.imageGalleryUpload_box8 {
+  padding: var(--space-3);
+  text-align: center;
+  border: 1px solid;
+  border-color: var(--app-border-default);
+  border-radius: var(--radius-2);
+  background-color: var(--app-canvas-subtle);
+  color: var(--app-fg-muted);
+}

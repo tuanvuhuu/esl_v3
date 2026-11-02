@@ -16,7 +16,7 @@ type SearchParams = Record<string, string | string[] | undefined>;
 // và chỉ gồm phụ huynh có con học ở cơ sở trong phạm vi.
 export default function MessagesPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   return (
-    <Suspense fallback={<section aria-busy="true" aria-label="Đang tải tin nhắn" className="h-[360px] animate-pulse rounded-[var(--radius-panel)] bg-stone" />}>
+    <Suspense fallback={<section aria-busy="true" aria-label="Đang tải tin nhắn" className="h-[360px] animate-pulse rounded-xl bg-[var(--bgColor-muted)]" />}>
       <MessagesData searchParams={searchParams} />
     </Suspense>
   );

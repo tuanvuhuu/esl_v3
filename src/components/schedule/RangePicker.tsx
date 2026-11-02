@@ -1,6 +1,6 @@
 'use client';
 
-import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
+import { CalendarIcon, ChevronLeftIcon, ChevronRightIcon } from '@primer/octicons-react';
 import { useEffect, useRef, useState } from 'react';
 import { ActIcon } from '@/components/ui/ActIcon';
 import { addDaysKey, dateKeyLabel, daysBetweenKeys, monthKey, monthLabel, monthStartKey, shiftMonth, todayKeyVN, weekdayLabel, weekdayOfKey } from '@/lib/datetime';
@@ -16,7 +16,7 @@ export function rangeLabel(from: string, to: string): string {
 }
 
 // Chọn khoảng ngày bằng lịch tháng (DESIGN mục 10, Lịch học). Bấm ngày bắt đầu, rồi bấm ngày kết thúc.
-// Nút hiện khoảng đang xem. Khoảng đang xem tô nhạt, hai đầu tô đậm, hôm nay có viền vàng.
+// Nút hiện khoảng đang xem. Khoảng đang xem tô nhạt, hai đầu tô đậm, hôm nay có viền điểm nhấn.
 export function RangePicker({ from, to, onPick }: { from: string; to: string; onPick: (from: string, to: string) => void }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
@@ -104,10 +104,10 @@ export function RangePicker({ from, to, onPick }: { from: string; to: string; on
     const active = draft !== null ? key === draft : key === from || key === to;
     const between = draft === null && key > from && key < to;
     const state = active
-      ? 'bg-primary font-bold text-on-primary'
-      : `${between ? 'bg-primary-soft hover:bg-line' : 'hover:bg-stone'} ${key.startsWith(month) ? 'text-ink' : 'text-muted'}`;
-    const todayRing = key === today && !active ? 'font-bold ring-1 ring-inset ring-primary-deep' : '';
-    return `grid size-[var(--icon-h)] place-items-center rounded-[var(--radius-ctl)] text-sm tabular-nums transition-colors ${state} ${todayRing}`;
+      ? 'bg-[var(--button-primary-bgColor-rest,var(--color-primary))] font-bold text-[var(--button-primary-fgColor-rest,var(--color-on-primary))]'
+      : `${between ? 'bg-[var(--bgColor-accent-muted,var(--color-primary-soft))] hover:bg-[var(--bgColor-neutral-muted)]' : 'hover:bg-[var(--bgColor-muted)]'} ${key.startsWith(month) ? 'text-[var(--fgColor-default)]' : 'text-[var(--fgColor-muted)]'}`;
+    const todayRing = key === today && !active ? 'font-bold ring-1 ring-inset ring-[var(--fgColor-accent)]' : '';
+    return `grid size-[var(--icon-h)] place-items-center rounded-[var(--borderRadius-medium)] text-sm tabular-nums transition-colors ${state} ${todayRing}`;
   }
 
   return (
@@ -118,9 +118,9 @@ export function RangePicker({ from, to, onPick }: { from: string; to: string; on
         aria-expanded={open}
         aria-label={`Chọn khoảng ngày, đang xem ${label}`}
         onClick={toggle}
-        className="inline-flex h-[var(--icon-h)] shrink-0 items-center gap-1.5 rounded-[var(--radius-ctl)] border border-line bg-surface px-3 text-sm font-bold text-ink transition-colors hover:text-ink max-[767px]:h-[var(--icon-h-touch)]"
+        className="inline-flex h-[var(--icon-h)] shrink-0 items-center gap-1.5 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-3 text-sm font-semibold text-[var(--fgColor-default)] transition-colors hover:bg-[var(--bgColor-muted)] max-[767px]:h-[var(--icon-h-touch)]"
       >
-        <CalendarDays className="size-4" aria-hidden />
+        <CalendarIcon size={16} aria-hidden />
         <span className="tabular-nums">{label}</span>
       </button>
       {open && (
@@ -128,20 +128,16 @@ export function RangePicker({ from, to, onPick }: { from: string; to: string; on
           role="dialog"
           aria-label="Chọn khoảng ngày"
           style={{ top: place.top, left: place.left, width: place.width }}
-          className="fixed z-30 rounded-[var(--radius-panel)] bg-surface p-3 shadow-card"
+          className="fixed z-30 rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-3 shadow-[var(--shadow-floating-small,0_8px_24px_rgba(140,149,159,0.2))]"
         >
           <div className="mb-2 flex items-center justify-between gap-2">
-            <ActIcon label="Tháng trước" onClick={() => setMonth(shiftMonth(month, -1))}>
-              <ChevronLeft className="size-4" aria-hidden />
-            </ActIcon>
-            <b className="text-sm font-bold text-ink">Tháng {monthLabel(month)}</b>
-            <ActIcon label="Tháng sau" onClick={() => setMonth(shiftMonth(month, 1))}>
-              <ChevronRight className="size-4" aria-hidden />
-            </ActIcon>
+            <ActIcon label="Tháng trước" icon={ChevronLeftIcon} onClick={() => setMonth(shiftMonth(month, -1))} />
+            <b className="text-sm font-semibold text-[var(--fgColor-default)]">Tháng {monthLabel(month)}</b>
+            <ActIcon label="Tháng sau" icon={ChevronRightIcon} onClick={() => setMonth(shiftMonth(month, 1))} />
           </div>
           <div className="mb-1 grid grid-cols-7 gap-1">
             {[1, 2, 3, 4, 5, 6, 0].map((d) => (
-              <span key={d} className="text-center text-xs font-normal text-muted">{weekdayLabel(d)}</span>
+              <span key={d} className="text-center text-xs font-normal text-[var(--fgColor-muted)]">{weekdayLabel(d)}</span>
             ))}
           </div>
           <div className="grid grid-cols-7 gap-1">
@@ -159,11 +155,11 @@ export function RangePicker({ from, to, onPick }: { from: string; to: string; on
               </button>
             ))}
           </div>
-          <p className="mt-3 border-t border-line pt-2 text-xs text-ink-2">
+          <p className="mt-3 border-t border-[var(--borderColor-muted)] pt-2 text-xs text-[var(--fgColor-muted)]">
             {draft === null ? (
-              <>Đang xem <b className="font-bold text-ink">{dateKeyLabel(from)} – {dateKeyLabel(to)}</b> · {span} ngày</>
+              <>Đang xem <b className="font-semibold text-[var(--fgColor-default)]">{dateKeyLabel(from)} – {dateKeyLabel(to)}</b> · {span} ngày</>
             ) : (
-              <>Đã chọn ngày bắt đầu <b className="font-bold text-ink">{dateKeyLabel(draft)}</b>. Bấm ngày kết thúc, hoặc bấm lại ngày này để bỏ chọn. Tối đa {MAX_SPAN_DAYS} ngày.</>
+              <>Đã chọn ngày bắt đầu <b className="font-semibold text-[var(--fgColor-default)]">{dateKeyLabel(draft)}</b>. Bấm ngày kết thúc, hoặc bấm lại ngày này để bỏ chọn. Tối đa {MAX_SPAN_DAYS} ngày.</>
             )}
           </p>
         </div>

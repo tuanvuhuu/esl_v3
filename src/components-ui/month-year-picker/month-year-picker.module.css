@@ -1,0 +1,19 @@
+button.monthYearPicker_button {
+  min-width: 140px;
+}
+
+.monthYearPicker_box3 {
+  padding: var(--space-2);
+  min-width: 240px;
+}
+
+.monthYearPicker_box6 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-1);
+}
+
+button.monthYearPicker_button2.monthYearPicker_button2.monthYearPicker_button2 {
+  justify-content: center;
+  font-size: 12px;
+}

@@ -1,0 +1,26 @@
+/* Chuyển từ sx (codemod). Có thể đổi tên class cho rõ nghĩa hơn khi sửa tới. */
+
+.cssEditorElement_box {
+  border-width: 1px;
+  border-style: solid;
+  border-color: var(--app-border-default);
+  border-radius: var(--radius-2);
+  padding: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.cssEditorElement_box3 {
+  flex: 1;
+  margin-left: var(--space-2);
+  margin-right: var(--space-2);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.cssEditorElement_box5 {
+  margin-top: var(--space-2);
+  border-top-width: 1px;
+  border-top-style: dashed;
+  border-top-color: var(--app-border-default);
+  padding-top: var(--space-2);
+}

@@ -1,6 +1,6 @@
 'use client';
 
-import { Paperclip, X } from 'lucide-react';
+import { PaperclipIcon, XIcon } from '@primer/octicons-react';
 import { useEffect, useState, useTransition } from 'react';
 import { listSpeakingMarksAction, saveSpeakingRubricAction, sendSpeakingFeedbackAction, type SpeakingRubric as Rubric } from '@/app/(app)/bai-tap/speaking-actions';
 import { rubricToPoints, type SpeakingScale } from '@/lib/speaking';
@@ -226,14 +226,14 @@ export function AnswerDialog({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-[var(--radius-ctl)] bg-bg px-3.5 py-2.5 text-sm">
-        <b className="text-base text-ink">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-[var(--borderRadius-medium)] bg-[var(--bgColor-muted)] px-3.5 py-2.5 text-sm">
+        <b className="text-base text-[var(--fgColor-default)]">
           Tổng {summary.total}/{summary.maxTotal} điểm
         </b>
         <Pill tone={summary.status === 'graded' ? 'mint' : summary.status === 'submitted' ? 'butter' : 'blush'}>{SUBMISSION_LABELS[summary.status]}</Pill>
         {summary.skills.map((s) => (
-          <span key={s.skill} className="text-ink-2">
-            {SKILL_LABELS[s.skill]} <b className="font-normal text-ink">{s.raw}/{s.max}</b>
+          <span key={s.skill} className="text-[var(--fgColor-muted)]">
+            {SKILL_LABELS[s.skill]} <b className="font-normal text-[var(--fgColor-default)]">{s.raw}/{s.max}</b>
           </span>
         ))}
       </div>
@@ -248,16 +248,16 @@ export function AnswerDialog({
         const d = drafts[item.id];
         const pts = summary.points[item.id];
         return (
-          <section key={item.id} aria-label={`Câu ${item.position}`} className="flex flex-col gap-2.5 rounded-[var(--radius-panel)] border border-line p-3.5">
+          <section key={item.id} aria-label={`Câu ${item.position}`} className="flex flex-col gap-2.5 rounded-xl border border-[var(--borderColor-default)] p-3.5">
             <header className="flex flex-wrap items-center gap-2 text-sm">
-              <b className="text-base text-ink">Câu {item.position}</b>
+              <b className="text-base text-[var(--fgColor-default)]">Câu {item.position}</b>
               <Pill tone="lav">{SKILL_LABELS[item.skill]}</Pill>
-              <span className="text-muted">
+              <span className="text-[var(--fgColor-muted)]">
                 {ITEM_TYPE_LABELS[item.itemType]} · {item.points} điểm
               </span>
             </header>
 
-            {item.prompt && <p className="whitespace-pre-line text-base text-ink">{item.prompt}</p>}
+            {item.prompt && <p className="whitespace-pre-line text-base text-[var(--fgColor-default)]">{item.prompt}</p>}
             {item.passage && <Notice className="whitespace-pre-line">{item.passage}</Notice>}
             {item.audioFileId !== null && (
               <audio controls preload="none" src={`/api/files/${item.audioFileId}`} aria-label={`Âm thanh câu ${item.position}`} className="w-full" />
@@ -294,23 +294,23 @@ export function AnswerDialog({
             )}
             {SPEAK_TYPES.has(item.itemType) && d.fileId === null && (
               <div className="flex flex-col gap-1.5">
-                <span className="text-sm font-normal text-ink-2">Bài nói của học sinh</span>
-                <small className="text-sm text-muted">Học sinh chưa ghi âm câu này.</small>
+                <span className="text-sm font-normal text-[var(--fgColor-muted)]">Bài nói của học sinh</span>
+                <small className="text-sm text-[var(--fgColor-muted)]">Học sinh chưa ghi âm câu này.</small>
               </div>
             )}
 
             {item.itemType === 'choice' && (
               <fieldset className="flex flex-col gap-1">
-                <legend className="mb-1 text-sm font-normal text-ink-2">Học sinh chọn đáp án nào</legend>
+                <legend className="mb-1 text-sm font-normal text-[var(--fgColor-muted)]">Học sinh chọn đáp án nào</legend>
                 {item.options.map((o, oi) => (
-                  <label key={o.id} className="flex cursor-pointer items-center gap-2.5 rounded-[var(--radius-ctl)] px-2 py-1.5 text-base text-ink hover:bg-stone">
+                  <label key={o.id} className="flex cursor-pointer items-center gap-2.5 rounded-[var(--borderRadius-medium)] px-2 py-1.5 text-base text-[var(--fgColor-default)] hover:bg-[var(--bgColor-muted)]">
                     <input
                       type="radio"
                       name={`answer-${item.id}`}
                       checked={d.selectedOptionId === o.id}
                       onChange={() => setDraft(item.id, { selectedOptionId: o.id })}
                       disabled={!canManage}
-                      className="size-4 shrink-0 accent-[var(--primary-deep)]"
+                      className="size-4 shrink-0 accent-[var(--control-checked-bgColor-rest,var(--fgColor-accent))]"
                     />
                     <span className="min-w-0">
                       {String.fromCharCode(65 + oi)}. {o.label}
@@ -320,13 +320,14 @@ export function AnswerDialog({
                 <div className="flex items-center gap-3">
                   <button
                     type="button"
+                    data-link="true"
                     onClick={() => setDraft(item.id, { selectedOptionId: null })}
                     disabled={!canManage || d.selectedOptionId === null}
-                    className="text-sm font-semibold text-ink-2 underline underline-offset-4 disabled:opacity-40"
+                    className="text-sm font-semibold text-[var(--fgColor-muted)] underline underline-offset-4 disabled:opacity-40"
                   >
                     Bỏ chọn
                   </button>
-                  <small className="text-sm text-muted">
+                  <small className="text-sm text-[var(--fgColor-muted)]">
                     Điểm tự chấm: {pts ?? 0}/{item.points}
                   </small>
                 </div>
@@ -348,16 +349,14 @@ export function AnswerDialog({
 
             {item.itemType === 'file' && (
               <div className="flex flex-col gap-2">
-                <span className="text-sm font-normal text-ink-2">Tệp bài nộp</span>
+                <span className="text-sm font-normal text-[var(--fgColor-muted)]">Tệp bài nộp</span>
                 {d.fileId !== null ? (
                   <div className="flex flex-wrap items-center gap-2 text-sm">
-                    <Paperclip className="size-4 text-muted" aria-hidden />
-                    <a href={`/api/files/${d.fileId}`} target="_blank" rel="noopener" className="font-semibold text-ink underline underline-offset-4">
+                    <PaperclipIcon size={16} className="text-[var(--fgColor-muted)]" aria-hidden />
+                    <a href={`/api/files/${d.fileId}`} target="_blank" rel="noopener" className="font-semibold text-[var(--fgColor-default)] underline underline-offset-4">
                       {d.fileName}
                     </a>
-                    <ActIcon label={`Bỏ tệp của câu ${item.position}`} onClick={() => setDraft(item.id, { fileId: null, fileName: null })} disabled={!canManage || pending}>
-                      <X className="size-4" aria-hidden />
-                    </ActIcon>
+                    <ActIcon label={`Bỏ tệp của câu ${item.position}`} icon={XIcon} onClick={() => setDraft(item.id, { fileId: null, fileName: null })} disabled={!canManage || pending} />
                   </div>
                 ) : (
                   <FileInput label={`Tải tệp bài nộp câu ${item.position}`} accept={UPLOAD_ACCEPT} disabled={!canManage || pending} onFile={(file) => uploadFile(item.id, file)} />
@@ -385,7 +384,7 @@ export function AnswerDialog({
                     </Field>
                   ))}
                 </div>
-                <small className="text-sm text-muted">
+                <small className="text-sm text-[var(--fgColor-muted)]">
                   Điểm câu: {pts === null || pts === undefined ? 'chưa chấm đủ các tiêu chí' : pts} / {item.points}
                 </small>
               </div>
@@ -495,19 +494,19 @@ function SecondMarkPanel({
   }
 
   return (
-    <div className="flex flex-col gap-2 rounded-[var(--radius-ctl)] bg-bg px-3 py-2.5">
+    <div className="flex flex-col gap-2 rounded-[var(--borderRadius-medium)] bg-[var(--bgColor-muted)] px-3 py-2.5">
       <div className="flex flex-wrap items-center gap-2 text-sm">
-        <b className="font-semibold text-ink">Chấm chéo</b>
+        <b className="font-semibold text-[var(--fgColor-default)]">Chấm chéo</b>
         {mark && (
-          <span className="text-ink-2">
-            Chấm lại: <b className="font-normal text-ink">{mark.points}/{item.points}</b>
+          <span className="text-[var(--fgColor-muted)]">
+            Chấm lại: <b className="font-normal text-[var(--fgColor-default)]">{mark.points}/{item.points}</b>
             {mark.graderName ? ` · ${mark.graderName}` : ''}
           </span>
         )}
         {gap && savedPoints !== null && (
           <>
-            <span className="text-ink-2">
-              Điểm lần đầu: <b className="font-normal text-ink">{savedPoints}/{item.points}</b>
+            <span className="text-[var(--fgColor-muted)]">
+              Điểm lần đầu: <b className="font-normal text-[var(--fgColor-default)]">{savedPoints}/{item.points}</b>
             </span>
             <Pill tone={gap.flagged ? 'blush' : 'mint'}>{gap.flagged ? `Lệch ${gap.gap} điểm` : gap.gap === 0 ? 'Khớp' : `Lệch ${gap.gap} điểm, trong ngưỡng`}</Pill>
           </>
@@ -515,13 +514,13 @@ function SecondMarkPanel({
       </div>
 
       {savedPoints === null ? (
-        <p className="text-sm text-muted">Chấm lần đầu câu này và lưu bài làm trước, rồi mới chấm chéo.</p>
+        <p className="text-sm text-[var(--fgColor-muted)]">Chấm lần đầu câu này và lưu bài làm trước, rồi mới chấm chéo.</p>
       ) : isFirstGrader ? (
-        <p className="text-sm text-muted">Bạn là người chấm lần đầu bài này nên không chấm lại được. Cần giáo viên khác chấm.</p>
+        <p className="text-sm text-[var(--fgColor-muted)]">Bạn là người chấm lần đầu bài này nên không chấm lại được. Cần giáo viên khác chấm.</p>
       ) : mark ? (
-        <p className="text-sm text-muted">Đã có điểm chấm lại. Muốn đổi, nhập lại điểm bên dưới.</p>
+        <p className="text-sm text-[var(--fgColor-muted)]">Đã có điểm chấm lại. Muốn đổi, nhập lại điểm bên dưới.</p>
       ) : (
-        <p className="text-sm text-muted">Chấm lại không xem điểm lần đầu. Điểm sẽ hiện sau khi lưu.</p>
+        <p className="text-sm text-[var(--fgColor-muted)]">Chấm lại không xem điểm lần đầu. Điểm sẽ hiện sau khi lưu.</p>
       )}
 
       {savedPoints !== null && !isFirstGrader && (

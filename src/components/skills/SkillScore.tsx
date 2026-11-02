@@ -14,5 +14,5 @@ export function skillCellClass(percent: number | null): string {
   if (band === 'good') return 'bg-mint text-mint-ink';
   if (band === 'mid') return 'bg-butter text-butter-ink';
   if (band === 'low') return 'bg-blush text-blush-ink';
-  return 'bg-stone text-stone-ink';
+  return 'bg-[var(--bgColor-muted)] text-[var(--fgColor-muted)]';
 }

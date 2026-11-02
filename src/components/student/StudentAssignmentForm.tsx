@@ -1,6 +1,6 @@
 'use client';
 
-import { Paperclip, X } from 'lucide-react';
+import { ArrowLeftIcon, PaperclipIcon, XIcon } from '@primer/octicons-react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useState, useTransition } from 'react';
@@ -83,13 +83,14 @@ export function StudentAssignmentForm({ view }: { view: StudentAssignmentView })
     return (
       <div className="flex flex-col gap-4 py-2">
         <div className="mx-auto flex w-full max-w-[420px] items-center justify-between text-xs">
-          <Link href="/cua-toi" className="font-bold text-ink underline">
-            ← Danh sách bài
+          <Link href="/cua-toi" data-link="true" className="inline-flex items-center gap-1 font-bold text-[var(--fgColor-default)] underline">
+            <ArrowLeftIcon size={14} aria-hidden /> Danh sách bài
           </Link>
           <button
             type="button"
+            data-link="true"
             onClick={() => setIsInteractive(false)}
-            className="font-bold text-muted hover:text-ink underline"
+            className="font-bold text-[var(--fgColor-muted)] underline hover:text-[var(--fgColor-default)]"
           >
             📋 Chuyển sang dạng danh sách
           </button>
@@ -102,8 +103,12 @@ export function StudentAssignmentForm({ view }: { view: StudentAssignmentView })
   return (
     <section className="flex flex-col gap-4">
       <div className="flex flex-col gap-2">
-        <Link href="/cua-toi" className="text-sm font-semibold text-ink-2 underline underline-offset-4">
-          ← Bài của tôi
+        <Link
+          href="/cua-toi"
+          data-link="true"
+          className="inline-flex items-center gap-1 self-start text-sm font-semibold text-[var(--fgColor-muted)] underline underline-offset-4 hover:text-[var(--fgColor-default)]"
+        >
+          <ArrowLeftIcon size={14} aria-hidden /> Bài của tôi
         </Link>
         <PageHeader
           crumbs={['Khu học sinh', 'Bài của tôi']}
@@ -124,14 +129,12 @@ export function StudentAssignmentForm({ view }: { view: StudentAssignmentView })
         {view.description && <Notice className="whitespace-pre-line">{view.description}</Notice>}
       </div>
 
-      {error && (
-        <Alert>
-          {error}
-        </Alert>
-      )}
+      {error && <Alert>{error}</Alert>}
 
       {view.items.length === 0 ? (
-        <p className="rounded-[var(--radius-panel)] bg-surface p-4 text-base text-ink-2 shadow-card">Bài này chưa có câu hỏi. Hỏi giáo viên để biết cách nộp.</p>
+        <Card>
+          <p className="text-base text-[var(--fgColor-muted)]">Bài này chưa có câu hỏi. Hỏi giáo viên để biết cách nộp.</p>
+        </Card>
       ) : (
         view.items.map((item) => {
           const d = drafts[item.id];
@@ -139,15 +142,15 @@ export function StudentAssignmentForm({ view }: { view: StudentAssignmentView })
           return (
             <Card as="section" key={item.id} aria-label={`Câu ${item.position}`}>
               <header className="flex flex-wrap items-center gap-2 text-sm">
-                <b className="text-base text-ink">Câu {item.position}</b>
+                <b className="text-base text-[var(--fgColor-default)]">Câu {item.position}</b>
                 <Pill tone="lav">{SKILL_LABELS[item.skill]}</Pill>
-                <span className="text-muted">
+                <span className="text-[var(--fgColor-muted)]">
                   {ITEM_TYPE_LABELS[item.itemType]} · {item.points} điểm
                 </span>
               </header>
 
-              {item.prompt && <p className="whitespace-pre-line text-base text-ink font-bold">{item.prompt}</p>}
-              {item.promptVi && <p className="text-xs text-muted">🇻🇳 {item.promptVi}</p>}
+              {item.prompt && <p className="whitespace-pre-line text-base font-bold text-[var(--fgColor-default)]">{item.prompt}</p>}
+              {item.promptVi && <p className="text-xs text-[var(--fgColor-muted)]">🇻🇳 {item.promptVi}</p>}
               {item.passage && <Notice className="whitespace-pre-line">{item.passage}</Notice>}
               {item.audioFileId !== null && (
                 <audio controls preload="none" src={`/api/files/${item.audioFileId}`} aria-label={`Âm thanh câu ${item.position}`} className="w-full" />
@@ -156,16 +159,19 @@ export function StudentAssignmentForm({ view }: { view: StudentAssignmentView })
               {/* Trắc nghiệm chữ */}
               {item.itemType === 'choice' && (
                 <fieldset className="flex flex-col gap-1">
-                  <legend className="mb-1 text-sm font-normal text-ink-2">Chọn một đáp án</legend>
+                  <legend className="mb-1 text-sm font-normal text-[var(--fgColor-muted)]">Chọn một đáp án</legend>
                   {item.options.map((o, oi) => (
-                    <label key={o.id} className="flex cursor-pointer items-center gap-2.5 rounded-[var(--radius-ctl)] px-2 py-2 text-base text-ink hover:bg-stone">
+                    <label
+                      key={o.id}
+                      className="flex cursor-pointer items-center gap-2.5 rounded-[var(--borderRadius-medium)] px-2 py-2 text-base text-[var(--fgColor-default)] transition-colors hover:bg-[var(--bgColor-muted)]"
+                    >
                       <input
                         type="radio"
                         name={`answer-${item.id}`}
                         checked={d.selectedOptionId === o.id}
                         onChange={() => patch(item.id, { selectedOptionId: o.id })}
                         disabled={locked}
-                        className="size-4 shrink-0 accent-[var(--primary-deep)]"
+                        className="size-4 shrink-0 accent-[var(--fgColor-accent)]"
                       />
                       <span className="min-w-0">
                         {String.fromCharCode(65 + oi)}. {o.label}
@@ -178,15 +184,17 @@ export function StudentAssignmentForm({ view }: { view: StudentAssignmentView })
               {/* Nghe / Chọn tranh */}
               {item.itemType === 'picture_choice' && (
                 <fieldset className="flex flex-col gap-2">
-                  <legend className="mb-1 text-sm font-normal text-ink-2">Chọn tranh đúng</legend>
+                  <legend className="mb-1 text-sm font-normal text-[var(--fgColor-muted)]">Chọn tranh đúng</legend>
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                     {item.options.map((o) => {
                       const isSel = d.selectedOptionId === o.id;
                       return (
                         <label
                           key={o.id}
-                          className={`flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 p-3 text-center transition-all ${
-                            isSel ? 'border-[var(--accent)] bg-[var(--mint)] text-[var(--mint-ink)] font-bold' : 'border-line bg-surface hover:bg-stone text-ink'
+                          className={`flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 p-3 text-center transition-all ${
+                            isSel
+                              ? 'border-[var(--bgColor-success-emphasis)] bg-mint font-bold text-mint-ink'
+                              : 'border-[var(--borderColor-default)] bg-[var(--bgColor-default)] text-[var(--fgColor-default)] hover:bg-[var(--bgColor-muted)]'
                           }`}
                         >
                           <input
@@ -203,8 +211,8 @@ export function StudentAssignmentForm({ view }: { view: StudentAssignmentView })
                           ) : (
                             <span className="text-4xl">🖼️</span>
                           )}
-                          <span className="mt-1 text-xs truncate max-w-full">{o.label}</span>
-                          {isSel && <span className="mt-1 text-xs font-bold text-[var(--accent)]">✓ Đã chọn</span>}
+                          <span className="mt-1 max-w-full truncate text-xs">{o.label}</span>
+                          {isSel && <span className="mt-1 text-xs font-bold text-[var(--fgColor-success)]">✓ Đã chọn</span>}
                         </label>
                       );
                     })}
@@ -216,7 +224,12 @@ export function StudentAssignmentForm({ view }: { view: StudentAssignmentView })
               {item.itemType === 'order' && item.orderWords.length > 0 && (
                 <p className="flex flex-wrap gap-1.5" aria-label={`Các từ câu ${item.position}`}>
                   {item.orderWords.map((w, k) => (
-                    <span key={k} className="rounded-lg border border-line bg-stone/40 px-2 py-1 text-sm font-bold text-ink">{w}</span>
+                    <span
+                      key={k}
+                      className="rounded-[var(--borderRadius-small)] border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]/60 px-2 py-1 text-sm font-bold text-[var(--fgColor-default)]"
+                    >
+                      {w}
+                    </span>
                   ))}
                 </p>
               )}
@@ -236,17 +249,27 @@ export function StudentAssignmentForm({ view }: { view: StudentAssignmentView })
               {/* Ghép đôi */}
               {item.itemType === 'match' && (
                 <div className="flex flex-col gap-2">
-                  <span className="text-xs font-bold text-muted">Ghép mỗi ô bên trái với một ô bên phải:</span>
+                  <span className="text-xs font-bold text-[var(--fgColor-muted)]">Ghép mỗi ô bên trái với một ô bên phải:</span>
                   {/* Hai cột xáo riêng theo từng học sinh, không hiện sẵn cặp đúng */}
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <ul className="flex flex-col gap-1.5" aria-label={`Cột trái câu ${item.position}`}>
                       {item.matchLeft.map((s, k) => (
-                        <li key={k} className="rounded-lg border border-line bg-stone/40 p-2 font-bold text-ink">{k + 1}. {s.label}</li>
+                        <li
+                          key={k}
+                          className="rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]/60 p-2 font-bold text-[var(--fgColor-default)]"
+                        >
+                          {k + 1}. {s.label}
+                        </li>
                       ))}
                     </ul>
                     <ul className="flex flex-col gap-1.5" aria-label={`Cột phải câu ${item.position}`}>
                       {item.matchRight.map((s, k) => (
-                        <li key={k} className="rounded-lg border border-line bg-stone/40 p-2 font-bold text-ink">{String.fromCharCode(65 + k)}. {s.label}</li>
+                        <li
+                          key={k}
+                          className="rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]/60 p-2 font-bold text-[var(--fgColor-default)]"
+                        >
+                          {String.fromCharCode(65 + k)}. {s.label}
+                        </li>
                       ))}
                     </ul>
                   </div>
@@ -280,22 +303,26 @@ export function StudentAssignmentForm({ view }: { view: StudentAssignmentView })
               {/* Nộp tệp hoặc Ghi âm */}
               {(item.itemType === 'file' || item.itemType === 'speak_repeat' || item.itemType === 'speak_read' || item.itemType === 'speak_picture') && (
                 <div className="flex flex-col gap-2">
-                  <span className="text-sm font-normal text-ink-2">
+                  <span className="text-sm font-normal text-[var(--fgColor-muted)]">
                     {item.itemType === 'file' ? 'Tệp bài làm' : 'Bản ghi âm bài nói'}
                   </span>
                   {d.fileId !== null ? (
                     <div className="flex flex-wrap items-center gap-2 text-sm">
-                      <Paperclip className="size-4 text-muted" aria-hidden />
-                      <span className="text-ink">{d.fileName || `Tệp ghi âm #${d.fileId}`}</span>
+                      <PaperclipIcon size={16} className="text-[var(--fgColor-muted)]" aria-hidden />
+                      <span className="text-[var(--fgColor-default)]">{d.fileName || `Tệp ghi âm #${d.fileId}`}</span>
                       {!locked && (
-                        <ActIcon label={`Bỏ tệp của câu ${item.position}`} onClick={() => patch(item.id, { fileId: null, fileName: null })}>
-                          <X className="size-4" aria-hidden />
-                        </ActIcon>
+                        <ActIcon
+                          label={`Bỏ tệp của câu ${item.position}`}
+                          icon={XIcon}
+                          onClick={() => patch(item.id, { fileId: null, fileName: null })}
+                        />
                       )}
                     </div>
                   ) : item.itemType !== 'file' && !view.voice.allowed ? (
-                    <span className="text-sm text-muted">
-                      {view.voice.needsChild ? 'Mở bài ở dạng từng câu để con bấm đồng ý ghi âm.' : 'Câu này cần ghi âm, phụ huynh chưa đồng ý cho con ghi âm. Bỏ qua câu này.'}
+                    <span className="text-sm text-[var(--fgColor-muted)]">
+                      {view.voice.needsChild
+                        ? 'Mở bài ở dạng từng câu để con bấm đồng ý ghi âm.'
+                        : 'Câu này cần ghi âm, phụ huynh chưa đồng ý cho con ghi âm. Bỏ qua câu này.'}
                     </span>
                   ) : (
                     <FileInput
@@ -322,7 +349,7 @@ export function StudentAssignmentForm({ view }: { view: StudentAssignmentView })
               )}
 
               {locked && item.itemType !== 'choice' && answer && (
-                <small className="text-sm text-ink-2">
+                <small className="text-sm text-[var(--fgColor-muted)]">
                   Điểm: {answer.points ?? 'chưa chấm'} / {item.points}
                   {answer.comment ? ` · Nhận xét: ${answer.comment}` : ''}
                 </small>

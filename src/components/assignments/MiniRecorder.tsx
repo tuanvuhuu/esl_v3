@@ -2,7 +2,7 @@
 
 // Ghi âm gọn cho giáo viên (giọng mẫu của một lỗi bài nói): bấm ghi, bấm dừng (tự dừng sau maxSec), tự tải lên.
 // Dùng chung cách chọn định dạng với bộ ghi âm của học sinh (src/lib/recording.ts).
-import { Mic, Square, Trash2 } from 'lucide-react';
+import { BroadcastIcon, SquareFillIcon, TrashIcon } from '@primer/octicons-react';
 import { useEffect, useRef, useState } from 'react';
 import { clock, pickRecordingFormat, recordedFormat } from '@/lib/recording';
 import { uploadAsStaff } from '@/lib/upload-client';
@@ -64,22 +64,18 @@ export function MiniRecorder({ fileId, label, maxSec = 10, disabled, onChange }:
     <div className="flex flex-col gap-1.5">
       <div className="flex flex-wrap items-center gap-2">
         {phase === 'recording' ? (
-          <Btn onClick={() => recorderRef.current?.stop()} aria-label="Dừng ghi giọng mẫu">
-            <Square className="size-4 text-blush-ink" aria-hidden />
+          <Btn onClick={() => recorderRef.current?.stop()} aria-label="Dừng ghi giọng mẫu" leadingVisual={<SquareFillIcon size={16} className="text-blush-ink" aria-hidden />}>
             Dừng {clock(seconds)}
           </Btn>
         ) : (
-          <Btn onClick={start} disabled={disabled || phase === 'uploading'}>
-            <Mic className="size-4" aria-hidden />
+          <Btn leadingVisual={BroadcastIcon} onClick={start} disabled={disabled || phase === 'uploading'}>
             {phase === 'uploading' ? 'Đang lưu…' : fileId ? 'Ghi lại giọng mẫu' : label}
           </Btn>
         )}
         {fileId !== null && phase === 'idle' && (
           <>
             <audio controls preload="none" src={`/api/files/${fileId}`} aria-label="Giọng mẫu đã ghi" className="h-[var(--ctl-h)] max-w-full" />
-            <ActIcon label="Bỏ giọng mẫu" danger onClick={() => onChange(null)} disabled={disabled}>
-              <Trash2 className="size-4" aria-hidden />
-            </ActIcon>
+            <ActIcon label="Bỏ giọng mẫu" danger icon={TrashIcon} onClick={() => onChange(null)} disabled={disabled} />
           </>
         )}
       </div>

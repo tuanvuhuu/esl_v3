@@ -1,12 +1,11 @@
 'use client';
 
-import { LayoutGrid } from 'lucide-react';
+import { AppsIcon } from '@primer/octicons-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { isActivePath, type NavItem } from '@/lib/nav';
 import { NAV_ICONS } from './nav-icons';
 
-// Thanh tab dưới đáy (điện thoại). Nút giữa mở bảng Tính năng. Tab đã lọc theo quyền ở layout (task 9.2).
 export function MobileTabBar({ tabs, onFeatures }: { tabs: NavItem[]; onFeatures: () => void }) {
   const pathname = usePathname();
   const left = tabs.slice(0, 2);
@@ -15,7 +14,7 @@ export function MobileTabBar({ tabs, onFeatures }: { tabs: NavItem[]; onFeatures
   return (
     <nav
       aria-label="Điều hướng nhanh"
-      className="fixed inset-x-0 bottom-0 z-40 hidden grid-cols-5 items-end border-t border-line bg-glass px-2 pb-[calc(8px+var(--safe-b))] pt-2 backdrop-blur-md max-[767px]:grid"
+      className="fixed inset-x-0 bottom-0 z-40 hidden grid-cols-5 items-end border-t border-[var(--borderColor-default)] bg-[var(--bgColor-default)]/95 px-2 pb-[calc(8px+var(--safe-b))] pt-1.5 backdrop-blur-md max-[767px]:grid"
     >
       {left.map((item) => (
         <TabLink key={item.href} item={item} active={isActivePath(pathname, item.href)} />
@@ -25,9 +24,9 @@ export function MobileTabBar({ tabs, onFeatures }: { tabs: NavItem[]; onFeatures
           type="button"
           onClick={onFeatures}
           aria-label="Tính năng"
-          className="-translate-y-4 grid size-14 place-items-center rounded-full bg-primary-deep text-on-primary shadow-[0_16px_30px_-10px_rgba(240,183,58,0.55)] active:translate-y-[-14px] active:scale-95"
+          className="-translate-y-3.5 grid size-13 place-items-center rounded-full border border-[var(--button-primary-borderColor-rest)] bg-[var(--button-primary-bgColor-rest)] text-[var(--button-primary-fgColor-rest)] shadow-[var(--shadow-floating-medium,0_8px_20px_rgba(0,0,0,0.18))] active:scale-95"
         >
-          <LayoutGrid className="size-6" aria-hidden />
+          <AppsIcon size={22} aria-hidden />
         </button>
       </div>
       {right.map((item) => (
@@ -43,10 +42,16 @@ function TabLink({ item, active }: { item: NavItem; active: boolean }) {
     <Link
       href={item.href}
       aria-current={active ? 'page' : undefined}
-      className={`flex min-h-14 min-w-0 flex-col items-center gap-1 pt-1.5 text-center text-2xs font-semibold ${active ? 'text-ink' : 'text-muted'}`}
+      className={`flex min-h-13 min-w-0 flex-col items-center gap-1 pt-1 text-center text-2xs font-semibold ${
+        active ? 'text-[var(--fgColor-default)]' : 'text-[var(--fgColor-muted)]'
+      }`}
     >
-      <span className={`grid h-7 w-13 place-items-center rounded-full transition-colors ${active ? 'bg-primary-soft' : ''}`}>
-        <Icon className="size-[18px]" aria-hidden />
+      <span
+        className={`grid h-7 w-12 place-items-center rounded-full transition-colors ${
+          active ? 'bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-accent)]' : ''
+        }`}
+      >
+        <Icon size={18} aria-hidden />
       </span>
       <span className="truncate">{item.label}</span>
     </Link>

@@ -2,10 +2,24 @@
 
 // Đồng ý của phụ huynh trong hồ sơ học sinh (P35.12). Mỗi mục đích một dòng: trạng thái, ai đồng ý, qua kênh nào, lúc nào.
 // Máy tính: nút ⋯ mở menu có icon. Điện thoại: hàng nút có chữ. Rút lại luôn qua hộp xác nhận.
-import { FileCheck, Send, Undo2 } from 'lucide-react';
+import { CheckCircleIcon, HistoryIcon, PaperAirplaneIcon } from '@primer/octicons-react';
 import { useEffect, useState, useTransition } from 'react';
-import { loadConsentsAction, recordConsentAction, requestConsentAction, withdrawConsentAction, type ConsentLoad } from '@/app/(app)/hoc-sinh/consent-actions';
-import { CONSENT_LABELS, CONSENT_PURPOSES, CONSENT_STATUS_LABELS, CONSENT_TERMS, consentStatus, type ConsentPurpose, type ConsentStatus } from '@/lib/consent';
+import {
+  loadConsentsAction,
+  recordConsentAction,
+  requestConsentAction,
+  withdrawConsentAction,
+  type ConsentLoad,
+} from '@/app/(app)/hoc-sinh/consent-actions';
+import {
+  CONSENT_LABELS,
+  CONSENT_PURPOSES,
+  CONSENT_STATUS_LABELS,
+  CONSENT_TERMS,
+  consentStatus,
+  type ConsentPurpose,
+  type ConsentStatus,
+} from '@/lib/consent';
 import { vnDateTimeLabel } from '@/lib/datetime';
 import { Btn } from '@/components/ui/Btn';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
@@ -54,28 +68,45 @@ export function ConsentPanel({ studentId }: { studentId: number }) {
 
   return (
     <Panel title="Đồng ý của phụ huynh" className="flex flex-col gap-3">
-      <p className="text-base text-ink-2">Học sinh chỉ ghi âm được khi phụ huynh đã đồng ý. Trẻ từ 7 tuổi sẽ được hỏi thêm trong khu học sinh.</p>
-      {error && <Alert inline>{error}</Alert>}
-      {!data && !error && <div className="h-16 animate-pulse rounded-[var(--radius-ctl)] bg-stone" aria-busy="true" aria-label="Đang tải" />}
+      <p className="text-sm text-[var(--fgColor-muted)]">
+        Học sinh chỉ ghi âm được khi phụ huynh đã đồng ý. Trẻ từ 7 tuổi sẽ được hỏi thêm trong khu học sinh.
+      </p>
+      {error && <Alert inline className="mt-2">{error}</Alert>}
+      {!data && !error && (
+        <div className="mt-2 h-16 animate-pulse rounded-[var(--borderRadius-medium)] bg-[var(--bgColor-muted)]" aria-busy="true" aria-label="Đang tải" />
+      )}
       {data && (
-        <ul className="flex flex-col">
+        <ul className="mt-1 flex flex-col">
           {CONSENT_PURPOSES.map((purpose) => {
             const { status, row } = consentStatus(data.entries, purpose);
             const entry = row ? data.entries.find((e) => e === row) : undefined;
             const menu: RowMenuItem[] = [
-              { kind: 'action', label: 'Gửi yêu cầu qua Telegram', icon: Send, onSelect: () => run(() => requestConsentAction(studentId, purpose)), disabled: linkedCount === 0, disabledHint: 'Chưa có phụ huynh kết nối Telegram' },
-              { kind: 'action', label: 'Ghi nhận đồng ý', icon: FileCheck, onSelect: () => setRecording(purpose) },
-              ...(status === 'granted' ? [{ kind: 'action' as const, label: 'Rút lại đồng ý', icon: Undo2, danger: true, onSelect: () => setWithdrawing(purpose) }] : []),
+              {
+                kind: 'action',
+                label: 'Gửi yêu cầu qua Telegram',
+                icon: PaperAirplaneIcon,
+                onSelect: () => run(() => requestConsentAction(studentId, purpose)),
+                disabled: linkedCount === 0,
+                disabledHint: 'Chưa có phụ huynh kết nối Telegram',
+              },
+              { kind: 'action', label: 'Ghi nhận đồng ý', icon: CheckCircleIcon, onSelect: () => setRecording(purpose) },
+              ...(status === 'granted'
+                ? [{ kind: 'action' as const, label: 'Rút lại đồng ý', icon: HistoryIcon, danger: true, onSelect: () => setWithdrawing(purpose) }]
+                : []),
             ];
             return (
-              <li key={purpose} aria-label={CONSENT_LABELS[purpose]} className="flex flex-col gap-2 border-b border-line py-3 last:border-b-0 min-[768px]:flex-row min-[768px]:items-center min-[768px]:justify-between">
+              <li
+                key={purpose}
+                aria-label={CONSENT_LABELS[purpose]}
+                className="flex flex-col gap-2 border-b border-[var(--borderColor-muted)] py-3 last:border-b-0 min-[768px]:flex-row min-[768px]:items-center min-[768px]:justify-between"
+              >
                 <div className="flex min-w-0 flex-col gap-1">
                   <span className="flex flex-wrap items-center gap-2">
-                    <b className="text-base font-semibold text-ink">{CONSENT_LABELS[purpose]}</b>
+                    <b className="text-sm font-semibold text-[var(--fgColor-default)]">{CONSENT_LABELS[purpose]}</b>
                     <Pill tone={TONE[status]}>{CONSENT_STATUS_LABELS[status]}</Pill>
                   </span>
                   {entry ? (
-                    <span className="text-sm text-muted">
+                    <span className="text-xs text-[var(--fgColor-muted)]">
                       {entry.parentName ? `${entry.parentName} · ` : ''}
                       {CHANNEL[entry.channel] ?? entry.channel} · {vnDateTimeLabel(entry.decidedAt)}
                       {entry.withdrawnAt ? ` · rút lại ${vnDateTimeLabel(entry.withdrawnAt)}` : ''}
@@ -83,7 +114,7 @@ export function ConsentPanel({ studentId }: { studentId: number }) {
                       {entry.note ? ` · ${entry.note}` : ''}
                     </span>
                   ) : (
-                    <span className="text-sm text-muted">Chưa hỏi phụ huynh.</span>
+                    <span className="text-xs text-[var(--fgColor-muted)]">Chưa hỏi phụ huynh.</span>
                   )}
                 </div>
                 {data.canEdit && (
@@ -92,18 +123,19 @@ export function ConsentPanel({ studentId }: { studentId: number }) {
                       <RowMenu label={`Thao tác: ${CONSENT_LABELS[purpose]}`} items={menu} />
                     </div>
                     <div className="grid grid-cols-2 gap-2 min-[768px]:hidden">
-                      <Btn onClick={() => run(() => requestConsentAction(studentId, purpose))} disabled={pending || linkedCount === 0}>
-                        <Send className="size-4" aria-hidden />
+                      <Btn
+                        leadingVisual={PaperAirplaneIcon}
+                        onClick={() => run(() => requestConsentAction(studentId, purpose))}
+                        disabled={pending || linkedCount === 0}
+                      >
                         Gửi Telegram
                       </Btn>
                       {status === 'granted' ? (
-                        <Btn variant="danger" onClick={() => setWithdrawing(purpose)} disabled={pending}>
-                          <Undo2 className="size-4" aria-hidden />
+                        <Btn variant="danger" leadingVisual={HistoryIcon} onClick={() => setWithdrawing(purpose)} disabled={pending}>
                           Rút lại
                         </Btn>
                       ) : (
-                        <Btn onClick={() => setRecording(purpose)} disabled={pending}>
-                          <FileCheck className="size-4" aria-hidden />
+                        <Btn leadingVisual={CheckCircleIcon} onClick={() => setRecording(purpose)} disabled={pending}>
                           Ghi nhận
                         </Btn>
                       )}
@@ -116,7 +148,9 @@ export function ConsentPanel({ studentId }: { studentId: number }) {
         </ul>
       )}
       {data && data.canEdit && linkedCount === 0 && (
-        <Notice>Chưa có phụ huynh nào kết nối Telegram nên chưa gửi yêu cầu qua bot được. Có thể ghi nhận đồng ý bằng giấy hoặc qua điện thoại.</Notice>
+        <Notice className="mt-2">
+          Chưa có phụ huynh nào kết nối Telegram nên chưa gửi yêu cầu qua bot được. Có thể ghi nhận đồng ý bằng giấy hoặc qua điện thoại.
+        </Notice>
       )}
 
       {data && recording && (
@@ -138,7 +172,11 @@ export function ConsentPanel({ studentId }: { studentId: number }) {
       <ConfirmDialog
         open={!!withdrawing}
         title="Rút lại đồng ý?"
-        text={withdrawing ? `${CONSENT_LABELS[withdrawing]}: học sinh sẽ không ghi âm được nữa. Bản ghi đã có giữ nguyên cho tới khi phụ huynh yêu cầu xoá.` : ''}
+        text={
+          withdrawing
+            ? `${CONSENT_LABELS[withdrawing]}: học sinh sẽ không ghi âm được nữa. Bản ghi đã có giữ nguyên cho tới khi phụ huynh yêu cầu xoá.`
+            : ''
+        }
         confirmLabel="Rút lại"
         pending={pending}
         onCancel={() => setWithdrawing(null)}
@@ -182,7 +220,13 @@ function RecordDialog({
         ) : (
           <>
             <Field label="Phụ huynh">
-              <SelectPanel label="Phụ huynh đồng ý" block value={parentId} onChange={setParentId} options={parents.map((p) => ({ value: String(p.id), label: p.name }))} />
+              <SelectPanel
+                label="Phụ huynh đồng ý"
+                block
+                value={parentId}
+                onChange={setParentId}
+                options={parents.map((p) => ({ value: String(p.id), label: p.name }))}
+              />
             </Field>
             <Field label="Ý kiến">
               <ChipGroup label="Ý kiến của phụ huynh">
@@ -201,7 +245,7 @@ function RecordDialog({
         )}
         <FormFooter>
           <Btn onClick={onClose}>Huỷ</Btn>
-          <Btn variant="primary" disabled={pending || parents.length === 0} onClick={() => onSave({ parentId: Number(parentId), granted, note })}>
+          <Btn variant="primary" loading={pending} disabled={pending || parents.length === 0} onClick={() => onSave({ parentId: Number(parentId), granted, note })}>
             {pending ? 'Đang lưu…' : 'Lưu'}
           </Btn>
         </FormFooter>

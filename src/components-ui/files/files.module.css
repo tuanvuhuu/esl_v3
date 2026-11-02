@@ -1,0 +1,30 @@
+.files_box3 {
+  border-style: solid;
+  border-width: 1px;
+  border-radius: var(--radius-2);
+  border-color: var(--app-border-default);
+}
+
+button.files_iconButton.files_iconButton {
+  top: 0px;
+  right: 0px;
+  position: absolute;
+  background-color: transparent;
+  height: 28px;
+  width: 28px;
+  padding: var(--space-0);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+button.files_iconButton2.files_iconButton2 {
+  margin-top: -5px;
+}
+
+/* ---- chuyển từ sx (codemod) ---- */
+
+.files_linkS3.files_linkS3 {
+  display: flex;
+}

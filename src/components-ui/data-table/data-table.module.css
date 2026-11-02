@@ -1,0 +1,9 @@
+.toolbar_text {
+  font-weight: 600;
+  font-size: 24px;
+}
+
+.toolbar_text2 {
+  color: var(--app-fg-muted);
+  font-size: 0.7875rem;
+}

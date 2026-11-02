@@ -4,7 +4,8 @@ import { startTransition, useActionState, type FormEvent } from 'react';
 import { createTeacherAction, updateTeacherAction, type TeacherFormValues } from '@/app/(app)/giao-vien/actions';
 import { STAFF_ROLES, STAFF_ROLE_LABELS, TEACHER_STATUSES, TEACHER_STATUS_LABELS } from '@/lib/validation/teacher';
 import type { ActionResult } from '@/lib/validation/student';
-import { Field, FORM_BTN_CANCEL, FORM_BTN_SUBMIT, inputClass, FormFooter } from '@/components/ui/Field';
+import { Btn } from '@/components/ui/Btn';
+import { Field, inputClass, FormFooter } from '@/components/ui/Field';
 import { SelectPanel } from '@/components/ui/SelectPanel';
 import { Alert } from '@/components/ui/primitives';
 
@@ -100,10 +101,10 @@ export function TeacherForm({
       </Field>
 
       <FormFooter className="col-span-full">
-        <button type="button" onClick={onCancel} className={FORM_BTN_CANCEL}>Huỷ</button>
-        <button type="submit" disabled={pending} className={FORM_BTN_SUBMIT}>
+        <Btn onClick={onCancel}>Huỷ</Btn>
+        <Btn type="submit" variant="primary" loading={pending} disabled={pending}>
           {pending ? 'Đang lưu…' : mode === 'edit' ? 'Lưu thay đổi' : 'Lưu giáo viên'}
-        </button>
+        </Btn>
       </FormFooter>
     </form>
   );

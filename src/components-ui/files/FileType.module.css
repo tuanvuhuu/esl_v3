@@ -1,0 +1,12 @@
+.icon{
+    /* height: 16px;
+    margin-top: 4px; */
+    height: 100%;
+}
+
+/* ---- chuyển từ sx (codemod) ---- */
+
+.fileType_box {
+  height: 16px;
+  margin-top: 4px;
+}

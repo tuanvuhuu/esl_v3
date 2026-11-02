@@ -1,0 +1,24 @@
+/* Chuyển từ sx (codemod). Có thể đổi tên class cho rõ nghĩa hơn khi sửa tới. */
+
+.filesView_box {
+  height: 16px;
+  width: 16px;
+  background-size: cover;
+  background-position: center;
+  border-radius: var(--radius-1);
+  border-color: var(--app-accent-emphasis);
+}
+
+.filesView_box_isHovered {
+  border: 1px solid;
+}
+
+a.filesView_link {
+  text-decoration: none;
+  color: var(--app-fg-default);
+  text-align: left;
+}
+
+button.filesView_iconButton.filesView_iconButton.filesView_iconButton {
+  margin-top: calc(-1 * var(--space-1));
+}

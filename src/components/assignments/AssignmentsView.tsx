@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { BarChart3, ClipboardCheck, Library, Pencil, Plus, Sparkles, Trash2 } from 'lucide-react';
+import { ChecklistIcon, GraphIcon, LibraryIcon, PencilIcon, PlusIcon, SparklesFillIcon, TrashIcon } from '@primer/octicons-react';
 import { useRouter } from 'next/navigation';
 import { useCallback, useState, useTransition } from 'react';
 import { deleteAssignmentAction, loadAssignmentForm, type AssignmentFormValues } from '@/app/(app)/bai-tap/actions';
@@ -10,7 +10,7 @@ import { FormFooter } from '@/components/ui/Field';
 import { STARTERS_SET } from '@/lib/sample-sets';
 import type { AssignmentRow } from '@/lib/queries/assignments';
 import { addDaysKey, todayKeyVN, vnDateTimeLabel } from '@/lib/datetime';
-import { BTN_BASE, Btn } from '@/components/ui/Btn';
+import { BTN_BASE, BTN_PRIMARY, Btn } from '@/components/ui/Btn';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { SelectPanel } from '@/components/ui/SelectPanel';
 import { Modal } from '@/components/ui/Modal';
@@ -73,9 +73,9 @@ export function AssignmentsView({
   }
 
   const menuItems = (row: AssignmentRow): RowMenuItem[] => [
-    { kind: 'link', href: `/bai-tap/${row.id}`, label: 'Chấm điểm', icon: ClipboardCheck },
-    { kind: 'action', label: 'Sửa', icon: Pencil, onSelect: () => openEdit(row), disabled: !canManage, disabledHint: 'Không có quyền quản lý bài tập' },
-    { kind: 'action', label: 'Xoá', icon: Trash2, danger: true, onSelect: () => setToDelete(row), disabled: !canManage, disabledHint: 'Không có quyền quản lý bài tập' },
+    { kind: 'link', href: `/bai-tap/${row.id}`, label: 'Chấm điểm', icon: ChecklistIcon },
+    { kind: 'action', label: 'Sửa', icon: PencilIcon, onSelect: () => openEdit(row), disabled: !canManage, disabledHint: 'Không có quyền quản lý bài tập' },
+    { kind: 'action', label: 'Xoá', icon: TrashIcon, danger: true, onSelect: () => setToDelete(row), disabled: !canManage, disabledHint: 'Không có quyền quản lý bài tập' },
   ];
 
   const cls = classes.find((c) => c.id === classId);
@@ -99,23 +99,19 @@ export function AssignmentsView({
         actions={
           canManage && (
             <div className="flex flex-wrap gap-2.5">
-              <Btn variant="ghost" onClick={() => router.push(`/bao-cao-ky-nang?cls=${classId}`)} disabled={classes.length === 0}>
-                <BarChart3 className="size-4" aria-hidden />
+              <Btn variant="ghost" leadingVisual={GraphIcon} onClick={() => router.push(`/bao-cao-ky-nang?cls=${classId}`)} disabled={classes.length === 0}>
                 Báo cáo kỹ năng
               </Btn>
-              <Btn variant="ghost" onClick={() => router.push('/ngan-hang-cau-hoi')}>
-                <Library className="size-4" aria-hidden />
+              <Btn variant="ghost" leadingVisual={LibraryIcon} onClick={() => router.push('/ngan-hang-cau-hoi')}>
                 Ngân hàng câu hỏi
               </Btn>
               {classes.length > 0 && (
-                <Btn variant="ghost" onClick={() => setSampleOpen(true)}>
-                  <Sparkles className="size-4" aria-hidden />
+                <Btn variant="ghost" leadingVisual={SparklesFillIcon} onClick={() => setSampleOpen(true)}>
                   Bộ bài mẫu
                 </Btn>
               )}
               {classes.length > 0 && (
-                <Btn variant="primary" onClick={() => setCreating(true)}>
-                  <Plus className="size-4" aria-hidden />
+                <Btn variant="primary" leadingVisual={PlusIcon} onClick={() => setCreating(true)}>
                   Thêm bài tập
                 </Btn>
               )}
@@ -146,9 +142,9 @@ export function AssignmentsView({
                 <Card key={row.id}>
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <Link href={`/bai-tap/${row.id}`} scroll={false} className="block truncate text-base font-extrabold text-ink hover:underline">{row.title}</Link>
-                      <small className="block text-sm text-muted">Hạn {vnDateTimeLabel(new Date(row.dueAt))} · tối đa {row.maxScore} điểm</small>
-                      {row.lessonTitle && <small className="block truncate text-sm text-ink-2">Bài giảng: {row.lessonTitle}</small>}
+                      <Link href={`/bai-tap/${row.id}`} scroll={false} className="block truncate text-base font-extrabold text-[var(--fgColor-default)] hover:underline">{row.title}</Link>
+                      <small className="block text-sm text-[var(--fgColor-muted)]">Hạn {vnDateTimeLabel(new Date(row.dueAt))} · tối đa {row.maxScore} điểm</small>
+                      {row.lessonTitle && <small className="block truncate text-sm text-[var(--fgColor-muted)]">Bài giảng: {row.lessonTitle}</small>}
                     </div>
                     <div className="hidden min-[768px]:block">
                       <RowMenu label={`Thao tác với bài ${row.title}`} items={menuItems(row)} />
@@ -156,21 +152,19 @@ export function AssignmentsView({
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
                     {row.overdue ? <Pill tone="blush">Quá hạn</Pill> : <Pill tone="stone">{new Date(row.dueAt) > new Date() ? 'Đang nhận bài' : 'Đã đóng'}</Pill>}
-                    <span className="text-sm text-ink-2">Đã nộp {row.done}/{row.enrolled} · Đã chấm {row.graded}</span>
+                    <span className="text-sm text-[var(--fgColor-muted)]">Đã nộp {row.done}/{row.enrolled} · Đã chấm {row.graded}</span>
                   </div>
                   <ProgressBar value={row.done} max={row.enrolled} />
                   {/* Điện thoại: ba nút có chữ, bằng nhau */}
                   <div className="grid grid-cols-3 gap-2 min-[768px]:hidden">
-                    <Link href={`/bai-tap/${row.id}`} scroll={false} className={`${BTN_BASE} bg-primary text-on-primary w-full`}>
-                      <ClipboardCheck className="size-4" aria-hidden />
+                    <Link href={`/bai-tap/${row.id}`} scroll={false} className={`${BTN_BASE} ${BTN_PRIMARY} w-full`}>
+                      <ChecklistIcon size={16} aria-hidden />
                       Chấm
                     </Link>
-                    <Btn block onClick={() => openEdit(row)} disabled={!canManage}>
-                      <Pencil className="size-4" aria-hidden />
+                    <Btn block leadingVisual={PencilIcon} onClick={() => openEdit(row)} disabled={!canManage}>
                       Sửa
                     </Btn>
-                    <Btn block variant="danger" onClick={() => setToDelete(row)} disabled={!canManage}>
-                      <Trash2 className="size-4" aria-hidden />
+                    <Btn block variant="danger" leadingVisual={TrashIcon} onClick={() => setToDelete(row)} disabled={!canManage}>
                       Xoá
                     </Btn>
                   </div>
@@ -212,17 +206,17 @@ export function AssignmentsView({
 
       <Modal open={sampleOpen} title={`Thêm ${STARTERS_SET.name} vào lớp ${cls?.name ?? ''}`} subtitle={STARTERS_SET.description} onClose={() => setSampleOpen(false)} labelledBy="sample-set-title">
         <div className="flex flex-col gap-3 pb-2">
-          <ul className="flex flex-col gap-1.5 text-base text-ink" aria-label="Nội dung bộ bài mẫu">
+          <ul className="flex flex-col gap-1.5 text-base text-[var(--fgColor-default)]" aria-label="Nội dung bộ bài mẫu">
             {STARTERS_SET.lessons.map((l) => (
               <li key={l.title}>
-                <b>{l.title}</b> <span className="text-sm text-muted">· {l.items.length} câu · {l.description}</span>
+                <b>{l.title}</b> <span className="text-sm text-[var(--fgColor-muted)]">· {l.items.length} câu · {l.description}</span>
               </li>
             ))}
             <li>
-              <b>Danh sách từ: {STARTERS_SET.wordList.name}</b> <span className="text-sm text-muted">· {STARTERS_SET.wordList.words.length} từ cho trò chơi</span>
+              <b>Danh sách từ: {STARTERS_SET.wordList.name}</b> <span className="text-sm text-[var(--fgColor-muted)]">· {STARTERS_SET.wordList.words.length} từ cho trò chơi</span>
             </li>
           </ul>
-          <p className="text-sm text-ink-2">Bài hạn nộp sau 7 ngày, sửa được như bài thường. Bài đã có trong lớp thì bỏ qua. Không gửi tin bài mới cho phụ huynh.</p>
+          <p className="text-sm text-[var(--fgColor-muted)]">Bài hạn nộp sau 7 ngày, sửa được như bài thường. Bài đã có trong lớp thì bỏ qua. Không gửi tin bài mới cho phụ huynh.</p>
           <FormFooter>
             <Btn onClick={() => setSampleOpen(false)} disabled={pending}>
               Huỷ

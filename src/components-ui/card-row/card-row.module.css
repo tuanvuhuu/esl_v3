@@ -1,0 +1,4 @@
+/* hàng cuối trong khung chứa (vd: cuối mỗi Section) không cần viền dưới */
+.cardRow:last-child {
+  border-bottom: 0;
+}

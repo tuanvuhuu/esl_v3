@@ -1,0 +1,12 @@
+/* Chuyển từ sx (codemod). Có thể đổi tên class cho rõ nghĩa hơn khi sửa tới. */
+
+.statusLabelSmall_box {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: var(--fw-bold);
+  line-height: 14px;
+  padding: 0 4px;
+  border-radius: 8px;
+  white-space: nowrap;
+  height: 14px;
+}

@@ -1,6 +1,6 @@
 'use client';
 
-import { Pencil, Phone, Plus, Trash2 } from 'lucide-react';
+import { DeviceMobileIcon, PencilIcon, PlusIcon, TrashIcon } from '@primer/octicons-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useState, useTransition } from 'react';
@@ -16,13 +16,13 @@ import { RowMenu, type RowMenuItem } from '@/components/ui/RowMenu';
 import { Avatar, EmptyState, Pill, type Tone } from '@/components/ui/primitives';
 import { Toast, useToast } from '@/components/ui/Toast';
 import { DataGrid, type GridColumn } from '@/components/ui/datagrid';
-import { TeacherForm, type CampusChoice } from './TeacherForm';
 import { Panel, Card } from '@/components/ui/surfaces';
+import { TeacherForm, type CampusChoice } from './TeacherForm';
 
 const STATUS_TONE: Record<TeacherRow['status'], Tone> = { active: 'mint', leave: 'butter' };
 // Vai trò quyết định người này được xếp vào vị trí nào của lớp (chủ nhiệm, trợ giảng, giáo viên nước ngoài)
 const ROLE_TONE: Record<StaffRole, Tone> = { teacher: 'stone', assistant: 'butter', foreign: 'lav' };
-const LINK = 'text-link underline underline-offset-2';
+const LINK = 'text-[var(--fgColor-link)] underline underline-offset-2';
 
 const COLUMNS: GridColumn<TeacherRow>[] = [
   { key: 'name', label: 'Giáo viên', width: 'minmax(200px,1.5fr)' },
@@ -89,8 +89,8 @@ export function TeacherList({
   }
 
   const menuItems = (row: TeacherRow): RowMenuItem[] => [
-    { kind: 'action', label: 'Sửa', icon: Pencil, onSelect: () => openEdit(row), disabled: !canManage, disabledHint: 'Không có quyền quản lý giáo viên' },
-    { kind: 'action', label: 'Xoá', icon: Trash2, danger: true, onSelect: () => askDelete(row), disabled: !canManage, disabledHint: 'Không có quyền quản lý giáo viên' },
+    { kind: 'action', label: 'Sửa', icon: PencilIcon, onSelect: () => openEdit(row), disabled: !canManage, disabledHint: 'Không có quyền quản lý giáo viên' },
+    { kind: 'action', label: 'Xoá', icon: TrashIcon, danger: true, onSelect: () => askDelete(row), disabled: !canManage, disabledHint: 'Không có quyền quản lý giáo viên' },
   ];
 
   const teaching = teachers.filter((t) => t.status === 'active').length;
@@ -102,9 +102,9 @@ export function TeacherList({
           <div className="flex min-w-0 items-center gap-3">
             <Avatar name={row.name} seed={row.id} />
             <div className="min-w-0">
-              <b className="block truncate text-base text-ink">{row.name}</b>
-              <a href={`tel:${row.phone.replace(/\s/g, '')}`} className={`inline-flex items-center gap-1 text-sm ${LINK}`}>
-                <Phone className="size-3" aria-hidden />
+              <b className="block truncate text-sm font-semibold text-[var(--fgColor-default)]">{row.name}</b>
+              <a href={`tel:${row.phone.replace(/\s/g, '')}`} className={`inline-flex items-center gap-1 text-xs ${LINK}`}>
+                <DeviceMobileIcon size={12} aria-hidden />
                 {formatPhone(row.phone)}
               </a>
             </div>
@@ -113,16 +113,16 @@ export function TeacherList({
       case 'role':
         return <Pill tone={ROLE_TONE[row.staffRole]}>{STAFF_ROLE_LABELS[row.staffRole]}</Pill>;
       case 'subject':
-        return <span className="text-sm text-ink">{row.subject}</span>;
+        return <span className="text-sm text-[var(--fgColor-default)]">{row.subject}</span>;
       case 'years':
-        return <span className="text-sm text-ink-2">{row.years} năm</span>;
+        return <span className="text-sm text-[var(--fgColor-muted)]">{row.years} năm</span>;
       case 'status':
         return <Pill tone={STATUS_TONE[row.status]}>{TEACHER_STATUS_LABELS[row.status]}</Pill>;
       case 'classes':
         return (
           <div className="flex min-w-0 flex-wrap gap-x-3 gap-y-1">
             {row.classes.length === 0 ? (
-              <small className="text-xs text-muted">Chưa dạy lớp nào</small>
+              <small className="text-xs text-[var(--fgColor-muted)]">Chưa dạy lớp nào</small>
             ) : (
               row.classes.map((c) => (
                 <Link key={c.id} href={`/lop-hoc/${c.id}`} className={`text-sm ${LINK}`}>
@@ -149,29 +149,29 @@ export function TeacherList({
         <Avatar name={row.name} seed={row.id} size="lg" />
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
-            <b className="min-w-0 truncate text-lg text-ink">{row.name}</b>
+            <b className="min-w-0 truncate text-base font-bold text-[var(--fgColor-default)]">{row.name}</b>
             <div className="hidden min-[768px]:block">
               <RowMenu label={`Thao tác với ${row.name}`} items={menuItems(row)} />
             </div>
           </div>
-          <small className="block truncate text-sm text-muted">{row.subject} · {row.years} năm kinh nghiệm</small>
+          <small className="block truncate text-xs text-[var(--fgColor-muted)]">{row.subject} · {row.years} năm kinh nghiệm</small>
           <div className="mt-1.5 flex flex-wrap items-center gap-2">
             <Pill tone={ROLE_TONE[row.staffRole]}>{STAFF_ROLE_LABELS[row.staffRole]}</Pill>
             <Pill tone={STATUS_TONE[row.status]}>{TEACHER_STATUS_LABELS[row.status]}</Pill>
             <a href={`tel:${row.phone.replace(/\s/g, '')}`} className={`inline-flex items-center gap-1.5 text-sm ${LINK}`}>
-              <Phone className="size-3.5" aria-hidden />
+              <DeviceMobileIcon size={14} aria-hidden />
               {formatPhone(row.phone)}
             </a>
           </div>
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-x-4 gap-y-1.5 rounded-xl bg-stone/60 px-3 py-2.5">
+      <div className="flex flex-wrap gap-x-4 gap-y-1.5 rounded-[var(--borderRadius-medium)] bg-[var(--bgColor-muted)] px-3 py-2.5">
         {row.classes.length === 0 ? (
-          <small className="text-sm text-muted">Chưa dạy lớp nào</small>
+          <small className="text-xs text-[var(--fgColor-muted)]">Chưa dạy lớp nào</small>
         ) : (
           row.classes.map((c) => (
-            <Link key={c.id} href={`/lop-hoc/${c.id}`} className={`text-base ${LINK}`}>
+            <Link key={c.id} href={`/lop-hoc/${c.id}`} className={`text-sm font-medium ${LINK}`}>
               {c.name}
             </Link>
           ))
@@ -179,12 +179,10 @@ export function TeacherList({
       </div>
 
       <div className="grid grid-cols-2 gap-2 min-[768px]:hidden">
-        <Btn block onClick={() => openEdit(row)} disabled={!canManage}>
-          <Pencil className="size-4" aria-hidden />
+        <Btn block leadingVisual={PencilIcon} onClick={() => openEdit(row)} disabled={!canManage}>
           Sửa
         </Btn>
-        <Btn block variant="danger" onClick={() => askDelete(row)} disabled={!canManage}>
-          <Trash2 className="size-4" aria-hidden />
+        <Btn block variant="danger" leadingVisual={TrashIcon} onClick={() => askDelete(row)} disabled={!canManage}>
           Xoá
         </Btn>
       </div>
@@ -199,8 +197,7 @@ export function TeacherList({
         subtitle={`${teachers.length} giáo viên, ${teaching} đang dạy. Đổi tên giáo viên sẽ cập nhật ở các lớp.`}
         actions={
           canManage && (
-            <Btn variant="primary" onClick={() => setCreating(true)}>
-              <Plus className="size-4" aria-hidden />
+            <Btn variant="primary" leadingVisual={PlusIcon} onClick={() => setCreating(true)}>
               Thêm giáo viên
             </Btn>
           )
@@ -228,7 +225,17 @@ export function TeacherList({
         <TeacherForm mode="create" campuses={campuses} defaultCampusId={defaultCampusId} onDone={onDone} onCancel={() => setCreating(false)} />
       </Modal>
       <Modal open={!!editing} title="Sửa giáo viên" subtitle="Các trường có dấu * là bắt buộc." onClose={() => setEditing(null)} labelledBy="teacher-edit-title">
-        {editing && <TeacherForm mode="edit" teacherId={editing.id} initial={editing.values} campuses={campuses} defaultCampusId={defaultCampusId} onDone={onDone} onCancel={() => setEditing(null)} />}
+        {editing && (
+          <TeacherForm
+            mode="edit"
+            teacherId={editing.id}
+            initial={editing.values}
+            campuses={campuses}
+            defaultCampusId={defaultCampusId}
+            onDone={onDone}
+            onCancel={() => setEditing(null)}
+          />
+        )}
       </Modal>
 
       <ConfirmDialog

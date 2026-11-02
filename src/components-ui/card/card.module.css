@@ -1,0 +1,8 @@
+/* Chuyển từ sx (codemod). Có thể đổi tên class cho rõ nghĩa hơn khi sửa tới. */
+
+div.card_box {
+  border: 1px solid;
+  border-color: var(--app-border-default);
+  border-radius: var(--radius-2);
+  padding: var(--space-3);
+}

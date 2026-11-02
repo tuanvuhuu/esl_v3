@@ -1,0 +1,8 @@
+/* Chuyển từ sx (codemod). Có thể đổi tên class cho rõ nghĩa hơn khi sửa tới. */
+
+.block_box {
+  background-color: #fff;
+  padding: var(--space-3);
+  padding-top: var(--space-3);
+  border-radius: var(--radius-2);
+}

@@ -1,12 +1,12 @@
 'use client';
 
-import { Library, Plus, Zap } from 'lucide-react';
+import { LibraryIcon, PlusIcon, ZapIcon } from '@primer/octicons-react';
 import { useState, useTransition } from 'react';
 import { saveAssignmentItemsAction } from '@/app/(app)/bai-tap/question-actions';
 import type { AssignmentItem } from '@/lib/queries/assignment-items';
 import type { BankQuestion } from '@/lib/queries/question-bank';
 import { Btn } from '@/components/ui/Btn';
-import { FORM_BTN_CANCEL, FORM_BTN_SUBMIT, FormFooter } from '@/components/ui/Field';
+import { FormFooter } from '@/components/ui/Field';
 import { Modal } from '@/components/ui/Modal';
 import { BankPicker } from '@/components/questions/BankPicker';
 import { blankDraft, draftFromBank, draftFromInput, draftToInput, toDraft, type Draft } from './item-draft';
@@ -66,80 +66,77 @@ export function ItemsEditor({
 
   return (
     <>
-    <Modal open={open && !quick} title="Câu hỏi của bài tập" subtitle="Mỗi câu có kỹ năng, loại và điểm. Điểm tối đa của bài là tổng điểm các câu." onClose={onClose} labelledBy="items-editor-title">
-      <div className="flex flex-col gap-4">
-        {error && (
-          <Alert>
-            {error}
-          </Alert>
-        )}
+      <Modal open={open && !quick} title="Câu hỏi của bài tập" subtitle="Mỗi câu có kỹ năng, loại và điểm. Điểm tối đa của bài là tổng điểm các câu." onClose={onClose} labelledBy="items-editor-title">
+        <div className="flex flex-col gap-4">
+          {error && (
+            <Alert>
+              {error}
+            </Alert>
+          )}
 
-        {drafts.length === 0 && (
-          <Notice>Bài chưa có câu hỏi. Thêm câu đầu tiên bên dưới.</Notice>
-        )}
+          {drafts.length === 0 && (
+            <Notice>Bài chưa có câu hỏi. Thêm câu đầu tiên bên dưới.</Notice>
+          )}
 
-        {drafts.map((d, index) => (
-          <ItemDraftCard
-            key={d.key}
-            draft={d}
-            index={index}
-            pending={pending}
-            onChange={(update) => updateDraft(d.key, update)}
-            onError={setError}
-            onMove={(dir) => move(index, dir)}
-            onRemove={() => setDrafts((prev) => prev.filter((x) => x.key !== d.key))}
-            canMoveUp={index > 0}
-            canMoveDown={index < drafts.length - 1}
-          />
-        ))}
+          {drafts.map((d, index) => (
+            <ItemDraftCard
+              key={d.key}
+              draft={d}
+              index={index}
+              pending={pending}
+              onChange={(update) => updateDraft(d.key, update)}
+              onError={setError}
+              onMove={(dir) => move(index, dir)}
+              onRemove={() => setDrafts((prev) => prev.filter((x) => x.key !== d.key))}
+              canMoveUp={index > 0}
+              canMoveDown={index < drafts.length - 1}
+            />
+          ))}
 
-        <div className="flex flex-wrap gap-2">
-          <Btn variant="primary" onClick={() => setQuick(true)}>
-            <Zap className="size-4" aria-hidden />
-            Soạn nhanh
-          </Btn>
-          <Btn variant="ghost" onClick={() => setDrafts((prev) => [...prev, blankDraft()])}>
-            <Plus className="size-4" aria-hidden />
-            Thêm câu
-          </Btn>
-          <Btn variant="ghost" onClick={() => setPicking(true)} disabled={bank.length === 0}>
-            <Library className="size-4" aria-hidden />
-            Thêm từ ngân hàng
-          </Btn>
+          <div className="flex flex-wrap gap-2">
+            <Btn variant="primary" leadingVisual={ZapIcon} onClick={() => setQuick(true)}>
+              Soạn nhanh
+            </Btn>
+            <Btn variant="ghost" leadingVisual={PlusIcon} onClick={() => setDrafts((prev) => [...prev, blankDraft()])}>
+              Thêm câu
+            </Btn>
+            <Btn variant="ghost" leadingVisual={LibraryIcon} onClick={() => setPicking(true)} disabled={bank.length === 0}>
+              Thêm từ ngân hàng
+            </Btn>
+          </div>
+
+          <FormFooter>
+            <Btn onClick={onClose}>
+              Huỷ
+            </Btn>
+            <Btn variant="primary" onClick={save} disabled={pending}>
+              {pending ? 'Đang lưu…' : 'Lưu câu hỏi'}
+            </Btn>
+          </FormFooter>
         </div>
 
-        <FormFooter>
-          <button type="button" onClick={onClose} className={FORM_BTN_CANCEL}>
-            Huỷ
-          </button>
-          <button type="button" onClick={save} disabled={pending} className={FORM_BTN_SUBMIT}>
-            {pending ? 'Đang lưu…' : 'Lưu câu hỏi'}
-          </button>
-        </FormFooter>
-      </div>
-
-      <BankPicker
-        open={picking}
-        bank={bank}
-        levelCode={levelCode}
-        onClose={() => setPicking(false)}
-        onAdd={(picked) => {
-          setDrafts((prev) => [...prev, ...picked.map(draftFromBank)]);
-          setPicking(false);
-        }}
-      />
-    </Modal>
-    {open && quick && (
-      <QuickCompose
-        open
-        levelCode={levelCode}
-        onClose={() => setQuick(false)}
-        onAdd={(items) => {
-          setDrafts((prev) => [...prev, ...items.map(draftFromInput)]);
-          setQuick(false);
-        }}
-      />
-    )}
+        <BankPicker
+          open={picking}
+          bank={bank}
+          levelCode={levelCode}
+          onClose={() => setPicking(false)}
+          onAdd={(picked) => {
+            setDrafts((prev) => [...prev, ...picked.map(draftFromBank)]);
+            setPicking(false);
+          }}
+        />
+      </Modal>
+      {open && quick && (
+        <QuickCompose
+          open
+          levelCode={levelCode}
+          onClose={() => setQuick(false)}
+          onAdd={(items) => {
+            setDrafts((prev) => [...prev, ...items.map(draftFromInput)]);
+            setQuick(false);
+          }}
+        />
+      )}
     </>
   );
 }

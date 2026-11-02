@@ -1,18 +1,11 @@
 'use client';
 
-import { Link2, Paperclip, Trash2 } from 'lucide-react';
+import { LinkIcon, PaperclipIcon, TrashIcon } from '@primer/octicons-react';
 import { useState, useTransition } from 'react';
 import { deleteMaterialAction, saveMaterialAction, attachDriveMaterialAction } from '@/app/(app)/bai-giang/actions';
 import { uploadAsStaff } from '@/lib/upload-client';
 import type { LessonRow } from '@/lib/queries/lessons';
 import { MATERIAL_KIND_LABELS } from '@/lib/validation/lesson';
-
-type UiMaterialKind = 'link' | 'file' | 'drive';
-const UI_MATERIAL_OPTIONS: { value: UiMaterialKind; label: string }[] = [
-  { value: 'link', label: 'Liên kết' },
-  { value: 'file', label: 'Tệp tải lên (Supabase)' },
-  { value: 'drive', label: 'Google Drive (Tệp lớn / Video)' },
-];
 import { ActIcon } from '@/components/ui/ActIcon';
 import { Btn } from '@/components/ui/Btn';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
@@ -21,6 +14,13 @@ import { SelectPanel } from '@/components/ui/SelectPanel';
 import { Alert } from '@/components/ui/primitives';
 import { Notice } from '@/components/ui/surfaces';
 import { UPLOAD_ACCEPT } from '@/lib/upload-types';
+
+type UiMaterialKind = 'link' | 'file' | 'drive';
+const UI_MATERIAL_OPTIONS: { value: UiMaterialKind; label: string }[] = [
+  { value: 'link', label: 'Liên kết' },
+  { value: 'file', label: 'Tệp tải lên (Supabase)' },
+  { value: 'drive', label: 'Google Drive (Tệp lớn / Video)' },
+];
 
 // Các loại tệp được tải lên làm tài liệu. Khớp với danh sách máy chủ kiểm khi tải lên.
 // Tài liệu của một bài giảng: danh sách liên kết và tệp, thêm và xoá (có xác nhận)
@@ -98,29 +98,31 @@ export function MaterialsPanel({ lesson, canManage, onChanged }: { lesson: Lesso
       ) : (
         <ul className="flex flex-col gap-2">
           {lesson.materials.map((m) => (
-            <li key={m.id} className="flex items-center justify-between gap-3 rounded-[var(--radius-ctl)] border border-line px-3 py-2.5">
+            <li key={m.id} className="flex items-center justify-between gap-3 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-3 py-2.5">
               <div className="flex min-w-0 items-center gap-2.5">
-                {m.kind === 'link' ? <Link2 className="size-4 shrink-0 text-muted" aria-hidden /> : <Paperclip className="size-4 shrink-0 text-muted" aria-hidden />}
+                {m.kind === 'link' ? (
+                  <LinkIcon size={16} className="shrink-0 text-[var(--fgColor-muted)]" aria-hidden />
+                ) : (
+                  <PaperclipIcon size={16} className="shrink-0 text-[var(--fgColor-muted)]" aria-hidden />
+                )}
                 <div className="min-w-0">
                   {m.kind === 'link' ? (
-                    <a href={m.url} target="_blank" rel="noopener noreferrer" className="block truncate text-base font-normal text-link underline underline-offset-2">
+                    <a href={m.url} target="_blank" rel="noopener noreferrer" data-link="true" className="block truncate text-base font-normal text-[var(--fgColor-link)] underline underline-offset-2">
                       {m.title}
                     </a>
                   ) : (
-                    <a href={`/api/files/${m.fileId}`} target="_blank" rel="noopener" data-link="true" className="block truncate text-base font-normal text-link underline underline-offset-2">
+                    <a href={`/api/files/${m.fileId}`} target="_blank" rel="noopener" data-link="true" className="block truncate text-base font-normal text-[var(--fgColor-link)] underline underline-offset-2">
                       {m.title}
                     </a>
                   )}
-                  <small className="block truncate text-sm text-muted">
+                  <small className="block truncate text-sm text-[var(--fgColor-muted)]">
                     {MATERIAL_KIND_LABELS[m.kind]}
                     {m.kind === 'file' && m.fileName ? ` · ${m.fileName}` : ''}
                   </small>
                 </div>
               </div>
               {canManage && (
-                <ActIcon label={`Xoá tài liệu ${m.title}`} danger onClick={() => setToDelete(m)} disabled={pending}>
-                  <Trash2 className="size-4" aria-hidden />
-                </ActIcon>
+                <ActIcon label={`Xoá tài liệu ${m.title}`} icon={TrashIcon} danger onClick={() => setToDelete(m)} disabled={pending} />
               )}
             </li>
           ))}
@@ -128,8 +130,8 @@ export function MaterialsPanel({ lesson, canManage, onChanged }: { lesson: Lesso
       )}
 
       {canManage && (
-        <div className="flex flex-col gap-3 rounded-[var(--radius-panel)] border border-line p-3.5">
-          <b className="text-base text-ink">Thêm tài liệu</b>
+        <div className="flex flex-col gap-3 rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-3.5">
+          <b className="text-base text-[var(--fgColor-default)]">Thêm tài liệu</b>
           <div className="grid grid-cols-1 gap-3 min-[768px]:grid-cols-2">
             <Field label="Loại tài liệu">
               <SelectPanel
@@ -182,10 +184,10 @@ export function MaterialsPanel({ lesson, canManage, onChanged }: { lesson: Lesso
 
           {kind === 'file' && (
             <div className="flex flex-col gap-2">
-              <span className="text-sm font-normal text-ink-2">Tệp *</span>
+              <span className="text-sm font-normal text-[var(--fgColor-muted)]">Tệp *</span>
               {fileId !== null ? (
-                <span className="inline-flex items-center gap-1.5 text-sm text-ink">
-                  <Paperclip className="size-4 text-muted" aria-hidden />
+                <span className="inline-flex items-center gap-1.5 text-sm text-[var(--fgColor-default)]">
+                  <PaperclipIcon size={16} className="text-[var(--fgColor-muted)]" aria-hidden />
                   {fileName}
                 </span>
               ) : (
@@ -195,7 +197,7 @@ export function MaterialsPanel({ lesson, canManage, onChanged }: { lesson: Lesso
           )}
 
           <div className="flex justify-end">
-            <Btn variant="primary" onClick={add} disabled={pending} className="max-[767px]:w-full">
+            <Btn variant="primary" loading={pending} onClick={add} disabled={pending} className="max-[767px]:w-full">
               {pending ? 'Đang lưu…' : 'Thêm tài liệu'}
             </Btn>
           </div>

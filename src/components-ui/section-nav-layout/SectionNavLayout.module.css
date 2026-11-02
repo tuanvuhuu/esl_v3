@@ -1,0 +1,31 @@
+/* Chỉ giữ phần utility (src/styles/utilities.css) không diễn đạt được: grid 2 cột, cuộn, viền giữa các nhóm, media query. */
+.layout {
+  display: grid;
+  grid-template-columns: var(--section-nav-side-width, 250px) 1fr;
+  min-height: 0;
+}
+
+.content {
+  position: relative;
+  overflow: auto;
+  padding: 0 var(--space-4);
+}
+
+/* đường nét đứt ngăn cách các nhóm, trừ nhóm cuối */
+.section:not(:last-child) {
+  border-bottom: 1px dashed var(--app-border-default);
+}
+
+@media (max-width: 768px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .side {
+    display: none;
+  }
+
+  .content {
+    padding: 0 var(--space-3);
+  }
+}

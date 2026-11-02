@@ -1,32 +1,38 @@
 'use client';
 
+// Form đăng nhập theo kiến trúc LoginPage của dự án 01. TSUKUBA trên nền @primer/react v38 + Octicons.
+import { KeyIcon, PersonIcon, RocketIcon } from '@primer/octicons-react';
+import { Button, TextInput } from '@primer/react';
 import { startTransition, useActionState, useState, useTransition, type FormEvent } from 'react';
 import { devQuickLoginAction, loginAction } from '@/app/dang-nhap/actions';
+import { BTN_BASE, BTN_GHOST } from '@/components/ui/Btn';
+import { Field } from '@/components/ui/Field';
+import { Alert } from '@/components/ui/primitives';
 import { ROLE_CODES, ROLE_LABELS, type Role } from '@/lib/permissions';
 import type { ActionResult } from '@/lib/validation/student';
-import { BTN_BASE, BTN_GHOST } from '@/components/ui/Btn';
-import { Field, FORM_BTN_SUBMIT, inputClass } from '@/components/ui/Field';
-import { Alert } from '@/components/ui/primitives';
 
 const INITIAL: ActionResult = { ok: false };
 
-// Form đăng nhập. Mật khẩu không được điền sẵn; lỗi hiện ngay trong ô.
-// quickLogin: bật nút đăng nhập nhanh theo vai trò (tạm thời, chỉ khi phát triển).
-// demo: nút "Vào học thử" mở thẳng bài học mẫu, không cần mật khẩu (DEMO_LOGIN=off để tắt).
-export function LoginForm({ quickLogin = false, demo = false, next = '' }: { quickLogin?: boolean; demo?: boolean; next?: string }) {
+export function LoginForm({
+  quickLogin = false,
+  demo = false,
+  next = '',
+}: {
+  quickLogin?: boolean;
+  demo?: boolean;
+  next?: string;
+}) {
   const [state, formAction, pending] = useActionState<ActionResult, FormData>(loginAction, INITIAL);
   const [quickPending, startQuick] = useTransition();
   const [quickError, setQuickError] = useState<string | null>(null);
   const errors = state.fieldErrors ?? {};
 
-  // Gọi action thủ công để ô nhập không bị reset khi có lỗi (E-028)
   function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     startTransition(() => formAction(formData));
   }
 
-  // Thành công thì action chuyển hướng về Tổng quan; chỉ lỗi mới trả về
   function quick(role: Role) {
     setQuickError(null);
     startQuick(async () => {
@@ -36,60 +42,83 @@ export function LoginForm({ quickLogin = false, demo = false, next = '' }: { qui
   }
 
   return (
-    <main className="grid min-h-dvh place-items-center bg-bg px-4 py-10">
-      <section className="flex w-[min(400px,100%)] flex-col gap-6 rounded-[var(--radius-panel)] bg-surface p-6 shadow-lift max-[767px]:p-5">
-        <header className="flex flex-col items-center gap-3 text-center">
-          <span className="grid size-14 place-items-center rounded-[18px] bg-primary text-2xl font-extrabold text-on-primary" aria-hidden>E</span>
+    <main className="grid min-h-dvh place-items-center bg-[var(--bgColor-inset)] px-4 py-10">
+      <section className="flex w-[min(420px,100%)] flex-col gap-5 rounded-2xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-6 shadow-[var(--shadow-floating-large,var(--lift))] max-[767px]:p-5">
+        <header className="flex flex-col items-center gap-2.5 text-center">
+          <span
+            className="grid size-13 place-items-center rounded-xl bg-[var(--button-primary-bgColor-rest)] text-xl font-extrabold text-[var(--button-primary-fgColor-rest)]"
+            aria-hidden
+          >
+            E
+          </span>
           <div>
-            <h1 className="text-2xl font-extrabold text-ink">ESL Center</h1>
-            <p className="mt-1 text-base text-muted">Đăng nhập để tiếp tục</p>
+            <h1 className="text-xl font-bold text-[var(--fgColor-default)]">ESL Center</h1>
+            <p className="mt-0.5 text-sm text-[var(--fgColor-muted)]">Đăng nhập hệ thống quản lý trung tâm</p>
           </div>
         </header>
 
-        <form onSubmit={submit} noValidate className="flex flex-col gap-4">
+        <form onSubmit={submit} noValidate className="flex flex-col gap-3.5">
           {next && <input type="hidden" name="next" value={next} />}
-          {state.message && !state.ok && (
-            <Alert>{state.message}</Alert>
-          )}
+          {state.message && !state.ok && <Alert>{state.message}</Alert>}
+
           <Field label="Email" error={errors.email}>
-            <input name="email" type="text" autoComplete="username" inputMode="email" placeholder="Email, hoặc mã học sinh HS-00001" className={inputClass(errors.email)} />
+            <TextInput
+              block
+              name="email"
+              type="text"
+              autoComplete="username"
+              inputMode="email"
+              leadingVisual={PersonIcon}
+              placeholder="Email, hoặc mã học sinh HS-00001"
+              validationStatus={errors.email ? 'error' : undefined}
+            />
           </Field>
+
           <Field label="Mật khẩu" error={errors.password}>
-            <input name="password" type="password" autoComplete="current-password" className={inputClass(errors.password)} />
+            <TextInput
+              block
+              name="password"
+              type="password"
+              autoComplete="current-password"
+              leadingVisual={KeyIcon}
+              validationStatus={errors.password ? 'error' : undefined}
+            />
           </Field>
-          <button type="submit" disabled={pending} className={`${FORM_BTN_SUBMIT} mt-1 w-full`}>
+
+          <Button type="submit" variant="primary" block loading={pending} disabled={pending} className="mt-1">
             {pending ? 'Đang đăng nhập…' : 'Đăng nhập'}
-          </button>
+          </Button>
         </form>
 
         {demo && (
-          // Thẻ a thường (không dùng Link) để trình duyệt không tải trước và tự tạo phiên học thử
-          <a href="/hoc-thu" className={`${BTN_BASE} ${BTN_GHOST} -mt-2 w-full`}>
+          <a href="/hoc-thu" className={`${BTN_BASE} ${BTN_GHOST} -mt-1.5 w-full`}>
+            <RocketIcon size={15} aria-hidden />
             Vào học thử, không cần đăng nhập
           </a>
         )}
 
         {quickLogin && (
-          <section aria-label="Đăng nhập nhanh theo quyền (tạm thời, chỉ khi phát triển)" className="flex flex-col gap-2.5 border-t border-line pt-4">
-            <p className="text-sm font-normal text-muted">Đăng nhập nhanh theo quyền (tạm thời, chỉ khi phát triển)</p>
+          <section
+            aria-label="Đăng nhập nhanh theo quyền (tạm thời, chỉ khi phát triển)"
+            className="flex flex-col gap-2.5 border-t border-[var(--borderColor-muted)] pt-4"
+          >
+            <p className="text-xs font-medium text-[var(--fgColor-muted)]">
+              Đăng nhập nhanh theo quyền (tạm thời, chỉ khi phát triển)
+            </p>
             <div className="grid grid-cols-2 gap-2">
               {ROLE_CODES.map((role) => (
-                <button
-                  key={role}
-                  type="button"
-                  disabled={quickPending}
-                  onClick={() => quick(role)}
-                  className={`${BTN_BASE} ${BTN_GHOST}`}
-                >
+                <Button key={role} type="button" variant="default" disabled={quickPending} onClick={() => quick(role)}>
                   {ROLE_LABELS[role]}
-                </button>
+                </Button>
               ))}
             </div>
             {quickError && <Alert inline>{quickError}</Alert>}
           </section>
         )}
 
-        <p className="text-center text-sm text-muted">Quên mật khẩu? Liên hệ quản trị trung tâm để đặt lại.</p>
+        <p className="text-center text-xs text-[var(--fgColor-muted)]">
+          Quên mật khẩu? Liên hệ quản trị trung tâm để đặt lại.
+        </p>
       </section>
     </main>
   );

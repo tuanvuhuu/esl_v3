@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowDown, ArrowUp, Eye, EyeOff, Image as ImageIcon, Paperclip, Plus, Trash2, X } from 'lucide-react';
+import { ArrowDownIcon, ArrowUpIcon, EyeClosedIcon, EyeIcon, ImageIcon, PaperclipIcon, PlusIcon, TrashIcon, XIcon } from '@primer/octicons-react';
 import { useState, useTransition } from 'react';
 import { uploadAsStaff } from '@/lib/upload-client';
 import {
@@ -16,6 +16,7 @@ import {
 import { ActIcon } from '@/components/ui/ActIcon';
 import { Btn } from '@/components/ui/Btn';
 import { Field, inputClass, textareaClass, FileInput } from '@/components/ui/Field';
+import { Pill } from '@/components/ui/primitives';
 import { SelectPanel } from '@/components/ui/SelectPanel';
 import { KaraokeTimingEditor } from './KaraokeTimingEditor';
 import { MiniRecorder } from './MiniRecorder';
@@ -180,41 +181,37 @@ export function ItemDraftCard({
   const hasCriteria = d.criteria.length > 0;
 
   return (
-    <section aria-label={`Câu ${n}`} className="flex flex-col gap-4 rounded-[var(--radius-panel)] border border-line bg-surface p-4 shadow-sm">
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line pb-3">
+    <section aria-label={`Câu ${n}`} className="flex flex-col gap-4 rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-4 shadow-[var(--shadow-resting-small,0_1px_2px_rgba(0,0,0,0.04))]">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--borderColor-muted)] pb-3">
         <div className="flex items-center gap-2">
-          <b className="text-base text-ink">Câu {n}</b>
-          <span className="rounded-full bg-[var(--primary-soft)] px-2.5 py-0.5 text-xs font-bold text-ink">
+          <b className="text-base text-[var(--fgColor-default)]">Câu {n}</b>
+          <Pill tone="butter">
             {EXERCISE_TYPES.find((t) => t.type === d.itemType)?.title ?? d.itemType}
-          </span>
+          </Pill>
         </div>
         <div className="flex items-center gap-1.5">
           <button
             type="button"
             onClick={() => setShowPreview(!showPreview)}
-            className={`flex h-8 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-semibold transition-colors ${
-              showPreview ? 'border-[var(--primary-deep)] bg-[var(--primary-soft)] text-ink' : 'border-line bg-surface text-ink-2 hover:bg-stone'
+            className={`flex h-8 items-center gap-1.5 rounded-[var(--borderRadius-medium)] border px-2.5 text-xs font-semibold transition-colors max-[767px]:h-9 ${
+              showPreview
+                ? 'border-[var(--fgColor-accent)] bg-[var(--bgColor-accent-muted,var(--color-primary-soft))] text-[var(--fgColor-default)]'
+                : 'border-[var(--borderColor-default)] bg-[var(--bgColor-default)] text-[var(--fgColor-muted)] hover:bg-[var(--bgColor-muted)]'
             }`}
           >
-            {showPreview ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
+            {showPreview ? <EyeClosedIcon size={14} aria-hidden /> : <EyeIcon size={14} aria-hidden />}
             <span>{showPreview ? 'Ẩn xem trước' : 'Xem trước'}</span>
           </button>
           {(onMove || onRemove) && (
             <div className="flex items-center gap-1">
               {onMove && (
                 <>
-                  <ActIcon label={`Đưa câu ${n} lên`} onClick={() => onMove(-1)} disabled={!canMoveUp || busy}>
-                    <ArrowUp className="size-4" aria-hidden />
-                  </ActIcon>
-                  <ActIcon label={`Đưa câu ${n} xuống`} onClick={() => onMove(1)} disabled={!canMoveDown || busy}>
-                    <ArrowDown className="size-4" aria-hidden />
-                  </ActIcon>
+                  <ActIcon label={`Đưa câu ${n} lên`} icon={ArrowUpIcon} onClick={() => onMove(-1)} disabled={!canMoveUp || busy} />
+                  <ActIcon label={`Đưa câu ${n} xuống`} icon={ArrowDownIcon} onClick={() => onMove(1)} disabled={!canMoveDown || busy} />
                 </>
               )}
               {onRemove && (
-                <ActIcon label={`Xoá câu ${n}`} danger onClick={onRemove}>
-                  <Trash2 className="size-4" aria-hidden />
-                </ActIcon>
+                <ActIcon label={`Xoá câu ${n}`} danger icon={TrashIcon} onClick={onRemove} />
               )}
             </div>
           )}
@@ -227,9 +224,9 @@ export function ItemDraftCard({
         </div>
       )}
 
-      {/* 1. Chọn dạng câu hỏi (Card Grid như mockup) */}
+      {/* 1. Chọn dạng câu hỏi */}
       <div>
-        <p className="mb-2 block text-xs font-bold uppercase tracking-wider text-muted">Dạng bài tập</p>
+        <p className="mb-2 block text-xs font-bold uppercase tracking-wider text-[var(--fgColor-muted)]">Dạng bài tập</p>
         <div role="radiogroup" aria-label={`Loại của câu ${n}`} className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {EXERCISE_TYPES.map((et) => {
             const active = d.itemType === et.type;
@@ -238,19 +235,20 @@ export function ItemDraftCard({
                 key={et.type}
                 type="button"
                 role="radio"
+                data-card="true"
                 aria-checked={active}
                 aria-label={et.title}
                 onClick={() => setItemType(et.type)}
                 className={`flex flex-col items-start rounded-xl border p-2.5 text-left transition-all ${
                   active
-                    ? 'border-[var(--primary-deep)] bg-[var(--primary-soft)] shadow-xs ring-2 ring-[var(--primary-deep)]/20'
-                    : 'border-line bg-surface hover:bg-stone/60'
+                    ? 'border-[var(--fgColor-accent)] bg-[var(--bgColor-accent-muted,var(--color-primary-soft))] ring-2 ring-[var(--fgColor-accent)]/20'
+                    : 'border-[var(--borderColor-default)] bg-[var(--bgColor-default)] hover:bg-[var(--bgColor-muted)]'
                 }`}
               >
-                <span className="text-sm font-bold text-ink">
+                <span className="text-sm font-bold text-[var(--fgColor-default)]">
                   {et.icon} {et.title}
                 </span>
-                <span className="text-xs text-muted">{et.hint}</span>
+                <span className="text-xs text-[var(--fgColor-muted)]">{et.hint}</span>
               </button>
             );
           })}
@@ -332,18 +330,16 @@ export function ItemDraftCard({
       )}
 
       {/* 4. Âm thanh câu hỏi */}
-      <div className="flex flex-col gap-2 rounded-xl border border-line bg-stone/30 p-3">
-        <span className="text-xs font-bold uppercase tracking-wider text-muted">Âm thanh câu hỏi / Giọng đọc mẫu</span>
+      <div className="flex flex-col gap-2 rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] p-3">
+        <span className="text-xs font-bold uppercase tracking-wider text-[var(--fgColor-muted)]">Âm thanh câu hỏi / Giọng đọc mẫu</span>
         {d.audioFileId !== null ? (
           <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 text-sm font-medium text-ink">
-              <Paperclip className="size-4 text-muted" aria-hidden />
+            <span className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--fgColor-default)]">
+              <PaperclipIcon size={16} className="text-[var(--fgColor-muted)]" aria-hidden />
               {d.audioName || `Tệp âm thanh #${d.audioFileId}`}
             </span>
             <audio controls preload="none" src={`/api/files/${d.audioFileId}`} className="h-8 max-w-xs" />
-            <ActIcon label={`Bỏ âm thanh câu ${n}`} onClick={() => patch({ audioFileId: null, audioName: null })} disabled={busy}>
-              <X className="size-4" aria-hidden />
-            </ActIcon>
+            <ActIcon label={`Bỏ âm thanh câu ${n}`} icon={XIcon} onClick={() => patch({ audioFileId: null, audioName: null })} disabled={busy} />
           </div>
         ) : (
           <FileInput label={`Tải tệp âm thanh cho câu ${n}`} accept={AUDIO_ACCEPT} disabled={busy} onFile={(file) => uploadAudio(file)} />
@@ -352,39 +348,39 @@ export function ItemDraftCard({
 
       {/* 5. Dạng Nghe / Chọn tranh (picture_choice) */}
       {d.itemType === 'picture_choice' && (
-        <fieldset className="flex flex-col gap-3 rounded-xl border border-line p-3">
-          <legend className="text-xs font-bold uppercase tracking-wider text-muted px-1">
+        <fieldset className="flex flex-col gap-3 rounded-xl border border-[var(--borderColor-default)] p-3">
+          <legend className="px-1 text-xs font-bold uppercase tracking-wider text-[var(--fgColor-muted)]">
             Các tranh lựa chọn (chọn 1 đáp án đúng bằng nút tròn)
           </legend>
           <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
             {d.options.map((opt, oi) => (
-              <div key={opt.key} className="flex items-center gap-2 rounded-xl border border-line bg-surface p-2 shadow-xs">
+              <div key={opt.key} className="flex items-center gap-2 rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-2">
                 <input
                   type="radio"
                   name={`correct-${d.key}`}
                   checked={opt.isCorrect}
                   onChange={() => markCorrect(opt.key)}
                   aria-label={`Đáp án ${oi + 1} đúng`}
-                  className="size-4 shrink-0 accent-[var(--primary-deep)]"
+                  className="size-4 shrink-0 accent-[var(--control-checked-bgColor-rest,var(--fgColor-accent))]"
                 />
-                <div className="relative flex size-12 shrink-0 items-center justify-center rounded-lg border border-line bg-stone/40 overflow-hidden">
+                <div className="relative flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]">
                   {opt.imageFileId ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={`/api/files/${opt.imageFileId}`} alt="" className="size-full object-contain" />
                   ) : (
-                    <ImageIcon className="size-5 text-muted" />
+                    <ImageIcon size={20} className="text-[var(--fgColor-muted)]" aria-hidden />
                   )}
                 </div>
-                <div className="flex flex-1 flex-col gap-1 min-w-0">
+                <div className="flex min-w-0 flex-1 flex-col gap-1">
                   <input
                     type="text"
                     value={opt.label}
                     onChange={(e) => patchOption(opt.key, { label: e.target.value })}
                     placeholder={`Tên tranh / từ ${oi + 1}`}
-                    className={`${inputClass()} h-8 text-xs`}
+                    className={`${inputClass()} !h-8 text-xs`}
                   />
                   <div className="flex items-center gap-1.5">
-                    <label className="cursor-pointer text-[11px] font-semibold text-[var(--link)] hover:underline">
+                    <label className="cursor-pointer text-[11px] font-semibold text-[var(--fgColor-accent)] hover:underline">
                       {opt.imageFileId ? 'Đổi ảnh' : 'Tải ảnh'}
                       <input
                         type="file"
@@ -397,23 +393,21 @@ export function ItemDraftCard({
                     {opt.imageFileId && (
                       <button
                         type="button"
+                        data-link="true"
                         onClick={() => patchOption(opt.key, { imageFileId: null })}
-                        className="text-[11px] text-red-600 hover:underline"
+                        className="text-[11px] text-blush-ink hover:underline"
                       >
                         Bỏ ảnh
                       </button>
                     )}
                   </div>
                 </div>
-                <ActIcon label={`Xoá đáp án ${oi + 1}`} danger onClick={() => removeOption(opt.key)} disabled={d.options.length <= 2}>
-                  <Trash2 className="size-4" aria-hidden />
-                </ActIcon>
+                <ActIcon label={`Xoá đáp án ${oi + 1}`} danger icon={TrashIcon} onClick={() => removeOption(opt.key)} disabled={d.options.length <= 2} />
               </div>
             ))}
           </div>
           <div>
-            <Btn variant="ghost" onClick={addOption} disabled={d.options.length >= MAX_OPTIONS}>
-              <Plus className="size-4" aria-hidden />
+            <Btn variant="ghost" leadingVisual={PlusIcon} onClick={addOption} disabled={d.options.length >= MAX_OPTIONS}>
               Thêm tranh
             </Btn>
           </div>
@@ -422,14 +416,14 @@ export function ItemDraftCard({
 
       {/* 6. Dạng Ghép đôi (match) */}
       {d.itemType === 'match' && (
-        <fieldset className="flex flex-col gap-3 rounded-xl border border-line p-3">
-          <legend className="text-xs font-bold uppercase tracking-wider text-muted px-1">
+        <fieldset className="flex flex-col gap-3 rounded-xl border border-[var(--borderColor-default)] p-3">
+          <legend className="px-1 text-xs font-bold uppercase tracking-wider text-[var(--fgColor-muted)]">
             Các cặp ghép đôi (Vế trái ghép với Vế phải tương ứng)
           </legend>
           <div className="flex flex-col gap-2">
             {d.pairs.map((p, pi) => (
               <div key={p.key} className="flex items-center gap-2">
-                <span className="w-5 text-center text-xs font-bold text-muted">{pi + 1}.</span>
+                <span className="w-5 text-center text-xs font-bold text-[var(--fgColor-muted)]">{pi + 1}.</span>
                 <input
                   type="text"
                   value={p.leftLabel}
@@ -437,7 +431,7 @@ export function ItemDraftCard({
                   placeholder="Vế trái (VD: mother)"
                   className={`${inputClass()} flex-1`}
                 />
-                <span className="text-muted font-bold">⇄</span>
+                <span className="font-bold text-[var(--fgColor-muted)]">⇄</span>
                 <input
                   type="text"
                   value={p.rightLabel}
@@ -445,15 +439,12 @@ export function ItemDraftCard({
                   placeholder="Vế phải (VD: mẹ)"
                   className={`${inputClass()} flex-1`}
                 />
-                <ActIcon label={`Xoá cặp ${pi + 1}`} danger onClick={() => removePair(p.key)} disabled={d.pairs.length <= 2}>
-                  <Trash2 className="size-4" aria-hidden />
-                </ActIcon>
+                <ActIcon label={`Xoá cặp ${pi + 1}`} danger icon={TrashIcon} onClick={() => removePair(p.key)} disabled={d.pairs.length <= 2} />
               </div>
             ))}
           </div>
           <div>
-            <Btn variant="ghost" onClick={addPair} disabled={d.pairs.length >= MAX_PAIRS}>
-              <Plus className="size-4" aria-hidden />
+            <Btn variant="ghost" leadingVisual={PlusIcon} onClick={addPair} disabled={d.pairs.length >= MAX_PAIRS}>
               Thêm cặp ghép
             </Btn>
           </div>
@@ -473,10 +464,10 @@ export function ItemDraftCard({
             />
           </Field>
           {d.referenceText && (
-            <div className="flex flex-wrap items-center gap-1.5 rounded-lg border border-line bg-stone/40 p-2.5">
-              <span className="text-xs text-muted">Các từ sẽ xuất hiện:</span>
+            <div className="flex flex-wrap items-center gap-1.5 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] p-2.5">
+              <span className="text-xs text-[var(--fgColor-muted)]">Các từ sẽ xuất hiện:</span>
               {d.referenceText.split(/\s+/).filter(Boolean).map((w, wi) => (
-                <span key={wi} className="rounded-md border border-line bg-surface px-2 py-0.5 text-xs font-bold text-ink shadow-xs">
+                <span key={wi} className="rounded-[var(--borderRadius-small)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-2 py-0.5 text-xs font-bold text-[var(--fgColor-default)]">
                   {w}
                 </span>
               ))}
@@ -521,8 +512,8 @@ export function ItemDraftCard({
               className={textareaClass()}
             />
           </Field>
-          <div className="flex flex-col gap-2 rounded-xl border border-line bg-stone/30 p-3">
-            <span className="text-xs font-bold uppercase tracking-wider text-muted">Giọng mẫu của Thầy/Cô (học sinh bấm Nghe mẫu)</span>
+          <div className="flex flex-col gap-2 rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] p-3">
+            <span className="text-xs font-bold uppercase tracking-wider text-[var(--fgColor-muted)]">Giọng mẫu của Thầy/Cô (học sinh bấm Nghe mẫu)</span>
             <MiniRecorder
               fileId={d.modelAudioFileId}
               label={`Ghi giọng mẫu câu ${n}`}
@@ -548,12 +539,12 @@ export function ItemDraftCard({
             </Field>
             {d.itemType === 'speak_picture' && (
               <div className="flex flex-col gap-1.5">
-                <span className="text-xs font-bold uppercase tracking-wider text-muted">Tranh gợi ý khi nói</span>
+                <span className="text-xs font-bold uppercase tracking-wider text-[var(--fgColor-muted)]">Tranh gợi ý khi nói</span>
                 {d.imageFileId ? (
                   <div className="flex items-center gap-2">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={`/api/files/${d.imageFileId}`} alt="" className="size-10 rounded object-contain border border-line" />
-                    <button type="button" onClick={() => patch({ imageFileId: null })} className="text-xs text-red-600 hover:underline">
+                    <img src={`/api/files/${d.imageFileId}`} alt="" className="size-10 rounded border border-[var(--borderColor-default)] object-contain" />
+                    <button type="button" data-link="true" onClick={() => patch({ imageFileId: null })} className="text-xs text-blush-ink hover:underline">
                       Xoá tranh
                     </button>
                   </div>
@@ -569,7 +560,7 @@ export function ItemDraftCard({
       {/* 10. Dạng Trắc nghiệm chữ truyền thống */}
       {d.itemType === 'choice' && (
         <fieldset className="flex flex-col gap-2">
-          <legend className="mb-1 text-sm font-normal text-ink-2">Đáp án (chọn một đáp án đúng)</legend>
+          <legend className="mb-1 text-sm font-normal text-[var(--fgColor-muted)]">Đáp án (chọn một đáp án đúng)</legend>
           {d.options.map((o, oi) => (
             <div key={o.key} className="flex items-center gap-2">
               <input
@@ -578,7 +569,7 @@ export function ItemDraftCard({
                 checked={o.isCorrect}
                 onChange={() => markCorrect(o.key)}
                 aria-label={`Đáp án ${oi + 1} là đáp án đúng`}
-                className="size-4 shrink-0 accent-[var(--primary-deep)]"
+                className="size-4 shrink-0 accent-[var(--control-checked-bgColor-rest,var(--fgColor-accent))]"
               />
               <input
                 type="text"
@@ -588,14 +579,11 @@ export function ItemDraftCard({
                 aria-label={`Nội dung đáp án ${oi + 1} của câu ${n}`}
                 className={inputClass()}
               />
-              <ActIcon label={`Xoá đáp án ${oi + 1} của câu ${n}`} danger onClick={() => removeOption(o.key)} disabled={d.options.length <= 2}>
-                <Trash2 className="size-4" aria-hidden />
-              </ActIcon>
+              <ActIcon label={`Xoá đáp án ${oi + 1} của câu ${n}`} danger icon={TrashIcon} onClick={() => removeOption(o.key)} disabled={d.options.length <= 2} />
             </div>
           ))}
           <div>
-            <Btn variant="ghost" onClick={addOption} disabled={d.options.length >= MAX_OPTIONS}>
-              <Plus className="size-4" aria-hidden />
+            <Btn variant="ghost" leadingVisual={PlusIcon} onClick={addOption} disabled={d.options.length >= MAX_OPTIONS}>
               Thêm đáp án
             </Btn>
           </div>
@@ -604,8 +592,8 @@ export function ItemDraftCard({
 
       {/* Tiêu chí chấm cho các dạng câu nói hoặc bài tự luận */}
       {!['choice', 'picture_choice', 'match', 'order', 'gap_fill'].includes(d.itemType) && (
-        <fieldset className="flex flex-col gap-2 border-t border-line pt-3">
-          <legend className="mb-1 text-sm font-normal text-ink-2">
+        <fieldset className="flex flex-col gap-2 border-t border-[var(--borderColor-default)] pt-3">
+          <legend className="mb-1 text-sm font-normal text-[var(--fgColor-muted)]">
             Tiêu chí chấm (không bắt buộc). Có tiêu chí thì điểm câu là tổng điểm các tiêu chí, tối đa {CRITERION_MAX_POINTS} điểm mỗi tiêu chí.
           </legend>
           {d.criteria.map((c, ci) => (
@@ -629,14 +617,11 @@ export function ItemDraftCard({
                 aria-label={`Điểm tối đa tiêu chí ${ci + 1} của câu ${n}`}
                 className={`${inputClass()} w-20 shrink-0`}
               />
-              <ActIcon label={`Xoá tiêu chí ${ci + 1} của câu ${n}`} danger onClick={() => removeCriterion(c.key)}>
-                <Trash2 className="size-4" aria-hidden />
-              </ActIcon>
+              <ActIcon label={`Xoá tiêu chí ${ci + 1} của câu ${n}`} danger icon={TrashIcon} onClick={() => removeCriterion(c.key)} />
             </div>
           ))}
           <div className="flex flex-wrap gap-2">
-            <Btn variant="ghost" onClick={addCriterion} disabled={d.criteria.length >= CRITERIA_PER_ITEM}>
-              <Plus className="size-4" aria-hidden />
+            <Btn variant="ghost" leadingVisual={PlusIcon} onClick={addCriterion} disabled={d.criteria.length >= CRITERIA_PER_ITEM}>
               Thêm tiêu chí
             </Btn>
             {!hasCriteria && (

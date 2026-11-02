@@ -68,18 +68,18 @@ export function ItemGradingView({
   const cell = (r: ItemGradingRow, key: string) => {
     switch (key) {
       case 'student':
-        return <span className="min-w-0 truncate text-base font-bold text-ink">{r.fullName}</span>;
+        return <span className="min-w-0 truncate text-base font-bold text-[var(--fgColor-default)]">{r.fullName}</span>;
       case 'status':
         return <SubmissionPill status={r.status} />;
       case 'score':
         return (
           <span className="flex flex-wrap items-center gap-2">
-            <span className="text-base text-ink">{scoreText(r)}</span>
+            <span className="text-base text-[var(--fgColor-default)]">{scoreText(r)}</span>
             {hasFlaggedMark(r) && <Pill tone="blush">Chấm chéo lệch</Pill>}
           </span>
         );
       case 'skills':
-        return <span className="text-sm text-ink-2">{skillText(r) || '—'}</span>;
+        return <span className="text-sm text-[var(--fgColor-muted)]">{skillText(r) || '—'}</span>;
       case 'action':
         return (
           <Btn variant="ghost" onClick={() => setOpenId(r.studentId)} disabled={!canManage && r.submissionId === null}>
@@ -114,9 +114,9 @@ export function ItemGradingView({
 
       {assignment.description && <Notice className="mb-4 whitespace-pre-line">{assignment.description}</Notice>}
 
-      <p className="mb-3 text-sm text-ink-2">
-        {items.length} câu hỏi · Chưa nộp <b className="font-normal text-ink">{counts.not_submitted}</b> · Đã nộp <b className="font-normal text-ink">{counts.submitted}</b> · Đã chấm{' '}
-        <b className="font-normal text-ink">{counts.graded}</b>
+      <p className="mb-3 text-sm text-[var(--fgColor-muted)]">
+        {items.length} câu hỏi · Chưa nộp <b className="font-normal text-[var(--fgColor-default)]">{counts.not_submitted}</b> · Đã nộp <b className="font-normal text-[var(--fgColor-default)]">{counts.submitted}</b> · Đã chấm{' '}
+        <b className="font-normal text-[var(--fgColor-default)]">{counts.graded}</b>
       </p>
 
       {rows.length === 0 ? (
@@ -134,12 +134,12 @@ export function ItemGradingView({
             card={(r) => (
               <Card>
                 <div className="flex items-start justify-between gap-2">
-                  <b className="min-w-0 truncate text-base text-ink">{r.fullName}</b>
+                  <b className="min-w-0 truncate text-base text-[var(--fgColor-default)]">{r.fullName}</b>
                   <SubmissionPill status={r.status} />
                 </div>
-                <small className="block text-sm text-ink-2">Điểm {scoreText(r)}</small>
+                <small className="block text-sm text-[var(--fgColor-muted)]">Điểm {scoreText(r)}</small>
                 {hasFlaggedMark(r) && <Pill tone="blush">Chấm chéo lệch</Pill>}
-                {skillText(r) && <small className="block text-sm text-muted">{skillText(r)}</small>}
+                {skillText(r) && <small className="block text-sm text-[var(--fgColor-muted)]">{skillText(r)}</small>}
                 <Btn block variant="ghost" onClick={() => setOpenId(r.studentId)}>
                   {canManage ? 'Chấm bài' : 'Xem bài'}
                 </Btn>

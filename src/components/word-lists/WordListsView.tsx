@@ -1,7 +1,7 @@
 'use client';
 
 // Màn Danh sách từ (35.14): web là bảng có ⋯ (Chơi thử, Trình chiếu, Sửa, Xoá), điện thoại là thẻ có nút chữ. Xoá luôn qua hộp xác nhận.
-import { Gamepad2, MonitorPlay, Pencil, Plus, Trash2 } from 'lucide-react';
+import { BroadcastIcon, PencilIcon, PlayIcon, PlusIcon, TrashIcon } from '@primer/octicons-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
@@ -63,10 +63,10 @@ export function WordListsView({ lists, classes, lessons, canManage }: { lists: W
   }
 
   const menu = (r: WordListRow): RowMenuItem[] => [
-    { kind: 'link', label: 'Chơi thử', icon: Gamepad2, href: `/tu-vung/${r.id}` },
-    { kind: 'action', label: 'Trình chiếu', icon: MonitorPlay, onSelect: () => present.start('word_list', r.id), disabled: present.starting },
-    { kind: 'action', label: 'Sửa', icon: Pencil, onSelect: () => openEdit(r), disabled: !canManage, disabledHint: 'Không có quyền soạn bài' },
-    { kind: 'action', label: 'Xoá', icon: Trash2, danger: true, onSelect: () => setToDelete(r), disabled: !canManage, disabledHint: 'Không có quyền soạn bài' },
+    { kind: 'link', label: 'Chơi thử', icon: PlayIcon, href: `/tu-vung/${r.id}` },
+    { kind: 'action', label: 'Trình chiếu', icon: BroadcastIcon, onSelect: () => present.start('word_list', r.id), disabled: present.starting },
+    { kind: 'action', label: 'Sửa', icon: PencilIcon, onSelect: () => openEdit(r), disabled: !canManage, disabledHint: 'Không có quyền soạn bài' },
+    { kind: 'action', label: 'Xoá', icon: TrashIcon, danger: true, onSelect: () => setToDelete(r), disabled: !canManage, disabledHint: 'Không có quyền soạn bài' },
   ];
 
   const cell = (r: WordListRow, key: string) => {
@@ -74,14 +74,21 @@ export function WordListsView({ lists, classes, lessons, canManage }: { lists: W
       case 'name':
         return (
           <div className="min-w-0">
-            <button type="button" onClick={() => openEdit(r)} className="text-left text-base font-normal text-link underline underline-offset-2">{r.name}</button>
-            <small className="block truncate text-xs text-muted">{r.preview}</small>
+            <button
+              type="button"
+              data-link="true"
+              onClick={() => openEdit(r)}
+              className="text-left text-base font-normal text-[var(--fgColor-link)] underline underline-offset-2"
+            >
+              {r.name}
+            </button>
+            <small className="block truncate text-xs text-[var(--fgColor-muted)]">{r.preview}</small>
           </div>
         );
       case 'link':
-        return <span className="text-sm text-ink-2">{linkText(r)}</span>;
+        return <span className="text-sm text-[var(--fgColor-muted)]">{linkText(r)}</span>;
       case 'count':
-        return <span className="text-base tabular-nums text-ink">{r.wordCount}</span>;
+        return <span className="text-base tabular-nums text-[var(--fgColor-default)]">{r.wordCount}</span>;
       case 'actions':
         return (
           <div className="flex justify-end">
@@ -96,21 +103,19 @@ export function WordListsView({ lists, classes, lessons, canManage }: { lists: W
   const card = (r: WordListRow) => (
     <Card>
       <div className="min-w-0">
-        <b className="block break-words text-base text-ink">{r.name}</b>
-        <small className="block text-sm text-muted">{linkText(r)} · {r.wordCount} từ</small>
-        {r.preview && <small className="mt-1 block text-sm text-ink-2">{r.preview}</small>}
+        <b className="block break-words text-base text-[var(--fgColor-default)]">{r.name}</b>
+        <small className="block text-sm text-[var(--fgColor-muted)]">{linkText(r)} · {r.wordCount} từ</small>
+        {r.preview && <small className="mt-1 block text-sm text-[var(--fgColor-muted)]">{r.preview}</small>}
       </div>
       <Link href={`/tu-vung/${r.id}`} className={`${BTN_BASE} ${BTN_PRIMARY} w-full`}>
-        <Gamepad2 className="size-4" aria-hidden />
+        <PlayIcon size={16} aria-hidden />
         Chơi thử
       </Link>
       <div className="grid grid-cols-2 gap-2">
-        <Btn block onClick={() => openEdit(r)} disabled={!canManage || pending}>
-          <Pencil className="size-4" aria-hidden />
+        <Btn block leadingVisual={PencilIcon} onClick={() => openEdit(r)} disabled={!canManage || pending}>
           Sửa
         </Btn>
-        <Btn block variant="danger" onClick={() => setToDelete(r)} disabled={!canManage}>
-          <Trash2 className="size-4" aria-hidden />
+        <Btn block variant="danger" leadingVisual={TrashIcon} onClick={() => setToDelete(r)} disabled={!canManage}>
           Xoá
         </Btn>
       </div>
@@ -125,8 +130,7 @@ export function WordListsView({ lists, classes, lessons, canManage }: { lists: W
         subtitle="Bộ từ (tranh, âm thanh, nghĩa) gắn với lớp hoặc bài giảng, dùng lại cho các trò chơi từ vựng."
         actions={
           canManage ? (
-            <Btn variant="primary" onClick={() => setCreating(true)}>
-              <Plus className="size-4" aria-hidden />
+            <Btn variant="primary" leadingVisual={PlusIcon} onClick={() => setCreating(true)}>
               Thêm danh sách
             </Btn>
           ) : null

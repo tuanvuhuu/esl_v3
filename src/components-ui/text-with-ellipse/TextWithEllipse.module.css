@@ -1,0 +1,16 @@
+.text {
+  white-space: pre-line;
+  cursor: default;
+}
+
+.toggleable {
+  cursor: pointer;
+}
+
+.clamped {
+  display: -webkit-box;
+  -webkit-line-clamp: var(--line-clamp);
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

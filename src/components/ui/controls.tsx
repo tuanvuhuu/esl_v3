@@ -1,22 +1,46 @@
-﻿// Điều khiển dùng chung (docs/DESIGN.md mục 8): ô nhập, ô chọn, chip, và phân trang.
-// Mọi thứ cao đúng token --ctl-h (32px) trên máy tính, --ctl-h-touch (44px) trên điện thoại.
+'use client';
+
+// Điều khiển dùng chung trên nền @primer/react v38: TextInput, Chip, Tag, ChipGroup và Pagination.
+// Cao đúng chuẩn --ctl-h (32px) trên máy tính, --ctl-h-touch (44px) trên điện thoại.
+import { ChevronLeftIcon, ChevronRightIcon } from '@primer/octicons-react';
+import { CounterLabel, TextInput as PrimerTextInput } from '@primer/react';
+import clsx from 'clsx';
 import Link from 'next/link';
-import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode } from 'react';
+import type { ButtonHTMLAttributes, ElementType, InputHTMLAttributes, ReactElement, ReactNode } from 'react';
 
-// Khung chung của ô nhập và ô chọn
 const CTL_BOX =
-  'h-[var(--ctl-h)] min-w-0 rounded-[var(--radius-ctl)] border border-line bg-surface text-sm text-ink outline-none placeholder:text-muted focus:border-primary-deep max-[767px]:h-[var(--ctl-h-touch)] max-[767px]:text-input';
+  'h-[var(--ctl-h)] min-w-0 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] text-sm text-[var(--fgColor-default)] outline-none placeholder:text-[var(--fgColor-muted)] focus:border-[var(--focus-outlineColor)] max-[767px]:h-[var(--ctl-h-touch)] max-[767px]:text-input';
 
-// Dùng cho ô nhập trong form (Field.inputClass)
 export const CTL_FIELD = `${CTL_BOX} w-full px-2.5`;
 
-export function TextInput({ error = false, className = '', ...rest }: InputHTMLAttributes<HTMLInputElement> & { error?: boolean }) {
-  return <input {...rest} className={`${CTL_BOX} w-full px-2.5 ${error ? 'border-blush-ink' : ''} ${className}`} />;
+export function TextInput({
+  error = false,
+  leadingVisual,
+  trailingVisual,
+  className = '',
+  size: _htmlSize,
+  ...rest
+}: InputHTMLAttributes<HTMLInputElement> & {
+  error?: boolean;
+  leadingVisual?: ElementType | ReactElement | null;
+  trailingVisual?: ElementType | ReactElement | null;
+}) {
+  void _htmlSize;
+  return (
+    <PrimerTextInput
+      {...rest}
+      block
+      leadingVisual={leadingVisual}
+      trailingVisual={trailingVisual}
+      validationStatus={error ? 'error' : undefined}
+      className={clsx('!min-w-0', className)}
+    />
+  );
 }
 
-// Chip lọc và chip tab (chuẩn trang Học sinh). Có href thì là liên kết (lọc qua URL), không thì là nút.
+// Chip lọc và chip tab. Có href thì là liên kết (lọc qua URL), không thì là nút.
 const CHIP =
-  'inline-flex h-[var(--ctl-h)] shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3 text-sm font-semibold transition-colors max-[767px]:h-[var(--chip-h-touch)] max-[767px]:text-xs';
+  'inline-flex h-[var(--ctl-h)] shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 text-sm font-medium transition-colors max-[767px]:h-[var(--chip-h-touch)] max-[767px]:text-xs';
 
 export function Chip({
   selected,
@@ -27,16 +51,29 @@ export function Chip({
   children,
   ...rest
 }: ButtonHTMLAttributes<HTMLButtonElement> & { selected: boolean; count?: number; href?: string; tab?: boolean }) {
-  const tone = selected ? 'bg-primary text-on-primary' : 'bg-stone text-stone-ink hover:bg-line';
+  const tone = selected
+    ? 'border-[var(--button-primary-borderColor-rest)] bg-[var(--button-primary-bgColor-rest)] text-[var(--button-primary-fgColor-rest)] font-semibold'
+    : 'border-[var(--borderColor-default)] bg-[var(--bgColor-default)] text-[var(--fgColor-muted)] hover:bg-[var(--bgColor-muted)] hover:text-[var(--fgColor-default)]';
   const body = (
     <>
       {children}
-      {count !== undefined && <b className={`text-xs font-normal ${selected ? 'opacity-80' : 'opacity-60'}`}>{count}</b>}
+      {count !== undefined && (
+        <CounterLabel className="!font-normal">
+          {count}
+        </CounterLabel>
+      )}
     </>
   );
   if (href) {
     return (
-      <Link href={href} scroll={false} role={tab ? 'tab' : undefined} aria-selected={tab ? selected : undefined} aria-current={!tab && selected ? 'page' : undefined} className={`${CHIP} ${tone} ${className}`}>
+      <Link
+        href={href}
+        scroll={false}
+        role={tab ? 'tab' : undefined}
+        aria-selected={tab ? selected : undefined}
+        aria-current={!tab && selected ? 'page' : undefined}
+        className={clsx(CHIP, tone, className)}
+      >
         {body}
       </Link>
     );
@@ -48,16 +85,20 @@ export function Chip({
       aria-selected={tab ? selected : undefined}
       aria-pressed={tab ? undefined : selected}
       {...rest}
-      className={`${CHIP} ${tone} ${className}`}
+      className={clsx(CHIP, tone, className)}
     >
       {body}
     </button>
   );
 }
 
-// Thẻ nhãn dữ liệu (con của phụ huynh, lớp của giáo viên): không phải nút lọc, cỡ chữ nhỏ hơn chip
+// Thẻ nhãn dữ liệu (con của phụ huynh, lớp của giáo viên)
 export function Tag({ href, children, className = '' }: { href?: string; children: ReactNode; className?: string }) {
-  const cls = `inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-full bg-stone px-2.5 py-1 text-sm font-normal text-stone-ink ${href ? 'hover:text-ink hover:underline' : ''} ${className}`;
+  const cls = clsx(
+    'inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-full border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] px-2.5 py-0.5 text-sm font-normal text-[var(--fgColor-default)]',
+    href && 'hover:border-[var(--borderColor-accent-emphasis)] hover:text-[var(--fgColor-link)] hover:underline',
+    className,
+  );
   if (href) {
     return (
       <Link href={href} scroll={false} className={cls}>
@@ -68,30 +109,60 @@ export function Tag({ href, children, className = '' }: { href?: string; childre
   return <span className={cls}>{children}</span>;
 }
 
-export function ChipGroup({ label, tabs = false, className = '', children }: { label: string; tabs?: boolean; className?: string; children: ReactNode }) {
+export function ChipGroup({
+  label,
+  tabs = false,
+  className = '',
+  children,
+}: {
+  label: string;
+  tabs?: boolean;
+  className?: string;
+  children: ReactNode;
+}) {
   return (
-    <div role={tabs ? 'tablist' : 'group'} aria-label={label} className={`flex flex-wrap items-center gap-2 ${className}`}>
+    <div role={tabs ? 'tablist' : 'group'} aria-label={label} className={clsx('flex flex-wrap items-center gap-2', className)}>
       {children}
     </div>
   );
 }
 
-// Phân trang dùng chung: ô số cùng cỡ với ô nhập
+// Phân trang dùng chung theo chuẩn Primer + 01. TSUKUBA
 const PAGE_BTN =
-  'grid h-[var(--ctl-h)] min-w-[var(--ctl-h)] place-items-center rounded-[var(--radius-ctl)] border px-2 text-sm font-bold transition-colors max-[767px]:h-[var(--ctl-h-touch)] max-[767px]:min-w-[var(--ctl-h-touch)]';
+  'inline-flex h-[var(--ctl-h)] min-w-[var(--ctl-h)] items-center justify-center rounded-[var(--borderRadius-medium)] border px-2 text-sm font-semibold transition-colors max-[767px]:h-[var(--ctl-h-touch)] max-[767px]:min-w-[var(--ctl-h-touch)]';
 
-// Đích của một nút trang: đường dẫn (phân trang theo URL) hoặc hàm chạy ngay trên trang (dữ liệu đã nằm trên trang)
 type PageTarget = { href: string } | { onClick: () => void };
 
-function PageLink({ target, label, current = false, disabled = false, children }: { target: PageTarget; label: string; current?: boolean; disabled?: boolean; children: ReactNode }) {
+function PageLink({
+  target,
+  label,
+  current = false,
+  disabled = false,
+  children,
+}: {
+  target: PageTarget;
+  label: string;
+  current?: boolean;
+  disabled?: boolean;
+  children: ReactNode;
+}) {
   if (disabled) {
     return (
-      <span aria-disabled="true" aria-label={label} className={`${PAGE_BTN} border-line bg-surface text-ink opacity-40`}>
+      <span
+        aria-disabled="true"
+        aria-label={label}
+        className={clsx(PAGE_BTN, 'border-[var(--borderColor-default)] bg-[var(--bgColor-default)] text-[var(--fgColor-muted)] opacity-45')}
+      >
         {children}
       </span>
     );
   }
-  const tone = `${PAGE_BTN} ${current ? 'border-primary-deep bg-primary text-on-primary' : 'border-line bg-surface text-ink hover:border-ink-2'}`;
+  const tone = clsx(
+    PAGE_BTN,
+    current
+      ? 'border-[var(--button-primary-borderColor-rest)] bg-[var(--button-primary-bgColor-rest)] text-[var(--button-primary-fgColor-rest)]'
+      : 'border-[var(--borderColor-default)] bg-[var(--bgColor-default)] text-[var(--fgColor-default)] hover:bg-[var(--bgColor-muted)]',
+  );
   if ('href' in target) {
     return (
       <Link href={target.href} scroll={false} aria-label={label} aria-current={current ? 'page' : undefined} className={tone}>
@@ -115,24 +186,30 @@ export function Pagination({
 }: {
   page: number;
   pageCount: number;
-  hrefFor?: (p: number) => string; // phân trang theo URL
-  onPage?: (p: number) => void; // phân trang ngay trên trang
+  hrefFor?: (p: number) => string;
+  onPage?: (p: number) => void;
   label?: string;
 }) {
   if (pageCount <= 1) return null;
   const pages = Array.from({ length: pageCount }, (_, i) => i + 1);
   const to = (p: number): PageTarget => (hrefFor ? { href: hrefFor(p) } : { onClick: () => onPage?.(p) });
   return (
-    <nav aria-label={label} className="flex flex-wrap items-center justify-between gap-3">
-      <small className="text-sm text-muted">Trang {page} / {pageCount}</small>
+    <nav aria-label={label} className="flex flex-wrap items-center justify-between gap-3 pt-1">
+      <small className="text-sm text-[var(--fgColor-muted)]">
+        Trang {page} / {pageCount}
+      </small>
       <div className="flex items-center gap-1.5">
-        <PageLink disabled={page <= 1} target={to(page - 1)} label="Trang trước">‹</PageLink>
+        <PageLink disabled={page <= 1} target={to(page - 1)} label="Trang trước">
+          <ChevronLeftIcon size={16} aria-hidden />
+        </PageLink>
         {pages.map((p) => (
           <PageLink key={p} target={to(p)} current={p === page} label={`Trang ${p}`}>
             {p}
           </PageLink>
         ))}
-        <PageLink disabled={page >= pageCount} target={to(page + 1)} label="Trang sau">›</PageLink>
+        <PageLink disabled={page >= pageCount} target={to(page + 1)} label="Trang sau">
+          <ChevronRightIcon size={16} aria-hidden />
+        </PageLink>
       </div>
     </nav>
   );

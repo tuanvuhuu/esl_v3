@@ -38,11 +38,11 @@ export function SkillReportView({
   const cls = classes.find((c) => c.id === classId);
 
   const cell = (r: SkillReportRow, key: string) => {
-    if (key === 'student') return <span className="min-w-0 truncate text-base font-bold text-ink">{r.fullName}</span>;
-    if (key === 'graded') return <span className="text-base text-ink">{r.gradedCount} bài</span>;
+    if (key === 'student') return <span className="min-w-0 truncate text-base font-bold text-[var(--fgColor-default)]">{r.fullName}</span>;
+    if (key === 'graded') return <span className="text-base text-[var(--fgColor-default)]">{r.gradedCount} bài</span>;
     const percent = totalPercent(r.totals[key as Skill]);
     return (
-      <span className={`inline-flex min-w-[56px] justify-center rounded-lg px-2.5 py-1 text-base font-normal ${skillCellClass(percent)}`}>
+      <span className={`inline-flex min-w-[56px] justify-center rounded-[var(--borderRadius-small)] px-2.5 py-1 text-base font-normal ${skillCellClass(percent)}`}>
         {percent === null ? '—' : `${percent}%`}
       </span>
     );
@@ -64,9 +64,9 @@ export function SkillReportView({
           onChange={(v) => router.push(`/bao-cao-ky-nang?cls=${v}`, { scroll: false })}
           options={classes.map((c) => ({ value: String(c.id), label: c.name }))}
         />
-        <div className="flex flex-wrap items-center gap-2 text-sm text-ink-2" aria-label="Chú thích dải màu">
+        <div className="flex flex-wrap items-center gap-2 text-sm text-[var(--fgColor-muted)]" aria-label="Chú thích dải màu">
           {LEGEND.map((b) => (
-            <span key={b} className={`inline-flex rounded-lg px-2 py-0.5 ${b === 'good' ? skillCellClass(80) : b === 'mid' ? skillCellClass(60) : b === 'low' ? skillCellClass(0) : skillCellClass(null)}`}>
+            <span key={b} className={`inline-flex rounded-[var(--borderRadius-small)] px-2 py-0.5 ${b === 'good' ? skillCellClass(80) : b === 'mid' ? skillCellClass(60) : b === 'low' ? skillCellClass(0) : skillCellClass(null)}`}>
               {BAND_LABEL[b]}
             </span>
           ))}
@@ -88,18 +88,18 @@ export function SkillReportView({
           from="md"
           card={(r) => (
             <Card>
-              <b className="text-base font-normal text-ink">{r.fullName}</b>
+              <b className="text-base font-normal text-[var(--fgColor-default)]">{r.fullName}</b>
               <div className="grid grid-cols-2 gap-2">
                 {SKILLS.map((s) => {
                   const percent = totalPercent(r.totals[s]);
                   return (
-                    <span key={s} className={`flex items-center justify-between rounded-lg px-3 py-2 text-sm ${skillCellClass(percent)}`}>
+                    <span key={s} className={`flex items-center justify-between rounded-[var(--borderRadius-medium)] px-3 py-2 text-sm ${skillCellClass(percent)}`}>
                       {SKILL_LABELS[s]} <b className="font-normal">{percent === null ? '—' : `${percent}%`}</b>
                     </span>
                   );
                 })}
               </div>
-              <small className="text-sm text-muted">{r.gradedCount} bài đã chấm</small>
+              <small className="text-sm text-[var(--fgColor-muted)]">{r.gradedCount} bài đã chấm</small>
             </Card>
           )}
         />

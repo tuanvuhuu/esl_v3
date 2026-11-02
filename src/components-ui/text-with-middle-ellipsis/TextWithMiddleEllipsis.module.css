@@ -1,0 +1,22 @@
+.expanded {
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.clamped {
+  display: -webkit-box;
+  -webkit-line-clamp: var(--line-clamp);
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-all;
+}
+
+.measure {
+  position: absolute;
+  top: -9999px;
+  left: -9999px;
+  height: auto;
+  visibility: hidden;
+  word-break: break-all;
+  pointer-events: none;
+}

@@ -1,13 +1,20 @@
 'use client';
 
 import { startTransition, useActionState, useEffect, useRef, useState, type FormEvent } from 'react';
-import { createClassAction, previewScheduleAction, rescheduleClassAction, updateClassAction, type ClassCoreValues, type SchedulePreview } from '@/app/(app)/lop-hoc/actions';
+import {
+  createClassAction,
+  previewScheduleAction,
+  rescheduleClassAction,
+  updateClassAction,
+  type ClassCoreValues,
+  type SchedulePreview,
+} from '@/app/(app)/lop-hoc/actions';
 import { dateKeyLabel, vnDateKey, vnTimeLabel, weekdayLabel, weekdayOfKey } from '@/lib/datetime';
 import { TUITION_PER_SESSION } from '@/lib/tuition';
 import { MAX_SLOTS_PER_DAY, WEEKDAY_CODES, WEEKDAY_CODE_LABELS, type WeekdayCode } from '@/lib/validation/class';
 import type { StaffRole } from '@/lib/validation/teacher';
 import type { ActionResult } from '@/lib/validation/student';
-import { Field, FORM_BTN_CANCEL, FORM_BTN_SUBMIT, inputClass, FormFooter } from '@/components/ui/Field';
+import { Field, inputClass, FormFooter } from '@/components/ui/Field';
 import { Btn } from '@/components/ui/Btn';
 import { SelectPanel } from '@/components/ui/SelectPanel';
 import { Alert } from '@/components/ui/primitives';
@@ -119,7 +126,9 @@ export function ClassForm({
   const [times, setTimes] = useState(initialTimes);
   const [touched, setTouched] = useState<Set<WeekdayCode>>(() => new Set(initialTimes.keys()));
   // Lớp đã có lịch: ngày mới bật lấy giờ ca đầu của lớp thay vì giờ mặc định
-  const [lastTime, setLastTime] = useState<SlotDraft>(() => (values.dayTimes?.[0] ? { start: values.dayTimes[0].start, end: values.dayTimes[0].end } : DEFAULT_TIME));
+  const [lastTime, setLastTime] = useState<SlotDraft>(() =>
+    values.dayTimes?.[0] ? { start: values.dayTimes[0].start, end: values.dayTimes[0].end } : DEFAULT_TIME,
+  );
   const daySlots: DaySlots[] = WEEKDAY_CODES.filter((c) => days.includes(c)).map((code) => ({ code, slots: times.get(code) ?? [lastTime] }));
 
   function toggleDay(code: WeekdayCode, on: boolean) {
@@ -196,7 +205,6 @@ export function ClassForm({
   const kept = values.keptSessions ?? 0;
 
   // Xem trước lịch khi tạo lớp hoặc xếp lại lịch: chờ ngừng nhập nửa giây rồi hỏi máy chủ (số buổi, ngày cuối, buổi trùng giáo viên hoặc phòng).
-  // bump tăng khi ô thường đổi; ô chọn (cơ sở, giáo viên) và giờ học nằm trong state nên đã có trong danh sách theo dõi.
   const formRef = useRef<HTMLFormElement>(null);
   const [bump, setBump] = useState(0);
   const [preview, setPreview] = useState<SchedulePreview | null>(null);
@@ -217,82 +225,82 @@ export function ClassForm({
 
       {isReschedule && <input type="hidden" name="rescheduleClassId" value={classId} />}
       {!isReschedule && (
-      <>
-      <SectionTitle>Thông tin lớp</SectionTitle>
-      <Field label="Cơ sở *" error={errors.campusId} hint="Mỗi lớp thuộc đúng một cơ sở">
-        <SelectPanel
-          name="campusId"
-          label="Cơ sở *"
-          value={campusId}
-          onChange={chooseCampus}
-          options={campuses.map((c) => ({ value: String(c.id), label: c.name }))}
-          error={!!errors.campusId}
-          block
-        />
-      </Field>
-      <Field label="Mã lớp *" error={errors.name} hint="VD: IELTS-K15">
-        <input name="name" defaultValue={values.name} autoComplete="off" className={inputClass(errors.name)} />
-      </Field>
-      <Field label="Khoá học *" error={errors.course}>
-        <input name="course" defaultValue={values.course} placeholder="VD: IELTS Foundation 6.0" autoComplete="off" className={inputClass(errors.course)} />
-      </Field>
-      <Field label="Trình độ CEFR" error={errors.levelId} hint="Khung tham chiếu Châu Âu (A1–C2), để trống nếu không áp dụng">
-        <SelectPanel
-          name="levelId"
-          label="Trình độ CEFR"
-          value={levelId}
-          onChange={setLevelId}
-          options={[
-            { value: '', label: 'Không áp dụng (để trống)' },
-            ...levels.map((l) => ({ value: String(l.id), label: `${l.code} · ${l.name}` })),
-          ]}
-          error={!!errors.levelId}
-          block
-        />
-      </Field>
-      <SectionTitle>Giáo viên và phòng</SectionTitle>
-      <Field label="Giáo viên chủ nhiệm *" error={errors.teacherId} hint={teacherOptions.length === 0 ? 'Cơ sở này chưa có giáo viên. Thêm ở màn Giáo viên.' : undefined}>
-        <SelectPanel
-          name="teacherId"
-          label="Giáo viên chủ nhiệm *"
-          value={teacherId}
-          onChange={setTeacherId}
-          options={[{ value: '', label: 'Chọn giáo viên' }, ...teacherOptions.map((t) => ({ value: String(t.id), label: `${t.name} · ${t.subject}` }))]}
-          error={!!errors.teacherId}
-          block
-        />
-      </Field>
-      <Field label="Trợ giảng" error={errors.assistantId} hint={assistantOptions.length === 0 ? 'Cơ sở này chưa có trợ giảng. Thêm ở màn Giáo viên, chọn vai trò Trợ giảng.' : undefined}>
-        <SelectPanel
-          name="assistantId"
-          label="Trợ giảng"
-          value={assistantId}
-          onChange={setAssistantId}
-          options={[{ value: '', label: 'Chưa có trợ giảng' }, ...assistantOptions.map((t) => ({ value: String(t.id), label: `${t.name} · ${t.subject}` }))]}
-          error={!!errors.assistantId}
-          block
-        />
-      </Field>
-      <Field label="Giáo viên nước ngoài" error={errors.foreignTeacherId} hint={foreignOptions.length === 0 ? 'Cơ sở này chưa có giáo viên nước ngoài. Thêm ở màn Giáo viên, chọn vai trò Giáo viên nước ngoài.' : undefined}>
-        <SelectPanel
-          name="foreignTeacherId"
-          label="Giáo viên nước ngoài"
-          value={foreignTeacherId}
-          onChange={setForeignTeacherId}
-          options={[{ value: '', label: 'Chưa có giáo viên nước ngoài' }, ...foreignOptions.map((t) => ({ value: String(t.id), label: `${t.name} · ${t.subject}` }))]}
-          error={!!errors.foreignTeacherId}
-          block
-        />
-      </Field>
-      <Field label="Phòng" error={errors.room}>
-        <input name="room" defaultValue={values.room} placeholder="VD: P.201" autoComplete="off" className={inputClass(errors.room)} />
-      </Field>
-      <SectionTitle>Sĩ số</SectionTitle>
-      <input type="hidden" name="fee" value={fee} />
-      <Field label="Sĩ số tối đa *" error={errors.capacity}>
-        <input name="capacity" type="number" inputMode="numeric" min={1} max={100} step={1} defaultValue={values.capacity} className={inputClass(errors.capacity)} />
-      </Field>
-      </>
+        <>
+          <SectionTitle>Thông tin lớp</SectionTitle>
+          <Field label="Cơ sở *" error={errors.campusId} hint="Mỗi lớp thuộc đúng một cơ sở">
+            <SelectPanel
+              name="campusId"
+              label="Cơ sở *"
+              value={campusId}
+              onChange={chooseCampus}
+              options={campuses.map((c) => ({ value: String(c.id), label: c.name }))}
+              error={!!errors.campusId}
+              block
+            />
+          </Field>
+          <Field label="Mã lớp *" error={errors.name} hint="VD: IELTS-K15">
+            <input name="name" defaultValue={values.name} autoComplete="off" className={inputClass(errors.name)} />
+          </Field>
+          <Field label="Khoá học *" error={errors.course}>
+            <input name="course" defaultValue={values.course} placeholder="VD: IELTS Foundation 6.0" autoComplete="off" className={inputClass(errors.course)} />
+          </Field>
+          <Field label="Trình độ CEFR" error={errors.levelId} hint="Khung tham chiếu Châu Âu (A1–C2), để trống nếu không áp dụng">
+            <SelectPanel
+              name="levelId"
+              label="Trình độ CEFR"
+              value={levelId}
+              onChange={setLevelId}
+              options={[
+                { value: '', label: 'Không áp dụng (để trống)' },
+                ...levels.map((l) => ({ value: String(l.id), label: `${l.code} · ${l.name}` })),
+              ]}
+              error={!!errors.levelId}
+              block
+            />
+          </Field>
+          <SectionTitle>Giáo viên và phòng</SectionTitle>
+          <Field label="Giáo viên chủ nhiệm *" error={errors.teacherId} hint={teacherOptions.length === 0 ? 'Cơ sở này chưa có giáo viên. Thêm ở màn Giáo viên.' : undefined}>
+            <SelectPanel
+              name="teacherId"
+              label="Giáo viên chủ nhiệm *"
+              value={teacherId}
+              onChange={setTeacherId}
+              options={[{ value: '', label: 'Chọn giáo viên' }, ...teacherOptions.map((t) => ({ value: String(t.id), label: `${t.name} · ${t.subject}` }))]}
+              error={!!errors.teacherId}
+              block
+            />
+          </Field>
+          <Field label="Trợ giảng" error={errors.assistantId} hint={assistantOptions.length === 0 ? 'Cơ sở này chưa có trợ giảng. Thêm ở màn Giáo viên, chọn vai trò Trợ giảng.' : undefined}>
+            <SelectPanel
+              name="assistantId"
+              label="Trợ giảng"
+              value={assistantId}
+              onChange={setAssistantId}
+              options={[{ value: '', label: 'Chưa có trợ giảng' }, ...assistantOptions.map((t) => ({ value: String(t.id), label: `${t.name} · ${t.subject}` }))]}
+              error={!!errors.assistantId}
+              block
+            />
+          </Field>
+          <Field label="Giáo viên nước ngoài" error={errors.foreignTeacherId} hint={foreignOptions.length === 0 ? 'Cơ sở này chưa có giáo viên nước ngoài. Thêm ở màn Giáo viên, chọn vai trò Giáo viên nước ngoài.' : undefined}>
+            <SelectPanel
+              name="foreignTeacherId"
+              label="Giáo viên nước ngoài"
+              value={foreignTeacherId}
+              onChange={setForeignTeacherId}
+              options={[{ value: '', label: 'Chưa có giáo viên nước ngoài' }, ...foreignOptions.map((t) => ({ value: String(t.id), label: `${t.name} · ${t.subject}` }))]}
+              error={!!errors.foreignTeacherId}
+              block
+            />
+          </Field>
+          <Field label="Phòng" error={errors.room}>
+            <input name="room" defaultValue={values.room} placeholder="VD: P.201" autoComplete="off" className={inputClass(errors.room)} />
+          </Field>
+          <SectionTitle>Sĩ số</SectionTitle>
+          <input type="hidden" name="fee" value={fee} />
+          <Field label="Sĩ số tối đa *" error={errors.capacity}>
+            <input name="capacity" type="number" inputMode="numeric" min={1} max={100} step={1} defaultValue={values.capacity} className={inputClass(errors.capacity)} />
+          </Field>
+        </>
       )}
 
       {hasSchedule ? (
@@ -305,7 +313,7 @@ export function ClassForm({
             <SectionTitle>Lịch học</SectionTitle>
           )}
           <fieldset className="col-span-full flex flex-col gap-2">
-            <legend className="mb-1.5 text-sm font-normal text-ink-2">Ngày học trong tuần *</legend>
+            <legend className="mb-1.5 text-sm font-medium text-[var(--fgColor-default)]">Ngày học trong tuần *</legend>
             <div className="flex flex-wrap gap-2">
               {WEEKDAY_CODES.map((code) => (
                 <label key={code} className="cursor-pointer" title={WEEKDAY_CODE_LABELS[code]}>
@@ -317,13 +325,13 @@ export function ClassForm({
                     onChange={(e) => toggleDay(code, e.target.checked)}
                     className="peer sr-only"
                   />
-                  <span className="inline-flex h-[var(--ctl-h)] min-w-[var(--ctl-h)] items-center justify-center rounded-full border border-line bg-surface px-3 text-sm font-semibold text-ink-2 max-[767px]:h-[var(--ctl-h-touch)] peer-checked:border-primary-deep peer-checked:bg-primary peer-checked:text-on-primary peer-focus-visible:outline-2 peer-focus-visible:outline-primary-deep">
+                  <span className="inline-flex h-[var(--ctl-h)] min-w-[var(--ctl-h)] items-center justify-center rounded-full border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-3 text-sm font-semibold text-[var(--fgColor-muted)] transition-colors max-[767px]:h-[var(--ctl-h-touch)] peer-checked:border-[var(--button-primary-borderColor-rest)] peer-checked:bg-[var(--button-primary-bgColor-rest)] peer-checked:text-[var(--button-primary-fgColor-rest)] peer-focus-visible:outline-2 peer-focus-visible:outline-[var(--focus-outlineColor)]">
                     {code}
                   </span>
                 </label>
               ))}
             </div>
-            {errors.weekdays && <span className="text-sm font-semibold text-blush-ink">{errors.weekdays}</span>}
+            {errors.weekdays && <span className="text-sm font-medium text-blush-ink">{errors.weekdays}</span>}
           </fieldset>
 
           {daySlots.length > 1 && (
@@ -348,7 +356,6 @@ export function ClassForm({
         </>
       ) : (
         <>
-          {/* Hướng dẫn đặt trên ô giờ: người dùng hay bỏ qua chữ ở cuối form */}
           <Notice className={`col-span-full ${daySlots.length === 0 ? 'hidden' : ''}`}>
             <b>Đổi giờ từng ca tại đây:</b> các buổi sắp tới của ca đó sẽ dời theo giờ mới. <b>Muốn thêm ca, đổi ngày học hoặc số buổi</b>, bấm <b>Xếp lại lịch</b> trong menu ⋯ của lớp ở danh sách. Sửa hoặc huỷ một buổi riêng ở màn Lịch học.
           </Notice>
@@ -357,10 +364,10 @@ export function ClassForm({
       )}
 
       <FormFooter className="col-span-full">
-        <button type="button" onClick={onCancel} className={FORM_BTN_CANCEL}>Huỷ</button>
-        <button type="submit" disabled={pending} className={FORM_BTN_SUBMIT}>
+        <Btn onClick={onCancel}>Huỷ</Btn>
+        <Btn type="submit" variant="primary" loading={pending} disabled={pending}>
           {pending ? 'Đang lưu…' : isCreate ? 'Tạo lớp' : isReschedule ? 'Xếp lại lịch' : 'Lưu thay đổi'}
-        </button>
+        </Btn>
       </FormFooter>
     </form>
   );
@@ -368,7 +375,7 @@ export function ClassForm({
 
 // Tiêu đề nhóm trong form lớp: chia form dài thành bốn phần dễ dò
 function SectionTitle({ children }: { children: string }) {
-  return <h3 className="col-span-full mt-2 border-b border-line pb-1.5 text-md font-extrabold text-ink first:mt-0">{children}</h3>;
+  return <h3 className="col-span-full mt-2 border-b border-[var(--borderColor-muted)] pb-1.5 text-sm font-bold text-[var(--fgColor-default)] first:mt-0">{children}</h3>;
 }
 
 // "T5 22/10/2026 08:00"
@@ -382,18 +389,23 @@ function PreviewBox({ preview }: { preview: SchedulePreview | null }) {
   if (!preview) return null;
   if (!preview.ok) return <Notice className="col-span-full">{preview.message}</Notice>;
   return (
-    <section aria-label="Xem trước lịch" className="col-span-full flex flex-col gap-2 rounded-[var(--radius-ctl)] bg-primary-soft p-3">
-      <p className="text-base text-ink">
-        <b className="font-extrabold">{preview.kept ? `${preview.total} buổi mới` : `${preview.total} buổi`}</b> · từ {whenLabel(preview.firstStartsAt)} đến {whenLabel(preview.lastStartsAt)}
+    <section
+      aria-label="Xem trước lịch"
+      className="col-span-full flex flex-col gap-2 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-accent-muted)] bg-[var(--bgColor-accent-muted)] p-3"
+    >
+      <p className="text-sm text-[var(--fgColor-default)]">
+        <b className="font-bold">{preview.kept ? `${preview.total} buổi mới` : `${preview.total} buổi`}</b> · từ {whenLabel(preview.firstStartsAt)} đến {whenLabel(preview.lastStartsAt)}
         {preview.kept ? ` · giữ ${preview.kept} buổi đã học` : ''}
       </p>
       <ul className="flex flex-wrap gap-1.5">
         {preview.sample.map((s) => (
-          <li key={s.startsAt.toISOString()} className="rounded-full bg-surface px-2.5 py-1 text-sm text-ink-2">
+          <li key={s.startsAt.toISOString()} className="rounded-full border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-2.5 py-0.5 text-xs text-[var(--fgColor-default)]">
             {whenLabel(s.startsAt)}–{vnTimeLabel(s.endsAt)}
           </li>
         ))}
-        {preview.total > preview.sample.length && <li className="px-1 py-1 text-sm text-muted">và {preview.total - preview.sample.length} buổi nữa</li>}
+        {preview.total > preview.sample.length && (
+          <li className="px-1 py-0.5 text-xs text-[var(--fgColor-muted)]">và {preview.total - preview.sample.length} buổi nữa</li>
+        )}
       </ul>
       {preview.conflictCount > 0 ? (
         <Alert inline>

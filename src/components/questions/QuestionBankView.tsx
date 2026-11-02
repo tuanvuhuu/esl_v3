@@ -1,6 +1,6 @@
 'use client';
 
-import { Pencil, Plus, Trash2 } from 'lucide-react';
+import { PencilIcon, PlusIcon, TrashIcon } from '@primer/octicons-react';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { deleteQuestionAction, saveQuestionAction } from '@/app/(app)/ngan-hang-cau-hoi/actions';
@@ -9,7 +9,7 @@ import { blankDraft, draftToInput, snippet, toDraft, type Draft } from '@/compon
 import { Btn } from '@/components/ui/Btn';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { DataGrid, type GridColumn } from '@/components/ui/datagrid';
-import { FORM_BTN_CANCEL, FORM_BTN_SUBMIT, FormFooter } from '@/components/ui/Field';
+import { Field, FormFooter } from '@/components/ui/Field';
 import { Modal } from '@/components/ui/Modal';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { RowMenu, type RowMenuItem } from '@/components/ui/RowMenu';
@@ -18,7 +18,6 @@ import { Pill, Alert } from '@/components/ui/primitives';
 import { Card, EmptyPanel } from '@/components/ui/surfaces';
 import { Toast, useToast } from '@/components/ui/Toast';
 import { ITEM_TYPE_LABELS, SKILL_LABELS, type ItemType, type Skill } from '@/lib/assignment-scoring';
-import { Field } from '@/components/ui/Field';
 import { topicLabel } from '@/lib/vocab-topics';
 import { EMPTY_FILTER, filterBank, LEVEL_FIELD_OPTIONS, LEVEL_OPTIONS, levelLabel, SKILL_OPTIONS, topicFieldOptions, topicOptions, TYPE_OPTIONS, type BankFilter } from './bank-filters';
 import type { BankQuestion } from '@/lib/queries/question-bank';
@@ -83,8 +82,8 @@ export function QuestionBankView({ questions }: { questions: BankQuestion[] }) {
   }
 
   const menuItems = (q: BankQuestion): RowMenuItem[] => [
-    { kind: 'action', label: 'Sửa', icon: Pencil, onSelect: () => openEdit(q) },
-    { kind: 'action', label: 'Xoá', icon: Trash2, danger: true, onSelect: () => setToDelete(q) },
+    { kind: 'action', label: 'Sửa', icon: PencilIcon, onSelect: () => openEdit(q) },
+    { kind: 'action', label: 'Xoá', icon: TrashIcon, danger: true, onSelect: () => setToDelete(q) },
   ];
 
   const cell = (q: BankQuestion, key: string) => {
@@ -92,20 +91,20 @@ export function QuestionBankView({ questions }: { questions: BankQuestion[] }) {
       case 'prompt':
         return (
           <span className="flex min-w-0 flex-col">
-            <span className="text-base text-ink [overflow-wrap:anywhere]">{snippet(q.prompt, q.audioName)}</span>
-            {q.topic && <span className="text-sm text-muted">{topicLabel(q.topic)}</span>}
+            <span className="text-base text-[var(--fgColor-default)] [overflow-wrap:anywhere]">{snippet(q.prompt, q.audioName)}</span>
+            {q.topic && <span className="text-sm text-[var(--fgColor-muted)]">{topicLabel(q.topic)}</span>}
           </span>
         );
       case 'level':
-        return <span className={`text-sm ${q.level ? 'text-ink-2' : 'text-muted'}`}>{q.level ? levelLabel(q.level) : ''}</span>;
+        return <span className={`text-sm ${q.level ? 'text-[var(--fgColor-default)]' : 'text-[var(--fgColor-muted)]'}`}>{q.level ? levelLabel(q.level) : ''}</span>;
       case 'skill':
         return <Pill tone="lav">{SKILL_LABELS[q.skill]}</Pill>;
       case 'type':
-        return <span className="text-sm text-ink-2">{ITEM_TYPE_LABELS[q.itemType]}</span>;
+        return <span className="text-sm text-[var(--fgColor-muted)]">{ITEM_TYPE_LABELS[q.itemType]}</span>;
       case 'points':
-        return <span className="text-base text-ink">{q.points}</span>;
+        return <span className="text-base text-[var(--fgColor-default)]">{q.points}</span>;
       case 'usage':
-        return <span className={`text-sm ${q.usageCount > 0 ? 'text-ink' : 'text-muted'}`}>{usageText(q)}</span>;
+        return <span className={`text-sm ${q.usageCount > 0 ? 'text-[var(--fgColor-default)]' : 'text-[var(--fgColor-muted)]'}`}>{usageText(q)}</span>;
       case 'action':
         return <RowMenu label={`Thao tác với câu ${q.id}`} items={menuItems(q)} />;
       default:
@@ -120,8 +119,7 @@ export function QuestionBankView({ questions }: { questions: BankQuestion[] }) {
         title="Ngân hàng câu hỏi"
         subtitle="Câu hỏi dùng chung toàn trung tâm. Thêm vào bài thì chép nội dung, nên sửa ở đây không đổi bài đã giao."
         actions={
-          <Btn variant="primary" onClick={openNew}>
-            <Plus className="size-4" aria-hidden />
+          <Btn variant="primary" leadingVisual={PlusIcon} onClick={openNew}>
             Thêm câu hỏi
           </Btn>
         }
@@ -136,7 +134,7 @@ export function QuestionBankView({ questions }: { questions: BankQuestion[] }) {
             <SelectPanel label="Lọc theo chủ đề" auto value={filter.topic} onChange={(v) => setFilter((f) => ({ ...f, topic: v }))} options={topicOptions(questions)} />
             <SelectPanel label="Lọc theo kỹ năng" auto value={filter.skill} onChange={(v) => setFilter((f) => ({ ...f, skill: v as 'all' | Skill }))} options={SKILL_OPTIONS} />
             <SelectPanel label="Lọc theo dạng câu" auto value={filter.type} onChange={(v) => setFilter((f) => ({ ...f, type: v as 'all' | ItemType }))} options={TYPE_OPTIONS} />
-            <span className="text-sm text-muted">{shown.length} câu</span>
+            <span className="text-sm text-[var(--fgColor-muted)]">{shown.length} câu</span>
           </div>
 
           {shown.length === 0 ? (
@@ -153,8 +151,8 @@ export function QuestionBankView({ questions }: { questions: BankQuestion[] }) {
               stickyEnd
               card={(q) => (
                 <Card>
-                  <b className="text-base font-normal text-ink [overflow-wrap:anywhere]">{snippet(q.prompt, q.audioName)}</b>
-                  <div className="flex flex-wrap items-center gap-2 text-sm text-ink-2">
+                  <b className="text-base font-normal text-[var(--fgColor-default)] [overflow-wrap:anywhere]">{snippet(q.prompt, q.audioName)}</b>
+                  <div className="flex flex-wrap items-center gap-2 text-sm text-[var(--fgColor-muted)]">
                     <Pill tone="lav">{SKILL_LABELS[q.skill]}</Pill>
                     <span>
                       {ITEM_TYPE_LABELS[q.itemType]} · {q.points} điểm · {usageText(q).toLowerCase()}
@@ -163,12 +161,10 @@ export function QuestionBankView({ questions }: { questions: BankQuestion[] }) {
                     </span>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
-                    <Btn block onClick={() => openEdit(q)}>
-                      <Pencil className="size-4" aria-hidden />
+                    <Btn block leadingVisual={PencilIcon} onClick={() => openEdit(q)}>
                       Sửa
                     </Btn>
-                    <Btn block variant="danger" onClick={() => setToDelete(q)}>
-                      <Trash2 className="size-4" aria-hidden />
+                    <Btn block variant="danger" leadingVisual={TrashIcon} onClick={() => setToDelete(q)}>
                       Xoá
                     </Btn>
                   </div>
@@ -209,12 +205,12 @@ export function QuestionBankView({ questions }: { questions: BankQuestion[] }) {
               onError={setError}
             />
             <FormFooter>
-              <button type="button" onClick={() => setEditor(null)} className={FORM_BTN_CANCEL}>
+              <Btn onClick={() => setEditor(null)}>
                 Huỷ
-              </button>
-              <button type="button" onClick={save} disabled={pending} className={FORM_BTN_SUBMIT}>
+              </Btn>
+              <Btn variant="primary" loading={pending} disabled={pending} onClick={save}>
                 {pending ? 'Đang lưu…' : 'Lưu câu hỏi'}
-              </button>
+              </Btn>
             </FormFooter>
           </div>
         )}

@@ -9,7 +9,7 @@ import { getCurrentAccount } from '@/lib/session';
 // Trò chơi từ vựng của học sinh (35.15). Chỉ mở được danh sách của lớp mình hoặc danh sách dùng chung.
 export default function StudentGamePage({ params }: { params: Promise<{ id: string }> }) {
   return (
-    <Suspense fallback={<section aria-busy="true" className="h-[360px] animate-pulse rounded-[var(--radius-panel)] bg-stone" />}>
+    <Suspense fallback={<section aria-busy="true" className="h-[360px] animate-pulse rounded-xl bg-[var(--bgColor-muted)]" />}>
       <StudentGameData params={params} />
     </Suspense>
   );

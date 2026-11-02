@@ -1,7 +1,7 @@
 'use client';
 
 // Bốn trò chơi tiếp theo (35.16): bingo nghe, Simon nói, đoán chữ, đua xe trả lời nhanh. Không trừ điểm khi sai, chỉ tính đúng.
-import { Volume2 } from 'lucide-react';
+import { UnmuteIcon } from '@primer/octicons-react';
 import { useEffect, useEffectEvent, useMemo, useRef, useState } from 'react';
 import {
   bingoBoard,
@@ -19,7 +19,8 @@ import {
 } from '@/lib/games';
 import { BIG, Picture, say, type GameProps } from './shared';
 
-const TILE = 'flex aspect-square w-full items-center justify-center rounded-2xl border-4 bg-surface shadow-card transition-transform active:scale-90';
+const TILE =
+  'flex aspect-square w-full items-center justify-center rounded-2xl border-4 bg-[var(--bgColor-default)] shadow-[var(--shadow-resting-small,0_1px_2px_rgba(0,0,0,0.04))] transition-transform active:scale-90';
 
 // ---------- Bingo nghe: nghe từ, chạm đúng ô trên bảng; đủ một hàng là thắng ----------
 export function BingoGame({ words, seed, onFinish }: GameProps) {
@@ -52,23 +53,26 @@ export function BingoGame({ words, seed, onFinish }: GameProps) {
 
   return (
     <div className="flex flex-col gap-4" data-target={current?.word}>
-      <p className="text-sm text-ink-2">Đã đánh dấu {marked.filter(Boolean).length} ô · đủ một hàng ngang, dọc hoặc chéo là BINGO</p>
-      <button type="button" onClick={() => current && say(current)} className={`${BIG} w-full`}>
-        <Volume2 className="size-6" aria-hidden /> Nghe lại từ
+      <p className="text-sm text-[var(--fgColor-muted)]">Đã đánh dấu {marked.filter(Boolean).length} ô · đủ một hàng ngang, dọc hoặc chéo là BINGO</p>
+      <button type="button" data-card="true" onClick={() => current && say(current)} className={`${BIG} w-full`}>
+        <UnmuteIcon size={22} aria-hidden /> Nghe lại từ
       </button>
       <ul className={`grid gap-2 ${board.size === 3 ? 'grid-cols-3' : 'grid-cols-2'}`} aria-label="Bảng bingo">
         {board.cells.map((c, k) => (
           <li key={c.word}>
             <button
               type="button"
+              data-card="true"
               onClick={() => tap(k)}
               data-word={c.word}
               aria-pressed={marked[k]}
               aria-label={`Tranh ${c.meaningVi || c.word}`}
-              className={`${TILE} relative ${marked[k] ? 'border-[var(--accent)] bg-mint' : miss === k ? 'border-blush-ink bg-blush' : 'border-line'}`}
+              className={`${TILE} relative ${
+                marked[k] ? 'border-[var(--bgColor-success-emphasis)] bg-mint' : miss === k ? 'border-blush-ink bg-blush' : 'border-[var(--borderColor-default)]'
+              }`}
             >
               <Picture w={c} size={board.size === 2 ? 'lg' : 'md'} />
-              {marked[k] && <span className="absolute right-1 top-1 text-xl" aria-hidden>✅</span>}
+              {marked[k] && <span className="absolute top-1 right-1 text-xl" aria-hidden>✅</span>}
             </button>
           </li>
         ))}
@@ -152,28 +156,37 @@ export function SimonGame({ words, seed, onFinish }: GameProps) {
 
   return (
     <div className="flex flex-col gap-4" data-target={seq.map((w) => w.word).join('|')}>
-      <p className="text-sm text-ink-2">Lượt {round + 1}/{game.sequences.length} · {seq.length} từ · Đúng {score}</p>
-      <p className="rounded-2xl bg-surface p-3 text-base font-bold text-ink" aria-live="polite">
-        {wrong ? `Chưa đúng. Thứ tự là: ${seq.map((w) => w.word).join(', ')}` : busy ? 'Nghe và nhìn tranh sáng lên…' : `Chạm lại ${seq.length} tranh theo đúng thứ tự (đã chạm ${step})`}
+      <p className="text-sm text-[var(--fgColor-muted)]">
+        Lượt {round + 1}/{game.sequences.length} · {seq.length} từ · Đúng {score}
+      </p>
+      <p className="rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-3 text-base font-bold text-[var(--fgColor-default)]" aria-live="polite">
+        {wrong
+          ? `Chưa đúng. Thứ tự là: ${seq.map((w) => w.word).join(', ')}`
+          : busy
+          ? 'Nghe và nhìn tranh sáng lên…'
+          : `Chạm lại ${seq.length} tranh theo đúng thứ tự (đã chạm ${step})`}
       </p>
       <ul className="grid grid-cols-2 gap-3" aria-label="Các tranh">
         {game.choices.map((c) => (
           <li key={c.word}>
             <button
               type="button"
+              data-card="true"
               onClick={() => tap(c)}
               disabled={busy || wrong}
               data-word={c.word}
               aria-label={`Tranh ${c.meaningVi || c.word}`}
-              className={`${TILE} ${lit === c.word ? 'scale-105 border-primary-deep bg-primary' : 'border-line'} disabled:cursor-default`}
+              className={`${TILE} ${
+                lit === c.word ? 'scale-105 border-[var(--borderColor-accent-emphasis)] bg-[var(--button-primary-bgColor-rest)]' : 'border-[var(--borderColor-default)]'
+              } disabled:cursor-default`}
             >
               <Picture w={c} size="lg" />
             </button>
           </li>
         ))}
       </ul>
-      <button type="button" onClick={replay} disabled={busy || wrong} className={`${BIG} w-full`}>
-        <Volume2 className="size-6" aria-hidden /> Nghe lại chuỗi
+      <button type="button" data-card="true" onClick={replay} disabled={busy || wrong} className={`${BIG} w-full`}>
+        <UnmuteIcon size={22} aria-hidden /> Nghe lại chuỗi
       </button>
     </div>
   );
@@ -211,11 +224,11 @@ export function HangmanGame({ words, seed, onFinish }: GameProps) {
 
   return (
     <div className="flex flex-col gap-4" data-target={w.word}>
-      <p className="text-sm text-ink-2">Từ {i + 1}/{list.length} · Đúng {score}</p>
-      <div className="flex items-center gap-3 rounded-2xl bg-surface p-3">
+      <p className="text-sm text-[var(--fgColor-muted)]">Từ {i + 1}/{list.length} · Đúng {score}</p>
+      <div className="flex items-center gap-3 rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-3">
         <Picture w={w} size="lg" />
         <div className="flex min-w-0 flex-col gap-1">
-          {w.meaningVi && <b className="text-lg font-extrabold text-ink">{w.meaningVi}</b>}
+          {w.meaningVi && <b className="text-lg font-extrabold text-[var(--fgColor-default)]">{w.meaningVi}</b>}
           <span className="text-2xl tracking-tight" aria-label={`Còn ${HANGMAN_LIVES - state.wrong} bóng bay`}>
             {Array.from({ length: HANGMAN_LIVES }, (_, k) => (k < HANGMAN_LIVES - state.wrong ? '🎈' : '💥')).join('')}
           </span>
@@ -223,7 +236,12 @@ export function HangmanGame({ words, seed, onFinish }: GameProps) {
       </div>
       <p className="flex flex-wrap justify-center gap-1.5" aria-label="Từ đang đoán" aria-live="polite">
         {(state.lost ? [...w.word] : maskWord(w.word, guessed)).map((ch, k) => (
-          <span key={k} className={`flex h-12 min-w-9 items-center justify-center rounded-xl text-2xl font-extrabold uppercase ${ch === '_' ? 'border-b-4 border-ink-2 text-transparent' : state.lost ? 'bg-blush text-blush-ink' : 'bg-mint text-ink'}`}>
+          <span
+            key={k}
+            className={`flex h-12 min-w-9 items-center justify-center rounded-xl text-2xl font-extrabold uppercase ${
+              ch === '_' ? 'border-b-4 border-[var(--fgColor-muted)] text-transparent' : state.lost ? 'bg-blush text-blush-ink' : 'bg-mint text-mint-ink'
+            }`}
+          >
             {ch === '_' ? '·' : ch}
           </span>
         ))}
@@ -237,11 +255,16 @@ export function HangmanGame({ words, seed, onFinish }: GameProps) {
             <li key={ch}>
               <button
                 type="button"
+                data-card="true"
                 onClick={() => guess(ch)}
                 disabled={used || state.solved || state.lost}
                 data-key={ch}
                 className={`flex h-11 w-full items-center justify-center rounded-xl border-2 text-lg font-extrabold uppercase transition-transform active:scale-90 ${
-                  hit ? 'border-[var(--accent)] bg-mint text-ink' : used ? 'border-line bg-stone text-muted' : 'border-line bg-surface text-ink'
+                  hit
+                    ? 'border-[var(--bgColor-success-emphasis)] bg-mint text-mint-ink'
+                    : used
+                    ? 'border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)] text-[var(--fgColor-muted)]'
+                    : 'border-[var(--borderColor-default)] bg-[var(--bgColor-default)] text-[var(--fgColor-default)] hover:bg-[var(--bgColor-muted)]'
                 }`}
               >
                 {ch}
@@ -296,25 +319,48 @@ export function RaceGame({ words, seed, onFinish }: GameProps) {
   const progress = score / qs.length;
   return (
     <div className="flex flex-col gap-4" data-target={q.target.word}>
-      <p className="text-sm text-ink-2">Câu {i + 1}/{qs.length} · Đúng {score}</p>
-      <div className="relative h-14 overflow-hidden rounded-2xl border-2 border-dashed border-line bg-surface" aria-label={`Xe đã đi ${score}/${qs.length} chặng`}>
-        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-3xl" aria-hidden>🏁</span>
-        <span className="absolute top-1/2 -translate-y-1/2 text-4xl transition-[left] duration-500" style={{ left: `calc(${progress} * (100% - 5.5rem) + 0.25rem)` }} aria-hidden>
+      <p className="text-sm text-[var(--fgColor-muted)]">Câu {i + 1}/{qs.length} · Đúng {score}</p>
+      <div
+        className="relative h-14 overflow-hidden rounded-xl border-2 border-dashed border-[var(--borderColor-default)] bg-[var(--bgColor-default)]"
+        aria-label={`Xe đã đi ${score}/${qs.length} chặng`}
+      >
+        <span className="absolute top-1/2 right-2 -translate-y-1/2 text-3xl" aria-hidden>🏁</span>
+        <span
+          className="absolute top-1/2 -translate-y-1/2 text-4xl transition-[left] duration-500"
+          style={{ left: `calc(${progress} * (100% - 5.5rem) + 0.25rem)` }}
+          aria-hidden
+        >
           🏎️
         </span>
       </div>
-      <div className="h-2 overflow-hidden rounded-full bg-stone" aria-label={`Còn ${left} giây`}>
-        <div className={`h-full rounded-full transition-[width] duration-1000 ease-linear ${left <= 3 ? 'bg-blush-ink' : 'bg-primary'}`} style={{ width: `${(left / RACE_SECONDS) * 100}%` }} />
+      <div className="h-2 overflow-hidden rounded-full bg-[var(--bgColor-muted)]" aria-label={`Còn ${left} giây`}>
+        <div
+          className={`h-full rounded-full transition-[width] duration-1000 ease-linear ${left <= 3 ? 'bg-blush-ink' : 'bg-[var(--button-primary-bgColor-rest)]'}`}
+          style={{ width: `${(left / RACE_SECONDS) * 100}%` }}
+        />
       </div>
-      <div className="flex justify-center rounded-2xl bg-surface p-4">
+      <div className="flex justify-center rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-4">
         <Picture w={q.target} size="lg" />
       </div>
       <ul className="flex flex-col gap-2" aria-label="Chọn từ đúng">
         {q.options.map((o) => {
-          const state = picked === null ? 'border-line bg-surface' : o.word === q.target.word ? 'border-[var(--accent)] bg-mint' : picked === o.word ? 'border-blush-ink bg-blush' : 'border-line bg-surface opacity-50';
+          const state =
+            picked === null
+              ? 'border-[var(--borderColor-default)] bg-[var(--bgColor-default)] hover:bg-[var(--bgColor-muted)]'
+              : o.word === q.target.word
+              ? 'border-[var(--bgColor-success-emphasis)] bg-mint text-mint-ink'
+              : picked === o.word
+              ? 'border-blush-ink bg-blush text-blush-ink'
+              : 'border-[var(--borderColor-default)] bg-[var(--bgColor-default)] opacity-50';
           return (
             <li key={o.word}>
-              <button type="button" onClick={() => answer(o.word)} data-word={o.word} className={`flex min-h-14 w-full items-center justify-center rounded-2xl border-2 px-4 text-xl font-extrabold text-ink transition-transform active:scale-95 ${state}`}>
+              <button
+                type="button"
+                data-card="true"
+                onClick={() => answer(o.word)}
+                data-word={o.word}
+                className={`flex min-h-14 w-full items-center justify-center rounded-xl border-2 px-4 text-xl font-extrabold text-[var(--fgColor-default)] transition-all active:scale-95 ${state}`}
+              >
                 {o.word}
               </button>
             </li>

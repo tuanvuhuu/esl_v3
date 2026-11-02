@@ -1,0 +1,79 @@
+/* Ghi đè component Primer → lặp class để thắng style gốc (styled-components) */
+.input.input {
+  height: 32px;
+}
+
+.toggleButton.toggleButton {
+  right: 0px;
+  top: 2px;
+  position: absolute;
+}
+
+.warningIcon {
+  right: 28px;
+  position: absolute;
+  color: var(--app-danger-emphasis);
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-left: calc(-1 * var(--space-2));
+  margin-right: calc(-1 * var(--space-2));
+}
+
+.yearInput.yearInput {
+  width: 110px;
+}
+
+.yearLabel {
+  margin-left: calc(-1 * var(--space-1));
+}
+
+.calendar {
+  margin-top: calc(-1 * var(--space-2));
+}
+
+.week {
+  display: grid;
+  grid-template-columns: repeat(7, 40px);
+}
+
+.dayName {
+  color: var(--app-fg-muted);
+  font-weight: 600;
+  font-size: var(--fs-0);
+  display: flex;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+}
+
+.day.day {
+  color: var(--app-fg-default);
+  font-size: 12px;
+  display: flex;
+  justify-content: center;
+  height: 32px;
+}
+
+.day.dayOutside {
+  color: var(--app-fg-muted);
+}
+
+.day.dayCurrent {
+  font-weight: 600;
+}
+
+.day.daySelected {
+  color: #fff;
+  background-color: var(--app-accent-emphasis);
+}
+
+.footer {
+  display: flex;
+  flex-direction: row-reverse;
+}

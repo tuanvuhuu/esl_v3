@@ -1,14 +1,24 @@
 'use client';
 
 import { startTransition, useActionState, useEffect, useState, type FormEvent } from 'react';
-import { checkStudentCodeAction, createStudentAction, suggestStudentCodeAction, tuitionPreviewAction, updateStudentAction, type StudentFormValues, type TuitionPreview } from '@/app/(app)/hoc-sinh/actions';
+import {
+  checkStudentCodeAction,
+  createStudentAction,
+  suggestStudentCodeAction,
+  tuitionPreviewAction,
+  updateStudentAction,
+  type StudentFormValues,
+  type TuitionPreview,
+} from '@/app/(app)/hoc-sinh/actions';
 import { dateKeyLabel } from '@/lib/datetime';
 import { formatVND } from '@/lib/money';
 import { TUITION_PER_SESSION } from '@/lib/tuition';
 import { todayIsoVN, type ActionResult } from '@/lib/validation/student';
-import { Field, FORM_BTN_CANCEL, FORM_BTN_SUBMIT, inputClass, textareaClass, FormFooter } from '@/components/ui/Field';
+import { Btn } from '@/components/ui/Btn';
+import { Field, inputClass, textareaClass, FormFooter } from '@/components/ui/Field';
 import { SelectPanel } from '@/components/ui/SelectPanel';
 import { Alert } from '@/components/ui/primitives';
+import { Callout } from '@/components/ui/surfaces';
 
 // campusId: lớp thuộc cơ sở nào. Form học sinh chọn cơ sở trước, rồi chỉ hiện lớp của cơ sở đó.
 export type ClassOption = { id: number; name: string; course: string; teacherName: string; fee: number; campusId: number };
@@ -236,7 +246,11 @@ export function StudentForm({
         error={errors.startDate}
         hint={shownPreview?.firstKey ? `Lớp khai giảng ${dateKeyLabel(shownPreview.firstKey)}. Vào giữa khoá thì chọn ngày học buổi đầu.` : 'Ngày học sinh bắt đầu vào lớp'}
       >
-        <input name="startDate" type="date" value={startDate} onChange={(e) => {
+        <input
+          name="startDate"
+          type="date"
+          value={startDate}
+          onChange={(e) => {
             setStartDate(e.target.value);
             setStartEdited(true);
           }}
@@ -245,11 +259,13 @@ export function StudentForm({
       </Field>
 
       {selectedClass && (
-        <div className="col-span-full rounded-[var(--radius-ctl)] bg-lav px-3 py-2.5 text-sm leading-relaxed text-lav-ink" data-testid="class-info">
-          <b className="text-ink">{selectedClass.course}</b>
-          <br />
-          {selectedClass.teacherName} · Học phí <b className="text-ink">{formatVND(TUITION_PER_SESSION)}</b> một buổi
-          {shownPreview && <> · {shownPreview.total} buổi{shownPreview.firstKey ? ` · Khai giảng ${dateKeyLabel(shownPreview.firstKey)}` : ''}</>}
+        <div className="col-span-full" data-testid="class-info">
+          <Callout tone="info" className="leading-relaxed">
+            <b className="font-semibold text-[var(--fgColor-default)]">{selectedClass.course}</b>
+            <br />
+            {selectedClass.teacherName} · Học phí <b className="font-semibold text-[var(--fgColor-default)]">{formatVND(TUITION_PER_SESSION)}</b> một buổi
+            {shownPreview && <> · {shownPreview.total} buổi{shownPreview.firstKey ? ` · Khai giảng ${dateKeyLabel(shownPreview.firstKey)}` : ''}</>}
+          </Callout>
         </div>
       )}
 
@@ -284,8 +300,8 @@ export function StudentForm({
         <SelectPanel name="parentRelation" label="Quan hệ" defaultValue={values.parentRelation} options={RELATION_OPTIONS} block />
       </Field>
 
-      <label className="flex min-w-0 items-center gap-2.5 self-end pb-2 text-sm font-normal text-ink-2">
-        <input name="parentPrimary" type="checkbox" defaultChecked className="size-4 accent-[var(--primary-deep)]" />
+      <label className="flex min-w-0 items-center gap-2.5 self-end pb-2 text-sm font-normal text-[var(--fgColor-default)]">
+        <input name="parentPrimary" type="checkbox" defaultChecked className="size-4 accent-[var(--control-checked-bgColor-rest)]" />
         Liên hệ chính
       </label>
 
@@ -294,12 +310,10 @@ export function StudentForm({
       </Field>
 
       <FormFooter className="col-span-full">
-        <button type="button" onClick={onCancel} className={FORM_BTN_CANCEL}>
-          Huỷ
-        </button>
-        <button type="submit" disabled={pending} className={FORM_BTN_SUBMIT}>
+        <Btn onClick={onCancel}>Huỷ</Btn>
+        <Btn type="submit" variant="primary" loading={pending} disabled={pending}>
           {pending ? 'Đang lưu…' : mode === 'edit' ? 'Lưu thay đổi' : 'Lưu học sinh'}
-        </button>
+        </Btn>
       </FormFooter>
     </form>
   );
@@ -307,5 +321,5 @@ export function StudentForm({
 
 // Tiêu đề nhóm trong form học sinh: chia form dài thành ba phần dễ dò
 function FormSection({ children }: { children: string }) {
-  return <h3 className="col-span-full mt-2 border-b border-line pb-1.5 text-md font-extrabold text-ink first:mt-0">{children}</h3>;
+  return <h3 className="col-span-full mt-2 border-b border-[var(--borderColor-muted)] pb-1.5 text-sm font-bold text-[var(--fgColor-default)] first:mt-0">{children}</h3>;
 }

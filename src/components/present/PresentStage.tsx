@@ -2,15 +2,28 @@
 
 // Màn chiếu cho cả lớp (35.19): chữ và tranh thật to, điều khiển bằng bàn phím, bút trình chiếu (PageUp/PageDown),
 // chuột, hoặc điện thoại quét mã QR. Trang chưa hiện đáp án thì bấm Tiếp là hiện đáp án, bấm nữa mới sang trang.
-import { ChevronLeft, ChevronRight, Eye, EyeOff, Maximize, Smartphone, Volume2, X } from 'lucide-react';
+import {
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  DeviceMobileIcon,
+  EyeClosedIcon,
+  EyeIcon,
+  ScreenFullIcon,
+  UnmuteIcon,
+  XIcon,
+} from '@primer/octicons-react';
 import Link from 'next/link';
 import { useEffect, useEffectEvent, useState } from 'react';
 import { setPresentModeAction, type PresentSnapshot } from '@/app/(present)/trinh-chieu/actions';
 import { QrImage } from '@/components/tuition/QrImage';
+import { Btn } from '@/components/ui/Btn';
+import { Chip, ChipGroup } from '@/components/ui/controls';
+import { Pill } from '@/components/ui/primitives';
 import { PRESENT_MODES, type PresentMode, type Slide } from '@/lib/presentation';
 import { usePresentSync } from './usePresentSync';
 
-const STAGE_BTN = 'inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border-2 px-5 text-stage-sm font-extrabold transition-transform active:scale-95 disabled:opacity-40';
+const STAGE_BTN =
+  'inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border-2 px-5 text-stage-sm font-extrabold transition-all active:scale-95 disabled:opacity-40';
 
 export function speakSlide(s: Slide) {
   if (s.audioFileId) {
@@ -87,51 +100,67 @@ export function PresentStage({
   }
 
   return (
-    <div className="flex h-dvh flex-col bg-bg text-ink" data-slide={index} data-revealed={state.revealed}>
-      <header className="flex flex-wrap items-center justify-between gap-2 px-4 py-2 text-sm">
+    <div
+      className="flex h-dvh flex-col bg-[var(--bgColor-inset,var(--bgColor-default))] text-[var(--fgColor-default)]"
+      data-slide={index}
+      data-revealed={state.revealed}
+    >
+      <header className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--borderColor-muted)] bg-[var(--bgColor-default)] px-4 py-2 text-sm">
         <div className="flex min-w-0 items-center gap-3">
-          <Link href={backHref} className="inline-flex items-center gap-1 font-bold underline underline-offset-4">
-            <X className="size-4" aria-hidden /> Thoát
+          <Link
+            href={backHref}
+            data-link="true"
+            className="inline-flex items-center gap-1 font-bold text-[var(--fgColor-default)] underline underline-offset-4 hover:text-[var(--fgColor-link)]"
+          >
+            <XIcon size={16} aria-hidden /> Thoát
           </Link>
-          <b className="truncate">{title}</b>
-          {offline && <span className="rounded-full bg-blush px-2 py-0.5 text-xs font-bold text-blush-ink">Mất kết nối, đang thử lại</span>}
+          <b className="truncate text-[var(--fgColor-default)]">{title}</b>
+          {offline && <Pill tone="blush">Mất kết nối, đang thử lại</Pill>}
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {canSwitchMode && (
-            <div className="flex rounded-full border border-line p-0.5" role="group" aria-label="Kiểu chiếu">
+            <ChipGroup label="Kiểu chiếu">
               {(Object.keys(PRESENT_MODES) as PresentMode[]).map((m) => (
-                <button key={m} type="button" aria-pressed={state.mode === m} onClick={() => void switchMode(m)} className={`rounded-full px-3 py-1 font-bold ${state.mode === m ? 'bg-primary text-on-primary' : ''}`}>
+                <Chip key={m} selected={state.mode === m} onClick={() => void switchMode(m)}>
                   {PRESENT_MODES[m]}
-                </button>
+                </Chip>
               ))}
-            </div>
+            </ChipGroup>
           )}
-          <button type="button" onClick={() => setShowQr((v) => !v)} aria-expanded={showQr} className="inline-flex items-center gap-1 rounded-full border border-line px-3 py-1 font-bold">
-            <Smartphone className="size-4" aria-hidden /> Điều khiển bằng điện thoại
-          </button>
-          <button type="button" onClick={() => void document.documentElement.requestFullscreen?.().catch(() => undefined)} className="inline-flex items-center gap-1 rounded-full border border-line px-3 py-1 font-bold">
-            <Maximize className="size-4" aria-hidden /> Toàn màn hình
-          </button>
+          <Btn onClick={() => setShowQr((v) => !v)} aria-expanded={showQr} leadingVisual={DeviceMobileIcon}>
+            Điều khiển bằng điện thoại
+          </Btn>
+          <Btn onClick={() => void document.documentElement.requestFullscreen?.().catch(() => undefined)} leadingVisual={ScreenFullIcon}>
+            Toàn màn hình
+          </Btn>
         </div>
       </header>
 
       <main className="relative flex min-h-0 flex-1 flex-col items-center justify-center gap-[2.5vh] overflow-hidden px-[4vw] text-center">
-        <p className="text-stage-sm font-bold text-ink-2" aria-label="Số trang">
+        <p className="text-stage-sm font-bold text-[var(--fgColor-muted)]" aria-label="Số trang">
           {index + 1} / {slides.length}
         </p>
         {s.prompt && <h1 className="max-w-[90vw] text-stage font-extrabold leading-tight [overflow-wrap:anywhere]">{s.prompt}</h1>}
-        {s.promptVi && <p className="text-stage-sm text-ink-2">{s.promptVi}</p>}
-        {s.passage && <p className="max-w-[80vw] whitespace-pre-line text-stage-sm text-ink-2">{s.passage}</p>}
+        {s.promptVi && <p className="text-stage-sm text-[var(--fgColor-muted)]">{s.promptVi}</p>}
+        {s.passage && <p className="max-w-[80vw] whitespace-pre-line text-stage-sm text-[var(--fgColor-muted)]">{s.passage}</p>}
         <StagePicture s={s} />
 
         {s.options.length > 0 && (
-          <ul className="grid w-full max-w-[1400px] gap-[1.5vw]" style={{ gridTemplateColumns: `repeat(${Math.min(s.options.length, 4)}, minmax(0, 1fr))` }} aria-label="Các đáp án">
+          <ul
+            className="grid w-full max-w-[1400px] gap-[1.5vw]"
+            style={{ gridTemplateColumns: `repeat(${Math.min(s.options.length, 4)}, minmax(0, 1fr))` }}
+            aria-label="Các đáp án"
+          >
             {s.options.map((o, k) => (
               <li
                 key={k}
                 data-correct={o.correct}
                 className={`flex min-h-[12dvh] flex-col items-center justify-center gap-2 rounded-3xl border-4 p-[1vw] text-stage font-extrabold [overflow-wrap:anywhere] ${
-                  state.revealed ? (o.correct ? 'border-[var(--accent)] bg-mint' : 'border-line opacity-40') : 'border-line bg-surface'
+                  state.revealed
+                    ? o.correct
+                      ? 'border-[var(--bgColor-success-emphasis)] bg-mint text-mint-ink'
+                      : 'border-[var(--borderColor-default)] opacity-40'
+                    : 'border-[var(--borderColor-default)] bg-[var(--bgColor-default)]'
                 }`}
               >
                 {o.imageFileId && (
@@ -147,36 +176,62 @@ export function PresentStage({
         <div className="min-h-[14dvh]" aria-live="polite" aria-label="Đáp án">
           {state.revealed && (s.answer || s.answerVi) && s.kind !== 'quiz' && (
             <>
-              {s.answer && <p className="text-stage font-extrabold text-ink">{s.answer}</p>}
-              {s.answerVi && <p className="text-stage-sm text-ink-2">{s.answerVi}</p>}
+              {s.answer && <p className="text-stage font-extrabold text-[var(--fgColor-default)]">{s.answer}</p>}
+              {s.answerVi && <p className="text-stage-sm text-[var(--fgColor-muted)]">{s.answerVi}</p>}
             </>
           )}
-          {state.revealed && s.kind === 'quiz' && s.answerVi && <p className="text-stage-sm text-ink-2">{s.answerVi}</p>}
+          {state.revealed && s.kind === 'quiz' && s.answerVi && <p className="text-stage-sm text-[var(--fgColor-muted)]">{s.answerVi}</p>}
         </div>
 
         {showQr && remoteUrl && (
-          <div className="absolute right-4 top-4 flex flex-col items-center gap-2 rounded-3xl bg-surface p-4 shadow-lift" role="dialog" aria-label="Mã điều khiển">
+          <div
+            className="absolute top-4 right-4 flex flex-col items-center gap-2 rounded-2xl border border-[var(--borderColor-default)] bg-[var(--overlay-bgColor)] p-4 shadow-[var(--shadow-floating-large,0_12px_28px_rgba(0,0,0,0.2))]"
+            role="dialog"
+            aria-label="Mã điều khiển"
+          >
             <QrImage payload={remoteUrl} size={200} label="Mã QR mở trang điều khiển trên điện thoại" />
-            <small className="max-w-[220px] text-sm text-ink-2">Quét bằng điện thoại đã đăng nhập cùng tài khoản này</small>
+            <small className="max-w-[220px] text-sm text-[var(--fgColor-muted)]">Quét bằng điện thoại đã đăng nhập cùng tài khoản này</small>
           </div>
         )}
       </main>
 
       <footer className="flex items-center justify-center gap-3 px-4 pb-4">
-        <button type="button" onClick={() => step({ op: 'prev' })} disabled={index === 0 && !state.revealed} className={`${STAGE_BTN} border-line bg-surface`}>
-          <ChevronLeft className="size-6" aria-hidden /> Trước
+        <button
+          type="button"
+          data-card="true"
+          onClick={() => step({ op: 'prev' })}
+          disabled={index === 0 && !state.revealed}
+          className={`${STAGE_BTN} border-[var(--borderColor-default)] bg-[var(--bgColor-default)] text-[var(--fgColor-default)] hover:bg-[var(--bgColor-muted)]`}
+        >
+          <ChevronLeftIcon size={24} aria-hidden /> Trước
         </button>
         {(s.audioFileId || s.speakText) && (
-          <button type="button" onClick={() => speakSlide(s)} className={`${STAGE_BTN} border-line bg-surface`}>
-            <Volume2 className="size-6" aria-hidden /> Nghe
+          <button
+            type="button"
+            data-card="true"
+            onClick={() => speakSlide(s)}
+            className={`${STAGE_BTN} border-[var(--borderColor-default)] bg-[var(--bgColor-default)] text-[var(--fgColor-default)] hover:bg-[var(--bgColor-muted)]`}
+          >
+            <UnmuteIcon size={24} aria-hidden /> Nghe
           </button>
         )}
-        <button type="button" onClick={() => step({ op: state.revealed ? 'hide' : 'reveal' })} className={`${STAGE_BTN} border-line bg-surface`}>
-          {state.revealed ? <EyeOff className="size-6" aria-hidden /> : <Eye className="size-6" aria-hidden />}
+        <button
+          type="button"
+          data-card="true"
+          onClick={() => step({ op: state.revealed ? 'hide' : 'reveal' })}
+          className={`${STAGE_BTN} border-[var(--borderColor-default)] bg-[var(--bgColor-default)] text-[var(--fgColor-default)] hover:bg-[var(--bgColor-muted)]`}
+        >
+          {state.revealed ? <EyeClosedIcon size={24} aria-hidden /> : <EyeIcon size={24} aria-hidden />}
           {state.revealed ? 'Ẩn đáp án' : 'Hiện đáp án'}
         </button>
-        <button type="button" onClick={() => step({ op: 'next' })} disabled={index === slides.length - 1 && state.revealed} className={`${STAGE_BTN} border-primary-deep bg-primary text-on-primary`}>
-          Tiếp <ChevronRight className="size-6" aria-hidden />
+        <button
+          type="button"
+          data-card="true"
+          onClick={() => step({ op: 'next' })}
+          disabled={index === slides.length - 1 && state.revealed}
+          className={`${STAGE_BTN} border-[var(--button-primary-borderColor-rest)] bg-[var(--button-primary-bgColor-rest)] text-[var(--button-primary-fgColor-rest)] hover:bg-[var(--button-primary-bgColor-hover)]`}
+        >
+          Tiếp <ChevronRightIcon size={24} aria-hidden />
         </button>
       </footer>
     </div>

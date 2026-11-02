@@ -2,7 +2,7 @@
 
 // Chọn từ trong kho từ (P36.4): trình độ, chủ đề, lưới từ chạm để chọn. Người có quyền Cài đặt thấy thêm "Chờ duyệt".
 // Dữ liệu tải theo trình độ và chủ đề bằng server action, không gửi cả kho xuống trình duyệt.
-import { Check, Zap } from 'lucide-react';
+import { CheckIcon, ZapIcon } from '@primer/octicons-react';
 import { useEffect, useState, useTransition } from 'react';
 import { loadVocabAction, reviewVocabAction, type VocabLoad } from '@/app/(app)/bai-tap/vocab-actions';
 import { LEVEL_LABELS, type LevelParams } from '@/lib/level-params';
@@ -92,8 +92,7 @@ export function VocabPicker({
       {error && <Alert inline>{error}</Alert>}
       {!showPending && (
         <div>
-          <Btn onClick={() => onPickMany(list.filter((w) => w.vi).slice(0, 8))} disabled={loading || !list.some((w) => w.vi)}>
-            <Zap className="size-4" aria-hidden />
+          <Btn leadingVisual={ZapIcon} onClick={() => onPickMany(list.filter((w) => w.vi).slice(0, 8))} disabled={loading || !list.some((w) => w.vi)}>
             Chọn 8 từ hay gặp
           </Btn>
         </div>
@@ -106,7 +105,7 @@ export function VocabPicker({
           const on = pickedIds.has(w.id);
           if (showPending) {
             return (
-              <div key={w.id} className="flex min-w-0 flex-col gap-2 rounded-[var(--radius-ctl)] border border-line bg-surface p-2.5">
+              <div key={w.id} className="flex min-w-0 flex-col gap-2 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-2.5">
                 <WordFace w={w} />
                 <div className="grid grid-cols-2 gap-1.5">
                   <Btn variant="primary" onClick={() => review(w, true)} disabled={reviewing}>
@@ -123,13 +122,18 @@ export function VocabPicker({
             <button
               key={w.id}
               type="button"
+              data-card="true"
               aria-pressed={on}
               onClick={() => onToggle(w)}
-              className={`flex min-h-[52px] min-w-0 items-center gap-2.5 rounded-[var(--radius-ctl)] border px-2.5 py-1.5 text-left transition-colors ${on ? 'border-primary-deep bg-primary-soft' : 'border-line bg-surface hover:bg-row-hover'}`}
+              className={`flex min-h-[52px] min-w-0 items-center gap-2.5 rounded-[var(--borderRadius-medium)] border px-2.5 py-1.5 text-left transition-colors ${
+                on
+                  ? 'border-[var(--fgColor-accent)] bg-[var(--bgColor-accent-muted,var(--color-primary-soft))]'
+                  : 'border-[var(--borderColor-default)] bg-[var(--bgColor-default)] hover:bg-[var(--bgColor-muted)]'
+              }`}
             >
               <WordFace w={w} />
-              <span aria-hidden className={`grid size-5 shrink-0 place-items-center rounded-md border-2 ${on ? 'border-accent bg-accent text-white' : 'border-line'}`}>
-                {on && <Check className="size-3.5" />}
+              <span aria-hidden className={`grid size-5 shrink-0 place-items-center rounded-[var(--borderRadius-small)] border-2 ${on ? 'border-accent bg-accent text-white' : 'border-[var(--borderColor-default)]'}`}>
+                {on && <CheckIcon size={14} aria-hidden />}
               </span>
             </button>
           );
@@ -152,12 +156,12 @@ export function VocabPicker({
 function WordFace({ w }: { w: VocabWord }) {
   return (
     <span className="flex min-w-0 flex-1 items-center gap-2.5">
-      <span aria-hidden className="grid size-9 shrink-0 place-items-center rounded-[10px] bg-stone text-[22px]">
+      <span aria-hidden className="grid size-9 shrink-0 place-items-center rounded-[var(--borderRadius-medium)] bg-[var(--bgColor-muted)] text-[22px]">
         {w.emoji || '·'}
       </span>
       <span className="min-w-0 flex-1">
-        <b className="block truncate text-md text-ink">{w.en}</b>
-        <span className={`block truncate text-sm ${w.vi ? 'text-muted' : 'italic text-muted opacity-70'}`}>{w.vi || 'Chưa có nghĩa'}</span>
+        <b className="block truncate text-md text-[var(--fgColor-default)]">{w.en}</b>
+        <span className={`block truncate text-sm text-[var(--fgColor-muted)] ${w.vi ? '' : 'italic opacity-70'}`}>{w.vi || 'Chưa có nghĩa'}</span>
       </span>
     </span>
   );

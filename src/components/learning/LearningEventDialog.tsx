@@ -1,13 +1,14 @@
 'use client';
 
+import { PlusIcon } from '@primer/octicons-react';
 import { startTransition, useActionState, useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { addLearningEventAction } from '@/app/(app)/lich-su-hoc-tap/actions';
 import { LEARNING_EVENT_LABELS, LEARNING_EVENT_TYPES } from '@/lib/validation/learning';
 import { todayKeyVN } from '@/lib/datetime';
 import type { ActionResult } from '@/lib/validation/student';
-import { BTN_BASE, BTN_PRIMARY } from '@/components/ui/Btn';
-import { Field, FORM_BTN_CANCEL, FORM_BTN_SUBMIT, inputClass, textareaClass, FormFooter } from '@/components/ui/Field';
+import { Btn } from '@/components/ui/Btn';
+import { Field, inputClass, textareaClass, FormFooter } from '@/components/ui/Field';
 import { SelectPanel } from '@/components/ui/SelectPanel';
 import { Modal } from '@/components/ui/Modal';
 import { Toast, useToast } from '@/components/ui/Toast';
@@ -21,9 +22,9 @@ export function LearningEventButton({ studentId, studentName }: { studentId: num
   const { message, notify } = useToast();
   return (
     <>
-      <button type="button" onClick={() => setOpen(true)} className={`${BTN_BASE} ${BTN_PRIMARY}`}>
+      <Btn variant="primary" leadingVisual={PlusIcon} onClick={() => setOpen(true)}>
         Thêm ghi chú
-      </button>
+      </Btn>
       <Toast message={message} />
       {open && <EventDialog studentId={studentId} studentName={studentName} onClose={() => setOpen(false)} onDone={(m) => { setOpen(false); notify(m); }} />}
     </>
@@ -75,8 +76,8 @@ function EventDialog({ studentId, studentName, onClose, onDone }: { studentId: n
           <textarea name="detail" rows={3} className={textareaClass(errors.detail)} />
         </Field>
         <FormFooter className="col-span-full">
-          <button type="button" onClick={onClose} className={FORM_BTN_CANCEL}>Huỷ</button>
-          <button type="submit" disabled={pending} className={FORM_BTN_SUBMIT}>{pending ? 'Đang ghi…' : 'Ghi vào lịch sử'}</button>
+          <Btn onClick={onClose}>Huỷ</Btn>
+          <Btn type="submit" variant="primary" loading={pending} disabled={pending}>{pending ? 'Đang ghi…' : 'Ghi vào lịch sử'}</Btn>
         </FormFooter>
       </form>
     </Modal>

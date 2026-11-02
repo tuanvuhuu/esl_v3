@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, Mic, RotateCcw, Volume2, X } from 'lucide-react';
+import { BroadcastIcon, CheckIcon, SyncIcon, UnmuteIcon, XIcon } from '@primer/octicons-react';
 import { useEffect, useRef, useState, useTransition } from 'react';
 import type { StudentAssignmentView, StudentItem } from '@/lib/queries/student-portal';
 import { checkPracticeAnswerAction, childAgreeVoiceAction, submitMyAnswersAction, type StudentAnswerInput, type SubmitScore } from '@/app/(student)/cua-toi/actions';
@@ -10,6 +10,7 @@ import { arrayMove, rectSortingStrategy, SortableContext, sortableKeyboardCoordi
 import { CSS } from '@dnd-kit/utilities';
 import { clock, pickRecordingFormat, recordedFormat, starsFor } from '@/lib/recording';
 import { uploadAsStudent } from '@/lib/upload-client';
+import { Pill } from '@/components/ui/primitives';
 import { KaraokeText } from './KaraokeText';
 
 export type AnswerDraft = {
@@ -95,9 +96,14 @@ export function InteractiveExercisePlayer({
   if (total === 0) {
     return (
       <div className="flex flex-col items-center justify-center p-8 text-center">
-        <p className="text-base text-muted">Bài tập này chưa có câu hỏi.</p>
+        <p className="text-base text-[var(--fgColor-muted)]">Bài tập này chưa có câu hỏi.</p>
         {onExit && (
-          <button type="button" onClick={onExit} className="mt-4 text-sm font-bold text-[var(--link)] underline">
+          <button
+            type="button"
+            data-link="true"
+            onClick={onExit}
+            className="mt-4 text-sm font-bold text-[var(--fgColor-link)] underline"
+          >
             Quay lại
           </button>
         )}
@@ -110,27 +116,31 @@ export function InteractiveExercisePlayer({
   }
 
   return (
-    <div className={`mx-auto flex w-full max-w-[420px] flex-col overflow-hidden rounded-[36px] border border-line bg-surface shadow-2xl min-h-[640px] ${view.youngLearner ? 'kid-touch' : ''}`}>
+    <div
+      className={`mx-auto flex min-h-[640px] w-full max-w-[420px] flex-col overflow-hidden rounded-3xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] shadow-[var(--shadow-floating-large,0_12px_28px_rgba(0,0,0,0.12))] ${
+        view.youngLearner ? 'kid-touch' : ''
+      }`}
+    >
       {/* Top bar: Nút đóng, thanh tiến trình & số câu */}
       <div className="flex items-center gap-3 px-5 pt-4 pb-2">
         <button
           type="button"
           onClick={onExit}
           aria-label="Thoát"
-          className="kid-skip flex size-9 items-center justify-center rounded-xl border border-line bg-surface text-ink-2 hover:bg-stone active:scale-95"
+          className="kid-skip flex size-9 items-center justify-center rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] text-[var(--fgColor-muted)] transition-colors hover:bg-[var(--bgColor-muted)] hover:text-[var(--fgColor-default)] active:scale-95"
         >
-          <X className="size-5" />
+          <XIcon size={18} aria-hidden />
         </button>
 
-        <div className="flex-1 h-3 rounded-full bg-stone overflow-hidden">
+        <div className="h-3 flex-1 overflow-hidden rounded-full bg-[var(--bgColor-neutral-muted,var(--bgColor-muted))]">
           <div
-            className="h-full rounded-full bg-[var(--accent)] transition-all duration-300"
+            className="h-full rounded-full bg-[var(--bgColor-success-emphasis)] transition-all duration-300"
             style={{ width: `${Math.round(((currentIndex + 1) / total) * 100)}%` }}
           />
         </div>
 
-        {view.mode === 'practice' && <span className="rounded-full bg-mint px-2 py-0.5 text-xs font-extrabold text-ink">Luyện tập</span>}
-        <span className="text-xs font-extrabold text-muted">
+        {view.mode === 'practice' && <Pill tone="mint">Luyện tập</Pill>}
+        <span className="text-xs font-extrabold tabular-nums text-[var(--fgColor-muted)]">
           {currentIndex + 1}/{total}
         </span>
       </div>
@@ -152,7 +162,7 @@ export function InteractiveExercisePlayer({
       )}
 
       {submitError && (
-        <p role="alert" className="mx-5 mb-5 rounded-2xl bg-[var(--blush)] p-3 text-sm font-semibold text-[var(--blush-ink)]">
+        <p role="alert" className="mx-5 mb-5 rounded-xl border border-[var(--borderColor-danger-muted)] bg-blush p-3 text-sm font-semibold text-blush-ink">
           {submitError} Bấm nộp lại nhé.
         </p>
       )}
@@ -216,7 +226,12 @@ function ExerciseItem({
 
   function check() {
     startCheck(async () => {
-      const r = await checkPracticeAnswerAction(assignmentId, { itemId: item.id, selectedOptionId: answer?.selectedOptionId ?? null, answerText: answer?.answerText ?? '', fileId: null });
+      const r = await checkPracticeAnswerAction(assignmentId, {
+        itemId: item.id,
+        selectedOptionId: answer?.selectedOptionId ?? null,
+        answerText: answer?.answerText ?? '',
+        fileId: null,
+      });
       if (!r.ok) return setCheckError(r.message);
       setCheckError(null);
       setVerdict(r.correct ? 'right' : 'wrong');
@@ -226,7 +241,10 @@ function ExerciseItem({
   function playAudio() {
     if (!audioRef.current) return;
     audioRef.current.currentTime = 0;
-    audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
+    audioRef.current
+      .play()
+      .then(() => setIsPlaying(true))
+      .catch(() => {});
   }
 
   // Tự động phát âm thanh khi chuyển câu (nếu có tệp âm thanh)
@@ -239,12 +257,7 @@ function ExerciseItem({
   return (
     <div className="flex flex-1 flex-col justify-between p-5">
       {item.audioFileId && (
-        <audio
-          ref={audioRef}
-          src={`/api/files/${item.audioFileId}`}
-          onEnded={() => setIsPlaying(false)}
-          className="hidden"
-        />
+        <audio ref={audioRef} src={`/api/files/${item.audioFileId}`} onEnded={() => setIsPlaying(false)} className="hidden" />
       )}
 
       {/* Phần Đề bài + Loa to + Lời nhắc tiếng Việt */}
@@ -253,32 +266,34 @@ function ExerciseItem({
           {item.audioFileId ? (
             <button
               type="button"
+              data-card="true"
               onClick={playAudio}
               aria-label="Nghe lại âm thanh"
-              className={`flex size-14 shrink-0 items-center justify-center rounded-full bg-[var(--primary)] text-[var(--on-primary)] shadow-[0_4px_0_var(--primary-deep)] active:translate-y-1 transition-all ${
-                isPlaying ? 'ring-4 ring-[var(--primary-soft)] animate-pulse' : ''
+              className={`flex size-14 shrink-0 items-center justify-center rounded-full bg-[var(--button-primary-bgColor-rest)] text-[var(--button-primary-fgColor-rest)] shadow-[0_4px_0_var(--borderColor-accent-emphasis)] transition-all active:translate-y-1 ${
+                isPlaying ? 'animate-pulse ring-4 ring-[var(--bgColor-accent-muted)]' : ''
               }`}
             >
-              <Volume2 className="size-7" />
+              <UnmuteIcon size={26} aria-hidden />
             </button>
           ) : (
             // Hướng dẫn bằng giọng nói (35.5): đọc đề tiếng Anh rồi lời nhắc tiếng Việt bằng giọng có sẵn của máy
             <button
               type="button"
+              data-card="true"
               onClick={() => speakInstructions(item.prompt, item.promptVi ?? '')}
               aria-label="Nghe hướng dẫn"
-              className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-stone text-ink active:scale-95"
+              className="flex size-12 shrink-0 items-center justify-center rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] text-[var(--fgColor-default)] transition-colors hover:bg-[var(--bgColor-neutral-muted,var(--bgColor-muted))] active:scale-95"
             >
-              <Volume2 className="size-6" aria-hidden />
+              <UnmuteIcon size={22} aria-hidden />
             </button>
           )}
 
           <div className="min-w-0 flex-1">
-            <h2 className="text-xl font-black leading-tight text-ink">
+            <h2 className="text-xl font-black leading-tight text-[var(--fgColor-default)]">
               {item.prompt || 'Hãy trả lời câu hỏi sau:'}
             </h2>
             {item.promptVi && (
-              <div className="mt-0.5 flex items-center gap-1.5 text-xs font-semibold text-muted">
+              <div className="mt-0.5 flex items-center gap-1.5 text-xs font-semibold text-[var(--fgColor-muted)]">
                 <span>🇻🇳</span>
                 <span>{item.promptVi}</span>
               </div>
@@ -288,7 +303,7 @@ function ExerciseItem({
 
         {/* Nội dung đoạn văn / gợi ý nếu có */}
         {item.passage && (
-          <div className="rounded-2xl border border-line bg-stone/40 p-3 text-sm font-medium text-ink leading-relaxed">
+          <div className="rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]/60 p-3 text-sm font-medium leading-relaxed text-[var(--fgColor-default)]">
             {item.passage}
           </div>
         )}
@@ -296,55 +311,59 @@ function ExerciseItem({
 
       {/* Thân câu hỏi theo từng dạng */}
       <div className="my-auto py-4">
-        {item.itemType === 'picture_choice' && (
-          <PictureChoiceQuestion item={item} answer={answer} onChange={change} />
-        )}
+        {item.itemType === 'picture_choice' && <PictureChoiceQuestion item={item} answer={answer} onChange={change} />}
 
-        {item.itemType === 'match' && (
-          <MatchQuestion item={item} answer={answer} onChange={change} />
-        )}
+        {item.itemType === 'match' && <MatchQuestion item={item} answer={answer} onChange={change} />}
 
-        {item.itemType === 'order' && (
-          <OrderQuestion item={item} answer={answer} onChange={change} />
-        )}
+        {item.itemType === 'order' && <OrderQuestion item={item} answer={answer} onChange={change} />}
 
-        {item.itemType === 'gap_fill' && (
-          <GapFillQuestion answer={answer} onChange={change} />
-        )}
+        {item.itemType === 'gap_fill' && <GapFillQuestion answer={answer} onChange={change} />}
 
         {(item.itemType === 'speak_repeat' || item.itemType === 'speak_read' || item.itemType === 'speak_picture') &&
-          (voice.allowed ? <SpeakQuestion item={item} answer={answer} onChange={onChange} /> : <VoiceGate needsChild={voice.needsChild} referenceText={item.referenceText ?? ''} />)}
+          (voice.allowed ? (
+            <SpeakQuestion item={item} answer={answer} onChange={onChange} />
+          ) : (
+            <VoiceGate needsChild={voice.needsChild} referenceText={item.referenceText ?? ''} />
+          ))}
 
-        {item.itemType === 'choice' && (
-          <ChoiceQuestion item={item} answer={answer} onChange={change} />
-        )}
+        {item.itemType === 'choice' && <ChoiceQuestion item={item} answer={answer} onChange={change} />}
 
-        {(item.itemType === 'text' || item.itemType === 'file') && (
-          <TextOrFileQuestion answer={answer} onChange={onChange} />
-        )}
+        {(item.itemType === 'text' || item.itemType === 'file') && <TextOrFileQuestion answer={answer} onChange={onChange} />}
       </div>
 
       {/* Kết quả kiểm câu ở chế độ luyện tập */}
       {practice && verdict === 'right' && (
-        <p role="status" className="mb-2 animate-bounce rounded-2xl bg-mint p-3 text-center text-lg font-black text-ink">Đúng rồi! Giỏi quá 🎉</p>
+        <p role="status" className="mb-2 animate-bounce rounded-xl border border-[var(--borderColor-success-muted)] bg-mint p-3 text-center text-lg font-black text-mint-ink">
+          Đúng rồi! Giỏi quá 🎉
+        </p>
       )}
       {practice && verdict === 'wrong' && (
-        <div role="status" className="mb-2 flex flex-col items-center gap-1 rounded-2xl bg-blush p-3 text-center">
+        <div role="status" className="mb-2 flex flex-col items-center gap-1 rounded-xl border border-[var(--borderColor-danger-muted)] bg-blush p-3 text-center">
           <b className="text-lg font-black text-blush-ink">Chưa đúng, con thử lại nhé!</b>
-          <button type="button" onClick={onNext} className="text-sm font-bold text-ink underline underline-offset-4">
+          <button
+            type="button"
+            data-link="true"
+            onClick={onNext}
+            className="text-sm font-bold text-[var(--fgColor-default)] underline underline-offset-4"
+          >
             Bỏ qua câu này
           </button>
         </div>
       )}
-      {checkError && <p role="alert" className="mb-2 text-center text-sm font-bold text-blush-ink">{checkError}</p>}
+      {checkError && (
+        <p role="alert" className="mb-2 text-center text-sm font-bold text-blush-ink">
+          {checkError}
+        </p>
+      )}
 
       {/* Nút Tiếp tục / Hoàn thành (luyện tập: Kiểm tra trước) */}
       <div className="pt-2">
         <button
           type="button"
+          data-card="true"
           onClick={needsCheck ? check : onNext}
           disabled={submitting || checking || (needsCheck && (!hasAnswer || verdict === 'wrong'))}
-          className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-[var(--primary)] text-lg font-black text-[var(--on-primary)] shadow-[0_4px_0_var(--primary-deep)] active:translate-y-1 active:shadow-none transition-all disabled:opacity-50"
+          className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl border border-[var(--button-primary-borderColor-rest)] bg-[var(--button-primary-bgColor-rest)] text-lg font-black text-[var(--button-primary-fgColor-rest)] shadow-[0_4px_0_var(--borderColor-accent-emphasis)] transition-all active:translate-y-1 active:shadow-none disabled:opacity-50"
         >
           {needsCheck ? (checking ? 'Đang kiểm…' : 'Kiểm tra') : submitting ? 'Đang gửi…' : isLast ? 'Xong bài 🎉' : 'Tiếp tục ➔'}
         </button>
@@ -381,29 +400,30 @@ function PictureChoiceQuestion({
             <button
               key={opt.id}
               type="button"
+              data-card="true"
               onClick={() => handleSelect(opt.id)}
-              className={`relative flex aspect-square flex-col items-center justify-center rounded-2xl border-3 p-3 transition-all active:scale-95 ${
+              className={`relative flex aspect-square flex-col items-center justify-center rounded-2xl border-2 p-3 transition-all active:scale-95 ${
                 isSelected
-                  ? 'border-[var(--accent)] bg-[var(--mint)] text-[var(--mint-ink)] shadow-md ring-2 ring-[var(--accent)]/30'
-                  : 'border-line bg-surface hover:bg-stone/50 text-ink'
+                  ? 'border-[var(--bgColor-success-emphasis)] bg-mint text-mint-ink shadow-sm ring-2 ring-[var(--bgColor-success-emphasis)]/30'
+                  : 'border-[var(--borderColor-default)] bg-[var(--bgColor-default)] text-[var(--fgColor-default)] hover:bg-[var(--bgColor-muted)]'
               }`}
             >
               {opt.imageFileId ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={`/api/files/${opt.imageFileId}`}
-                  alt={opt.label}
-                  className="max-h-24 max-w-full rounded-lg object-contain"
-                />
+                <img src={`/api/files/${opt.imageFileId}`} alt={opt.label} className="max-h-24 max-w-full rounded-lg object-contain" />
               ) : leadingEmoji(opt.label) ? (
-                <span className="text-6xl" aria-hidden>{leadingEmoji(opt.label)}</span>
+                <span className="text-6xl" aria-hidden>
+                  {leadingEmoji(opt.label)}
+                </span>
               ) : (
-                <span className="text-5xl" aria-hidden>🖼️</span>
+                <span className="text-5xl" aria-hidden>
+                  🖼️
+                </span>
               )}
               {opt.label && <span className="mt-2 max-w-full truncate text-base font-black">{stripLeadingEmoji(opt.label)}</span>}
               {isSelected && (
-                <span className="absolute top-2 right-2 flex size-6 items-center justify-center rounded-full bg-[var(--accent)] text-white shadow-xs">
-                  <Check className="size-4 stroke-[3]" />
+                <span className="absolute top-2 right-2 flex size-6 items-center justify-center rounded-full bg-[var(--bgColor-success-emphasis)] text-white shadow-xs">
+                  <CheckIcon size={14} aria-hidden />
                 </span>
               )}
             </button>
@@ -412,7 +432,7 @@ function PictureChoiceQuestion({
       </div>
 
       {feedback && (
-        <div className="rounded-xl bg-[var(--mint)] p-2.5 text-center text-xs font-bold text-[var(--mint-ink)]">
+        <div className="rounded-xl border border-[var(--borderColor-success-muted)] bg-mint p-2.5 text-center text-xs font-bold text-mint-ink">
           {feedback}
         </div>
       )}
@@ -468,10 +488,15 @@ function MatchQuestion({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between text-xs text-muted">
+      <div className="flex items-center justify-between text-xs text-[var(--fgColor-muted)]">
         <span className="font-bold">Chạm vế trái rồi chạm vế phải để nối</span>
-        <button type="button" onClick={resetPairs} className="flex items-center gap-1 text-[var(--link)] font-bold">
-          <RotateCcw className="size-3" /> Nối lại
+        <button
+          type="button"
+          data-link="true"
+          onClick={resetPairs}
+          className="inline-flex items-center gap-1 font-bold text-[var(--fgColor-link)] underline"
+        >
+          <SyncIcon size={12} aria-hidden /> Nối lại
         </button>
       </div>
 
@@ -485,14 +510,15 @@ function MatchQuestion({
               <button
                 key={lt}
                 type="button"
+                data-card="true"
                 onClick={() => handleSelectLeft(lt)}
                 disabled={isPaired}
                 className={`flex h-13 items-center justify-center rounded-xl border-2 px-3 text-center text-sm font-black transition-all ${
                   isPaired
-                    ? 'border-[var(--accent)] bg-[var(--mint)] text-[var(--mint-ink)] opacity-85'
+                    ? 'border-[var(--bgColor-success-emphasis)] bg-mint text-mint-ink opacity-85'
                     : isSel
-                    ? 'border-[var(--primary-deep)] bg-[var(--primary-soft)] text-ink scale-[1.02]'
-                    : 'border-line bg-surface hover:bg-stone text-ink'
+                    ? 'scale-[1.02] border-[var(--borderColor-accent-emphasis)] bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-default)]'
+                    : 'border-[var(--borderColor-default)] bg-[var(--bgColor-default)] text-[var(--fgColor-default)] hover:bg-[var(--bgColor-muted)]'
                 }`}
               >
                 {lt}
@@ -509,12 +535,13 @@ function MatchQuestion({
               <button
                 key={rt}
                 type="button"
+                data-card="true"
                 onClick={() => handleSelectRight(rt)}
                 disabled={isPaired}
                 className={`flex h-13 items-center justify-center rounded-xl border-2 px-3 text-center text-sm font-black transition-all ${
                   isPaired
-                    ? 'border-[var(--accent)] bg-[var(--mint)] text-[var(--mint-ink)] opacity-85'
-                    : 'border-line bg-surface hover:bg-stone text-ink'
+                    ? 'border-[var(--bgColor-success-emphasis)] bg-mint text-mint-ink opacity-85'
+                    : 'border-[var(--borderColor-default)] bg-[var(--bgColor-default)] text-[var(--fgColor-default)] hover:bg-[var(--bgColor-muted)]'
                 }`}
               >
                 {rt}
@@ -524,7 +551,7 @@ function MatchQuestion({
         </div>
       </div>
 
-      <div className="text-center text-xs font-bold text-muted">
+      <div className="text-center text-xs font-bold text-[var(--fgColor-muted)]">
         Đã ghép: {paired.length}/{item.matchLeft.length} cặp {paired.length === item.matchLeft.length && '🎉 Giỏi quá!'}
       </div>
     </div>
@@ -587,9 +614,12 @@ function OrderQuestion({
       {/* Khung ô câu đã xếp */}
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
         <SortableContext items={placed.map((p) => p.id)} strategy={rectSortingStrategy}>
-          <div className="min-h-16 rounded-2xl border-2 border-dashed border-line bg-stone/30 p-3 flex flex-wrap items-center gap-2" aria-label="Câu đang xếp">
+          <div
+            className="flex min-h-16 flex-wrap items-center gap-2 rounded-xl border-2 border-dashed border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]/40 p-3"
+            aria-label="Câu đang xếp"
+          >
             {placed.length === 0 ? (
-              <span className="text-xs text-muted">Chạm các từ bên dưới để ghép câu, kéo từ để đổi chỗ…</span>
+              <span className="text-xs text-[var(--fgColor-muted)]">Chạm các từ bên dưới để ghép câu, kéo từ để đổi chỗ…</span>
             ) : (
               placed.map((p) => <PlacedWord key={p.id} id={p.id} word={p.w} onRemove={() => removeWord(p.id)} />)
             )}
@@ -609,12 +639,13 @@ function OrderQuestion({
             <button
               key={wi}
               type="button"
+              data-card="true"
               onClick={() => addWord(w)}
               disabled={isUsed}
-              className={`flex h-11 items-center justify-center rounded-xl border-2 px-3.5 text-base font-extrabold shadow-sm transition-all active:scale-95 ${
+              className={`flex h-11 items-center justify-center rounded-xl border-2 px-3.5 text-base font-extrabold transition-all active:scale-95 ${
                 isUsed
                   ? 'invisible opacity-0'
-                  : 'border-line bg-surface hover:bg-stone text-ink shadow-[0_3px_0_var(--line)]'
+                  : 'border-[var(--borderColor-default)] bg-[var(--bgColor-default)] text-[var(--fgColor-default)] shadow-[0_3px_0_var(--borderColor-default)] hover:bg-[var(--bgColor-muted)]'
               }`}
             >
               {w}
@@ -626,10 +657,11 @@ function OrderQuestion({
       <div className="flex justify-end">
         <button
           type="button"
+          data-link="true"
           onClick={reset}
-          className="flex items-center gap-1 text-xs font-bold text-muted hover:text-ink"
+          className="inline-flex items-center gap-1 text-xs font-bold text-[var(--fgColor-muted)] underline hover:text-[var(--fgColor-default)]"
         >
-          <RotateCcw className="size-3.5" /> Xếp lại
+          <SyncIcon size={14} aria-hidden /> Xếp lại
         </button>
       </div>
     </div>
@@ -643,6 +675,7 @@ function PlacedWord({ id, word, onRemove }: { id: string; word: string; onRemove
     <button
       ref={setNodeRef}
       type="button"
+      data-card="true"
       {...attributes}
       {...listeners}
       // Chuột, chạm: bấm là bỏ từ ra. Bàn phím: Space để nhấc lên kéo (dnd-kit) nên không bỏ; Delete hoặc Backspace để bỏ
@@ -656,7 +689,9 @@ function PlacedWord({ id, word, onRemove }: { id: string; word: string; onRemove
       aria-label={`${word} (kéo để đổi chỗ, bấm để bỏ ra)`}
       data-placed={word}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={`flex h-10 touch-none items-center justify-center rounded-xl border-2 border-[var(--primary-deep)] bg-[var(--primary-soft)] px-3 text-sm font-extrabold text-ink shadow-xs ${isDragging ? 'z-10 scale-110 shadow-lg' : 'active:scale-95'}`}
+      className={`flex h-10 touch-none items-center justify-center rounded-xl border-2 border-[var(--borderColor-accent-emphasis)] bg-[var(--bgColor-accent-muted)] px-3 text-sm font-extrabold text-[var(--fgColor-default)] shadow-xs ${
+        isDragging ? 'z-10 scale-110 shadow-lg' : 'active:scale-95'
+      }`}
     >
       {word}
     </button>
@@ -684,13 +719,14 @@ function GapFillQuestion({
 }) {
   return (
     <div className="flex flex-col gap-3">
-      <label className="text-xs font-bold text-muted">Gõ từ còn thiếu vào ô:</label>
+      <label className="text-xs font-bold text-[var(--fgColor-muted)]">Gõ từ còn thiếu vào ô:</label>
       <input
         type="text"
+        data-card="true"
         value={answer?.answerText || ''}
         onChange={(e) => onChange({ answerText: e.target.value })}
         placeholder="Gõ từ của bạn…"
-        className="h-14 w-full rounded-2xl border-2 border-line bg-surface px-4 text-lg font-bold text-ink outline-none focus:border-[var(--primary-deep)]"
+        className="h-14 w-full rounded-xl border-2 border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-4 text-lg font-bold text-[var(--fgColor-default)] outline-none placeholder:text-[var(--fgColor-muted)] focus:border-[var(--focus-outlineColor)]"
       />
     </div>
   );
@@ -707,16 +743,25 @@ function VoiceGate({ needsChild, referenceText }: { needsChild: boolean; referen
   const [msg, setMsg] = useState<string | null>(null);
   return (
     <div className="flex flex-col items-center gap-4 py-2 text-center">
-      {referenceText && <div className="rounded-2xl border border-line bg-stone/40 p-3 text-lg font-extrabold leading-relaxed text-ink">“{referenceText}”</div>}
+      {referenceText && (
+        <div className="rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]/60 p-3 text-lg font-extrabold leading-relaxed text-[var(--fgColor-default)]">
+          “{referenceText}”
+        </div>
+      )}
       {needsChild ? (
         <>
           <span className="text-5xl" aria-hidden>
             🎤
           </span>
-          <p className="text-lg font-extrabold leading-snug text-ink">Cô giáo muốn nghe giọng con để chấm bài nói. Con có đồng ý ghi âm không?</p>
-          <p className="text-sm font-semibold text-muted">Bố mẹ con đã đồng ý rồi. Chỉ cô giáo, con và bố mẹ nghe được.</p>
+          <p className="text-lg font-extrabold leading-snug text-[var(--fgColor-default)]">
+            Cô giáo muốn nghe giọng con để chấm bài nói. Con có đồng ý ghi âm không?
+          </p>
+          <p className="text-sm font-semibold text-[var(--fgColor-muted)]">
+            Bố mẹ con đã đồng ý rồi. Chỉ cô giáo, con và bố mẹ nghe được.
+          </p>
           <button
             type="button"
+            data-card="true"
             disabled={pending}
             onClick={() =>
               start(async () => {
@@ -725,19 +770,21 @@ function VoiceGate({ needsChild, referenceText }: { needsChild: boolean; referen
                 if (r.ok) router.refresh();
               })
             }
-            className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-[var(--accent)] text-lg font-extrabold text-white shadow-[0_4px_0_#0e7445] disabled:opacity-60"
+            className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-[var(--bgColor-success-emphasis)] text-lg font-extrabold text-white shadow-[0_4px_0_#0e7445] disabled:opacity-60"
           >
-            <Check className="size-5" aria-hidden />
+            <CheckIcon size={20} aria-hidden />
             Con đồng ý
           </button>
-          <span className="text-sm font-semibold text-muted">Chưa muốn thì con bấm Tiếp tục để làm câu khác.</span>
+          <span className="text-sm font-semibold text-[var(--fgColor-muted)]">
+            Chưa muốn thì con bấm Tiếp tục để làm câu khác.
+          </span>
         </>
       ) : (
-        <p role="note" className="w-full rounded-2xl bg-[var(--butter)] p-4 text-base font-bold leading-relaxed text-[var(--butter-ink)]">
+        <p role="note" className="w-full rounded-xl border border-[var(--borderColor-attention-muted)] bg-butter p-4 text-base font-bold leading-relaxed text-butter-ink">
           Câu này cần ghi âm, mà bố mẹ con chưa đồng ý cho con ghi âm. Con bấm Tiếp tục để làm câu khác nhé. Cô giáo sẽ hỏi bố mẹ.
         </p>
       )}
-      {msg && <p className="text-sm font-bold text-ink-2">{msg}</p>}
+      {msg && <p className="text-sm font-bold text-[var(--fgColor-muted)]">{msg}</p>}
     </div>
   );
 }
@@ -886,11 +933,21 @@ export function SpeakQuestion({
       {item.itemType === 'speak_read' && item.referenceText ? (
         <KaraokeText text={item.referenceText} audioFileId={item.modelAudioFileId ?? item.audioFileId} wordTimings={item.wordTimings} disabled={recording} />
       ) : (
-        item.referenceText && <div className="rounded-2xl border border-line bg-stone/40 p-3 text-center text-lg font-extrabold leading-relaxed text-ink">“{item.referenceText}”</div>
+        item.referenceText && (
+          <div className="rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]/60 p-3 text-center text-lg font-extrabold leading-relaxed text-[var(--fgColor-default)]">
+            “{item.referenceText}”
+          </div>
+        )
       )}
       {item.itemType !== 'speak_read' && (item.modelAudioFileId || item.referenceText) && (
-        <button type="button" onClick={() => playModel(item)} disabled={recording} className="inline-flex min-h-11 items-center gap-2 rounded-full border-2 border-line bg-surface px-4 text-base font-extrabold text-ink active:scale-95 disabled:opacity-40">
-          <Volume2 className="size-5" aria-hidden /> Nghe mẫu
+        <button
+          type="button"
+          data-card="true"
+          onClick={() => playModel(item)}
+          disabled={recording}
+          className="inline-flex min-h-11 items-center gap-2 rounded-full border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-4 text-base font-extrabold text-[var(--fgColor-default)] shadow-[var(--shadow-resting-small,0_1px_2px_rgba(0,0,0,0.04))] transition-colors hover:bg-[var(--bgColor-muted)] active:scale-95 disabled:opacity-40"
+        >
+          <UnmuteIcon size={20} aria-hidden /> Nghe mẫu
         </button>
       )}
 
@@ -898,43 +955,60 @@ export function SpeakQuestion({
         <div className="flex flex-col items-center gap-2">
           <button
             type="button"
+            data-card="true"
             onClick={recording ? stop : start}
             aria-label={recording ? 'Dừng ghi âm' : 'Bấm để nói'}
-            className={`relative flex size-28 items-center justify-center rounded-full bg-[var(--blush-ink)] text-white transition-all active:scale-95 ${
-              recording ? 'ring-8 ring-[var(--blush)]' : 'shadow-[0_6px_0_#8c2c0f]'
+            className={`relative flex size-28 items-center justify-center rounded-full bg-blush-ink text-white transition-all active:scale-95 ${
+              recording ? 'ring-8 ring-blush' : 'shadow-[0_6px_0_#8c2c0f]'
             }`}
           >
-            {recording ? <span className="size-8 rounded-lg bg-white" aria-hidden /> : <Mic className="size-11" aria-hidden />}
+            {recording ? <span className="size-8 rounded-lg bg-white" aria-hidden /> : <BroadcastIcon size={40} aria-hidden />}
           </button>
           {recording ? (
             <>
-              <span className="text-2xl font-extrabold tabular-nums text-ink" aria-live="polite">
+              <span className="text-2xl font-extrabold tabular-nums text-[var(--fgColor-default)]" aria-live="polite">
                 {clock(seconds)} / {clock(maxSec)}
               </span>
               <span className="flex h-8 items-center gap-1" aria-hidden>
                 {[0, 1, 2, 3, 4, 5, 6].map((i) => (
-                  <i key={i} className="w-1.5 animate-pulse rounded-full bg-[var(--blush-ink)]" style={{ height: `${10 + ((i * 7) % 20)}px`, animationDelay: `${i * 120}ms` }} />
+                  <i
+                    key={i}
+                    className="w-1.5 animate-pulse rounded-full bg-blush-ink"
+                    style={{ height: `${10 + ((i * 7) % 20)}px`, animationDelay: `${i * 120}ms` }}
+                  />
                 ))}
               </span>
-              <span className="text-sm font-bold text-muted">Bấm ô vuông để dừng</span>
+              <span className="text-sm font-bold text-[var(--fgColor-muted)]">Bấm ô vuông để dừng</span>
             </>
           ) : (
-            <span className="text-base font-extrabold text-ink">{answer?.fileId ? 'Bấm để nói lại' : 'Bấm để nói'}</span>
+            <span className="text-base font-extrabold text-[var(--fgColor-default)]">{answer?.fileId ? 'Bấm để nói lại' : 'Bấm để nói'}</span>
           )}
         </div>
       )}
 
       {(phase === 'review' || phase === 'uploading') && preview && (
         <div className="flex w-full flex-col items-center gap-3">
-          <span className="text-base font-extrabold text-ink">Nghe lại bài nói của con</span>
+          <span className="text-base font-extrabold text-[var(--fgColor-default)]">Nghe lại bài nói của con</span>
           <audio controls src={preview.url} className="w-full" aria-label="Nghe lại bản vừa ghi" />
           <div className="grid w-full grid-cols-2 gap-2">
-            <button type="button" onClick={redo} disabled={phase === 'uploading'} className="flex h-14 items-center justify-center gap-2 rounded-2xl border-2 border-line bg-surface text-base font-extrabold text-ink disabled:opacity-50">
-              <RotateCcw className="size-5" aria-hidden />
+            <button
+              type="button"
+              data-card="true"
+              onClick={redo}
+              disabled={phase === 'uploading'}
+              className="flex h-14 items-center justify-center gap-2 rounded-2xl border-2 border-[var(--borderColor-default)] bg-[var(--bgColor-default)] text-base font-extrabold text-[var(--fgColor-default)] transition-colors hover:bg-[var(--bgColor-muted)] disabled:opacity-50"
+            >
+              <SyncIcon size={18} aria-hidden />
               Nói lại
             </button>
-            <button type="button" onClick={keepRecording} disabled={phase === 'uploading'} className="flex h-14 items-center justify-center gap-2 rounded-2xl bg-[var(--accent)] text-base font-extrabold text-white shadow-[0_4px_0_#0e7445] disabled:opacity-60">
-              <Check className="size-5" aria-hidden />
+            <button
+              type="button"
+              data-card="true"
+              onClick={keepRecording}
+              disabled={phase === 'uploading'}
+              className="flex h-14 items-center justify-center gap-2 rounded-2xl bg-[var(--bgColor-success-emphasis)] text-base font-extrabold text-white shadow-[0_4px_0_#0e7445] disabled:opacity-60"
+            >
+              <CheckIcon size={18} aria-hidden />
               {phase === 'uploading' ? 'Đang lưu…' : 'Dùng bản này'}
             </button>
           </div>
@@ -942,16 +1016,16 @@ export function SpeakQuestion({
       )}
 
       {phase === 'idle' && answer?.fileId && (
-        <div className="flex w-full flex-col items-center gap-2 rounded-2xl bg-[var(--mint)] p-3">
-          <span className="flex items-center gap-1.5 text-sm font-bold text-[var(--mint-ink)]">
-            <Check className="size-4" aria-hidden /> Đã lưu bản ghi âm
+        <div className="flex w-full flex-col items-center gap-2 rounded-xl border border-[var(--borderColor-success-muted)] bg-mint p-3">
+          <span className="flex items-center gap-1.5 text-sm font-bold text-mint-ink">
+            <CheckIcon size={16} aria-hidden /> Đã lưu bản ghi âm
           </span>
           <audio controls preload="none" src={`/api/files/${answer.fileId}`} className="w-full" aria-label="Nghe bản đã lưu" />
         </div>
       )}
 
       {error && (
-        <p role="alert" className="w-full rounded-2xl bg-[var(--blush)] p-3 text-sm font-semibold leading-relaxed text-[var(--blush-ink)]">
+        <p role="alert" className="w-full rounded-xl border border-[var(--borderColor-danger-muted)] bg-blush p-3 text-sm font-semibold leading-relaxed text-blush-ink">
           {error}
         </p>
       )}
@@ -979,14 +1053,15 @@ function ChoiceQuestion({
           <button
             key={opt.id}
             type="button"
+            data-card="true"
             onClick={() => onChange({ selectedOptionId: opt.id })}
-            className={`flex h-13 items-center gap-3 rounded-2xl border-2 px-4 text-left text-sm font-black transition-all active:scale-[0.98] ${
+            className={`flex h-13 items-center gap-3 rounded-xl border-2 px-4 text-left text-sm font-black transition-all active:scale-[0.98] ${
               isSelected
-                ? 'border-[var(--primary-deep)] bg-[var(--primary-soft)] text-ink shadow-sm'
-                : 'border-line bg-surface hover:bg-stone text-ink'
+                ? 'border-[var(--borderColor-accent-emphasis)] bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-default)] shadow-xs'
+                : 'border-[var(--borderColor-default)] bg-[var(--bgColor-default)] text-[var(--fgColor-default)] hover:bg-[var(--bgColor-muted)]'
             }`}
           >
-            <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-stone text-xs font-bold">
+            <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-[var(--bgColor-muted)] text-xs font-normal text-[var(--fgColor-default)]">
               {String.fromCharCode(65 + i)}
             </span>
             <span className="flex-1 truncate">{opt.label}</span>
@@ -1014,7 +1089,7 @@ function TextOrFileQuestion({
         onChange={(e) => onChange({ answerText: e.target.value })}
         rows={4}
         placeholder="Nhập bài làm của bạn…"
-        className="w-full rounded-2xl border-2 border-line p-3 text-base font-medium text-ink outline-none focus:border-[var(--primary-deep)]"
+        className="w-full rounded-xl border-2 border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-3 text-base font-medium text-[var(--fgColor-default)] outline-none placeholder:text-[var(--fgColor-muted)] focus:border-[var(--focus-outlineColor)]"
       />
     </div>
   );
@@ -1039,13 +1114,13 @@ function CelebrationScreen({
   const cheer = stars === 3 ? 'Tuyệt vời!' : stars === 2 ? 'Giỏi lắm!' : 'Cố lên nhé!';
 
   return (
-    <div className="relative mx-auto flex w-full max-w-[420px] flex-col items-center justify-between overflow-hidden rounded-[36px] border border-line bg-surface p-6 text-center shadow-2xl min-h-[640px]">
+    <div className="relative mx-auto flex min-h-[640px] w-full max-w-[420px] flex-col items-center justify-between overflow-hidden rounded-3xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-6 text-center shadow-[var(--shadow-floating-large,0_12px_28px_rgba(0,0,0,0.12))]">
       {/* Pháo giấy Confetti */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         {[...Array(20)].map((_, i) => (
           <div
             key={i}
-            className="absolute size-2 rounded-xs opacity-80 animate-bounce"
+            className="absolute size-2 animate-bounce rounded-xs opacity-80"
             style={{
               left: `${(i * 5) % 100}%`,
               top: `${(i * 7) % 60}%`,
@@ -1057,8 +1132,8 @@ function CelebrationScreen({
       </div>
 
       <div className="flex flex-col items-center gap-3 pt-6">
-        <span className="text-7xl animate-pulse">🦉</span>
-        <h1 className="text-3xl font-black text-ink">{cheer}</h1>
+        <span className="animate-pulse text-7xl">🦉</span>
+        <h1 className="text-3xl font-black text-[var(--fgColor-default)]">{cheer}</h1>
         <div className="flex gap-1.5 text-4xl" role="img" aria-label={`${stars} trên 3 sao`}>
           {[1, 2, 3].map((n) => (
             <span key={n} className={n <= stars ? '' : 'opacity-30 grayscale'} aria-hidden>
@@ -1066,29 +1141,29 @@ function CelebrationScreen({
             </span>
           ))}
         </div>
-        <p className="text-sm font-semibold text-muted">Con đã làm xong bài &quot;{view.title}&quot;.</p>
+        <p className="text-sm font-semibold text-[var(--fgColor-muted)]">Con đã làm xong bài &quot;{view.title}&quot;.</p>
         {score && score.autoMax > 0 && (
-          <p className="text-base font-extrabold text-ink">
+          <p className="text-base font-extrabold text-[var(--fgColor-default)]">
             Đúng {Math.round(score.autoPoints * 10) / 10}/{score.autoMax} điểm phần tự chấm
           </p>
         )}
-        {score?.pendingReview && <p className="text-sm font-semibold text-muted">Cô giáo sẽ chấm phần nói và viết rồi gửi nhận xét cho con.</p>}
+        {score?.pendingReview && (
+          <p className="text-sm font-semibold text-[var(--fgColor-muted)]">Cô giáo sẽ chấm phần nói và viết rồi gửi nhận xét cho con.</p>
+        )}
       </div>
 
       {/* Sticker mở khóa */}
-      <div className="w-full rounded-2xl border border-line bg-stone/40 p-4 text-left">
+      <div className="w-full rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]/50 p-4 text-left">
         <div className="mb-2 flex items-center justify-between">
-          <span className="text-xs font-bold uppercase tracking-wider text-muted">Sticker của con</span>
-          <span className="rounded-full bg-[var(--primary)] px-2 py-0.5 text-xs font-extrabold text-[var(--on-primary)]">
-            +{stars} sticker
-          </span>
+          <span className="text-xs font-bold uppercase tracking-wider text-[var(--fgColor-muted)]">Sticker của con</span>
+          <Pill tone="butter">+{stars} sticker</Pill>
         </div>
         <div className="grid grid-cols-4 gap-2">
           {stickers.map((stk, i) => (
             <div
               key={i}
               className={`flex aspect-square items-center justify-center rounded-xl text-2xl ${
-                i < stars ? 'bg-[var(--butter)] ring-2 ring-[var(--primary-deep)]' : 'bg-surface opacity-30 grayscale'
+                i < stars ? 'bg-butter ring-2 ring-[var(--borderColor-accent-emphasis)]' : 'bg-[var(--bgColor-default)] opacity-30 grayscale'
               }`}
             >
               {stk}
@@ -1100,8 +1175,9 @@ function CelebrationScreen({
       <div className="w-full pt-4">
         <button
           type="button"
+          data-card="true"
           onClick={onExit}
-          className="flex h-14 w-full items-center justify-center rounded-2xl bg-[var(--primary)] text-lg font-black text-[var(--on-primary)] shadow-[0_4px_0_var(--primary-deep)] active:translate-y-1 transition-all"
+          className="flex h-14 w-full items-center justify-center rounded-2xl border border-[var(--button-primary-borderColor-rest)] bg-[var(--button-primary-bgColor-rest)] text-lg font-black text-[var(--button-primary-fgColor-rest)] shadow-[0_4px_0_var(--borderColor-accent-emphasis)] transition-all active:translate-y-1"
         >
           Về bài của tôi ➔
         </button>

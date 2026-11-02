@@ -1,7 +1,7 @@
 'use client';
 
 // Danh sách cơ sở với hộp thoại thêm, sửa, xoá. Mỗi lớp thuộc đúng một cơ sở nên cơ sở còn lớp thì không xoá được.
-import { Pencil, Plus, Trash2 } from 'lucide-react';
+import { PencilIcon, PlusIcon, TrashIcon } from '@primer/octicons-react';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { deleteCampusAction } from '@/app/(app)/co-so/actions';
@@ -58,11 +58,11 @@ export function CampusList({ campuses, canManage, canAddRemove = true }: { campu
   }
 
   const menuItems = (row: CampusRowView): RowMenuItem[] => [
-    { kind: 'action', label: 'Sửa', icon: Pencil, onSelect: () => setEditing(row), disabled: !canManage, disabledHint: 'Không có quyền quản lý cơ sở' },
+    { kind: 'action', label: 'Sửa', icon: PencilIcon, onSelect: () => setEditing(row), disabled: !canManage, disabledHint: 'Không có quyền quản lý cơ sở' },
     {
       kind: 'action',
       label: 'Xoá',
-      icon: Trash2,
+      icon: TrashIcon,
       danger: true,
       onSelect: () => askDelete(row),
       disabled: !canManage || !canAddRemove,
@@ -78,8 +78,7 @@ export function CampusList({ campuses, canManage, canAddRemove = true }: { campu
         subtitle={`${campuses.length} cơ sở. Mỗi lớp thuộc đúng một cơ sở.`}
         actions={
           canManage && canAddRemove && (
-            <Btn variant="primary" onClick={() => setCreating(true)}>
-              <Plus className="size-4" aria-hidden />
+            <Btn variant="primary" leadingVisual={PlusIcon} onClick={() => setCreating(true)}>
               Thêm cơ sở
             </Btn>
           )
@@ -94,27 +93,25 @@ export function CampusList({ campuses, canManage, canAddRemove = true }: { campu
             <Card key={row.id}>
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <b className="block truncate text-lg font-extrabold text-ink">{row.name}</b>
-                  <small className="block truncate text-sm text-muted">{row.address || 'Chưa có địa chỉ'}</small>
+                  <b className="block truncate text-lg font-extrabold text-[var(--fgColor-default)]">{row.name}</b>
+                  <small className="block truncate text-sm text-[var(--fgColor-muted)]">{row.address || 'Chưa có địa chỉ'}</small>
                 </div>
                 <div className="hidden min-[768px]:block">
                   <RowMenu label={`Thao tác với cơ sở ${row.name}`} items={menuItems(row)} />
                 </div>
               </div>
 
-              <div className="rounded-[var(--radius-ctl)] bg-bg px-3 py-2.5 text-sm">
-                <span className="font-bold text-ink">{row.classCount} lớp</span>
-                <span className="text-ink-2">{row.classCount > 0 ? ' · đang có lớp học' : ' · chưa có lớp'}</span>
+              <div className="rounded-[var(--borderRadius-medium)] bg-[var(--bgColor-muted)] px-3 py-2.5 text-sm">
+                <span className="font-bold text-[var(--fgColor-default)]">{row.classCount} lớp</span>
+                <span className="text-[var(--fgColor-muted)]">{row.classCount > 0 ? ' · đang có lớp học' : ' · chưa có lớp'}</span>
               </div>
 
               {/* Điện thoại: hai nút có chữ, bằng nhau */}
               <div className="grid grid-cols-2 gap-2 min-[768px]:hidden">
-                <Btn block onClick={() => setEditing(row)} disabled={!canManage}>
-                  <Pencil className="size-4" aria-hidden />
+                <Btn block leadingVisual={PencilIcon} onClick={() => setEditing(row)} disabled={!canManage}>
                   Sửa
                 </Btn>
-                <Btn block variant="danger" onClick={() => askDelete(row)} disabled={!canManage || !canAddRemove}>
-                  <Trash2 className="size-4" aria-hidden />
+                <Btn block variant="danger" leadingVisual={TrashIcon} onClick={() => askDelete(row)} disabled={!canManage || !canAddRemove}>
                   Xoá
                 </Btn>
               </div>

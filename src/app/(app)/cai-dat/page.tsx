@@ -27,8 +27,8 @@ export default function SettingsPage() {
 function SettingsSkeleton() {
   return (
     <section aria-busy="true" aria-label="Đang tải cài đặt" className="flex flex-col gap-4">
-      <div className="h-9 w-40 animate-pulse rounded-xl bg-stone" />
-      <div className="h-[420px] w-full animate-pulse rounded-[var(--radius-panel)] bg-stone" />
+      <div className="h-9 w-40 animate-pulse rounded-[var(--borderRadius-medium)] bg-[var(--bgColor-muted)]" />
+      <div className="h-[420px] w-full animate-pulse rounded-xl bg-[var(--bgColor-muted)]" />
     </section>
   );
 }

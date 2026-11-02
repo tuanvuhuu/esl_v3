@@ -4,7 +4,8 @@ import { useState, useTransition } from 'react';
 import { saveLessonAction } from '@/app/(app)/bai-giang/actions';
 import type { CampusOption } from '@/lib/campus';
 import type { LessonRow } from '@/lib/queries/lessons';
-import { Field, FORM_BTN_CANCEL, FORM_BTN_SUBMIT, inputClass, textareaClass, FormFooter } from '@/components/ui/Field';
+import { Btn } from '@/components/ui/Btn';
+import { Field, inputClass, textareaClass, FormFooter } from '@/components/ui/Field';
 import { SelectPanel } from '@/components/ui/SelectPanel';
 import { Alert } from '@/components/ui/primitives';
 
@@ -83,12 +84,12 @@ export function LessonForm({
       </Field>
 
       <FormFooter>
-        <button type="button" onClick={onCancel} className={FORM_BTN_CANCEL}>
+        <Btn onClick={onCancel}>
           Huỷ
-        </button>
-        <button type="button" onClick={save} disabled={pending} className={FORM_BTN_SUBMIT}>
+        </Btn>
+        <Btn variant="primary" loading={pending} disabled={pending} onClick={save}>
           {pending ? 'Đang lưu…' : 'Lưu bài giảng'}
-        </button>
+        </Btn>
       </FormFooter>
     </div>
   );

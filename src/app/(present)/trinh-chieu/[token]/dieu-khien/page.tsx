@@ -6,7 +6,7 @@ import { loadPresentation } from '../../load';
 // Điện thoại điều khiển màn chiếu (35.19): mở bằng mã QR trên màn chiếu, cùng tài khoản với máy chiếu.
 export default function PresentRemotePage({ params }: { params: Promise<{ token: string }> }) {
   return (
-    <Suspense fallback={<div aria-busy="true" className="h-dvh animate-pulse bg-stone" />}>
+    <Suspense fallback={<div aria-busy="true" className="h-dvh animate-pulse bg-[var(--bgColor-muted)]" />}>
       <RemoteData params={params} />
     </Suspense>
   );

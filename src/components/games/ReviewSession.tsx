@@ -2,7 +2,7 @@
 
 // Ôn từ hôm nay (35.18): mỗi từ đến hạn một câu, nhìn tranh chọn đúng từ trong 3 từ. Đúng là nhớ, sai là quên (ôn lại ngày mai).
 // Không đọc từ trước khi chọn (đọc là lộ đáp án); chọn xong mới đọc và báo lần ôn tới.
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeftIcon } from '@primer/octicons-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import { reviewWordAction } from '@/app/(student)/cua-toi/game-actions';
@@ -45,40 +45,74 @@ export function ReviewSession({ due, others }: { due: BoxWord[]; others: BoxWord
 
   return (
     <section className="mx-auto flex w-full max-w-[480px] flex-col gap-4 py-2">
-      <Link href="/cua-toi" className="inline-flex items-center gap-1 self-start text-sm font-bold text-ink underline underline-offset-4">
-        <ArrowLeft className="size-4" aria-hidden /> Bài của tôi
+      <Link
+        href="/cua-toi"
+        data-link="true"
+        className="inline-flex items-center gap-1 self-start text-sm font-bold text-[var(--fgColor-default)] underline underline-offset-4 hover:text-[var(--fgColor-link)]"
+      >
+        <ArrowLeftIcon size={16} aria-hidden /> Bài của tôi
       </Link>
-      <h1 className="text-2xl font-extrabold text-ink">Ôn từ hôm nay</h1>
+      <h1 className="text-2xl font-extrabold text-[var(--fgColor-default)]">Ôn từ hôm nay</h1>
 
       {done ? (
-        <div className="flex flex-col items-center gap-3 rounded-2xl bg-surface p-6 text-center shadow-card" role="status" aria-label="Kết quả ôn">
-          <span className="text-5xl" aria-label={`${gameStars(score, questions.length)} sao`}>{'⭐'.repeat(gameStars(score, questions.length))}</span>
-          <b className="text-2xl font-extrabold text-ink">Con nhớ {score}/{questions.length} từ</b>
-          <p className="text-base text-ink-2">Từ nhớ rồi sẽ hẹn ôn lại sau vài ngày, từ chưa nhớ thì ngày mai ôn tiếp. Hẹn con ngày mai nhé!</p>
-          <Link href="/cua-toi" className={`${BIG_BASE} w-full border-primary-deep bg-primary text-on-primary`}>
+        <div
+          className="flex flex-col items-center gap-3 rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-6 text-center shadow-[var(--shadow-resting-small,0_1px_2px_rgba(0,0,0,0.04))]"
+          role="status"
+          aria-label="Kết quả ôn"
+        >
+          <span className="text-5xl" aria-label={`${gameStars(score, questions.length)} sao`}>
+            {'⭐'.repeat(gameStars(score, questions.length))}
+          </span>
+          <b className="text-2xl font-extrabold text-[var(--fgColor-default)]">
+            Con nhớ {score}/{questions.length} từ
+          </b>
+          <p className="text-base text-[var(--fgColor-muted)]">
+            Từ nhớ rồi sẽ hẹn ôn lại sau vài ngày, từ chưa nhớ thì ngày mai ôn tiếp. Hẹn con ngày mai nhé!
+          </p>
+          <Link
+            href="/cua-toi"
+            className={`${BIG_BASE} w-full border-[var(--button-primary-borderColor-rest)] bg-[var(--button-primary-bgColor-rest)] text-[var(--button-primary-fgColor-rest)]`}
+          >
             Về trang của con
           </Link>
         </div>
       ) : (
         <div className="flex flex-col gap-4" data-target={q.target.word}>
-          <p className="text-sm text-ink-2">Từ {i + 1}/{questions.length} · Nhớ {score}</p>
-          <div className="flex min-h-36 flex-col items-center justify-center gap-2 rounded-2xl bg-surface p-4 shadow-card">
+          <p className="text-sm text-[var(--fgColor-muted)]">Từ {i + 1}/{questions.length} · Nhớ {score}</p>
+          <div className="flex min-h-36 flex-col items-center justify-center gap-2 rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-4 shadow-[var(--shadow-resting-small,0_1px_2px_rgba(0,0,0,0.04))]">
             <Picture w={q.target} size="lg" />
-            {(q.target.imageFileId || q.target.emoji) && q.target.meaningVi && <span className="text-base font-bold text-ink-2">{q.target.meaningVi}</span>}
+            {(q.target.imageFileId || q.target.emoji) && q.target.meaningVi && (
+              <span className="text-base font-bold text-[var(--fgColor-muted)]">{q.target.meaningVi}</span>
+            )}
           </div>
           <ul className="flex flex-col gap-2" aria-label="Chọn từ đúng">
             {q.options.map((o) => {
-              const state = picked === null ? 'border-line bg-surface' : o.key === q.target.key ? 'border-[var(--accent)] bg-mint' : picked === o.key ? 'border-blush-ink bg-blush' : 'border-line bg-surface opacity-50';
+              const state =
+                picked === null
+                  ? 'border-[var(--borderColor-default)] bg-[var(--bgColor-default)] hover:bg-[var(--bgColor-muted)]'
+                  : o.key === q.target.key
+                  ? 'border-[var(--bgColor-success-emphasis)] bg-mint text-mint-ink'
+                  : picked === o.key
+                  ? 'border-blush-ink bg-blush text-blush-ink'
+                  : 'border-[var(--borderColor-default)] bg-[var(--bgColor-default)] opacity-50';
               return (
                 <li key={o.key}>
-                  <button type="button" onClick={() => choose(o.key)} data-word={o.word} className={`flex min-h-14 w-full items-center justify-center rounded-2xl border-2 px-4 text-xl font-extrabold text-ink transition-transform active:scale-95 ${state}`}>
+                  <button
+                    type="button"
+                    data-card="true"
+                    onClick={() => choose(o.key)}
+                    data-word={o.word}
+                    className={`flex min-h-14 w-full items-center justify-center rounded-xl border-2 px-4 text-xl font-extrabold text-[var(--fgColor-default)] transition-all active:scale-95 ${state}`}
+                  >
                     {o.word}
                   </button>
                 </li>
               );
             })}
           </ul>
-          <p className="min-h-6 text-center text-sm font-bold text-ink-2" aria-live="polite">{nextLabel}</p>
+          <p className="min-h-6 text-center text-sm font-bold text-[var(--fgColor-muted)]" aria-live="polite">
+            {nextLabel}
+          </p>
         </div>
       )}
     </section>

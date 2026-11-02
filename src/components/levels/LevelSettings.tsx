@@ -46,52 +46,54 @@ export function LevelSettings({ levels, canManage }: { levels: LevelRow[]; canMa
   }
 
   return (
-    <Panel title="Trình độ và ngưỡng lên lớp" className="flex flex-col gap-3 min-[1200px]:col-span-2">
-      <p className="text-sm text-ink-2">Ngưỡng là điểm trung bình tối thiểu (%) của ba bài đã chấm gần nhất để được gợi ý lên trình độ kế tiếp.</p>
+    <Panel title="Trình độ và ngưỡng lên lớp" className="min-[1200px]:col-span-2">
+      <div className="flex flex-col gap-3">
+        <p className="text-sm text-[var(--fgColor-muted)]">Ngưỡng là điểm trung bình tối thiểu (%) của ba bài đã chấm gần nhất để được gợi ý lên trình độ kế tiếp.</p>
 
-      {levels.map((l) => {
-        const d = drafts[l.id];
-        const err = errors[l.id];
-        return (
-          <div key={l.id} className="flex flex-col gap-3 rounded-[var(--radius-ctl)] border border-line p-3.5">
-            <div className="grid grid-cols-1 gap-3 min-[768px]:grid-cols-[120px_minmax(0,1fr)]">
-              <Field label={`Tên trình độ ${l.code}`}>
-                <input value={d.name} onChange={(e) => patch(l.id, { name: e.target.value })} disabled={!canManage} aria-label={`Tên trình độ ${l.code}`} className={inputClass()} />
-              </Field>
-              <div className="grid grid-cols-2 gap-2.5 min-[768px]:grid-cols-4">
-                {SKILLS.map((s) => (
-                  <Field key={s} label={`Ngưỡng ${SKILL_LABELS[s]} (%)`}>
-                    <input
-                      type="number"
-                      inputMode="numeric"
-                      min={0}
-                      max={100}
-                      step={1}
-                      value={d.thresholds[s]}
-                      onChange={(e) => patch(l.id, { thresholds: { ...d.thresholds, [s]: e.target.value } })}
-                      disabled={!canManage}
-                      aria-label={`Ngưỡng ${SKILL_LABELS[s]} của trình độ ${l.code}`}
-                      className={inputClass()}
-                    />
-                  </Field>
-                ))}
+        {levels.map((l) => {
+          const d = drafts[l.id];
+          const err = errors[l.id];
+          return (
+            <div key={l.id} className="flex flex-col gap-3 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-3.5">
+              <div className="grid grid-cols-1 gap-3 min-[768px]:grid-cols-[120px_minmax(0,1fr)]">
+                <Field label={`Tên trình độ ${l.code}`}>
+                  <input value={d.name} onChange={(e) => patch(l.id, { name: e.target.value })} disabled={!canManage} aria-label={`Tên trình độ ${l.code}`} className={inputClass()} />
+                </Field>
+                <div className="grid grid-cols-2 gap-2.5 min-[768px]:grid-cols-4">
+                  {SKILLS.map((s) => (
+                    <Field key={s} label={`Ngưỡng ${SKILL_LABELS[s]} (%)`}>
+                      <input
+                        type="number"
+                        inputMode="numeric"
+                        min={0}
+                        max={100}
+                        step={1}
+                        value={d.thresholds[s]}
+                        onChange={(e) => patch(l.id, { thresholds: { ...d.thresholds, [s]: e.target.value } })}
+                        disabled={!canManage}
+                        aria-label={`Ngưỡng ${SKILL_LABELS[s]} của trình độ ${l.code}`}
+                        className={inputClass()}
+                      />
+                    </Field>
+                  ))}
+                </div>
+              </div>
+              {err && (
+                <Alert inline>
+                  {err}
+                </Alert>
+              )}
+              <div className="flex justify-end">
+                <Btn variant="ghost" loading={pendingId === l.id} onClick={() => save(l.id)} disabled={!canManage || pendingId === l.id}>
+                  {pendingId === l.id ? 'Đang lưu…' : `Lưu ${l.code}`}
+                </Btn>
               </div>
             </div>
-            {err && (
-              <Alert inline>
-                {err}
-              </Alert>
-            )}
-            <div className="flex justify-end">
-              <Btn variant="ghost" onClick={() => save(l.id)} disabled={!canManage || pendingId === l.id}>
-                {pendingId === l.id ? 'Đang lưu…' : `Lưu ${l.code}`}
-              </Btn>
-            </div>
-          </div>
-        );
-      })}
+          );
+        })}
 
-      <Toast message={message} />
+        <Toast message={message} />
+      </div>
     </Panel>
   );
 }

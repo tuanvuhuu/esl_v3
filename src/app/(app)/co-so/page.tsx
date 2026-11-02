@@ -18,10 +18,10 @@ export default function CampusesPage() {
 function CampusesSkeleton() {
   return (
     <section aria-busy="true" aria-label="Đang tải cơ sở" className="flex flex-col gap-4">
-      <div className="h-9 w-48 animate-pulse rounded-xl bg-stone" />
+      <div className="h-9 w-48 animate-pulse rounded-[var(--borderRadius-medium)] bg-[var(--bgColor-muted)]" />
       <div className="grid grid-cols-1 gap-3 min-[768px]:grid-cols-2 min-[1200px]:grid-cols-3">
-        <div className="h-[180px] animate-pulse rounded-[var(--radius-panel)] bg-stone" />
-        <div className="h-[180px] animate-pulse rounded-[var(--radius-panel)] bg-stone" />
+        <div className="h-[180px] animate-pulse rounded-xl bg-[var(--bgColor-muted)]" />
+        <div className="h-[180px] animate-pulse rounded-xl bg-[var(--bgColor-muted)]" />
       </div>
     </section>
   );

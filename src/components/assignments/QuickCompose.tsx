@@ -2,7 +2,7 @@
 
 // Soạn nhanh (P36.3, kho từ P36.4): dán danh sách từ, chọn từ có sẵn hoặc dán câu → chọn dạng câu → xem lại → thêm vào bài.
 // Bản mẫu: docs/mockups/soan-nhanh.html. Máy tính: menu ⋯ trên từng câu. Điện thoại: thẻ có nút chữ, nút chính dính đáy (chân Modal).
-import { ArrowLeftRight, Check, Library, Save, Shuffle, Trash2 } from 'lucide-react';
+import { ArrowSwitchIcon, BookmarkIcon, CheckIcon, LibraryIcon, SyncIcon, TrashIcon } from '@primer/octicons-react';
 import { useEffect, useMemo, useState, useTransition, type KeyboardEvent } from 'react';
 import { lookupVocabAction, saveVocabWordsAction } from '@/app/(app)/bai-tap/vocab-actions';
 import { saveQuestionsAction } from '@/app/(app)/ngan-hang-cau-hoi/actions';
@@ -124,7 +124,11 @@ export function QuickCompose({ open, levelCode, onClose, onAdd }: { open: boolea
 
   function toggleType(id: QuickType) {
     if (typeAvailability(id, words, sentences, level) !== true) return;
-    setCount(id, activeCounts[id] > 0 ? 0 : Math.min(defaultCounts(words, sentences, level)[id] || 1, maxCount(id, words, sentences, level)));
+    setCount(id, activeCounts[id] > 0 ? 0 : Math.min(defaultCounts(words, sentences, level)[id] || 1, maxCount(tId(id), words, sentences, level)));
+  }
+
+  function tId(id: QuickType) {
+    return id;
   }
 
   function changeLevel(code: (typeof LEVEL_CODES)[number]) {
@@ -190,16 +194,20 @@ export function QuickCompose({ open, levelCode, onClose, onAdd }: { open: boolea
             const current = n === step;
             return (
               <li key={name} className="flex items-center gap-2">
-                {i > 0 && <span aria-hidden className="h-0.5 w-5 rounded bg-line max-[767px]:hidden" />}
+                {i > 0 && <span aria-hidden className="h-0.5 w-5 rounded bg-[var(--borderColor-default)] max-[767px]:hidden" />}
                 <button
                   type="button"
                   onClick={() => goTo(n)}
                   disabled={n > 1 && !hasInput}
                   aria-current={current ? 'step' : undefined}
-                  className={`inline-flex h-10 items-center gap-2 rounded-full border pl-1.5 pr-3.5 text-md font-bold transition-colors disabled:opacity-40 ${current ? 'border-primary-deep bg-primary-soft text-ink' : 'border-line bg-surface text-ink-2'}`}
+                  className={`inline-flex h-9 items-center gap-2 rounded-full border pl-1.5 pr-3.5 text-sm font-bold transition-colors max-[767px]:h-11 disabled:opacity-40 ${
+                    current
+                      ? 'border-[var(--fgColor-accent)] bg-[var(--bgColor-accent-muted,var(--color-primary-soft))] text-[var(--fgColor-default)]'
+                      : 'border-[var(--borderColor-default)] bg-[var(--bgColor-default)] text-[var(--fgColor-muted)] hover:bg-[var(--bgColor-muted)]'
+                  }`}
                 >
-                  <span className={`grid size-7 place-items-center rounded-full text-base font-extrabold ${done ? 'bg-accent text-white' : current ? 'bg-primary text-on-primary' : 'bg-stone text-stone-ink'}`}>
-                    {done ? <Check className="size-4" aria-hidden /> : n}
+                  <span className={`grid size-6 place-items-center rounded-full text-sm font-bold ${done ? 'bg-accent text-white' : current ? 'bg-[var(--button-primary-bgColor-rest,var(--color-primary))] text-[var(--button-primary-fgColor-rest,var(--color-on-primary))]' : 'bg-[var(--bgColor-muted)] text-[var(--fgColor-muted)]'}`}>
+                    {done ? <CheckIcon size={14} aria-hidden /> : n}
                   </span>
                   {name}
                 </button>
@@ -279,23 +287,29 @@ export function QuickCompose({ open, levelCode, onClose, onAdd }: { open: boolea
                     tabIndex={0}
                     onClick={() => toggleType(t.id)}
                     onKeyDown={onKey}
-                    className={`relative flex min-h-[132px] cursor-pointer flex-col gap-1.5 rounded-[18px] border p-3.5 text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-primary ${can !== true ? 'cursor-not-allowed border-line bg-stone' : on ? 'border-primary-deep bg-primary-soft' : 'border-line bg-surface hover:bg-row-hover'}`}
+                    className={`relative flex min-h-[132px] cursor-pointer flex-col gap-1.5 rounded-xl border p-3.5 text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[var(--fgColor-accent)] ${
+                      can !== true
+                        ? 'cursor-not-allowed border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]'
+                        : on
+                          ? 'border-[var(--fgColor-accent)] bg-[var(--bgColor-accent-muted,var(--color-primary-soft))]'
+                          : 'border-[var(--borderColor-default)] bg-[var(--bgColor-default)] hover:bg-[var(--bgColor-muted)]'
+                    }`}
                   >
-                    <span aria-hidden className={`absolute right-3 top-3 grid size-5 place-items-center rounded-md border-2 ${on ? 'border-accent bg-accent text-white' : 'border-line'}`}>
-                      {on && <Check className="size-3.5" />}
+                    <span aria-hidden className={`absolute right-3 top-3 grid size-5 place-items-center rounded-[var(--borderRadius-small)] border-2 ${on ? 'border-accent bg-accent text-white' : 'border-[var(--borderColor-default)]'}`}>
+                      {on && <CheckIcon size={14} aria-hidden />}
                     </span>
                     <span aria-hidden className={`text-[26px] leading-none ${can !== true ? 'opacity-50' : ''}`}>{t.icon}</span>
-                    <b className={`pr-6 text-md ${can !== true ? 'text-muted' : 'text-ink'}`}>{t.label}</b>
-                    <span className={`text-sm ${can !== true ? 'text-blush-ink' : 'text-muted'}`}>
+                    <b className={`pr-6 text-md ${can !== true ? 'text-[var(--fgColor-muted)]' : 'text-[var(--fgColor-default)]'}`}>{t.label}</b>
+                    <span className={`text-sm ${can !== true ? 'text-blush-ink' : 'text-[var(--fgColor-muted)]'}`}>
                       {can !== true ? can : t.perWord ? 'Mỗi từ một câu' : t.id === 'match' ? `${level.pairs[0]}–${level.pairs[1]} cặp một câu` : `${maxCount(t.id, words, sentences, level)} câu hợp lệ`}
                     </span>
                     {can === true && (
                       <span className="mt-auto inline-flex items-center gap-1" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
-                        <button type="button" aria-label={`Bớt một câu ${t.label}`} onClick={() => setCount(t.id, count - 1)} disabled={count === 0} className="grid size-7 place-items-center rounded-lg border border-line bg-surface font-extrabold disabled:opacity-40 max-[767px]:size-9">
+                        <button type="button" aria-label={`Bớt một câu ${t.label}`} onClick={() => setCount(t.id, count - 1)} disabled={count === 0} className="grid size-8 place-items-center rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] font-extrabold disabled:opacity-40 max-[767px]:size-9">
                           −
                         </button>
                         <span className="min-w-7 text-center font-bold tabular-nums" aria-live="polite">{count}</span>
-                        <button type="button" aria-label={`Thêm một câu ${t.label}`} onClick={() => setCount(t.id, count + 1)} disabled={count >= maxCount(t.id, words, sentences, level)} className="grid size-7 place-items-center rounded-lg border border-line bg-surface font-extrabold disabled:opacity-40 max-[767px]:size-9">
+                        <button type="button" aria-label={`Thêm một câu ${t.label}`} onClick={() => setCount(t.id, count + 1)} disabled={count >= maxCount(t.id, words, sentences, level)} className="grid size-8 place-items-center rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] font-extrabold disabled:opacity-40 max-[767px]:size-9">
                           +
                         </button>
                       </span>
@@ -307,7 +321,7 @@ export function QuickCompose({ open, levelCode, onClose, onAdd }: { open: boolea
 
             <section aria-label="Độ khó theo trình độ" className="flex flex-col gap-2">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <h3 className="text-lg font-extrabold text-ink">Độ khó theo trình độ</h3>
+                <h3 className="text-lg font-extrabold text-[var(--fgColor-default)]">Độ khó theo trình độ</h3>
                 <ChipGroup label="Trình độ">
                   {LEVEL_CODES.map((c) => (
                     <Chip key={c} selected={level.code === c} onClick={() => changeLevel(c)}>
@@ -325,9 +339,9 @@ export function QuickCompose({ open, levelCode, onClose, onAdd }: { open: boolea
                   ['Nhắc lại, đọc to', `${level.speakSeconds} giây`],
                   ['Cỡ bài gợi ý', `${level.lessonSize[0]}–${level.lessonSize[1]} câu`],
                 ].map(([k, v]) => (
-                  <div key={k} className="flex justify-between gap-2 border-b border-line py-2 text-base">
-                    <dt className="text-muted">{k}</dt>
-                    <dd className="font-semibold text-ink">{v}</dd>
+                  <div key={k} className="flex justify-between gap-2 border-b border-[var(--borderColor-muted)] py-2 text-base">
+                    <dt className="text-[var(--fgColor-muted)]">{k}</dt>
+                    <dd className="font-semibold text-[var(--fgColor-default)]">{v}</dd>
                   </div>
                 ))}
               </dl>
@@ -337,7 +351,7 @@ export function QuickCompose({ open, levelCode, onClose, onAdd }: { open: boolea
 
         {step === 3 && (
           <>
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-[18px] bg-primary-soft px-4 py-3">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-accent-muted,var(--color-primary-soft))] px-4 py-3">
               <dl className="flex flex-wrap gap-5">
                 {[
                   [items.length, 'câu'],
@@ -345,15 +359,14 @@ export function QuickCompose({ open, levelCode, onClose, onAdd }: { open: boolea
                   [new Set(items.map((x) => x.quickType)).size, 'dạng'],
                 ].map(([v, k]) => (
                   <div key={k} className="flex flex-col">
-                    <dd className="text-2xl font-extrabold leading-tight text-ink">{v}</dd>
-                    <dt className="text-sm text-ink-2">{k}</dt>
+                    <dd className="text-2xl font-extrabold leading-tight text-[var(--fgColor-default)]">{v}</dd>
+                    <dt className="text-sm text-[var(--fgColor-muted)]">{k}</dt>
                   </div>
                 ))}
               </dl>
               <span className="flex flex-wrap items-center gap-2">
                 <Pill tone="lav">{LEVEL_LABELS[level.code]}</Pill>
-                <Btn onClick={saveToBank} disabled={banking || items.length === 0 || banked?.ok === true}>
-                  <Library className="size-4" aria-hidden />
+                <Btn leadingVisual={LibraryIcon} onClick={saveToBank} disabled={banking || items.length === 0 || banked?.ok === true}>
                   {banking ? 'Đang lưu…' : banked?.ok ? 'Đã lưu vào ngân hàng' : 'Lưu vào ngân hàng'}
                 </Btn>
               </span>
@@ -373,16 +386,16 @@ export function QuickCompose({ open, levelCode, onClose, onAdd }: { open: boolea
                   const reroll = () => replaceItem(it.key, rerollItem(it, words, level));
                   const swap = () => replaceItem(it.key, switchItem(it, words, level));
                   const menu: RowMenuItem[] = [
-                    ...(canReroll(it) ? [{ kind: 'action' as const, label: 'Bốc lại đáp án nhiễu', icon: Shuffle, onSelect: reroll }] : []),
-                    ...(canSwitch(it) ? [{ kind: 'action' as const, label: it.quickType === 'picture' ? 'Đổi sang trắc nghiệm nghĩa' : 'Đổi sang chọn tranh', icon: ArrowLeftRight, onSelect: swap }] : []),
-                    { kind: 'action', label: 'Bỏ câu', icon: Trash2, danger: true, onSelect: () => setDropKey(it.key) },
+                    ...(canReroll(it) ? [{ kind: 'action' as const, label: 'Bốc lại đáp án nhiễu', icon: SyncIcon, onSelect: reroll }] : []),
+                    ...(canSwitch(it) ? [{ kind: 'action' as const, label: it.quickType === 'picture' ? 'Đổi sang trắc nghiệm nghĩa' : 'Đổi sang chọn tranh', icon: ArrowSwitchIcon, onSelect: swap }] : []),
+                    { kind: 'action', label: 'Bỏ câu', icon: TrashIcon, danger: true, onSelect: () => setDropKey(it.key) },
                   ];
                   return (
-                    <li key={it.key} aria-label={`Câu ${i + 1}`} className="grid grid-cols-[28px_minmax(0,1fr)] gap-x-3 gap-y-2 border-b border-line py-3 min-[768px]:grid-cols-[28px_minmax(0,1fr)_minmax(0,300px)_auto] min-[768px]:items-center">
-                      <span className="pt-0.5 text-center font-extrabold tabular-nums text-muted">{i + 1}</span>
+                    <li key={it.key} aria-label={`Câu ${i + 1}`} className="grid grid-cols-[28px_minmax(0,1fr)] gap-x-3 gap-y-2 border-b border-[var(--borderColor-muted)] py-3 min-[768px]:grid-cols-[28px_minmax(0,1fr)_minmax(0,300px)_auto] min-[768px]:items-center">
+                      <span className="pt-0.5 text-center font-extrabold tabular-nums text-[var(--fgColor-muted)]">{i + 1}</span>
                       <div className="min-w-0">
-                        <b className="block text-md text-ink">{it.input.prompt}</b>
-                        <span className="mt-1 flex flex-wrap items-center gap-1.5 text-sm text-muted">
+                        <b className="block text-md text-[var(--fgColor-default)]">{it.input.prompt}</b>
+                        <span className="mt-1 flex flex-wrap items-center gap-1.5 text-sm text-[var(--fgColor-muted)]">
                           <Pill tone="stone">
                             {meta.icon} {meta.label}
                           </Pill>
@@ -396,16 +409,13 @@ export function QuickCompose({ open, levelCode, onClose, onAdd }: { open: boolea
                         <RowMenu label={`Thao tác câu ${i + 1}`} items={menu} />
                       </div>
                       <div className="col-start-2 grid grid-cols-3 gap-1.5 min-[768px]:hidden">
-                        <Btn onClick={reroll} disabled={!canReroll(it)} className="px-1.5">
-                          <Shuffle className="size-4" aria-hidden />
+                        <Btn leadingVisual={SyncIcon} onClick={reroll} disabled={!canReroll(it)} className="px-1.5">
                           Bốc lại
                         </Btn>
-                        <Btn onClick={swap} disabled={!canSwitch(it)} className="px-1.5">
-                          <ArrowLeftRight className="size-4" aria-hidden />
+                        <Btn leadingVisual={ArrowSwitchIcon} onClick={swap} disabled={!canSwitch(it)} className="px-1.5">
                           Đổi dạng
                         </Btn>
-                        <Btn variant="danger" onClick={() => setDropKey(it.key)} className="px-1.5">
-                          <Trash2 className="size-4" aria-hidden />
+                        <Btn variant="danger" leadingVisual={TrashIcon} onClick={() => setDropKey(it.key)} className="px-1.5">
                           Bỏ
                         </Btn>
                       </div>
@@ -433,7 +443,7 @@ export function QuickCompose({ open, levelCode, onClose, onAdd }: { open: boolea
   );
 }
 
-// Danh sách từ đã nhận: máy tính là bảng, điện thoại là chip. Nghĩa và emoji lấy từ bộ từ có sẵn hiện chữ xanh.
+// Danh sách từ đã nhận: máy tính là bảng, điện thoại là chip. Nghĩa và emoji lấy từ bộ từ có sẵn hiện chữ màu điểm nhấn.
 function ParsedWords({ words, levelCode }: { words: QuickWord[]; levelCode: string }) {
   const missing = words.filter((w) => !w.vi).length;
   // Từ giáo viên tự gõ nghĩa: lưu được vào kho chung để lần sau tự điền
@@ -452,8 +462,8 @@ function ParsedWords({ words, levelCode }: { words: QuickWord[]; levelCode: stri
   return (
     <section aria-label="Từ đã nhận" className="flex min-w-0 flex-col gap-2">
       <div className="flex items-baseline justify-between gap-2">
-        <h3 className="text-lg font-extrabold text-ink">{words.length} từ đã nhận</h3>
-        {missing > 0 && <span className="text-sm text-muted">{missing} từ chưa có nghĩa</span>}
+        <h3 className="text-lg font-extrabold text-[var(--fgColor-default)]">{words.length} từ đã nhận</h3>
+        {missing > 0 && <span className="text-sm text-[var(--fgColor-muted)]">{missing} từ chưa có nghĩa</span>}
       </div>
       {words.length === 0 ? (
         <Notice>Chưa có từ nào. Dán mỗi dòng một từ, hoặc chọn từ có sẵn.</Notice>
@@ -461,27 +471,26 @@ function ParsedWords({ words, levelCode }: { words: QuickWord[]; levelCode: stri
         <>
           <ul className="flex flex-col max-[767px]:hidden">
             {words.map((w) => (
-              <li key={w.en} className="grid min-h-12 grid-cols-[40px_minmax(0,1fr)_minmax(0,1.2fr)_auto] items-center gap-2.5 border-b border-line px-1 py-1 last:border-b-0">
-                <span aria-hidden className={`grid size-10 place-items-center rounded-[var(--radius-ctl)] text-2xl ${w.emoji ? 'bg-stone' : 'border border-dashed border-line text-sm text-muted'}`}>{w.emoji || '—'}</span>
-                <b className="truncate text-md text-ink">{w.en}</b>
-                <span className={`truncate text-md ${!w.vi ? 'italic text-muted' : w.viFromBank ? 'text-link' : 'text-ink-2'}`}>{w.vi || 'Chưa có nghĩa'}</span>
+              <li key={w.en} className="grid min-h-12 grid-cols-[40px_minmax(0,1fr)_minmax(0,1.2fr)_auto] items-center gap-2.5 border-b border-[var(--borderColor-muted)] px-1 py-1 last:border-b-0">
+                <span aria-hidden className={`grid size-10 place-items-center rounded-[var(--borderRadius-medium)] text-2xl ${w.emoji ? 'bg-[var(--bgColor-muted)]' : 'border border-dashed border-[var(--borderColor-default)] text-sm text-[var(--fgColor-muted)]'}`}>{w.emoji || '—'}</span>
+                <b className="truncate text-md text-[var(--fgColor-default)]">{w.en}</b>
+                <span className={`truncate text-md ${!w.vi ? 'italic text-[var(--fgColor-muted)]' : w.viFromBank ? 'text-[var(--fgColor-accent)]' : 'text-[var(--fgColor-muted)]'}`}>{w.vi || 'Chưa có nghĩa'}</span>
                 {!w.vi ? <Pill tone="butter">Cần nghĩa</Pill> : w.viFromBank || w.emojiFromBank ? <Pill tone="lav">Có sẵn</Pill> : <Pill tone="mint">Đủ</Pill>}
               </li>
             ))}
           </ul>
           <ul className="flex flex-wrap gap-1.5 min-[768px]:hidden">
             {words.map((w) => (
-              <li key={w.en} className={`inline-flex h-[var(--chip-h-touch)] items-center gap-1.5 rounded-full pl-1.5 pr-3 text-base font-semibold ${w.vi ? 'bg-stone text-ink' : 'bg-butter text-butter-ink'}`}>
+              <li key={w.en} className={`inline-flex h-[var(--chip-h-touch)] items-center gap-1.5 rounded-full pl-1.5 pr-3 text-base font-semibold ${w.vi ? 'bg-[var(--bgColor-muted)] text-[var(--fgColor-default)]' : 'bg-butter text-butter-ink'}`}>
                 <span aria-hidden className="text-xl">{w.emoji || '❔'}</span>
                 {w.en}
               </li>
             ))}
           </ul>
-          <p className="text-sm text-muted">Chữ xanh là nghĩa lấy từ kho từ. Từ chưa có nghĩa vẫn dùng được cho nghe nhắc lại và viết.</p>
+          <p className="text-sm text-[var(--fgColor-muted)]">Chữ nổi bật là nghĩa lấy từ kho từ. Từ chưa có nghĩa vẫn dùng được cho nghe nhắc lại và viết.</p>
           {typed.length > 0 && (
             <div className="flex flex-wrap items-center gap-2">
-              <Btn onClick={save} disabled={saving}>
-                <Save className="size-4" aria-hidden />
+              <Btn leadingVisual={BookmarkIcon} onClick={save} disabled={saving}>
                 {saving ? 'Đang lưu…' : `Lưu ${typed.length} từ vào kho chung`}
               </Btn>
               {saved && (
@@ -506,11 +515,11 @@ function SentencePreview({ sentences, words, level, known }: { sentences: string
       {sentences.map((s, i) => {
         const gap = gapTarget(s, words);
         return (
-          <li key={`${i}-${s}`} className="flex flex-col gap-1.5 border-b border-line py-2 last:border-b-0">
-            <p className="text-md leading-relaxed text-ink">
+          <li key={`${i}-${s}`} className="flex flex-col gap-1.5 border-b border-[var(--borderColor-muted)] py-2 last:border-b-0">
+            <p className="text-md leading-relaxed text-[var(--fgColor-default)]">
               {s.split(/\s+/).map((t, k) => {
                 const bare = t.toLowerCase().replace(/[^a-z'-]/g, '');
-                const cls = k === gap ? 'rounded bg-primary-soft px-0.5 font-bold text-ink' : known.has(bare) ? 'underline decoration-accent decoration-2 underline-offset-4' : '';
+                const cls = k === gap ? 'rounded bg-[var(--bgColor-accent-muted,var(--color-primary-soft))] px-0.5 font-bold text-[var(--fgColor-default)]' : known.has(bare) ? 'underline decoration-accent decoration-2 underline-offset-4' : '';
                 return (
                   <span key={k}>
                     <span className={cls}>{t}</span>{' '}
@@ -532,14 +541,14 @@ function SentencePreview({ sentences, words, level, known }: { sentences: string
 // Xem trước gọn của một câu: tranh, đáp án, cặp ghép hoặc câu chuẩn; đáp án đúng tô xanh
 function MiniPreview({ item }: { item: GeneratedItem }) {
   const { input, quickType } = item;
-  const box = 'inline-flex min-h-10 items-center justify-center rounded-[10px] border-2 px-2 text-base font-bold';
+  const box = 'inline-flex min-h-10 items-center justify-center rounded-[var(--borderRadius-medium)] border-2 px-2 text-base font-bold';
   if (quickType === 'picture') {
     return (
       <div className="flex flex-wrap gap-1.5">
         {input.options.map((o) => {
           const [emoji] = o.label.split(' ');
           return (
-            <span key={o.label} title={o.label} className={`${box} size-10 px-0 text-[22px] ${o.isCorrect ? 'border-accent bg-mint' : 'border-line bg-surface'}`}>
+            <span key={o.label} title={o.label} className={`${box} size-10 px-0 text-[22px] ${o.isCorrect ? 'border-accent bg-mint' : 'border-[var(--borderColor-default)] bg-[var(--bgColor-default)]'}`}>
               {emoji}
             </span>
           );
@@ -551,7 +560,7 @@ function MiniPreview({ item }: { item: GeneratedItem }) {
     return (
       <div className="flex flex-wrap gap-1.5">
         {input.options.map((o) => (
-          <span key={o.label} className={`${box} ${o.isCorrect ? 'border-accent bg-mint text-mint-ink' : 'border-line bg-surface text-ink'}`}>
+          <span key={o.label} className={`${box} ${o.isCorrect ? 'border-accent bg-mint text-mint-ink' : 'border-[var(--borderColor-default)] bg-[var(--bgColor-default)] text-[var(--fgColor-default)]'}`}>
             {o.label}
           </span>
         ))}
@@ -562,7 +571,7 @@ function MiniPreview({ item }: { item: GeneratedItem }) {
     return (
       <div className="flex flex-wrap gap-1.5">
         {(input.pairs ?? []).map((p) => (
-          <span key={p.leftLabel} className="inline-flex min-h-8 items-center rounded-[10px] border-2 border-line bg-surface px-2 text-sm font-semibold text-ink">
+          <span key={p.leftLabel} className="inline-flex min-h-8 items-center rounded-[var(--borderRadius-medium)] border-2 border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-2 text-sm font-semibold text-[var(--fgColor-default)]">
             {p.leftLabel} → {p.rightLabel}
           </span>
         ))}
@@ -573,7 +582,7 @@ function MiniPreview({ item }: { item: GeneratedItem }) {
     return (
       <div className="flex flex-wrap gap-1.5">
         {(input.referenceText ?? '').split(/\s+/).map((w, i) => (
-          <span key={i} className={`${box} border-line bg-surface text-ink`}>
+          <span key={i} className={`${box} border-[var(--borderColor-default)] bg-[var(--bgColor-default)] text-[var(--fgColor-default)]`}>
             {w}
           </span>
         ))}

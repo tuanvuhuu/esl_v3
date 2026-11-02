@@ -1,0 +1,10 @@
+/* Gắn lên span bọc ngoài của Textarea (Primer v36) — xem TextAreaAutoHeight.tsx */
+span.textarea {
+  min-height: unset;
+}
+
+span.noBorder {
+  outline: none !important;
+  border: none;
+  box-shadow: none;
+}

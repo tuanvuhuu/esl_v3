@@ -1,0 +1,60 @@
+.multiImageUpload_box3 {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: var(--space-1);
+  max-height: 200px;
+  overflow-y: auto;
+  padding: var(--space-2);
+  border: 1px solid;
+  border-color: var(--app-border-default);
+  border-radius: var(--radius-2);
+  background-color: var(--app-canvas-subtle);
+}
+
+.multiImageUpload_box4 {
+  position: relative;
+  border: 1px solid;
+  border-color: var(--app-border-default);
+  border-radius: var(--radius-1);
+  overflow: hidden;
+  aspect-ratio: 1;
+}
+
+button.multiImageUpload_button.multiImageUpload_button {
+  position: absolute;
+  top: var(--space-0);
+  right: var(--space-0);
+  min-width: 20px;
+  min-height: 20px;
+  padding: var(--space-0);
+  font-size: 10px;
+}
+
+.multiImageUpload_box5 {
+  border: 2px dashed;
+  border-color: var(--app-border-default);
+  border-radius: var(--radius-2);
+  padding: var(--space-3);
+  text-align: center;
+  min-height: 80px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.multiImageUpload_box5:hover {
+  border-color: var(--app-accent-emphasis);
+  background-color: var(--app-canvas-subtle);
+}
+
+.multiImageUpload_box7 {
+  padding: var(--space-3);
+  text-align: center;
+  border: 1px solid;
+  border-color: var(--app-border-default);
+  border-radius: var(--radius-2);
+  background-color: var(--app-canvas-subtle);
+  color: var(--app-fg-muted);
+}

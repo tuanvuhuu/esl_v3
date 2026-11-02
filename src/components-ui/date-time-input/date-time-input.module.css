@@ -1,0 +1,87 @@
+span.dateTimeInput_textInput {
+  height: 32px;
+  padding-right: 28px;
+}
+
+button.dateTimeInput_iconButton.dateTimeInput_iconButton.dateTimeInput_iconButton {
+  right: 2px;
+  top: 2px;
+  position: absolute;
+  color: var(--app-fg-muted);
+}
+
+.dateTimeInput_octicon {
+  right: 28px;
+  position: absolute;
+  color: var(--app-danger-emphasis);
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+.dateTimeInput_box2 {
+  padding: var(--space-3);
+  display: grid;
+  gap: var(--space-2);
+  min-width: 310px;
+}
+
+span.dateTimeInput_textInput2 {
+  width: 90px;
+}
+
+.dateTimeInput_box5 {
+  display: grid;
+  grid-template-columns: repeat(7, 38px);
+}
+
+.dateTimeInput_box6 {
+  color: var(--app-fg-muted);
+  font-weight: 600;
+  font-size: var(--fs-0);
+  display: flex;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+}
+
+button.dateTimeInput_button.dateTimeInput_button {
+  font-size: 12px;
+  display: flex;
+  justify-content: center;
+  height: 30px;
+  min-width: 30px;
+  padding: var(--space-0);
+}
+
+button.dateTimeInput_button_isCurrentMonth.dateTimeInput_button_isCurrentMonth {
+  font-weight: 600;
+}
+
+button.dateTimeInput_button_isSelected.dateTimeInput_button_isSelected {
+  background-color: var(--app-accent-emphasis);
+}
+
+.dateTimeInput_box7 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: var(--space-2);
+  border-top: 1px solid;
+  border-color: var(--app-border-subtle);
+}
+
+.dateTimeInput_box9 {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--app-fg-muted);
+}
+
+.dateTimeInput_box10 {
+  font-weight: 600;
+  font-size: 12px;
+}
+
+div.timeOverlay {
+  max-height: 200px;
+  overflow-y: auto;
+}

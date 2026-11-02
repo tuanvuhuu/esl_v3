@@ -1,0 +1,50 @@
+/* Bảng màu --app-* dùng trong components-ui (từ dự án 01. TSUKUBA), trỏ tới biến @primer/primitives */
+:root[data-color-mode][data-light-theme],
+:root[data-color-mode][data-dark-theme],
+:root[data-color-mode],
+[data-component='BaseStyles'] {
+  --app-accent-emphasis: var(--bgColor-accent-emphasis);
+  --app-accent-fg: var(--fgColor-accent);
+  --app-accent-muted: var(--borderColor-accent-muted);
+  --app-accent-subtle: var(--bgColor-accent-muted);
+  --app-actionListItem-default-hoverBg: var(--control-transparent-bgColor-hover, var(--stone));
+  --app-attention-emphasis: var(--bgColor-attention-emphasis);
+  --app-attention-fg: var(--fgColor-attention);
+  --app-attention-muted: var(--borderColor-attention-muted);
+  --app-attention-subtle: var(--bgColor-attention-muted);
+  --app-border-default: var(--borderColor-default);
+  --app-border-muted: var(--borderColor-muted);
+  --app-border-subtle: var(--borderColor-muted);
+  --app-canvas-default: var(--bgColor-default);
+  --app-canvas-overlay: var(--overlay-bgColor);
+  --app-canvas-subtle: var(--bgColor-muted);
+  --app-danger-emphasis: var(--borderColor-danger-emphasis);
+  --app-danger-fg: var(--fgColor-danger);
+  --app-danger-muted: var(--borderColor-danger-muted);
+  --app-danger-subtle: var(--bgColor-danger-muted);
+  --app-done-emphasis: var(--bgColor-done-emphasis);
+  --app-done-fg: var(--fgColor-done);
+  --app-done-muted: var(--borderColor-done-muted);
+  --app-done-subtle: var(--bgColor-done-muted);
+  --app-fg-default: var(--fgColor-default);
+  --app-fg-muted: var(--fgColor-muted);
+  --app-fg-onEmphasis: var(--fgColor-onEmphasis);
+  --app-fg-subtle: var(--fgColor-muted);
+  --app-neutral-muted: var(--bgColor-neutral-muted);
+  --app-neutral-subtle: var(--bgColor-neutral-muted);
+  --app-open-muted: var(--borderColor-open-muted);
+  --app-severe-fg: var(--fgColor-severe);
+  --app-severe-muted: var(--borderColor-severe-muted);
+  --app-shadow-large: var(--shadow-floating-large, var(--lift));
+  --app-shadow-medium: var(--shadow-resting-medium, var(--shadow));
+  --app-shadow-small: var(--shadow-resting-small, var(--shadow));
+  --app-sponsors-emphasis: var(--bgColor-sponsors-emphasis);
+  --app-sponsors-fg: var(--fgColor-sponsors);
+  --app-sponsors-muted: var(--borderColor-sponsors-muted);
+  --app-sponsors-subtle: var(--bgColor-sponsors-muted);
+  --app-success-emphasis: var(--bgColor-success-emphasis);
+  --app-success-fg: var(--fgColor-success);
+  --app-success-muted: var(--borderColor-success-muted);
+  --app-success-subtle: var(--bgColor-success-muted);
+}
+

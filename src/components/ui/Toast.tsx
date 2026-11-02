@@ -1,8 +1,8 @@
 'use client';
 
-// Thông báo ngắn sau khi lưu hoặc xoá. Tự tắt sau vài giây. Dùng hook useToast trong component cha.
-// Trạng thái giữ ở mức module, không ở state của component: khi trang làm mới sau khi lưu làm dựng lại cây giao diện,
-// thông báo vẫn còn hiện (E-062).
+// Thông báo nhanh sau khi lưu hoặc xoá (kiểu Toast có vạch nhấn bên trái của dự án 01. TSUKUBA).
+// Giữ state ở mức module để khi router.refresh() làm dựng lại cây giao diện thì thông báo vẫn hiển thị (E-062).
+import { CheckCircleIcon } from '@primer/octicons-react';
 import { useCallback, useSyncExternalStore } from 'react';
 
 type ToastState = { text: string } | null;
@@ -50,8 +50,12 @@ export function useToast(durationMs = 3200) {
 export function Toast({ message }: { message: string | null }) {
   if (!message) return null;
   return (
-    <div role="status" className="fixed inset-x-0 bottom-[calc(96px+var(--safe-b))] z-[95] mx-auto w-fit max-w-[calc(100%-32px)] rounded-full border border-line bg-surface px-4 py-2.5 text-center text-base font-semibold text-ink shadow-lift min-[768px]:bottom-6">
-      {message}
+    <div
+      role="status"
+      className="fixed bottom-[calc(96px+var(--safe-b))] right-4 z-[95] flex max-w-[calc(100vw-32px)] items-center gap-2 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] border-l-4 border-l-[var(--bgColor-success-emphasis)] bg-[var(--bgColor-default)] px-4 py-2.5 text-sm font-semibold text-[var(--fgColor-default)] shadow-[var(--shadow-floating-medium,0_6px_18px_rgba(0,0,0,0.16))] max-[767px]:inset-x-4 max-[767px]:mx-auto max-[767px]:w-fit min-[768px]:bottom-5"
+    >
+      <CheckCircleIcon size={16} className="shrink-0 text-[var(--fgColor-success)]" aria-hidden />
+      <span>{message}</span>
     </div>
   );
 }

@@ -5,6 +5,11 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['tests/unit/**/*.test.ts'],
+    server: {
+      deps: {
+        inline: ['@primer/react'],
+      },
+    },
   },
   resolve: {
     alias: {

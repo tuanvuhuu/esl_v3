@@ -3,7 +3,8 @@
 import { startTransition, useActionState, useState, type FormEvent } from 'react';
 import { createAssignmentAction, updateAssignmentAction, type AssignmentFormValues } from '@/app/(app)/bai-tap/actions';
 import type { ActionResult } from '@/lib/validation/student';
-import { Field, FORM_BTN_CANCEL, FORM_BTN_SUBMIT, inputClass, textareaClass, FormFooter } from '@/components/ui/Field';
+import { Btn } from '@/components/ui/Btn';
+import { Field, inputClass, textareaClass, FormFooter } from '@/components/ui/Field';
 import { SelectPanel } from '@/components/ui/SelectPanel';
 import { Alert } from '@/components/ui/primitives';
 import { ASSIGNMENT_MODE_LABELS, ASSIGNMENT_MODES } from '@/lib/validation/assignment';
@@ -120,10 +121,10 @@ export function AssignmentForm({
         <textarea name="description" defaultValue={values.description} rows={3} placeholder="Yêu cầu, tài liệu, lưu ý…" className={textareaClass(errors.description)} />
       </Field>
       <FormFooter className="col-span-full">
-        <button type="button" onClick={onCancel} className={FORM_BTN_CANCEL}>Huỷ</button>
-        <button type="submit" disabled={pending} className={FORM_BTN_SUBMIT}>
+        <Btn onClick={onCancel}>Huỷ</Btn>
+        <Btn type="submit" variant="primary" disabled={pending}>
           {pending ? 'Đang lưu…' : mode === 'edit' ? 'Lưu thay đổi' : 'Tạo bài tập'}
-        </button>
+        </Btn>
       </FormFooter>
     </form>
   );

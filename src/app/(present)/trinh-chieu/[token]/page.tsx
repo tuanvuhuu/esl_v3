@@ -6,7 +6,7 @@ import { loadPresentation } from '../load';
 // Màn chiếu cho cả lớp (35.19), không có khung menu để chiếu toàn màn hình.
 export default function PresentPage({ params }: { params: Promise<{ token: string }> }) {
   return (
-    <Suspense fallback={<div aria-busy="true" className="h-dvh animate-pulse bg-stone" />}>
+    <Suspense fallback={<div aria-busy="true" className="h-dvh animate-pulse bg-[var(--bgColor-muted)]" />}>
       <PresentData params={params} />
     </Suspense>
   );

@@ -12,7 +12,7 @@ import { getCurrentPermissions } from '@/lib/session';
 // Giáo viên chơi thử danh sách từ (35.15), giống hệt màn học sinh thấy.
 export default function WordListPlayPage({ params }: { params: Promise<{ id: string }> }) {
   return (
-    <Suspense fallback={<section aria-busy="true" className="h-[360px] animate-pulse rounded-[var(--radius-panel)] bg-stone" />}>
+    <Suspense fallback={<section aria-busy="true" className="h-[360px] animate-pulse rounded-xl bg-[var(--bgColor-muted)]" />}>
       <WordListPlayData params={params} />
     </Suspense>
   );

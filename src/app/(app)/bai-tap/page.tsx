@@ -1,4 +1,4 @@
-﻿import { connection } from 'next/server';
+import { connection } from 'next/server';
 import { Suspense } from 'react';
 import { AssignmentsView } from '@/components/assignments/AssignmentsView';
 import { NoAccess } from '@/components/ui/NoAccess';
@@ -28,9 +28,9 @@ export default function AssignmentsPage({ searchParams }: { searchParams: Promis
 function AssignmentsSkeleton() {
   return (
     <section aria-busy="true" aria-label="Đang tải bài tập" className="flex flex-col gap-4">
-      <div className="h-9 w-40 animate-pulse rounded-xl bg-stone" />
-      <div className="h-[var(--ctl-h)] w-full max-w-sm animate-pulse rounded-[var(--radius-ctl)] bg-stone" />
-      <div className="h-[220px] animate-pulse rounded-[var(--radius-panel)] bg-stone" />
+      <div className="h-9 w-40 animate-pulse rounded-md bg-[var(--bgColor-muted)]" />
+      <div className="h-[var(--ctl-h)] w-full max-w-sm animate-pulse rounded-[var(--borderRadius-medium)] bg-[var(--bgColor-muted)]" />
+      <div className="h-[220px] animate-pulse rounded-xl bg-[var(--bgColor-muted)]" />
     </section>
   );
 }

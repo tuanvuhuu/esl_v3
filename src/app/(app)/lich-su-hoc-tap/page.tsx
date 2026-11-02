@@ -1,7 +1,7 @@
 import { connection } from 'next/server';
 import { Suspense } from 'react';
 import { HistoryTimeline } from '@/components/learning/HistoryTimeline';
-import { BTN_BASE, BTN_GHOST } from '@/components/ui/Btn';
+import { Btn } from '@/components/ui/Btn';
 import { NoAccess } from '@/components/ui/NoAccess';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { SelectPanel } from '@/components/ui/SelectPanel';
@@ -29,9 +29,9 @@ export default function LearningHistoryPage({ searchParams }: { searchParams: Pr
 function HistorySkeleton() {
   return (
     <section aria-busy="true" aria-label="Đang tải lịch sử học tập" className="flex flex-col gap-4">
-      <div className="h-9 w-56 animate-pulse rounded-xl bg-stone" />
-      <div className="h-[var(--ctl-h)] w-full animate-pulse rounded-[var(--radius-ctl)] bg-stone" />
-      <div className="h-[420px] w-full animate-pulse rounded-[var(--radius-panel)] bg-stone" />
+      <div className="h-9 w-56 animate-pulse rounded-[var(--borderRadius-medium)] bg-[var(--bgColor-muted)]" />
+      <div className="h-[var(--ctl-h)] w-full animate-pulse rounded-[var(--borderRadius-medium)] bg-[var(--bgColor-muted)]" />
+      <div className="h-[420px] w-full animate-pulse rounded-xl bg-[var(--bgColor-muted)]" />
     </section>
   );
 }
@@ -80,11 +80,11 @@ async function HistoryData({ searchParams }: { searchParams: Promise<SearchParam
           block
           className="flex-1 min-[768px]:max-w-xs"
         />
-        <button type="submit" className={`${BTN_BASE} ${BTN_GHOST}`}>Lọc</button>
+        <Btn type="submit" variant="ghost">Lọc</Btn>
       </form>
 
       <Panel>
-        <p className="mb-4 text-sm text-muted">{items.length} mục{all.length >= 400 ? ' (chỉ tải 400 mục gần nhất)' : ''}</p>
+        <p className="mb-4 text-sm text-[var(--fgColor-muted)]">{items.length} mục{all.length >= 400 ? ' (chỉ tải 400 mục gần nhất)' : ''}</p>
         <HistoryTimeline items={items} showStudent />
       </Panel>
     </section>

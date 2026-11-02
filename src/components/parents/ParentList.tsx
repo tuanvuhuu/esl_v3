@@ -2,7 +2,16 @@
 
 // Màn Phụ huynh (docs/DESIGN.md mục 155). Từ 1200px: bảng, mỗi phụ huynh một dòng, mỗi học sinh một cột,
 // sửa tên, email, số điện thoại, ghi chú tại ô. Dưới 1200px: thẻ (máy tính bảng theo trang, điện thoại bấm Xem thêm).
-import { Check, Pencil, Phone, Plus, Search, Send, Trash2, UserPlus } from 'lucide-react';
+import {
+  CheckIcon,
+  DeviceMobileIcon,
+  PaperAirplaneIcon,
+  PencilIcon,
+  PersonAddIcon,
+  PlusIcon,
+  SearchIcon,
+  TrashIcon,
+} from '@primer/octicons-react';
 import Link from 'next/link';
 import { useCallback, useMemo, useState, useTransition, type MouseEvent } from 'react';
 import { useRouter } from 'next/navigation';
@@ -20,11 +29,11 @@ import { RowMenu, type RowMenuItem } from '@/components/ui/RowMenu';
 import { Card, EmptyPanel } from '@/components/ui/surfaces';
 import { Toast, useToast } from '@/components/ui/Toast';
 import { DataGrid, type GridColumn, type GridSort } from '@/components/ui/datagrid';
-import { Btn, BTN_BASE, BTN_GHOST } from '@/components/ui/Btn';
+import { Btn } from '@/components/ui/Btn';
 import { Pagination, TextInput } from '@/components/ui/controls';
+import { ZaloLink } from '@/components/ui/ZaloLink';
 import { ChildEditor } from './ChildEditor';
 import { InlineText } from './InlineText';
-import { ZaloLink } from '@/components/ui/ZaloLink';
 import { ParentAssignForm } from './ParentAssignForm';
 import { ParentForm } from './ParentForm';
 
@@ -135,10 +144,10 @@ export function ParentList(props: { parents: ParentRow[]; students?: StudentChoi
   }
 
   const menuItems = (row: ParentRow): RowMenuItem[] => [
-    { kind: 'action', label: 'Gán học sinh', icon: UserPlus, onSelect: () => setAssigning(row), disabled: !canManage, disabledHint: NO_RIGHT },
-    { kind: 'action', label: 'Sửa', icon: Pencil, onSelect: () => openEdit(row), disabled: !canManage, disabledHint: NO_RIGHT },
-    { kind: 'action', label: 'Kết nối Telegram', icon: Send, onSelect: () => setTelegramFor(row), disabled: !canManage, disabledHint: NO_RIGHT },
-    { kind: 'action', label: 'Xoá', icon: Trash2, danger: true, onSelect: () => setToDelete(row), disabled: !canManage, disabledHint: NO_RIGHT },
+    { kind: 'action', label: 'Gán học sinh', icon: PersonAddIcon, onSelect: () => setAssigning(row), disabled: !canManage, disabledHint: NO_RIGHT },
+    { kind: 'action', label: 'Sửa', icon: PencilIcon, onSelect: () => openEdit(row), disabled: !canManage, disabledHint: NO_RIGHT },
+    { kind: 'action', label: 'Kết nối Telegram', icon: PaperAirplaneIcon, onSelect: () => setTelegramFor(row), disabled: !canManage, disabledHint: NO_RIGHT },
+    { kind: 'action', label: 'Xoá', icon: TrashIcon, danger: true, onSelect: () => setToDelete(row), disabled: !canManage, disabledHint: NO_RIGHT },
   ];
 
   const deleteText = toDelete
@@ -160,15 +169,17 @@ export function ParentList(props: { parents: ParentRow[]; students?: StudentChoi
       return (
         <button
           type="button"
-          onClick={(e: MouseEvent<HTMLButtonElement>) => setChildEdit({ parentId: row.id, studentId: child.studentId, anchor: e.currentTarget.getBoundingClientRect() })}
+          onClick={(e: MouseEvent<HTMLButtonElement>) =>
+            setChildEdit({ parentId: row.id, studentId: child.studentId, anchor: e.currentTarget.getBoundingClientRect() })
+          }
           aria-label={`Sửa ${child.studentName}, ${relationText(child)}${child.isPrimary ? ', liên hệ chính' : ''}`}
           data-link="true"
-          className="-mx-1 flex min-w-0 max-w-full flex-col items-start rounded-[var(--radius-ctl)] px-1 py-0.5 text-left hover:bg-stone"
+          className="-mx-1 flex min-w-0 max-w-full flex-col items-start rounded-[var(--borderRadius-small)] px-1 py-0.5 text-left hover:bg-[var(--bgColor-muted)]"
         >
-          <span className="break-words text-base text-link underline underline-offset-2">{child.studentName}</span>
-          <span className="inline-flex items-center gap-1 text-sm text-relation">
+          <span className="break-words text-sm font-medium text-[var(--fgColor-link)] underline underline-offset-2">{child.studentName}</span>
+          <span className="inline-flex items-center gap-1 text-xs text-[var(--fgColor-muted)]">
             {relationText(child)}
-            {child.isPrimary && <Check className="size-3.5" aria-hidden />}
+            {child.isPrimary && <CheckIcon size={12} aria-hidden />}
           </span>
         </button>
       );
@@ -179,7 +190,7 @@ export function ParentList(props: { parents: ParentRow[]; students?: StudentChoi
         <button
           type="button"
           onClick={() => setAssigning(row)}
-          className="-mx-1 h-[var(--ctl-h)] rounded-[var(--radius-ctl)] px-1 text-sm text-link underline underline-offset-2 opacity-0 transition-opacity hover:opacity-100 focus-visible:opacity-100 group-hover:opacity-100"
+          className="-mx-1 h-[var(--ctl-h)] rounded-[var(--borderRadius-small)] px-1 text-sm text-[var(--fgColor-link)] underline underline-offset-2 opacity-0 transition-opacity hover:opacity-100 focus-visible:opacity-100 group-hover:opacity-100"
         >
           + Thêm
         </button>
@@ -199,10 +210,10 @@ export function ParentList(props: { parents: ParentRow[]; students?: StudentChoi
               label="họ tên"
               placeholder="Thêm họ tên"
               canEdit={canManage}
-              className="text-base font-bold text-ink"
+              className="text-sm font-semibold text-[var(--fgColor-default)]"
               onSave={(next) => updateParentFieldAction(row.id, 'fullName', next)}
             />
-            {row.telegramLinked && <small className="block text-xs text-muted">Đã kết nối Telegram</small>}
+            {row.telegramLinked && <small className="block text-xs text-[var(--fgColor-muted)]">Đã kết nối Telegram</small>}
           </div>
         );
       case 'email':
@@ -213,7 +224,7 @@ export function ParentList(props: { parents: ParentRow[]; students?: StudentChoi
             placeholder="Thêm email"
             inputType="email"
             canEdit={canManage}
-            className="text-sm text-ink-2"
+            className="text-sm text-[var(--fgColor-muted)]"
             onSave={(next) => updateParentFieldAction(row.id, 'email', next)}
           />
         );
@@ -226,14 +237,14 @@ export function ParentList(props: { parents: ParentRow[]; students?: StudentChoi
               placeholder="Thêm số điện thoại"
               inputType="tel"
               canEdit
-              className="text-base text-ink"
+              className="text-sm text-[var(--fgColor-default)]"
               onSave={(next) => updateParentFieldAction(row.id, 'phone', next)}
             />
             <ZaloLink phone={row.phone} name={row.fullName} variant="link" />
           </span>
         ) : (
           <span className="flex flex-wrap items-center gap-2">
-            <a href={`tel:${row.phone}`} className="text-base text-link underline underline-offset-2">
+            <a href={`tel:${row.phone}`} className="text-sm text-[var(--fgColor-link)] underline underline-offset-2">
               {row.phone}
             </a>
             <ZaloLink phone={row.phone} name={row.fullName} variant="link" />
@@ -247,7 +258,7 @@ export function ParentList(props: { parents: ParentRow[]; students?: StudentChoi
             placeholder="Thêm ghi chú"
             multiline
             canEdit={canManage}
-            className="text-xs leading-tight text-ink-2"
+            className="text-xs leading-tight text-[var(--fgColor-muted)]"
             wrap
             onSave={(next) => updateParentFieldAction(row.id, 'note', next)}
           />
@@ -281,8 +292,8 @@ export function ParentList(props: { parents: ParentRow[]; students?: StudentChoi
       <header className="mb-4 flex flex-wrap items-end justify-between gap-4 max-[767px]:mb-3">
         <div className="min-w-0">
           <PageCrumbs crumbs={['Đào tạo', 'Phụ huynh']} />
-          <h1 className="text-h1 font-extrabold leading-tight tracking-tight text-ink min-[768px]:sr-only">Phụ huynh</h1>
-          <p className="mt-1 text-base text-muted max-[767px]:mt-1.5 max-[767px]:text-sm">
+          <h1 className="text-h1 font-extrabold leading-tight tracking-tight text-[var(--fgColor-default)] min-[768px]:sr-only">Phụ huynh</h1>
+          <p className="mt-1 text-sm text-[var(--fgColor-muted)] max-[767px]:mt-1.5">
             {parents.length} phụ huynh. Xoá phụ huynh chỉ gỡ liên kết, học sinh vẫn được giữ lại.
           </p>
         </div>
@@ -298,6 +309,7 @@ export function ParentList(props: { parents: ParentRow[]; students?: StudentChoi
               <TextInput
                 id="parent-search"
                 type="search"
+                leadingVisual={SearchIcon}
                 value={q}
                 onChange={(e) => {
                   setQ(e.target.value);
@@ -306,24 +318,22 @@ export function ParentList(props: { parents: ParentRow[]; students?: StudentChoi
                 }}
                 placeholder="Tìm theo tên, SĐT hoặc tên con"
                 autoComplete="off"
-                className="pl-8 [&::-webkit-search-cancel-button]:hidden"
+                className="[&::-webkit-search-cancel-button]:hidden"
               />
-              <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted" aria-hidden />
             </div>
-            <span className="hidden whitespace-nowrap text-sm text-muted min-[768px]:inline">
+            <span className="hidden whitespace-nowrap text-sm text-[var(--fgColor-muted)] min-[768px]:inline">
               Đang hiển thị {sorted.length === 0 ? 0 : `${(currentPage - 1) * PAGE_SIZE + 1}–${Math.min(currentPage * PAGE_SIZE, sorted.length)}`} trên {sorted.length} phụ huynh
             </span>
           </div>
 
           {canManage && (
-            <Btn variant="primary" onClick={() => setCreating(true)} className="shrink-0">
-              <Plus className="size-4" aria-hidden />
+            <Btn variant="primary" leadingVisual={PlusIcon} onClick={() => setCreating(true)} className="shrink-0">
               Thêm phụ huynh
             </Btn>
           )}
         </div>
 
-        <p className="text-sm text-muted min-[768px]:hidden">
+        <p className="text-sm text-[var(--fgColor-muted)] min-[768px]:hidden">
           {sorted.length === 0 ? 'Không có phụ huynh phù hợp.' : `Đang hiển thị ${phoneRows.length} trên ${sorted.length} phụ huynh`}
         </p>
       </div>
@@ -356,11 +366,13 @@ export function ParentList(props: { parents: ParentRow[]; students?: StudentChoi
       )}
 
       {/* Điện thoại: thẻ, bấm Xem thêm để tiếp */}
-      <div className="flex flex-col gap-3 min-[768px]:hidden">{sorted.length === 0 ? empty : phoneRows.map((row) => <div key={row.id}>{card(row)}</div>)}</div>
+      <div className="flex flex-col gap-3 min-[768px]:hidden">
+        {sorted.length === 0 ? empty : phoneRows.map((row) => <div key={row.id}>{card(row)}</div>)}
+      </div>
       {hasMorePhone && (
-        <button type="button" onClick={() => setPhoneCount((n) => n + PAGE_SIZE)} className={`${BTN_BASE} ${BTN_GHOST} mt-3 w-full min-[768px]:hidden`}>
+        <Btn block onClick={() => setPhoneCount((n) => n + PAGE_SIZE)} className="mt-3 min-[768px]:hidden">
           Xem thêm {Math.min(PAGE_SIZE, sorted.length - phoneRows.length)} phụ huynh (còn {sorted.length - phoneRows.length})
-        </button>
+        </Btn>
       )}
 
       <Toast message={message} />
@@ -430,31 +442,31 @@ function ParentCard({
   return (
     <Card>
       <div className="min-w-0">
-        <b className="block break-words text-base text-ink">{row.fullName}</b>
+        <b className="block break-words text-sm font-semibold text-[var(--fgColor-default)]">{row.fullName}</b>
         <div className="mt-0.5 flex flex-wrap items-center gap-2">
-          <a href={`tel:${row.phone}`} className="inline-flex items-center gap-1.5 text-base text-link underline underline-offset-2">
-            <Phone className="size-3.5" aria-hidden />
+          <a href={`tel:${row.phone}`} className="inline-flex items-center gap-1.5 text-sm text-[var(--fgColor-link)] underline underline-offset-2">
+            <DeviceMobileIcon size={14} aria-hidden />
             {row.phone}
           </a>
           <ZaloLink phone={row.phone} name={row.fullName} variant="link" />
         </div>
-        {row.email && <small className="block break-words text-sm text-muted">{row.email}</small>}
-        {row.telegramLinked && <small className="block text-xs text-muted">Đã kết nối Telegram</small>}
+        {row.email && <small className="block break-words text-xs text-[var(--fgColor-muted)]">{row.email}</small>}
+        {row.telegramLinked && <small className="block text-xs text-[var(--fgColor-muted)]">Đã kết nối Telegram</small>}
       </div>
       {row.children.length === 0 ? (
-        <small className="text-sm text-muted">Chưa liên kết học sinh nào</small>
+        <small className="text-xs text-[var(--fgColor-muted)]">Chưa liên kết học sinh nào</small>
       ) : (
         <ul className="grid grid-cols-[minmax(0,max-content)_auto] justify-start gap-x-3 gap-y-1.5" aria-label={`Học sinh của ${row.fullName}`}>
           {row.children.map((c) => (
             <li key={c.studentId} className="contents">
-              <Link href={`/hoc-sinh/${c.studentId}`} className="min-w-0 break-words text-base text-link underline underline-offset-2">
+              <Link href={`/hoc-sinh/${c.studentId}`} className="min-w-0 break-words text-sm font-medium text-[var(--fgColor-link)] underline underline-offset-2">
                 {c.studentName}
               </Link>
-              <span className="inline-flex items-center gap-1 text-sm text-relation">
+              <span className="inline-flex items-center gap-1 text-xs text-[var(--fgColor-muted)]">
                 {relationText(c)}
                 {c.isPrimary && (
                   <>
-                    <Check className="size-3.5" aria-hidden />
+                    <CheckIcon size={12} aria-hidden />
                     <span className="sr-only">liên hệ chính</span>
                   </>
                 )}
@@ -463,25 +475,27 @@ function ParentCard({
           ))}
         </ul>
       )}
-      {/* "+ Gán học sinh" là liên kết ngay dưới danh sách con, giống ô "+ Thêm" trên bảng; hàng nút chỉ còn Sửa, Xoá, Telegram (DESIGN.md mục 74) */}
+      {/* "+ Gán học sinh" là liên kết ngay dưới danh sách con */}
       {canManage && (
-        <button type="button" onClick={onAssign} className="inline-flex min-h-[var(--ctl-h-touch)] items-center gap-1.5 self-start text-base text-link underline underline-offset-2">
-          <UserPlus className="size-4" aria-hidden />
+        <button
+          type="button"
+          data-link="true"
+          onClick={onAssign}
+          className="inline-flex min-h-[var(--ctl-h)] items-center gap-1.5 self-start text-sm font-medium text-[var(--fgColor-link)] underline underline-offset-2 max-[767px]:min-h-[var(--ctl-h-touch)]"
+        >
+          <PersonAddIcon size={16} aria-hidden />
           Gán học sinh
         </button>
       )}
-      {row.note && <p className="break-words text-sm text-ink-2">{row.note}</p>}
+      {row.note && <p className="break-words text-sm text-[var(--fgColor-muted)]">{row.note}</p>}
       <div className="grid grid-cols-3 gap-2">
-        <Btn block onClick={onEdit} disabled={!canManage}>
-          <Pencil className="size-4" aria-hidden />
+        <Btn block leadingVisual={PencilIcon} onClick={onEdit} disabled={!canManage}>
           Sửa
         </Btn>
-        <Btn block variant="danger" onClick={onDelete} disabled={!canManage}>
-          <Trash2 className="size-4" aria-hidden />
+        <Btn block variant="danger" leadingVisual={TrashIcon} onClick={onDelete} disabled={!canManage}>
           Xoá
         </Btn>
-        <Btn block onClick={onTelegram} disabled={!canManage}>
-          <Send className="size-4" aria-hidden />
+        <Btn block leadingVisual={PaperAirplaneIcon} onClick={onTelegram} disabled={!canManage}>
           Telegram
         </Btn>
       </div>
@@ -494,11 +508,17 @@ function MoreChildren({ names }: { names: string[] }) {
   const [open, setOpen] = useState(false);
   return (
     <div className="flex flex-col items-start gap-1">
-      <button type="button" aria-expanded={open} onClick={() => setOpen((o) => !o)} className="text-sm font-semibold text-muted underline underline-offset-4 hover:text-ink">
+      <button
+        type="button"
+        data-link="true"
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
+        className="text-xs font-semibold text-[var(--fgColor-muted)] underline underline-offset-4 hover:text-[var(--fgColor-default)]"
+      >
         {open ? 'Ẩn bớt' : `+${names.length} học sinh khác`}
       </button>
       {open && (
-        <ul className="flex flex-col gap-0.5 text-sm text-ink-2">
+        <ul className="flex flex-col gap-0.5 text-xs text-[var(--fgColor-muted)]">
           {names.map((n, i) => (
             <li key={`${i}-${n}`}>{n}</li>
           ))}

@@ -1,0 +1,6 @@
+/* Chuyển từ sx (codemod). Có thể đổi tên class cho rõ nghĩa hơn khi sửa tới. */
+
+h2.myHeading_heading {
+  font-size: 24px;
+  margin-bottom: var(--space-3);
+}

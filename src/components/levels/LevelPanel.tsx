@@ -50,81 +50,76 @@ export function LevelPanel({
   const failing = check?.failing ?? [];
 
   return (
-    <Panel title="Trình độ" action={canManage ? <Btn variant="ghost" onClick={() => setChanging(true)} disabled={pending}>Đổi trình độ</Btn> : null} className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <Panel title="Trình độ" action={canManage ? <Btn variant="ghost" onClick={() => setChanging(true)} disabled={pending}>Đổi trình độ</Btn> : null}>
+      <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center gap-2.5">
-          <span className="text-sm text-ink-2">Trình độ hiện tại</span>
+          <span className="text-sm text-[var(--fgColor-muted)]">Trình độ hiện tại</span>
           {current ? <Pill tone="lav">{current.code} · {current.name}</Pill> : <Pill tone="stone">Chưa xếp</Pill>}
         </div>
-        {canManage && (
-          <Btn variant="ghost" onClick={() => setChanging(true)} disabled={pending}>
-            Đổi trình độ
-          </Btn>
-        )}
-      </div>
 
-      {next && check?.ready && (
-        <div className="flex flex-col gap-2.5 rounded-[var(--radius-ctl)] bg-mint px-3.5 py-3 text-mint-ink">
-          <b className="text-base font-normal">Đủ điều kiện lên {next.code} ({next.name})</b>
-          <span className="text-sm">Ba bài đã chấm gần nhất đạt ngưỡng ở cả bốn kỹ năng. Giáo viên xác nhận thì mới đổi trình độ.</span>
-          <div>
-            <Btn variant="primary" onClick={() => apply(next.id, 'suggestion')} disabled={!canManage || pending}>
-              Xác nhận lên {next.code}
-            </Btn>
+        {next && check?.ready && (
+          <div className="flex flex-col gap-2.5 rounded-[var(--borderRadius-medium)] bg-mint px-3.5 py-3 text-mint-ink">
+            <b className="text-base font-normal">Đủ điều kiện lên {next.code} ({next.name})</b>
+            <span className="text-sm">Ba bài đã chấm gần nhất đạt ngưỡng ở cả bốn kỹ năng. Giáo viên xác nhận thì mới đổi trình độ.</span>
+            <div>
+              <Btn variant="primary" loading={pending} onClick={() => apply(next.id, 'suggestion')} disabled={!canManage || pending}>
+                Xác nhận lên {next.code}
+              </Btn>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {next && check && !check.ready && (
-        <div className="flex flex-col gap-1 text-sm text-ink-2">
-          <span>
-            Chưa đủ để lên {next.code}.{' '}
-            {check.assignments < 3 ? `Mới có ${check.assignments}/3 bài đã chấm có câu hỏi.` : 'Cần ba bài gần nhất đạt ngưỡng ở cả bốn kỹ năng.'}
-          </span>
-          {failing.length > 0 && (
+        {next && check && !check.ready && (
+          <div className="flex flex-col gap-1 text-sm text-[var(--fgColor-muted)]">
             <span>
-              Còn thiếu:{' '}
-              {failing.map((s: Skill, i) => (
-                <span key={s}>
-                  {i > 0 && ', '}
-                  <b className="font-normal text-ink">
-                    {SKILL_LABELS[s]}
-                    {check.averages[s] === null ? ' (chưa có điểm)' : ` (trung bình ${check.averages[s]}%, cần ${current?.thresholds[s] ?? '—'}%)`}
-                  </b>
-                </span>
-              ))}
+              Chưa đủ để lên {next.code}.{' '}
+              {check.assignments < 3 ? `Mới có ${check.assignments}/3 bài đã chấm có câu hỏi.` : 'Cần ba bài gần nhất đạt ngưỡng ở cả bốn kỹ năng.'}
             </span>
-          )}
-        </div>
-      )}
+            {failing.length > 0 && (
+              <span>
+                Còn thiếu:{' '}
+                {failing.map((s: Skill, i) => (
+                  <span key={s}>
+                    {i > 0 && ', '}
+                    <b className="font-normal text-[var(--fgColor-default)]">
+                      {SKILL_LABELS[s]}
+                      {check.averages[s] === null ? ' (chưa có điểm)' : ` (trung bình ${check.averages[s]}%, cần ${current?.thresholds[s] ?? '—'}%)`}
+                    </b>
+                  </span>
+                ))}
+              </span>
+            )}
+          </div>
+        )}
 
-      {error && (
-        <Alert inline>
-          {error}
-        </Alert>
-      )}
+        {error && (
+          <Alert inline>
+            {error}
+          </Alert>
+        )}
 
-      <Modal open={changing} title="Đổi trình độ" subtitle="Chọn trình độ mới. Mỗi lần đổi được ghi vào lịch sử học tập." onClose={() => setChanging(false)} labelledBy="level-change-title">
-        <div className="flex flex-col gap-4">
-          <SelectPanel
-            label="Trình độ"
-            value={choice}
-            onChange={setChoice}
-            options={[{ value: '', label: 'Chưa xếp trình độ' }, ...levels.map((l) => ({ value: String(l.id), label: `${l.code} · ${l.name}` }))]}
-            block
-          />
-          <FormFooter>
-            <Btn variant="ghost" onClick={() => setChanging(false)} disabled={pending}>
-              Huỷ
-            </Btn>
-            <Btn variant="primary" onClick={() => apply(choice === '' ? null : Number(choice), 'manual')} disabled={pending}>
-              {pending ? 'Đang lưu…' : 'Lưu trình độ'}
-            </Btn>
-          </FormFooter>
-        </div>
-      </Modal>
+        <Modal open={changing} title="Đổi trình độ" subtitle="Chọn trình độ mới. Mỗi lần đổi được ghi vào lịch sử học tập." onClose={() => setChanging(false)} labelledBy="level-change-title">
+          <div className="flex flex-col gap-4">
+            <SelectPanel
+              label="Trình độ"
+              value={choice}
+              onChange={setChoice}
+              options={[{ value: '', label: 'Chưa xếp trình độ' }, ...levels.map((l) => ({ value: String(l.id), label: `${l.code} · ${l.name}` }))]}
+              block
+            />
+            <FormFooter>
+              <Btn variant="ghost" onClick={() => setChanging(false)} disabled={pending}>
+                Huỷ
+              </Btn>
+              <Btn variant="primary" loading={pending} onClick={() => apply(choice === '' ? null : Number(choice), 'manual')} disabled={pending}>
+                {pending ? 'Đang lưu…' : 'Lưu trình độ'}
+              </Btn>
+            </FormFooter>
+          </div>
+        </Modal>
 
-      <Toast message={message} />
+        <Toast message={message} />
+      </div>
     </Panel>
   );
 }

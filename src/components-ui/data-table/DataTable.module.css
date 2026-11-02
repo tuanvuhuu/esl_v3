@@ -1,0 +1,294 @@
+.container {
+    border: 1px solid #d1d9e0;
+    /* border-radius: 0.375rem; */
+    border-radius: 8px;
+
+    position: relative;
+    max-width: 100%;
+    overflow-x: auto;
+    /* overflow-y: hidden; */
+}
+
+.containerHasPaging {
+    border-bottom-left-radius: 0px;
+    border-bottom-right-radius: 0px;
+    border-bottom: 0px;
+}
+
+.pagingContainer {
+    position: absolute;
+    bottom: 1px;
+    /* width: 100%; */
+    background-color: #fff;
+    left: 0;
+    right: 0;
+    padding-left: 8px;
+    padding-right: 8px;
+    height: 40px;
+    border-top: 1px solid #d1d9e0;
+    border-left: 1px solid #d1d9e0;
+    border-right: 1px solid #d1d9e0;
+    border-bottom: 1px solid #d1d9e0;
+    /* border-bottom-left-radius: 0.375rem;
+    border-bottom-right-radius: 0.375rem; */
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+}
+
+.pagingContainer :global([class*="prc-Pagination-"]) {
+    /* background-color: red; */
+    margin: 0px;
+}
+
+.pagingContainer :global([class*="prc-Pagination-"]) a {
+    line-height: 1.5;
+}
+
+.selected {
+    background-color: #1f883d !important;
+    color: #fff !important;
+}
+
+.title {
+    font-size: 24px;
+    font-weight: 600;
+}
+
+.subTitle {
+    color: #1f2328;
+    font-size: 13px;
+}
+
+.myTable {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    /* border-collapse: collapse; */
+    /* border: 1px solid #d1d9e0; */
+    border-radius: 0.328125rem;
+    table-layout: fixed;
+}
+
+.myTable.hasPaging {
+    margin-bottom: 41px;
+    border-bottom: 1px solid #d1d9e0;
+}
+
+.myTable tbody {
+    border-bottom: 1px solid #d1d9e0;
+}
+
+.myTable tr:hover {
+    background-color: #f7f8fa;
+}
+
+.fixed_column {
+    position: sticky;
+    left: 0;
+    /* background-color: red; */
+    z-index: 0;
+    background-color: #fff;
+}
+
+.fixed_column_header {
+    position: sticky;
+    top: 0;
+    left: 0;
+    z-index: 3 !important;
+    background-color: #f7f8fa;
+}
+
+.myTable thead {
+    font-weight: 500;
+    background-color: #f7f8fa;
+}
+
+.myTable td {
+    padding: 0.4375rem 0.65625rem;
+    font-size: 13px;
+}
+
+.myTable.noPadding td {
+    padding: 0;
+}
+
+.myTable.noPadding th {
+    padding: 0;
+}
+
+.myTable th:not(:last-child),
+.myTable td:not(:last-child) {
+    /* border-right: 1px solid #d1d9e0; */
+}
+
+.myTable thead tr td {
+    border-bottom: 1px solid #d1d9e0;
+    font-weight: 600;
+    color: #656d76;
+    padding: 0.4375rem 0.65625rem;
+    font-size: 13px;
+}
+
+.myTable thead tr th {
+    border-bottom: 1px solid #d1d9e0;
+    font-weight: 600;
+    color: #59636e;
+    padding: 0.4375rem 0.65625rem;
+
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background-color: #f7f8fa;
+    font-size: 13px;
+}
+
+.myTable button {
+    /* color: red; */
+    color: #59636e;
+}
+
+/* Apply a border to the bottom of all but the last row */
+.myTable > thead > tr:not(:last-child) > th,
+.myTable > thead > tr:not(:last-child) > td,
+.myTable > tbody > tr:not(:last-child) > th,
+.myTable > tbody > tr:not(:last-child) > td,
+.myTable > tfoot > tr:not(:last-child) > th,
+.myTable > tfoot > tr:not(:last-child) > td,
+.myTable > tr:not(:last-child) > td,
+.myTable > tr:not(:last-child) > th,
+.myTable > thead:not(:last-child),
+.myTable > tbody:not(:last-child),
+.myTable > tfoot:not(:last-child) {
+    border-bottom: 1px solid #d1d9e0;
+}
+
+.focused {
+    padding: 0px !important;
+    border-radius: 2px !important;
+    border: 1px solid #1f883d !important;
+    box-shadow: 0 0 0 3px rgba(31, 136, 61, 0.1) !important;
+    outline: none !important;
+}
+
+.focusedRow {
+    background-color: #ddf4ff !important;
+}
+
+.focusedRow:hover {
+    background-color: #b6e3ff !important;
+}
+
+/* Màu nền cho ô đã chọn */
+.rangeSelected {
+    /* background-color: rgba(84, 174, 255, 0.4) !important; */
+    background-color: #ffebe9 !important;
+    /* opacity: 0.5; */
+    color: #1f883d;
+    /* border: 1px solid #ddf4ff !important; */
+}
+
+/* Tùy chỉnh border cho vùng được chọn */
+.myTable td.rangeSelected:first-child {
+    /* border-left: 1px solid #007bff !important; */
+    /* border-top: 1px solid #007bff !important; */
+}
+
+.myTable td.rangeSelected:last-child {
+    /* border-right: 1px solid #007bff !important; */
+}
+
+.myTable.rangeSelection {
+    user-select: none;
+    /* Vô hiệu hóa chọn văn bản */
+}
+
+/* custom thanh cuộn */
+/* .container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.container::-webkit-scrollbar-thumb {
+  background: #4caf50;
+  border-radius: 4px;
+}
+
+.container::-webkit-scrollbar-thumb:hover {
+  background: #388e3c;
+}
+
+.container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+} */
+.dataTable_warpper {
+  position: relative;
+}
+
+.dataTable_warpper_pagingEnable {
+  padding-bottom: 41px;
+}
+
+.dataTable_warpper_notPagingEnable {
+  padding-bottom: var(--space-0);
+}
+
+div.dataTable_container {
+  overflow: auto;
+}
+
+.groupRow_box {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  margin-top: calc(-1 * var(--space-1));
+  margin-bottom: calc(-1 * var(--space-1));
+}
+
+.header_box {
+  margin: -0.4375rem -0.65625rem;
+}
+
+span.header_textInput {
+  background-color: transparent;
+  box-shadow: none;
+  border: 0!important;
+  margin-top: 1px;
+}
+
+.header_box2 {
+  color: #656d76;
+}
+
+.header_octicon {
+  width: 12px;
+  height: 12px;
+}
+
+.paging_box2 {
+  font-size: var(--fs-0);
+  color: var(--app-fg-muted);
+}
+
+button.paging_pageSize.paging_pageSize.paging_pageSize {
+  font-weight: 400;
+}
+
+button.paging_pageSize_pageSize.paging_pageSize_pageSize.paging_pageSize_pageSize {
+  color: var(--app-accent-subtle);
+  background-color: var(--app-accent-emphasis);
+}
+
+.paging_info {
+  width: 100px;
+  text-align: center;
+}
+
+.paging_box3 {
+  color: var(--app-fg-muted);
+}
+
+.paging_box4 {
+  flex: 1;
+  display: flex;
+  flex-direction: row-reverse;
+}

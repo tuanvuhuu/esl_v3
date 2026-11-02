@@ -1,4 +1,4 @@
-﻿import { connection } from 'next/server';
+import { connection } from 'next/server';
 import { Suspense } from 'react';
 import { AttendanceView } from '@/components/attendance/AttendanceView';
 import { NoAccess } from '@/components/ui/NoAccess';
@@ -35,9 +35,9 @@ export default function AttendancePage({ searchParams }: { searchParams: Promise
 function AttendanceSkeleton() {
   return (
     <section aria-busy="true" aria-label="Đang tải điểm danh" className="flex flex-col gap-4">
-      <div className="h-9 w-48 animate-pulse rounded-xl bg-stone" />
-      <div className="h-[var(--ctl-h)] w-full animate-pulse rounded-[var(--radius-ctl)] bg-stone" />
-      <div className="h-[360px] w-full animate-pulse rounded-[var(--radius-panel)] bg-stone" />
+      <div className="h-9 w-48 animate-pulse rounded-md bg-[var(--bgColor-muted)]" />
+      <div className="h-[var(--ctl-h)] w-full animate-pulse rounded-[var(--borderRadius-medium)] bg-[var(--bgColor-muted)]" />
+      <div className="h-[360px] w-full animate-pulse rounded-xl bg-[var(--bgColor-muted)]" />
     </section>
   );
 }

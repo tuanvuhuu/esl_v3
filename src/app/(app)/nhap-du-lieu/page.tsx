@@ -8,7 +8,7 @@ import { getCurrentPermissions } from '@/lib/session';
 // Nhập cơ sở, lớp, giáo viên, học sinh và phụ huynh từ một file Excel. Quyền đọc trong Suspense (cacheComponents đang bật).
 export default function ImportPage() {
   return (
-    <Suspense fallback={<section aria-busy="true" aria-label="Đang tải" className="h-[320px] animate-pulse rounded-[var(--radius-panel)] bg-stone" />}>
+    <Suspense fallback={<section aria-busy="true" aria-label="Đang tải" className="h-[320px] animate-pulse rounded-xl bg-[var(--bgColor-muted)]" />}>
       <ImportData />
     </Suspense>
   );

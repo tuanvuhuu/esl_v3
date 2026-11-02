@@ -13,7 +13,7 @@ import { getCurrentPermissions } from '@/lib/session';
 // Danh sách từ cho trò chơi (35.14), theo cơ sở đang xem. Dữ liệu đọc trong Suspense (cacheComponents đang bật).
 export default function WordListsPage() {
   return (
-    <Suspense fallback={<section aria-busy="true" aria-label="Đang tải danh sách từ" className="h-[320px] animate-pulse rounded-[var(--radius-panel)] bg-stone" />}>
+    <Suspense fallback={<section aria-busy="true" aria-label="Đang tải danh sách từ" className="h-[320px] animate-pulse rounded-xl bg-[var(--bgColor-muted)]" />}>
       <WordListsData />
     </Suspense>
   );

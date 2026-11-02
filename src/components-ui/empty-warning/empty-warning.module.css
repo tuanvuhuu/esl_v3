@@ -1,0 +1,19 @@
+/* Chuyển từ sx (codemod). Có thể đổi tên class cho rõ nghĩa hơn khi sửa tới. */
+
+div.emptyWarning_flash {
+  background-color: var(--app-canvas-subtle);
+  border-color: var(--app-border-default);
+}
+
+.emptyWarning_box_icon {
+  grid-template-columns: auto 1fr;
+}
+
+.emptyWarning_box_notIcon {
+  grid-template-columns: 1fr;
+}
+
+.emptyWarning_box2 {
+  font-weight: 600;
+  font-size: 16px;
+}

@@ -45,16 +45,16 @@ export function KaraokeTimingEditor({ n, text, audioFileId, value, disabled, onC
 
   return (
     <div className="flex flex-col gap-2" role="group" aria-label={`Mốc karaoke câu ${n}`}>
-      <span className="text-xs font-bold uppercase tracking-wider text-muted">Karaoke đọc theo</span>
+      <span className="text-xs font-bold uppercase tracking-wider text-[var(--fgColor-muted)]">Karaoke đọc theo</span>
       <p className="flex flex-wrap gap-1.5">
         {words.map((w, i) => (
-          <span key={i} className={`rounded-lg px-2 py-0.5 text-sm ${taps !== null && i === taps.length ? 'bg-primary font-bold text-on-primary' : 'bg-surface text-ink'}`}>
+          <span key={i} className={`rounded-[var(--borderRadius-medium)] px-2 py-0.5 text-sm ${taps !== null && i === taps.length ? 'bg-[var(--button-primary-bgColor-rest,var(--color-primary))] font-bold text-[var(--button-primary-fgColor-rest,var(--color-on-primary))]' : 'bg-[var(--bgColor-default)] text-[var(--fgColor-default)]'}`}>
             {w}
-            {saved && <small className="ml-1 text-xs text-muted">{(saved[i] / 1000).toFixed(1)}s</small>}
+            {saved && <small className="ml-1 text-xs text-[var(--fgColor-muted)]">{(saved[i] / 1000).toFixed(1)}s</small>}
           </span>
         ))}
       </p>
-      <small className="text-sm text-ink-2">
+      <small className="text-sm text-[var(--fgColor-muted)]">
         {!audioFileId
           ? 'Chưa có giọng mẫu: học sinh nghe máy đọc, chữ sáng theo máy đọc.'
           : saved

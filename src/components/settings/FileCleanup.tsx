@@ -29,35 +29,37 @@ export function FileCleanup({ count, megabytes, canManage }: { count: number; me
   }
 
   return (
-    <Panel title="Tệp không còn dùng" className="flex flex-col gap-3">
-        <p className="text-sm text-ink-2">
+    <Panel title="Tệp không còn dùng">
+      <div className="flex flex-col gap-3">
+        <p className="text-sm text-[var(--fgColor-muted)]">
           Tệp tải lên đã quá 24 giờ mà không còn câu hỏi, bài nộp hay tài liệu nào dùng. Tệp mới dưới 24 giờ được giữ lại.
         </p>
-      <p className="text-base text-ink">
-        {count === 0 ? 'Không có tệp nào cần dọn.' : `Có ${count} tệp, khoảng ${megabytes} MB.`}
-      </p>
-      {error && (
-        <Alert inline>
-          {error}
-        </Alert>
-      )}
-      <div>
-        <Btn variant="ghost" onClick={() => setAsking(true)} disabled={!canManage || count === 0 || pending}>
-          {pending ? 'Đang dọn…' : 'Dọn tệp không còn dùng'}
-        </Btn>
+        <p className="text-base text-[var(--fgColor-default)]">
+          {count === 0 ? 'Không có tệp nào cần dọn.' : `Có ${count} tệp, khoảng ${megabytes} MB.`}
+        </p>
+        {error && (
+          <Alert inline>
+            {error}
+          </Alert>
+        )}
+        <div>
+          <Btn variant="ghost" loading={pending} onClick={() => setAsking(true)} disabled={!canManage || count === 0 || pending}>
+            {pending ? 'Đang dọn…' : 'Dọn tệp không còn dùng'}
+          </Btn>
+        </div>
+
+        <ConfirmDialog
+          open={asking}
+          title="Dọn tệp không còn dùng?"
+          text={`${count} tệp sẽ bị xoá khỏi ổ đĩa và không thể khôi phục. Các câu hỏi và bài làm đang dùng tệp không bị ảnh hưởng.`}
+          confirmLabel="Dọn tệp"
+          pending={pending}
+          onConfirm={run}
+          onCancel={() => setAsking(false)}
+        />
+
+        <Toast message={message} />
       </div>
-
-      <ConfirmDialog
-        open={asking}
-        title="Dọn tệp không còn dùng?"
-        text={`${count} tệp sẽ bị xoá khỏi ổ đĩa và không thể khôi phục. Các câu hỏi và bài làm đang dùng tệp không bị ảnh hưởng.`}
-        confirmLabel="Dọn tệp"
-        pending={pending}
-        onConfirm={run}
-        onCancel={() => setAsking(false)}
-      />
-
-      <Toast message={message} />
     </Panel>
   );
 }

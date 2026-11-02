@@ -1,0 +1,9 @@
+/* Tiptap editor (components-ui/html-editor*) */
+.tiptap[data-focus-visible-added] {
+  outline: none;
+}
+
+.tiptap[data-focus-visible-added] img.ProseMirror-selectednode {
+  outline: 0.1875rem solid var(--primary-deep);
+}
+

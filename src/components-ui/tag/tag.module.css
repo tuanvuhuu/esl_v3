@@ -1,0 +1,5 @@
+/* Chuyển từ sx (codemod). Có thể đổi tên class cho rõ nghĩa hơn khi sửa tới. */
+
+span.tag_label {
+  border: 0;
+}

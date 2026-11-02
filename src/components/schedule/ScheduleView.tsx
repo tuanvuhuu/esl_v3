@@ -3,7 +3,7 @@
 import { DndContext, KeyboardSensor, PointerSensor, pointerWithin, useDraggable, useDroppable, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { CSS } from '@dnd-kit/utilities';
-import { Filter, Plus, Users } from 'lucide-react';
+import { FilterIcon, PeopleIcon, PlusIcon } from '@primer/octicons-react';
 import { useRouter } from 'next/navigation';
 import { startTransition, useEffect, useOptimistic, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import type { SessionRow } from '@/lib/queries/sessions';
@@ -31,7 +31,6 @@ export function sessionState(s: SessionRow): { label: string; tone: Tone } {
   if (s.isPast) return { label: 'Chưa điểm danh', tone: 'butter' };
   return { label: 'Sắp học', tone: 'mint' };
 }
-
 
 // Phút trong ngày theo giờ Việt Nam (UTC+7) của một mốc thời gian
 function minutesOfDay(iso: string): number {
@@ -176,7 +175,6 @@ export function ScheduleView({
     ? `Tuần ${dateKeyLabel(rangeFrom)} – ${dateKeyLabel(rangeTo)}. Bấm vào buổi để xem hoặc sửa.`
     : `Từ ${dateKeyLabel(rangeFrom)} đến ${dateKeyLabel(rangeTo)} (${days.length} ngày). Bấm vào buổi để xem hoặc sửa.`;
 
-
   // Kéo buổi trên lưới tuần để dời (người quản lý lớp). Thả xong giờ mới làm tròn 15 phút, kiểm trùng ở máy chủ.
   const dragging = useRef(false);
   const [pendingMove, setPendingMove] = useState<{ session: SessionRow; day: string; start: number } | null>(null);
@@ -221,8 +219,7 @@ export function ScheduleView({
         subtitle={subtitle}
         actions={
           canManage && classes.length > 0 ? (
-            <Btn variant="primary" onClick={() => setAdding(true)}>
-              <Plus className="size-4" aria-hidden />
+            <Btn variant="primary" leadingVisual={PlusIcon} onClick={() => setAdding(true)}>
               Thêm buổi
             </Btn>
           ) : null
@@ -250,7 +247,7 @@ export function ScheduleView({
           <SelectPanel
             multiple
             label="Lọc theo lớp"
-            icon={<Users className="size-3.5 text-muted" aria-hidden />}
+            icon={<PeopleIcon size={14} className="text-[var(--fgColor-muted)]" aria-hidden />}
             values={listParam(clsView)}
             onChange={(vs) => applyFilter({ cls: vs.join(',') })}
             options={classes.map((c) => ({ value: String(c.id), label: c.name }))}
@@ -260,7 +257,7 @@ export function ScheduleView({
           <SelectPanel
             multiple
             label="Lọc theo giáo viên"
-            icon={<Filter className="size-3.5 text-muted" aria-hidden />}
+            icon={<FilterIcon size={14} className="text-[var(--fgColor-muted)]" aria-hidden />}
             values={listParam(teacherView)}
             onChange={(vs) => applyFilter({ teacher: vs.join(',') })}
             options={teachers.map((t) => ({ value: String(t.id), label: t.name }))}
@@ -276,57 +273,57 @@ export function ScheduleView({
         <>
           {/* Máy tính bảng và máy tính: lưới giờ, mỗi ngày một cột. Chỉ dùng khi khoảng có tối đa 7 ngày. */}
           {!longRange && (
-            <div className="hidden overflow-hidden rounded-[var(--radius-panel)] bg-surface shadow-card min-[768px]:block">
+            <div className="hidden overflow-hidden rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] shadow-[var(--shadow-resting-small,0_1px_2px_rgba(0,0,0,0.04))] min-[768px]:block">
               <DndContext sensors={sensors} collisionDetection={pointerWithin} onDragStart={onDragStart} onDragCancel={onDragCancel} onDragEnd={onDragEnd}>
-              <div ref={gridScroll} data-testid="week-grid" className="relative max-h-[calc(100dvh-13rem)] min-h-[24rem] overflow-auto">
-                <div style={{ minWidth: `${gridWidth}px` }}>
-                  {/* Tiêu đề ngày: dính trên cùng khi cuộn; hôm nay tô màu */}
-                  <div className="sticky top-0 z-10 grid border-b border-line bg-surface" style={{ gridTemplateColumns: `${TIME_COL} ${dayColumns}` }}>
-                    <div />
-                    {days.map((day) => (
-                      <div key={day} aria-current={day === today ? 'date' : undefined} className={`px-2 py-2.5 text-center ${day === today ? 'bg-primary-soft' : ''}`}>
-                        <b className="block text-sm font-bold text-ink">
-                          {weekdayLabel(weekdayOfKey(day))}
-                          {day === today && <span className="ml-1 font-normal text-ink-2">· Hôm nay</span>}
-                        </b>
-                        <small className="text-xs text-muted">{dateKeyLabel(day).slice(0, 5)} · {(byDay.get(day) ?? []).length} buổi</small>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Lưới giờ */}
-                  <div className="grid" style={{ gridTemplateColumns: `${TIME_COL} ${dayColumns}` }}>
-                    <div className="relative" style={{ height: gridHeight }}>
-                      {hours.map((h) => (
-                        <span key={h} data-hour={h} className="absolute right-2 -translate-y-1/2 text-xs tabular-nums text-muted" style={{ top: hourTop(h) }}>
-                          {String(h).padStart(2, '0')}:00
-                        </span>
+                <div ref={gridScroll} data-testid="week-grid" className="relative max-h-[calc(100dvh-13rem)] min-h-[24rem] overflow-auto">
+                  <div style={{ minWidth: `${gridWidth}px` }}>
+                    {/* Tiêu đề ngày: dính trên cùng khi cuộn; hôm nay tô màu */}
+                    <div className="sticky top-0 z-10 grid border-b border-[var(--borderColor-default)] bg-[var(--bgColor-default)]" style={{ gridTemplateColumns: `${TIME_COL} ${dayColumns}` }}>
+                      <div />
+                      {days.map((day) => (
+                        <div key={day} aria-current={day === today ? 'date' : undefined} className={`px-2 py-2.5 text-center ${day === today ? 'bg-[var(--bgColor-accent-muted,var(--color-primary-soft))]' : ''}`}>
+                          <b className="block text-sm font-semibold text-[var(--fgColor-default)]">
+                            {weekdayLabel(weekdayOfKey(day))}
+                            {day === today && <span className="ml-1 font-normal text-[var(--fgColor-muted)]">· Hôm nay</span>}
+                          </b>
+                          <small className="text-xs text-[var(--fgColor-muted)]">{dateKeyLabel(day).slice(0, 5)} · {(byDay.get(day) ?? []).length} buổi</small>
+                        </div>
                       ))}
                     </div>
-                    {days.map((day) => (
-                      <DayColumn key={day} day={day} today={today} height={gridHeight}>
+
+                    {/* Lưới giờ */}
+                    <div className="grid" style={{ gridTemplateColumns: `${TIME_COL} ${dayColumns}` }}>
+                      <div className="relative" style={{ height: gridHeight }}>
                         {hours.map((h) => (
-                          <div key={h} className="absolute inset-x-0 border-t border-line" style={{ top: hourTop(h) }} />
+                          <span key={h} data-hour={h} className="absolute right-2 -translate-y-1/2 text-xs tabular-nums text-[var(--fgColor-muted)]" style={{ top: hourTop(h) }}>
+                            {String(h).padStart(2, '0')}:00
+                          </span>
                         ))}
-                        {(placedByDay.get(day) ?? []).map((p) => (
-                          <CalendarBlock
-                            key={p.s.id}
-                            placed={p}
-                            style={{
-                              top: `calc(${(p.start - hourStart * 60) / 60} * var(--cal-hour-h) + 2px)`,
-                              height: `calc(${(p.end - p.start) / 60} * var(--cal-hour-h) - 4px)`,
-                              left: `calc(${(p.lane / p.lanes) * 100}% + 2px)`,
-                              width: `calc(${100 / p.lanes}% - 4px)`,
-                            }}
-                            onOpen={() => { if (!dragging.current) setOpen(p.s); }}
-                            canDrag={canManage}
-                          />
-                        ))}
-                      </DayColumn>
-                    ))}
+                      </div>
+                      {days.map((day) => (
+                        <DayColumn key={day} day={day} today={today} height={gridHeight}>
+                          {hours.map((h) => (
+                            <div key={h} className="absolute inset-x-0 border-t border-[var(--borderColor-muted)]" style={{ top: hourTop(h) }} />
+                          ))}
+                          {(placedByDay.get(day) ?? []).map((p) => (
+                            <CalendarBlock
+                              key={p.s.id}
+                              placed={p}
+                              style={{
+                                top: `calc(${(p.start - hourStart * 60) / 60} * var(--cal-hour-h) + 2px)`,
+                                height: `calc(${(p.end - p.start) / 60} * var(--cal-hour-h) - 4px)`,
+                                left: `calc(${(p.lane / p.lanes) * 100}% + 2px)`,
+                                width: `calc(${100 / p.lanes}% - 4px)`,
+                              }}
+                              onOpen={() => { if (!dragging.current) setOpen(p.s); }}
+                              canDrag={canManage}
+                            />
+                          ))}
+                        </DayColumn>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
               </DndContext>
             </div>
           )}
@@ -336,15 +333,15 @@ export function ScheduleView({
             {days.filter((d) => (byDay.get(d) ?? []).length > 0).map((day) => (
               <section key={day} aria-label={`Buổi học ${dateKeyLabel(day)}`} className="flex flex-col gap-3">
                 <header className="flex items-center gap-3">
-                  <span className="grid size-11 shrink-0 place-items-center rounded-[var(--radius-ctl)] bg-primary text-base font-extrabold text-on-primary">
+                  <span className="grid size-11 shrink-0 place-items-center rounded-[var(--borderRadius-medium)] bg-[var(--button-primary-bgColor-rest,var(--color-primary))] text-base font-extrabold text-[var(--button-primary-fgColor-rest,var(--color-on-primary))]">
                     {day.slice(8, 10)}
                   </span>
                   <div>
-                    <h2 className="text-base font-bold text-ink">{weekdayLabel(weekdayOfKey(day))}</h2>
-                    <small className="text-xs text-muted">{dateKeyLabel(day)} · {(byDay.get(day) ?? []).length} buổi</small>
+                    <h2 className="text-base font-bold text-[var(--fgColor-default)]">{weekdayLabel(weekdayOfKey(day))}</h2>
+                    <small className="text-xs text-[var(--fgColor-muted)]">{dateKeyLabel(day)} · {(byDay.get(day) ?? []).length} buổi</small>
                   </div>
                 </header>
-                <ul className="ml-[1.15rem] flex flex-col gap-2.5 border-l-2 border-line pl-4">
+                <ul className="ml-[1.15rem] flex flex-col gap-2.5 border-l-2 border-[var(--borderColor-default)] pl-4">
                   {(byDay.get(day) ?? []).map((s) => (
                     <li key={s.id}>
                       <AgendaCard session={s} onOpen={() => setOpen(s)} />
@@ -401,12 +398,12 @@ function CalendarBlock({ placed, style, onOpen, canDrag }: { placed: { s: Sessio
       onClick={onOpen}
       style={{ ...style, transform: CSS.Translate.toString(transform), zIndex: isDragging ? 20 : undefined, cursor: canDrag ? 'grab' : undefined, touchAction: canDrag ? 'none' : undefined }}
       title={`${s.className} · ${s.timeLabel} · ${s.teacherName}${s.room ? ` · ${s.room}` : ''} · ${state.label}`}
-      className={`absolute flex flex-col overflow-hidden rounded-[var(--radius-ctl)] border-l-4 px-1.5 py-1 text-left leading-tight transition-shadow hover:shadow-card ${tone.bg} ${tone.edge} ${cancelled ? 'opacity-60' : ''}`}
+      className={`absolute flex flex-col overflow-hidden rounded-[var(--borderRadius-medium)] border-l-4 px-1.5 py-1 text-left leading-tight transition-shadow hover:shadow-sm ${tone.bg} ${tone.edge} ${cancelled ? 'opacity-60' : ''}`}
     >
-      <span className={`block truncate text-2xs font-bold tabular-nums text-ink ${cancelled ? 'line-through' : ''}`}>{s.timeLabel.split('–')[0]}</span>
-      <span className={`block truncate text-sm font-extrabold leading-tight text-ink ${cancelled ? 'line-through' : ''}`}>{s.className}</span>
-      <span className="block truncate text-2xs text-ink-2">{shortTeacher(s.teacherName)}{s.room ? ` · ${s.room}` : ''}</span>
-      <span className="mt-auto flex items-center gap-1 pt-0.5 whitespace-nowrap text-2xs text-ink-2">
+      <span className={`block truncate text-2xs font-bold tabular-nums text-[var(--fgColor-default)] ${cancelled ? 'line-through' : ''}`}>{s.timeLabel.split('–')[0]}</span>
+      <span className={`block truncate text-sm font-extrabold leading-tight text-[var(--fgColor-default)] ${cancelled ? 'line-through' : ''}`}>{s.className}</span>
+      <span className="block truncate text-2xs text-[var(--fgColor-muted)]">{shortTeacher(s.teacherName)}{s.room ? ` · ${s.room}` : ''}</span>
+      <span className="mt-auto flex items-center gap-1 pt-0.5 whitespace-nowrap text-2xs text-[var(--fgColor-muted)]">
         <span aria-hidden className={`size-1.5 shrink-0 rounded-full ${dot}`} />
         {state.label}
       </span>
@@ -419,7 +416,7 @@ function DayColumn({ day, today, height, children }: { day: string; today: strin
   // Ngày đã qua không nhận buổi được thả
   const { setNodeRef, isOver } = useDroppable({ id: `day-${day}`, data: { day }, disabled: day < today });
   return (
-    <div ref={setNodeRef} data-day={day} className={`relative border-l border-line ${day === today ? 'bg-primary-soft/40' : ''} ${isOver ? 'bg-primary-soft/70' : ''}`} style={{ height }}>
+    <div ref={setNodeRef} data-day={day} className={`relative border-l border-[var(--borderColor-default)] ${day === today ? 'bg-[var(--bgColor-accent-muted,var(--color-primary-soft))]/40' : ''} ${isOver ? 'bg-[var(--bgColor-accent-muted,var(--color-primary-soft))]/70' : ''}`} style={{ height }}>
       {children}
     </div>
   );
@@ -435,14 +432,14 @@ function AgendaCard({ session: s, onOpen }: { session: SessionRow; onOpen: () =>
       type="button"
       data-card="true"
       onClick={onOpen}
-      className={`flex w-full flex-col gap-1 rounded-[var(--radius-ctl)] border-l-4 px-3 py-2.5 text-left transition-colors ${tone.bg} ${tone.edge} ${cancelled ? 'opacity-70' : ''}`}
+      className={`flex w-full flex-col gap-1 rounded-[var(--borderRadius-medium)] border-l-4 px-3 py-2.5 text-left transition-colors ${tone.bg} ${tone.edge} ${cancelled ? 'opacity-70' : ''}`}
     >
       <div className="flex items-center justify-between gap-2">
-        <span className={`text-sm font-extrabold tabular-nums text-ink ${cancelled ? 'line-through' : ''}`}>{s.timeLabel}</span>
+        <span className={`text-sm font-extrabold tabular-nums text-[var(--fgColor-default)] ${cancelled ? 'line-through' : ''}`}>{s.timeLabel}</span>
         <Pill tone={state.tone}>{state.label}</Pill>
       </div>
-      <span className={`truncate text-base font-bold text-ink ${cancelled ? 'line-through' : ''}`}>{s.className}</span>
-      <span className="truncate text-xs text-ink-2">{s.teacherName}{s.room ? ` · ${s.room}` : ''}</span>
+      <span className={`truncate text-base font-bold text-[var(--fgColor-default)] ${cancelled ? 'line-through' : ''}`}>{s.className}</span>
+      <span className="truncate text-xs text-[var(--fgColor-muted)]">{s.teacherName}{s.room ? ` · ${s.room}` : ''}</span>
       {cancelled && s.cancelReason && <small className="text-xs text-blush-ink">Lý do: {s.cancelReason}</small>}
     </button>
   );

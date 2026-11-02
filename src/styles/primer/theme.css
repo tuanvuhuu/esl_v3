@@ -1,0 +1,102 @@
+/*
+ * Ánh xạ hệ màu Sáng/Tối và Màu chủ đề (data-accent) của ESL Center vào biến CSS của @primer/primitives.
+ * Đặt trên cả :root[data-color-mode] và [data-component='BaseStyles'] để mọi phần tử (kể cả Portal của Primer)
+ * kế thừa đúng màu thương hiệu, bo góc và kích thước chuẩn (32px máy tính, 44px điện thoại).
+ */
+
+:root[data-color-mode][data-light-theme],
+:root[data-color-mode][data-dark-theme],
+:root[data-color-mode],
+[data-component='BaseStyles'] {
+  --BaseStyles-fontFamily: var(--font-normal);
+  --BaseStyles-lineHeight: var(--lh-default);
+
+  /* Bo góc điều khiển theo chuẩn ESL Center */
+  --borderRadius-small: var(--radius-1);
+  --borderRadius-medium: var(--radius-ctl);
+  --borderRadius-large: var(--radius-panel);
+
+  /* Đồng bộ nền, mặt thẻ, viền và chữ giữa ESL Center và Primer */
+  --bgColor-default: var(--surface);
+  --bgColor-muted: var(--stone);
+  --bgColor-inset: var(--bg);
+  --overlay-bgColor: var(--surface);
+  --fgColor-default: var(--ink);
+  --fgColor-muted: var(--muted);
+  --fgColor-link: var(--link);
+  --borderColor-default: var(--line);
+  --borderColor-muted: var(--line);
+
+  /* Đồng bộ màu nhấn (accent) theo data-accent của ESL Center */
+  --fgColor-accent: var(--primary-deep);
+  --focus-outlineColor: var(--primary-deep);
+  --borderColor-accent-emphasis: var(--primary-deep);
+  --borderColor-accent-muted: var(--brand-primary-muted);
+  --bgColor-accent-emphasis: var(--primary-deep);
+  --bgColor-accent-muted: var(--primary-soft);
+
+  /* Checkbox / Radio / UnderlineNav theo màu chủ đề */
+  --control-checked-bgColor-rest: var(--primary-deep);
+  --control-checked-bgColor-hover: var(--primary-deep);
+  --control-checked-bgColor-active: var(--primary-deep);
+  --control-checked-borderColor-rest: var(--primary-deep);
+  --underlineNav-borderColor-active: var(--primary-deep);
+
+  /* Nút chính (Button variant="primary"): nền --primary, chữ --on-primary đảm bảo tương phản AA kể cả màu vàng mật */
+  --button-primary-bgColor-rest: var(--primary);
+  --button-primary-bgColor-hover: color-mix(in srgb, var(--primary) 90%, var(--ink));
+  --button-primary-bgColor-active: var(--primary-deep);
+  --button-primary-fgColor-rest: var(--on-primary);
+  --button-primary-fgColor-disabled: var(--muted);
+  --button-primary-bgColor-disabled: var(--stone);
+  --button-primary-borderColor-rest: color-mix(in srgb, var(--primary-deep) 35%, transparent);
+  --button-primary-borderColor-hover: var(--primary-deep);
+  --button-primary-borderColor-active: var(--primary-deep);
+  --button-primary-borderColor-disabled: var(--line);
+
+  /* Nút mặc định (Button variant="default") & Nút nguy hiểm (variant="danger") */
+  --button-default-bgColor-rest: var(--surface);
+  --button-default-bgColor-hover: var(--stone);
+  --button-default-bgColor-active: var(--line);
+  --button-default-fgColor-rest: var(--ink);
+  --button-default-borderColor-rest: var(--line);
+  --button-default-borderColor-hover: var(--ink-2);
+  --button-default-borderColor-active: var(--ink);
+
+  --button-danger-fgColor-rest: var(--blush-ink);
+  --button-danger-fgColor-hover: #ffffff;
+  --button-danger-bgColor-rest: var(--surface);
+  --button-danger-bgColor-hover: var(--blush-ink);
+  --button-danger-bgColor-active: var(--blush-ink);
+  --button-danger-borderColor-rest: var(--blush-ink);
+  --button-danger-borderColor-hover: var(--blush-ink);
+
+  /* Trạng thái ngữ nghĩa khớp bảng màu ESL Center */
+  --fgColor-danger: var(--blush-ink);
+  --bgColor-danger-muted: var(--blush);
+  --borderColor-danger-muted: color-mix(in srgb, var(--blush-ink) 35%, transparent);
+  --borderColor-danger-emphasis: var(--blush-ink);
+
+  --fgColor-success: var(--mint-ink);
+  --bgColor-success-muted: var(--mint);
+  --bgColor-success-emphasis: var(--accent);
+  --borderColor-success-muted: color-mix(in srgb, var(--mint-ink) 30%, transparent);
+
+  --fgColor-attention: var(--butter-ink);
+  --bgColor-attention-muted: var(--butter);
+  --borderColor-attention-muted: color-mix(in srgb, var(--butter-ink) 35%, transparent);
+
+  /* Kích thước điều khiển chuẩn ESL Center: 32px máy tính */
+  --control-medium-size: var(--ctl-h);
+}
+
+/* Điện thoại (< 768px): điều khiển nâng lên 44px (--ctl-h-touch) và chữ ô nhập 16px không tự zoom iOS */
+@media (max-width: 767px) {
+  :root[data-color-mode][data-light-theme],
+  :root[data-color-mode][data-dark-theme],
+  :root[data-color-mode],
+  [data-component='BaseStyles'] {
+    --control-medium-size: var(--ctl-h-touch);
+  }
+}
+

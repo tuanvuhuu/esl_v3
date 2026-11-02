@@ -1,0 +1,28 @@
+
+.imgItem {
+  background-size: cover;
+  height: 48px;
+  width: 48px;
+  border-radius: var(--radius-1);
+  cursor: pointer;
+}
+
+.colorItem {
+  background-size: cover;
+  height: 32px;
+  width: 32px;
+  border-radius: var(--radius-1);
+  cursor: pointer;
+}
+
+button.pillCombobox {
+  background-color: var(--app-accent-subtle);
+  border: 0;
+  color: var(--app-accent-emphasis);
+  font-weight: 600;
+  border-radius: 12px;
+}
+
+button.pillCombobox svg {
+  color: var(--app-accent-emphasis);
+}

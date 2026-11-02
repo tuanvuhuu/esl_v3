@@ -109,13 +109,13 @@ export function ChildEditor({
       role="dialog"
       aria-label={`Quan hệ của ${child.studentName}`}
       style={{ top, left, width: WIDTH }}
-      className="fixed z-[60] flex flex-col gap-3 rounded-[var(--radius-panel)] border border-line bg-surface p-4 shadow-lift"
+      className="fixed z-[60] flex flex-col gap-3 rounded-xl border border-[var(--borderColor-default)] bg-[var(--overlay-bgColor)] p-4 shadow-[var(--shadow-floating-large,var(--lift))]"
     >
       <div className="min-w-0">
-        <Link href={`/hoc-sinh/${child.studentId}`} className="block truncate text-base font-bold text-ink hover:underline">
+        <Link href={`/hoc-sinh/${child.studentId}`} className="block truncate text-sm font-bold text-[var(--fgColor-link)] hover:underline">
           {child.studentName}
         </Link>
-        <small className="block truncate text-sm text-muted">Phụ huynh: {parentName}</small>
+        <small className="block truncate text-xs text-[var(--fgColor-muted)]">Phụ huynh: {parentName}</small>
       </div>
 
       <SelectPanel

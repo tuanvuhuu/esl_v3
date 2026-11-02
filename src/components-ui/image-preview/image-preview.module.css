@@ -1,0 +1,90 @@
+.imagePreview_box2 {
+  border-style: solid;
+  border-width: 1px;
+  border-radius: var(--radius-2);
+  border-color: var(--app-border-default);
+}
+
+.imageViewer_box2 {
+  position: relative;
+  border-radius: var(--radius-2);
+  overflow: hidden;
+  cursor: pointer;
+  box-shadow: sm;
+}
+
+.imageViewer_box2:hover img {
+  transform: scale(1.05);
+}
+
+.imageViewer_box3 {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.2s ease;
+}
+
+.imageViewer_box4 {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(0,0,0,0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 600;
+  color: #fff;
+  backdrop-filter: blur(2px);
+}
+
+.imageViewer_box5 {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0,0,0,0.8);
+  z-index: 999999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  flex-direction: column;
+}
+
+.imageViewer_box7 {
+  max-width: 90vw;
+  max-height: 85vh;
+  border-radius: var(--radius-3);
+  box-shadow: xl;
+  user-select: none;
+  transition: all 0.3s;
+}
+
+.imageViewer_box8 {
+  position: absolute;
+  top: 50%;
+  left: 20px;
+  transform: translateY(-50%);
+}
+
+button.imageViewer_iconButton.imageViewer_iconButton.imageViewer_iconButton {
+  color: #fff;
+}
+
+.imageViewer_box9 {
+  position: absolute;
+  top: 50%;
+  right: 20px;
+  transform: translateY(-50%);
+}
+
+button.imageViewer_iconButton2.imageViewer_iconButton2.imageViewer_iconButton2 {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  color: #fff;
+}
+
+span.imageViewer_text {
+  margin-top: var(--space-3);
+  font-size: var(--fs-1);
+  opacity: 0.8;
+}

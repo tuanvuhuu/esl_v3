@@ -1,6 +1,8 @@
 'use client';
 
-import { Bell } from 'lucide-react';
+// Chuông thông báo theo phong cách NutChuong (01. TSUKUBA) trên nền @primer/react v38 + Octicons.
+import { BellIcon } from '@primer/octicons-react';
+import { IconButton } from '@primer/react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
@@ -8,16 +10,12 @@ import { createPortal } from 'react-dom';
 import { listNotificationsAction } from '@/app/(app)/thong-bao/actions';
 import type { AttentionGroup } from '@/lib/queries/notifications';
 
-// Chuông thông báo: việc cần chú ý theo quyền của người dùng, cùng nguồn với mục Cần chú ý ở Tổng quan.
-// Số trên chuông là tổng số việc. Danh sách lấy lại mỗi khi đổi trang. Bấm một việc để mở trang đó.
-// Bảng đưa ra thẳng body (portal) vì thanh đầu có backdrop-blur, làm định vị cố định bị lệch.
 export function NotificationBell() {
   const pathname = usePathname();
   const rootRef = useRef<HTMLDivElement>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const [groups, setGroups] = useState<AttentionGroup[]>([]);
-  // Bảng chỉ mở ở đúng trang lúc mở. Đổi trang thì bảng tự đóng, không cần effect để đóng.
   const [openPath, setOpenPath] = useState<string | null>(null);
   const [place, setPlace] = useState({ top: 0, left: 0, width: 300 });
   const open = openPath === pathname;
@@ -37,7 +35,6 @@ export function NotificationBell() {
     };
   }, [pathname]);
 
-  // Bấm ra ngoài (cả nút và bảng không tính là ngoài) hoặc nhấn Esc thì đóng
   useEffect(() => {
     if (!open) return;
     const onDown = (e: MouseEvent) => {
@@ -55,7 +52,6 @@ export function NotificationBell() {
     };
   }, [open]);
 
-  // Đặt bảng ngay dưới nút, căn theo nút nhưng không tràn khỏi màn hình (điện thoại nút nằm giữa thanh)
   function toggle() {
     if (open) {
       setOpenPath(null);
@@ -69,23 +65,26 @@ export function NotificationBell() {
   }
 
   return (
-    <div ref={rootRef} className="relative">
-      <button
+    <div ref={rootRef} className="relative inline-flex">
+      <IconButton
         ref={btnRef}
-        type="button"
+        icon={BellIcon}
+        variant="default"
+        unsafeDisableTooltip
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-label={count > 0 ? `Thông báo, ${count} việc cần chú ý` : 'Thông báo'}
         onClick={toggle}
-        className="relative grid size-[var(--icon-h)] shrink-0 place-items-center rounded-[var(--radius-ctl)] border border-line bg-surface text-ink-2 hover:border-ink-2 hover:text-ink max-[767px]:size-[var(--icon-h-touch)]"
-      >
-        <Bell className="size-[18px]" aria-hidden />
-        {count > 0 && (
-          <span className="absolute -right-1.5 -top-1.5 grid h-5 min-w-5 place-items-center rounded-full bg-primary-deep px-1 text-2xs font-bold text-on-primary">
-            {count > 99 ? '99+' : count}
-          </span>
-        )}
-      </button>
+        className="!size-[var(--icon-h)] shrink-0 max-[767px]:!size-[var(--icon-h-touch)]"
+      />
+      {count > 0 && (
+        <span
+          aria-hidden
+          className="pointer-events-none absolute -right-1.5 -top-1.5 grid h-5 min-w-5 place-items-center rounded-full bg-[var(--bgColor-danger-emphasis,var(--blush-ink))] px-1 text-2xs font-bold text-white"
+        >
+          {count > 99 ? '99+' : count}
+        </span>
+      )}
 
       {open &&
         createPortal(
@@ -94,19 +93,21 @@ export function NotificationBell() {
             role="dialog"
             aria-label="Thông báo"
             style={{ top: place.top, left: place.left, width: place.width }}
-            className="fixed z-50 flex max-h-[70vh] flex-col rounded-[var(--radius-panel)] border border-line bg-surface shadow-lift"
+            className="fixed z-50 flex max-h-[70vh] flex-col rounded-xl border border-[var(--borderColor-default)] bg-[var(--overlay-bgColor)] shadow-[var(--shadow-floating-large,var(--lift))]"
           >
-            <div className="shrink-0 border-b border-line px-4 py-3">
-              <b className="text-base font-bold text-ink">Thông báo</b>
-              <span className="ml-2 text-sm text-muted">{count > 0 ? `${count} việc cần chú ý` : 'Không có việc cần chú ý'}</span>
+            <div className="shrink-0 border-b border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)]/60 px-4 py-2.5">
+              <b className="text-sm font-bold text-[var(--fgColor-default)]">Thông báo</b>
+              <span className="ml-2 text-xs text-[var(--fgColor-muted)]">
+                {count > 0 ? `${count} việc cần chú ý` : 'Không có việc cần chú ý'}
+              </span>
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto p-2">
               {groups.length === 0 ? (
-                <p className="px-3 py-6 text-center text-sm text-muted">Hôm nay không có việc gấp.</p>
+                <p className="px-3 py-6 text-center text-sm text-[var(--fgColor-muted)]">Hôm nay không có việc gấp.</p>
               ) : (
                 groups.map((g) => (
                   <section key={g.key} className="flex flex-col gap-1 p-2">
-                    <h2 className="text-xs font-normal uppercase tracking-wider text-muted">
+                    <h2 className="text-xs font-medium uppercase tracking-wider text-[var(--fgColor-muted)]">
                       {g.title} ({g.count})
                     </h2>
                     <ul className="flex flex-col">
@@ -115,13 +116,13 @@ export function NotificationBell() {
                           <Link
                             href={it.href}
                             onClick={() => setOpenPath(null)}
-                            className="flex items-center justify-between gap-3 rounded-[var(--radius-ctl)] px-3 py-2 hover:bg-stone"
+                            className="flex items-center justify-between gap-3 rounded-[var(--borderRadius-medium)] px-2.5 py-2 transition-colors hover:bg-[var(--bgColor-muted)]"
                           >
                             <span className="min-w-0">
-                              <b className="block truncate text-sm font-bold text-ink">{it.title}</b>
-                              <small className="block truncate text-xs text-muted">{it.meta}</small>
+                              <b className="block truncate text-sm font-semibold text-[var(--fgColor-default)]">{it.title}</b>
+                              <small className="block truncate text-xs text-[var(--fgColor-muted)]">{it.meta}</small>
                             </span>
-                            <small className="shrink-0 text-xs font-semibold text-blush-ink">{it.right}</small>
+                            <small className="shrink-0 text-xs font-semibold text-[var(--fgColor-danger)]">{it.right}</small>
                           </Link>
                         </li>
                       ))}
@@ -130,7 +131,7 @@ export function NotificationBell() {
                       <Link
                         href={g.href}
                         onClick={() => setOpenPath(null)}
-                        className="px-3 pt-1 text-xs font-bold text-ink underline underline-offset-4"
+                        className="px-2.5 pt-1 text-xs font-semibold text-[var(--fgColor-link)] underline underline-offset-4"
                       >
                         Xem tất cả {g.count} mục
                       </Link>

@@ -74,17 +74,17 @@ export function BankPicker({
           <ul className="flex max-h-[50vh] flex-col gap-2 overflow-y-auto pr-1">
             {shown.map((q) => (
               <li key={q.id}>
-                <label className="flex cursor-pointer items-start gap-3 rounded-[var(--radius-ctl)] border border-line px-3 py-2.5 hover:bg-stone">
+                <label className="flex cursor-pointer items-start gap-3 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-3 py-2.5 transition-colors hover:bg-[var(--bgColor-muted)]">
                   <input
                     type="checkbox"
                     checked={chosen.includes(q.id)}
                     onChange={() => toggle(q.id)}
                     aria-label={`Chọn câu: ${snippet(q.prompt, q.audioName)}`}
-                    className="mt-1 size-4 shrink-0 accent-[var(--primary-deep)]"
+                    className="mt-1 size-4 shrink-0 accent-[var(--control-checked-bgColor-rest)]"
                   />
                   <span className="flex min-w-0 flex-col gap-1.5">
-                    <span className="text-base text-ink [overflow-wrap:anywhere]">{snippet(q.prompt, q.audioName)}</span>
-                    <span className="flex flex-wrap items-center gap-2 text-sm text-ink-2">
+                    <span className="text-base text-[var(--fgColor-default)] [overflow-wrap:anywhere]">{snippet(q.prompt, q.audioName)}</span>
+                    <span className="flex flex-wrap items-center gap-2 text-sm text-[var(--fgColor-muted)]">
                       <Pill tone="lav">{SKILL_LABELS[q.skill]}</Pill>
                       <span>
                         {ITEM_TYPE_LABELS[q.itemType]} · {q.points} điểm

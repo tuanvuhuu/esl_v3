@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
+import { ArrowDownIcon, ArrowSwitchIcon, ArrowUpIcon } from '@primer/octicons-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 export type SortHeaderProps = {
@@ -24,7 +24,6 @@ export function SortHeader({
   const searchParams = useSearchParams();
   const pathname = usePathname();
 
-  // Tự động kiểm tra trạng thái sắp xếp từ URL nếu không truyền prop điều khiển từ ngoài
   const isUrlMode = onSort === undefined && controlledIsSorted === undefined;
   const urlSort = isUrlMode ? searchParams?.get('sort') : null;
   const urlOrder = isUrlMode ? searchParams?.get('order') : null;
@@ -38,8 +37,8 @@ export function SortHeader({
   const nextActionLabel = !isSorted
     ? `Sắp xếp tăng dần theo ${label}`
     : isAsc
-    ? `Sắp xếp giảm dần theo ${label}`
-    : `Bỏ sắp xếp theo ${label}`;
+      ? `Sắp xếp giảm dần theo ${label}`
+      : `Bỏ sắp xếp theo ${label}`;
 
   function handleClick() {
     if (onSort) {
@@ -47,7 +46,6 @@ export function SortHeader({
       return;
     }
 
-    // Tự động cập nhật tham số trên URL nếu dùng chế độ mặc định (URL mode)
     if (searchParams && router) {
       const params = new URLSearchParams(searchParams.toString());
       const currentSort = params.get('sort');
@@ -65,12 +63,11 @@ export function SortHeader({
         params.set('order', 'asc');
       }
 
-      // Quay về trang đầu tiên khi đổi thứ tự sắp xếp
       if (params.has('p')) params.set('p', '1');
       if (params.has('n')) params.set('n', '1');
 
       const qs = params.toString();
-      router.push(qs ? `${pathname}?${qs}` : (pathname || ''), { scroll: false });
+      router.push(qs ? `${pathname}?${qs}` : pathname || '', { scroll: false });
     }
   }
 
@@ -80,22 +77,23 @@ export function SortHeader({
       data-link="true"
       onClick={handleClick}
       title={nextActionLabel}
-      className={`group/sort -mx-1 inline-flex max-w-full items-center gap-1 rounded px-1 py-0.5 text-xs transition-colors cursor-pointer select-none ${
+      className={`group/sort -mx-1 inline-flex max-w-full cursor-pointer select-none items-center gap-1 rounded px-1 py-0.5 text-xs font-normal transition-colors ${
         align === 'end' ? 'flex-row-reverse' : ''
       } ${
         isSorted
-          ? 'font-medium text-ink bg-stone/40'
-          : 'font-normal text-muted hover:bg-stone/50 hover:text-ink'
+          ? 'bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-default)]'
+          : 'text-[var(--fgColor-muted)] hover:bg-[var(--bgColor-default)] hover:text-[var(--fgColor-default)]'
       }`}
     >
       <span className="truncate">{label}</span>
       <span className="flex shrink-0 items-center">
-        {isAsc && <ArrowUp className="size-3 text-ink" aria-hidden="true" />}
-        {isDesc && <ArrowDown className="size-3 text-ink" aria-hidden="true" />}
+        {isAsc && <ArrowUpIcon size={12} className="text-[var(--fgColor-accent)]" aria-hidden />}
+        {isDesc && <ArrowDownIcon size={12} className="text-[var(--fgColor-accent)]" aria-hidden />}
         {!isSorted && (
-          <ArrowUpDown
-            className="size-3 text-muted/40 transition-opacity group-hover/sort:text-ink group-hover/sort:opacity-100"
-            aria-hidden="true"
+          <ArrowSwitchIcon
+            size={12}
+            className="rotate-90 text-[var(--fgColor-muted)]/50 transition-opacity group-hover/sort:text-[var(--fgColor-default)] group-hover/sort:opacity-100"
+            aria-hidden
           />
         )}
       </span>

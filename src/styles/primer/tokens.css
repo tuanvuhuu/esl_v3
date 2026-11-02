@@ -1,0 +1,62 @@
+/*
+ * Design tokens bổ trợ cho bộ Primer React & components-ui (đồng bộ từ dự án 01. TSUKUBA).
+ * Lưu ý:
+ * - Không xung đột với --fs-2xs..--fs-display và --radius-ctl/--radius-panel của ESL Center.
+ * - Màu thương hiệu lấy trực tiếp từ biến --primary / --primary-deep / --primary-soft / --on-primary của ESL Center.
+ */
+:root {
+  /* space — thang khoảng cách chuẩn Primer */
+  --space-0: 0;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 1rem;
+  --space-4: 1.5rem;
+  --space-5: 2rem;
+  --space-6: 2.5rem;
+  --space-7: 3rem;
+  --space-8: 4rem;
+  --space-9: 5rem;
+  --space-10: 6rem;
+  --space-11: 7rem;
+  --space-12: 8rem;
+
+  /* fontSizes theo số cho components-ui */
+  --fs-0: 0.75rem;
+  --fs-1: 0.875rem;
+  --fs-2: 1rem;
+  --fs-3: 1.5rem;
+  --fs-4: 2rem;
+  --fs-5: 2.5rem;
+  --fs-6: 3rem;
+  --fs-7: 3.5rem;
+
+  /* radii theo số cho components-ui */
+  --radius-0: 0.25rem;
+  --radius-1: 0.375rem;
+  --radius-2: 0.5rem;
+  --radius-3: 1rem;
+
+  /* fontWeights */
+  --fw-light: 300;
+  --fw-normal: 400;
+  --fw-semibold: 500;
+  --fw-bold: 600;
+  --fw-bolder: 800;
+
+  /* lineHeights */
+  --lh-condensed-ultra: 1;
+  --lh-condensed: 1.25;
+  --lh-default: 1.5;
+
+  /* fonts — giữ nguyên Be Vietnam Pro của ESL Center */
+  --font-normal: var(--font-be-vietnam), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: var(--fontStack-monospace, SFMono-Regular, Consolas, "Liberation Mono", Menlo, Courier, monospace);
+
+  /* Ánh xạ màu thương hiệu ESL Center (hỗ trợ cả 5 màu accent Sáng/Tối) */
+  --brand-primary: var(--primary-deep);
+  --brand-primary-fill: var(--primary);
+  --brand-on-primary: var(--on-primary);
+  --brand-primary-muted: color-mix(in srgb, var(--primary-deep) 35%, transparent);
+  --brand-primary-subtle: var(--primary-soft);
+}
+

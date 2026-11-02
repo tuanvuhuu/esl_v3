@@ -3,7 +3,8 @@
 import { startTransition, useActionState, type FormEvent } from 'react';
 import { createParentAction, updateParentAction, type ParentFormValues } from '@/app/(app)/phu-huynh/actions';
 import type { ActionResult } from '@/lib/validation/student';
-import { Field, FORM_BTN_CANCEL, FORM_BTN_SUBMIT, inputClass, textareaClass, FormFooter } from '@/components/ui/Field';
+import { Btn } from '@/components/ui/Btn';
+import { Field, inputClass, textareaClass, FormFooter } from '@/components/ui/Field';
 import { Alert } from '@/components/ui/primitives';
 import { SelectPanel } from '@/components/ui/SelectPanel';
 import { PARENT_RELATION_LABELS } from '@/lib/parent-labels';
@@ -80,10 +81,10 @@ export function ParentForm({
         <textarea name="note" defaultValue={values.note} rows={3} placeholder="Giờ liên hệ thuận tiện, lưu ý…" className={textareaClass(errors.note)} />
       </Field>
       <FormFooter className="col-span-full">
-        <button type="button" onClick={onCancel} className={FORM_BTN_CANCEL}>Huỷ</button>
-        <button type="submit" disabled={pending} className={FORM_BTN_SUBMIT}>
+        <Btn onClick={onCancel}>Huỷ</Btn>
+        <Btn type="submit" variant="primary" loading={pending} disabled={pending}>
           {pending ? 'Đang lưu…' : mode === 'edit' ? 'Lưu thay đổi' : 'Lưu phụ huynh'}
-        </button>
+        </Btn>
       </FormFooter>
     </form>
   );

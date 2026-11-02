@@ -1,4 +1,4 @@
-﻿import { Suspense } from 'react';
+import { Suspense } from 'react';
 import { ParentList } from '@/components/parents/ParentList';
 import { NoAccess } from '@/components/ui/NoAccess';
 import { hasPermission } from '@/lib/permissions';
@@ -18,9 +18,9 @@ export default function ParentsPage() {
 function ParentsSkeleton() {
   return (
     <section aria-busy="true" aria-label="Đang tải phụ huynh" className="flex flex-col gap-4">
-      <div className="h-9 w-48 animate-pulse rounded-xl bg-stone" />
-      <div className="h-11 w-full animate-pulse rounded-[var(--radius-ctl)] bg-stone" />
-      <div className="h-[420px] w-full animate-pulse rounded-[var(--radius-panel)] bg-stone" />
+      <div className="h-9 w-48 animate-pulse rounded-lg bg-[var(--bgColor-muted)]" />
+      <div className="h-11 w-full animate-pulse rounded-[var(--borderRadius-medium)] bg-[var(--bgColor-muted)]" />
+      <div className="h-[420px] w-full animate-pulse rounded-xl bg-[var(--bgColor-muted)]" />
     </section>
   );
 }

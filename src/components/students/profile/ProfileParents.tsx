@@ -1,20 +1,20 @@
 'use client';
 
-import { ZaloLink } from '@/components/ui/ZaloLink';
-import { Phone, Plus, Star, Unlink } from 'lucide-react';
+import { DeviceMobileIcon, PlusIcon, StarIcon, UnlinkIcon } from '@primer/octicons-react';
 import { useActionState, useState, useTransition, startTransition, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { addParentLinkAction, setPrimaryParentAction, unlinkParentAction } from '@/app/(app)/phu-huynh/actions';
 import { PARENT_RELATION_LABELS } from '@/lib/parent-labels';
 import type { ActionResult } from '@/lib/validation/student';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { BTN_BASE, BTN_DANGER, BTN_GHOST } from '@/components/ui/Btn';
+import { Btn, BTN_BASE, BTN_GHOST } from '@/components/ui/Btn';
 import { EmptyPanel } from '@/components/ui/surfaces';
-import { Field, FORM_BTN_CANCEL, FORM_BTN_SUBMIT, inputClass, FormFooter } from '@/components/ui/Field';
+import { Field, inputClass, FormFooter } from '@/components/ui/Field';
 import { SelectPanel } from '@/components/ui/SelectPanel';
 import { Modal } from '@/components/ui/Modal';
 import { Pill, Alert } from '@/components/ui/primitives';
 import { Toast, useToast } from '@/components/ui/Toast';
+import { ZaloLink } from '@/components/ui/ZaloLink';
 
 export type ProfileParent = {
   id: number;
@@ -75,31 +75,32 @@ export function ProfileParents({
       ) : (
         <ul className="flex flex-col gap-3">
           {parents.map((p) => (
-            <li key={p.id} className="flex flex-col gap-3 rounded-[var(--radius-panel)] bg-bg p-4">
+            <li
+              key={p.id}
+              className="flex flex-col gap-3 rounded-xl border border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)] p-4"
+            >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <b className="block truncate text-base text-ink">{p.fullName}</b>
-                  <small className="text-sm text-muted">{PARENT_RELATION_LABELS[p.relation]}</small>
+                  <b className="block truncate text-sm font-semibold text-[var(--fgColor-default)]">{p.fullName}</b>
+                  <small className="text-xs text-[var(--fgColor-muted)]">{PARENT_RELATION_LABELS[p.relation]}</small>
                 </div>
                 {p.isPrimary && <Pill tone="butter">Liên hệ chính</Pill>}
               </div>
               <a href={`tel:${p.phone}`} className={`${BTN_BASE} ${BTN_GHOST}`}>
-                <Phone className="size-4" aria-hidden />
+                <DeviceMobileIcon size={16} aria-hidden />
                 Gọi {p.phone}
               </a>
               <ZaloLink phone={p.phone} name={p.fullName} />
               {canManage && (
                 <div className="flex flex-wrap gap-2">
                   {!p.isPrimary && (
-                    <button type="button" onClick={() => setPrimary(p)} disabled={pending} className={`${BTN_BASE} ${BTN_GHOST}`}>
-                      <Star className="size-4" aria-hidden />
+                    <Btn leadingVisual={StarIcon} onClick={() => setPrimary(p)} disabled={pending}>
                       Đặt liên hệ chính
-                    </button>
+                    </Btn>
                   )}
-                  <button type="button" onClick={() => setUnlinking(p)} disabled={pending} className={`${BTN_BASE} ${BTN_DANGER}`}>
-                    <Unlink className="size-4" aria-hidden />
+                  <Btn variant="danger" leadingVisual={UnlinkIcon} onClick={() => setUnlinking(p)} disabled={pending}>
                     Gỡ liên kết
-                  </button>
+                  </Btn>
                 </div>
               )}
             </li>
@@ -108,10 +109,9 @@ export function ProfileParents({
       )}
 
       {canManage && (
-        <button type="button" onClick={() => setAdding(true)} className={`${BTN_BASE} ${BTN_GHOST}`}>
-          <Plus className="size-4" aria-hidden />
+        <Btn leadingVisual={PlusIcon} onClick={() => setAdding(true)}>
           Thêm phụ huynh
-        </button>
+        </Btn>
       )}
 
       <Toast message={message} />
@@ -203,13 +203,15 @@ function AddParentDialog({
             ))}
           </select>
         </Field>
-        <label className="flex min-w-0 items-center gap-2.5 self-end pb-2.5 text-sm font-normal text-ink-2">
-          <input name="isPrimary" type="checkbox" className="size-4 accent-[var(--primary-deep)]" />
+        <label className="flex min-w-0 items-center gap-2.5 self-end pb-2.5 text-sm font-normal text-[var(--fgColor-default)]">
+          <input name="isPrimary" type="checkbox" className="size-4 accent-[var(--control-checked-bgColor-rest)]" />
           Đặt làm liên hệ chính
         </label>
         <FormFooter className="col-span-full">
-          <button type="button" onClick={onClose} className={FORM_BTN_CANCEL}>Huỷ</button>
-          <button type="submit" disabled={pending} className={FORM_BTN_SUBMIT}>{pending ? 'Đang thêm…' : 'Thêm vào hồ sơ'}</button>
+          <Btn onClick={onClose}>Huỷ</Btn>
+          <Btn type="submit" variant="primary" loading={pending} disabled={pending}>
+            {pending ? 'Đang thêm…' : 'Thêm vào hồ sơ'}
+          </Btn>
         </FormFooter>
       </form>
     </Modal>
