@@ -47,7 +47,7 @@ const BG_CHOICES: { value: string; label: string }[] = [
 function applyTheme(pref: Pref) {
   const root = document.documentElement;
   if (pref === 'system') {
-    root.removeAttribute('data-theme');
+    root.setAttribute('data-theme', 'system');
     root.setAttribute('data-color-mode', 'auto');
   } else {
     root.setAttribute('data-theme', pref);
@@ -62,9 +62,9 @@ function applyAccent(accent: Accent) {
 }
 
 export function ThemeMenu() {
-  const [storedTheme, setStoredTheme] = useLocalStorage(THEME_KEY, 'system');
+  const [storedTheme, setStoredTheme] = useLocalStorage(THEME_KEY, 'light');
   const [storedAccent, setStoredAccent] = useLocalStorage(ACCENT_KEY, 'blue');
-  const pref: Pref = storedTheme === 'light' || storedTheme === 'dark' ? storedTheme : 'system';
+  const pref: Pref = storedTheme === 'dark' || storedTheme === 'system' ? storedTheme : 'light';
   const accent: Accent = ACCENTS.find((a) => a.value === storedAccent)?.value ?? 'blue';
   const [storedBg, setStoredBg] = useLocalStorage(BG_KEY, 'none');
   const [storedCustom, setStoredCustom] = useLocalStorage(BG_CUSTOM_KEY, '');
@@ -116,7 +116,7 @@ export function ThemeMenu() {
     setStoredBg(value);
   }
 
-  const current = OPTIONS.find((o) => o.value === pref) ?? OPTIONS[2];
+  const current = OPTIONS.find((o) => o.value === pref) ?? OPTIONS[0];
 
   return (
     <div className="relative shrink-0">

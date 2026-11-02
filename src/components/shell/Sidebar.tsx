@@ -136,7 +136,9 @@ export function Sidebar({
                       {item.label}
                       {count > 0 && (
                         <NavList.TrailingVisual>
-                          <CounterLabel scheme="primary">{count > 99 ? '99+' : count}</CounterLabel>
+                          <CounterLabel scheme="secondary" className="!bg-[var(--bgColor-muted)] !text-[11px] !font-normal !text-[var(--fgColor-muted)]">
+                            {count > 99 ? '99+' : count}
+                          </CounterLabel>
                         </NavList.TrailingVisual>
                       )}
                     </NavList.Item>

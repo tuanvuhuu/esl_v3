@@ -41,16 +41,16 @@ const LOW_SESSIONS = 2;
 const needsPay = (r: InvoiceRow) => r.debt > 0 || (r.sessionsLeft <= LOW_SESSIONS && (r.status === 'active' || r.status === 'trial'));
 
 const COLUMNS: GridColumn<InvoiceRow>[] = [
-  { key: 'fullName', label: 'Học sinh', width: 'minmax(160px,1.5fr)' },
-  { key: 'paid', label: 'Đã nộp', width: 'minmax(100px,0.9fr)' },
-  { key: 'discount', label: 'Giảm trừ', width: 'minmax(90px,0.8fr)' },
-  { key: 'bought', label: 'Buổi đã mua', width: 'minmax(88px,0.75fr)', sortValue: (r) => r.sessionsBought },
-  { key: 'done', label: 'Đã học', width: 'minmax(72px,0.65fr)', sortValue: (r) => r.sessionsDone },
-  { key: 'left', label: 'Còn lại', width: 'minmax(96px,0.85fr)', sortValue: (r) => r.sessionsLeft },
-  { key: 'balance', label: 'Tiền trước/nợ', width: 'minmax(112px,0.95fr)', sortValue: (r) => r.balance },
-  { key: 'status', label: 'Trạng thái', width: 'minmax(104px,0.95fr)', sortValue: (r) => r.state },
-  // Đủ chỗ cho hai nút có chữ "Ghi thu", "Nhắc" trên một dòng
-  { key: 'actions', label: 'Thao tác', width: '140px', align: 'end', srOnly: true },
+  { key: 'fullName', label: 'Học sinh', width: 'minmax(168px,1.65fr)' },
+  { key: 'paid', label: 'Đã nộp', width: 'minmax(98px,0.88fr)' },
+  { key: 'discount', label: 'Giảm trừ', width: 'minmax(82px,0.7fr)' },
+  { key: 'bought', label: 'Buổi đã mua', width: 'minmax(86px,0.72fr)', sortValue: (r) => r.sessionsBought },
+  { key: 'done', label: 'Đã học', width: 'minmax(70px,0.6fr)', sortValue: (r) => r.sessionsDone },
+  { key: 'left', label: 'Còn lại', width: 'minmax(92px,0.8fr)', sortValue: (r) => r.sessionsLeft },
+  { key: 'balance', label: 'Tiền trước/nợ', width: 'minmax(132px,1.18fr)', sortValue: (r) => r.balance },
+  { key: 'status', label: 'Trạng thái', width: 'minmax(102px,0.9fr)', sortValue: (r) => r.state },
+  // Đủ chỗ cho hai nút có chữ "Ghi thu", "Hoàn số dư" trên một dòng không tràn cột
+  { key: 'actions', label: 'Thao tác', width: '176px', align: 'end', srOnly: true },
 ];
 
 // Cột chọn dòng để ghi thu nhiều học sinh cùng lúc (chỉ hiện với người có quyền thu)
@@ -166,14 +166,14 @@ export function TuitionView({
         );
       case 'actions':
         return (
-          <div className="flex justify-end gap-1.5">
-            {canManage && <Btn onClick={() => setPaying(r)}>Ghi thu</Btn>}
+          <div className="flex justify-end gap-1">
+            {canManage && <Btn size="small" onClick={() => setPaying(r)}>Ghi thu</Btn>}
             {canManage && needsPay(r) && (
-              <Btn onClick={() => remind(r)} disabled={pending}>
+              <Btn size="small" onClick={() => remind(r)} disabled={pending}>
                 Nhắc
               </Btn>
             )}
-            {canRefund(r) && <Btn onClick={() => setRefunding(r)}>Hoàn số dư</Btn>}
+            {canRefund(r) && <Btn size="small" onClick={() => setRefunding(r)}>Hoàn số dư</Btn>}
           </div>
         );
       default:

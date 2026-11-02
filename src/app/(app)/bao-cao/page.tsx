@@ -2,7 +2,7 @@ import { ChevronLeftIcon, ChevronRightIcon } from '@primer/octicons-react';
 import Link from 'next/link';
 import { connection } from 'next/server';
 import { Suspense } from 'react';
-import { BTN_BASE, BTN_GHOST } from '@/components/ui/Btn';
+import { BTN_BASE, BTN_GHOST } from '@/components/ui/btn-classes';
 import { DataGrid, type GridColumn } from '@/components/ui/datagrid';
 import { NoAccess } from '@/components/ui/NoAccess';
 import { PageHeader } from '@/components/ui/PageHeader';

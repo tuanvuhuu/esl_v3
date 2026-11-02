@@ -7,49 +7,49 @@
    mặt thẻ trắng (#ffffff / #151b23), chữ than chì sắc nét (#1f2328 / #f0f6fc).
    ============================================================ */
 
-/* ---------- Bảng màu: sáng (mặc định — Primer Light + Xanh Primer) ---------- */
+/* ---------- Bảng màu: sáng (mặc định — Primer Light + 01. TSUKUBA) ---------- */
 :root {
-  --bg: #f6f8fa;
+  --bg: #ffffff;
   --surface: #ffffff;
   --qr-bg: #ffffff; /* nền mã QR: giữ trắng cả ở giao diện tối để app ngân hàng quét được */
   --ink: #1f2328;
-  --ink-2: #424a53;
+  --ink-2: #3d444d;
   --muted: #59636e;
-  --line: #d1d9e0;
-  --stone: #eff2f5;
+  --line: #dfe4ea;
+  --stone: #f6f8fa;
   --stone-ink: #424a53;
   --primary: #0969da;
   --primary-deep: #0550ae;
-  --primary-soft: #ddf4ff;
+  --primary-soft: #e8f3ff;
   --on-primary: #ffffff;
   --accent: #1a7f37;
-  --mint: #dafbe1;
-  --mint-ink: #1a7f37;
-  --lav: #ddf4ff;
+  --mint: #e6f7ed;
+  --mint-ink: #157333;
+  --lav: #e8f3ff;
   --lav-ink: #0969da;
-  --butter: #fff8c5;
-  --butter-ink: #9a6700;
-  --blush: #ffebe9;
+  --butter: #fff6db;
+  --butter-ink: #946200;
+  --blush: #ffeceb;
   --blush-ink: #cf222e;
-  --row-hover: #f6f8fa;
+  --row-hover: #f4f8fd;
   --link: #0969da;
   --relation: #8250df;
-  --bar-bg: rgba(255, 255, 255, 0.94);
-  --glass: rgba(255, 255, 255, 0.96);
-  --scrim: rgba(31, 35, 40, 0.4);
-  --shadow: 0 0 0 1px var(--line), 0 1px 3px rgba(31, 35, 40, 0.06), 0 8px 24px rgba(66, 74, 83, 0.08);
-  --lift: 0 8px 24px rgba(31, 35, 40, 0.16), 0 24px 48px rgba(31, 35, 40, 0.12);
+  --bar-bg: rgba(255, 255, 255, 0.96);
+  --glass: rgba(255, 255, 255, 0.98);
+  --scrim: rgba(31, 35, 40, 0.35);
+  --shadow: 0 1px 2px rgba(31, 35, 40, 0.04);
+  --lift: 0 8px 24px rgba(31, 35, 40, 0.12), 0 1px 3px rgba(31, 35, 40, 0.06);
   --safe-b: env(safe-area-inset-bottom, 0px);
   color-scheme: light;
 
-  /* Kích thước điều khiển chuẩn: 32px máy tính, 44px điện thoại; bo góc gọn sắc theo Primer / 01. TSUKUBA */
+  /* Kích thước điều khiển đồng nhất 32px máy tính, 44px điện thoại; bo góc gọn sắc chuẩn GitHub Primer */
   --ctl-h: 2rem; /* 32px: nút chữ, ô nhập, ô chọn, chip trên máy tính */
   --ctl-h-touch: 2.75rem; /* 44px: ô và nút trên điện thoại */
   --chip-h-touch: 2.25rem; /* 36px: chip trên điện thoại */
-  --icon-h: 2.25rem; /* 36px: nút icon và nút ⋯ trên máy tính */
+  --icon-h: 2rem; /* 32px: đồng bộ chiều cao với nút chữ & ô nhập trên máy tính */
   --icon-h-touch: 2.75rem; /* 44px: nút icon trên điện thoại */
-  --radius-ctl: 0.5rem; /* 8px: nút, ô nhập, ô chọn chuẩn Primer */
-  --radius-panel: 0.75rem; /* 12px: thẻ, bảng, khung chuẩn Primer */
+  --radius-ctl: 0.375rem; /* 6px: nút, ô nhập, ô chọn chuẩn Primer */
+  --radius-panel: 0.625rem; /* 10px: thẻ, bảng, khung chuẩn Primer */
   --cal-hour-h: 6rem;
 }
 
@@ -87,9 +87,9 @@
   color-scheme: dark;
 }
 
-/* Theo hệ thống, khi người dùng chọn "Theo hệ thống" (data-theme chưa đặt) */
+/* Chỉ chuyển tối theo hệ thống khi người dùng chủ động chọn "Theo hệ thống" (data-theme="system") */
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
+  :root[data-theme="system"] {
     --bg: #0d1117;
     --surface: #151b23;
     --ink: #f0f6fc;
@@ -143,7 +143,7 @@
   --on-primary: #ffffff;
 }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"])[data-accent="green"] {
+  :root[data-theme="system"][data-accent="green"] {
     --primary: #238636;
     --primary-deep: #3fb950;
     --primary-soft: #122d1f;
@@ -165,7 +165,7 @@
   --on-primary: #ffffff;
 }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"])[data-accent="rose"] {
+  :root[data-theme="system"][data-accent="rose"] {
     --primary: #da3633;
     --primary-deep: #f85149;
     --primary-soft: #3c1618;
@@ -187,7 +187,7 @@
   --on-primary: #ffffff;
 }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"])[data-accent="violet"] {
+  :root[data-theme="system"][data-accent="violet"] {
     --primary: #8957e5;
     --primary-deep: #a371f7;
     --primary-soft: #271d45;
@@ -209,7 +209,7 @@
   --on-primary: #0d1117;
 }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"])[data-accent="honey"] {
+  :root[data-theme="system"][data-accent="honey"] {
     --primary: #d29922;
     --primary-deep: #e3b341;
     --primary-soft: #342809;

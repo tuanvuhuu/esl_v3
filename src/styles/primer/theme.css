@@ -1,6 +1,6 @@
 /*
  * Ánh xạ bảng màu GitHub Primer & Màu chủ đề (data-accent) vào biến CSS của @primer/primitives.
- * Mặc định dùng Xanh Primer (#0969da) và nền trung tính sắc nét (#f6f8fa / #ffffff) giống 01. TSUKUBA.
+ * Mặc định dùng giao diện Sáng tinh gọn (nền trắng #ffffff, header phụ #f6f8fa, viền mảnh #dfe4ea) giống 01. TSUKUBA.
  */
 
 :root[data-color-mode][data-light-theme],
@@ -18,7 +18,7 @@
   --base-text-weight-medium: 400;
   --base-text-weight-semibold: 500;
 
-  /* Bo góc chuẩn Primer / 01. TSUKUBA: 6px / 8px / 12px */
+  /* Bo góc chuẩn Primer / 01. TSUKUBA: 6px / 6px / 10px */
   --borderRadius-small: var(--radius-1);
   --borderRadius-medium: var(--radius-ctl);
   --borderRadius-large: var(--radius-panel);
@@ -26,20 +26,20 @@
   /* Đồng bộ nền, mặt thẻ, viền và chữ */
   --bgColor-default: var(--surface);
   --bgColor-muted: var(--stone);
-  --bgColor-neutral-muted: color-mix(in srgb, var(--ink) 7%, transparent);
-  --bgColor-inset: var(--bg);
+  --bgColor-neutral-muted: color-mix(in srgb, var(--ink) 6%, transparent);
+  --bgColor-inset: var(--stone);
   --overlay-bgColor: var(--surface);
   --fgColor-default: var(--ink);
   --fgColor-muted: var(--muted);
   --fgColor-link: var(--link);
   --borderColor-default: var(--line);
-  --borderColor-muted: color-mix(in srgb, var(--line) 65%, var(--surface));
+  --borderColor-muted: color-mix(in srgb, var(--line) 60%, var(--surface));
 
   /* Đồng bộ màu nhấn (accent) có độ tương phản cao >= 4.5:1 */
-  --fgColor-accent: var(--primary-deep);
+  --fgColor-accent: var(--primary);
   --focus-outlineColor: var(--primary);
   --borderColor-accent-emphasis: var(--primary);
-  --borderColor-accent-muted: color-mix(in srgb, var(--primary) 35%, transparent);
+  --borderColor-accent-muted: color-mix(in srgb, var(--primary) 26%, var(--surface));
   --bgColor-accent-emphasis: var(--primary);
   --bgColor-accent-muted: var(--primary-soft);
 
@@ -57,7 +57,7 @@
   --button-primary-fgColor-rest: var(--on-primary);
   --button-primary-fgColor-disabled: var(--muted);
   --button-primary-bgColor-disabled: var(--stone);
-  --button-primary-borderColor-rest: rgba(31, 35, 40, 0.15);
+  --button-primary-borderColor-rest: rgba(31, 35, 40, 0.12);
   --button-primary-borderColor-hover: rgba(31, 35, 40, 0.15);
   --button-primary-borderColor-active: rgba(31, 35, 40, 0.2);
   --button-primary-borderColor-disabled: var(--line);
@@ -65,11 +65,11 @@
   /* Nút mặc định (Button variant="default") & Nút nguy hiểm (variant="danger") */
   --button-default-bgColor-rest: var(--surface);
   --button-default-bgColor-hover: var(--stone);
-  --button-default-bgColor-active: color-mix(in srgb, var(--stone) 85%, var(--ink));
+  --button-default-bgColor-active: color-mix(in srgb, var(--stone) 92%, var(--ink));
   --button-default-fgColor-rest: var(--ink);
   --button-default-borderColor-rest: var(--line);
-  --button-default-borderColor-hover: color-mix(in srgb, var(--line) 75%, var(--ink));
-  --button-default-borderColor-active: var(--ink-2);
+  --button-default-borderColor-hover: color-mix(in srgb, var(--line) 80%, var(--ink));
+  --button-default-borderColor-active: color-mix(in srgb, var(--line) 65%, var(--ink));
 
   --button-danger-fgColor-rest: var(--blush-ink);
   --button-danger-fgColor-hover: #ffffff;
@@ -79,24 +79,28 @@
   --button-danger-borderColor-rest: var(--line);
   --button-danger-borderColor-hover: var(--blush-ink);
 
-  /* Trạng thái ngữ nghĩa chuẩn Primer */
+  /* Trạng thái ngữ nghĩa chuẩn Primer — sáng trong, không đục */
   --fgColor-danger: var(--blush-ink);
   --bgColor-danger-muted: var(--blush);
   --bgColor-danger-emphasis: var(--blush-ink);
-  --borderColor-danger-muted: color-mix(in srgb, var(--blush-ink) 30%, transparent);
+  --borderColor-danger-muted: color-mix(in srgb, var(--blush-ink) 22%, var(--surface));
   --borderColor-danger-emphasis: var(--blush-ink);
 
   --fgColor-success: var(--mint-ink);
   --bgColor-success-muted: var(--mint);
   --bgColor-success-emphasis: var(--accent);
-  --borderColor-success-muted: color-mix(in srgb, var(--mint-ink) 30%, transparent);
+  --borderColor-success-muted: color-mix(in srgb, var(--mint-ink) 22%, var(--surface));
 
   --fgColor-attention: var(--butter-ink);
   --bgColor-attention-muted: var(--butter);
-  --borderColor-attention-muted: color-mix(in srgb, var(--butter-ink) 35%, transparent);
+  --borderColor-attention-muted: color-mix(in srgb, var(--butter-ink) 25%, var(--surface));
 
   /* Kích thước điều khiển chuẩn ESL Center: 32px máy tính */
   --control-medium-size: var(--ctl-h);
+}
+
+:root[data-theme='dark'] {
+  --bgColor-inset: var(--bg);
 }
 
 /* Điện thoại (< 768px): điều khiển nâng lên 44px (--ctl-h-touch) và chữ ô nhập 16px không tự zoom iOS */

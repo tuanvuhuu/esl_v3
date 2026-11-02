@@ -1,5 +1,5 @@
 :root {
-  ---table-border: var(--borderColor-muted, #d1d9e0);
+  ---table-border: color-mix(in srgb, var(--borderColor-default, #dfe4ea) 65%, transparent);
 }
 
 .table {
@@ -7,21 +7,21 @@
   border-spacing: 0;
   table-layout: fixed;
   width: 100%;
-  border-radius: 8px;
+  border-radius: var(--borderRadius-medium, 6px);
   background-color: var(--bgColor-default);
 }
 
 .table thead {
-  font-weight: 400;
+  font-weight: 500;
   background-color: var(--bgColor-muted);
 }
 
 .table th {
   border-right: 1px solid var(---table-border);
-  border-bottom: 1px solid var(---table-border);
-  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid var(--borderColor-default);
+  padding: 0.45rem 0.625rem;
   font-size: 0.78125rem;
-  font-weight: 400;
+  font-weight: 500;
   box-sizing: border-box;
   background-color: var(--bgColor-muted);
 }
@@ -45,9 +45,10 @@
 .table td {
   border-bottom: 1px solid var(---table-border);
   border-right: 1px solid var(---table-border);
-  padding: 0.4rem 0.5rem;
+  padding: 0.4375rem 0.625rem;
   font-size: 0.8125rem;
   font-weight: 400;
+  vertical-align: middle;
   box-sizing: border-box;
   background-color: var(--bgColor-default);
   color: var(--fgColor-default);
@@ -197,7 +198,7 @@
   width: 100%;
   min-width: 0;
   align-items: center;
-  font-weight: 400;
+  font-weight: 500;
   font-size: 0.78125rem;
   color: var(--fgColor-muted);
 }

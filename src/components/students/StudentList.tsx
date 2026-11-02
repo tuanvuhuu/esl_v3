@@ -38,15 +38,15 @@ const TUITION_META: Record<StudentRow['tuition'], { label: string; tone: Tone }>
 
 // Cột của bảng máy tính, mỗi thông tin một cột riêng (không avatar). Độ rộng là lưới CSS, dùng chung cho tiêu đề và mọi dòng.
 const COLUMNS: GridColumn[] = [
-  { key: 'name', label: 'Họ tên', width: 'minmax(128px,1.6fr)', sortable: true },
-  { key: 'code', label: 'Mã HS', width: 'minmax(72px,0.7fr)', sortable: true },
-  { key: 'gender', label: 'Giới tính', width: 'minmax(74px,0.7fr)', sortable: true },
-  { key: 'class', label: 'Lớp & giáo viên', width: 'minmax(110px,1.1fr)', sortable: true },
-  { key: 'progress', label: 'Tiến độ', width: 'minmax(104px,1.2fr)', sortable: true },
-  { key: 'attendance', label: 'Chuyên cần', width: 'minmax(88px,0.8fr)', sortable: true },
-  { key: 'tuition', label: 'Học phí', width: 'minmax(110px,1.3fr)', sortable: true },
-  { key: 'status', label: 'Trạng thái', width: 'minmax(96px,1fr)', sortable: true },
-  { key: 'actions', label: 'Thao tác', width: '44px', align: 'end', srOnly: true },
+  { key: 'name', label: 'Họ tên', width: 'minmax(132px,1.35fr)', sortable: true },
+  { key: 'code', label: 'Mã HS', width: 'minmax(74px,0.62fr)', sortable: true },
+  { key: 'gender', label: 'Giới tính', width: 'minmax(62px,0.52fr)', sortable: true },
+  { key: 'class', label: 'Lớp & giáo viên', width: 'minmax(116px,1.1fr)', sortable: true },
+  { key: 'progress', label: 'Tiến độ', width: 'minmax(108px,1.1fr)', sortable: true },
+  { key: 'attendance', label: 'Chuyên cần', width: 'minmax(82px,0.65fr)', sortable: true },
+  { key: 'tuition', label: 'Học phí', width: 'minmax(160px,1.7fr)', sortable: true },
+  { key: 'status', label: 'Trạng thái', width: 'minmax(94px,0.82fr)', sortable: true },
+  { key: 'actions', label: 'Thao tác', width: '40px', align: 'end', srOnly: true },
 ];
 
 type Props = {

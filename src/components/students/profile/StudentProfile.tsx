@@ -5,7 +5,7 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { HistoryTimeline } from '@/components/learning/HistoryTimeline';
 import { LearningEventButton } from '@/components/learning/LearningEventDialog';
-import { BTN_BASE, BTN_GHOST } from '@/components/ui/Btn';
+import { BTN_BASE, BTN_GHOST } from '@/components/ui/btn-classes';
 import { Chip } from '@/components/ui/controls';
 import { Avatar, Pill, ProgressBar, type Tone } from '@/components/ui/primitives';
 import { Panel } from '@/components/ui/surfaces';
@@ -244,7 +244,7 @@ export function StudentProfile({
           <Link
             href={drawerClose}
             aria-label="Đóng hồ sơ"
-            className="grid size-[var(--icon-h)] place-items-center rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] text-[var(--fgColor-muted)] hover:bg-[var(--bgColor-muted)] max-[767px]:size-[var(--icon-h-touch)]"
+            className="grid size-[var(--icon-h)] place-items-center rounded-[var(--borderRadius-medium)] text-[var(--fgColor-muted)] hover:bg-[var(--bgColor-muted)] hover:text-[var(--fgColor-default)] max-[767px]:size-[var(--icon-h-touch)]"
           >
             <XIcon size={16} aria-hidden />
           </Link>
@@ -289,7 +289,13 @@ export function StudentProfile({
       {body}
 
       {perms.tuition && (
-        <div className="sticky bottom-0 -mx-1 rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)]/95 p-3 shadow-[var(--shadow-resting-small,0_1px_2px_rgba(0,0,0,0.04))] backdrop-blur-md">
+        <div
+          className={
+            drawerClose
+              ? 'sticky bottom-0 -mx-1 rounded-lg border border-[var(--borderColor-default)] bg-[var(--bgColor-default)]/95 p-3 shadow-[var(--shadow)] backdrop-blur-md'
+              : 'max-[767px]:sticky max-[767px]:bottom-0 max-[767px]:-mx-1 max-[767px]:rounded-lg max-[767px]:border max-[767px]:border-[var(--borderColor-default)] max-[767px]:bg-[var(--bgColor-default)]/95 max-[767px]:p-3 max-[767px]:shadow-[var(--shadow)] max-[767px]:backdrop-blur-md min-[768px]:self-end'
+          }
+        >
           <TuitionRemindButton studentId={student.id} debt={student.debt} />
         </div>
       )}

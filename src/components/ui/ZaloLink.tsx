@@ -1,5 +1,5 @@
 import { zaloUrl } from '@/lib/zalo';
-import { BTN_BASE, BTN_GHOST } from '@/components/ui/Btn';
+import { BTN_BASE, BTN_GHOST } from '@/components/ui/btn-classes';
 
 // Nút mở chat Zalo với phụ huynh, đặt cạnh số gọi. Không có số hợp lệ thì không hiện.
 // variant "link" dùng trong bảng (chữ xanh gạch chân), "button" dùng trong thẻ và hồ sơ.

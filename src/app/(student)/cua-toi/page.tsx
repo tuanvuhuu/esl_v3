@@ -6,7 +6,7 @@ import { LearningPath } from '@/components/student/LearningPath';
 import { MotivationSummary } from '@/components/student/MotivationSummary';
 import { RewardsShelf } from '@/components/student/RewardsShelf';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { BTN_BASE, BTN_PRIMARY } from '@/components/ui/Btn';
+import { BTN_BASE, BTN_PRIMARY } from '@/components/ui/btn-classes';
 import { Card, EmptyPanel } from '@/components/ui/surfaces';
 import { vnDateTimeLabel } from '@/lib/datetime';
 import { studentMotivation } from '@/lib/queries/motivation';

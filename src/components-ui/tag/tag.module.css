@@ -1,5 +1,10 @@
-/* Chuyển từ sx (codemod). Có thể đổi tên class cho rõ nghĩa hơn khi sửa tới. */
-
 span.tag_label {
-  border: 0;
+  border-width: 1px;
+  border-style: solid;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.25rem;
+  height: 1.375rem;
+  padding: 0 0.5rem;
+  border-radius: 999px;
 }

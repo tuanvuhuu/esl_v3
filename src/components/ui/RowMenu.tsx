@@ -27,9 +27,9 @@ export function RowMenu({ items, label }: { items: RowMenuItem[]; label: string 
             icon={KebabHorizontalIcon}
             aria-label={label}
             title={label}
-            variant="default"
+            variant="invisible"
             unsafeDisableTooltip
-            className="!size-[var(--icon-h)] max-[767px]:!size-[var(--icon-h-touch)]"
+            className="!size-7 !text-[var(--fgColor-muted)] hover:!text-[var(--fgColor-default)] max-[767px]:!size-[var(--icon-h-touch)]"
           />
         </ActionMenu.Anchor>
         <ActionMenu.Overlay align="end" width="small" className="row-menu">

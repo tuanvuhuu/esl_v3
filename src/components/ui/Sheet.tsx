@@ -42,7 +42,7 @@ export function Sheet({
         <Dialog.Header>
           <div className="flex w-full items-center justify-between gap-3">
             <Dialog.Title id={labelledBy}>{title}</Dialog.Title>
-            <ActIcon label="Đóng" icon={XIcon} onClick={() => handleHeaderClose('close-button')} />
+            <ActIcon quiet label="Đóng" icon={XIcon} onClick={() => handleHeaderClose('close-button')} />
           </div>
         </Dialog.Header>
       )}

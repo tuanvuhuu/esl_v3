@@ -2,15 +2,12 @@
 
 // Bộ điều khiển dùng trực tiếp thành phần từ `@/components-ui` (01. TSUKUBA) + `@primer/react` v38:
 // - TextInput → `@/components-ui` TextInput (hỗ trợ debounce + trạng thái lỗi Primer)
-// - Tag → `@/components-ui` Tag (nhãn màu muted theo semantic token)
+// - Tag → `@/components-ui` Tag (nhãn màu pastel sáng theo semantic token)
 // - SegmentedSwitch → `@/components-ui` SegementedControlWraper + `@primer/react` SegmentedControl
-// - ChipGroup / Chip → `@primer/react` UnderlineNav + Button + CounterLabel
+// - ChipGroup / Chip → Thanh lọc phân đoạn (Segmented Filter Pills) gọn sắc chuẩn Primer
 // - Pagination → tích hợp `@/components-ui` Paging & `@primer/react` Pagination
 import type { Icon } from '@primer/octicons-react';
 import {
-  Button,
-  CounterLabel,
-  LinkButton,
   Pagination as PrimerPagination,
   SegmentedControl,
   UnderlineNav,
@@ -96,7 +93,8 @@ export function SegmentedSwitch<T extends string>({
   );
 }
 
-const UnderlineTabContext = createContext(false);
+type ChipMode = 'standalone' | 'segmented' | 'underline';
+const ChipGroupContext = createContext<ChipMode>('standalone');
 
 export function ChipGroup({
   label,
@@ -111,17 +109,26 @@ export function ChipGroup({
 }) {
   if (tabs) {
     return (
-      <UnderlineTabContext.Provider value={true}>
+      <ChipGroupContext.Provider value="underline">
         <UnderlineNav aria-label={label} className={clsx('!w-auto !border-b-0 !px-0 !py-0', className)}>
           {children}
         </UnderlineNav>
-      </UnderlineTabContext.Provider>
+      </ChipGroupContext.Provider>
     );
   }
   return (
-    <div role="group" aria-label={label} className={clsx('flex flex-wrap items-center gap-1.5', className)}>
-      {children}
-    </div>
+    <ChipGroupContext.Provider value="segmented">
+      <div
+        role="group"
+        aria-label={label}
+        className={clsx(
+          'inline-flex flex-wrap items-center gap-0.5 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] p-0.5',
+          className,
+        )}
+      >
+        {children}
+      </div>
+    </ChipGroupContext.Provider>
   );
 }
 
@@ -135,9 +142,9 @@ export function Chip({
   onClick,
   ...rest
 }: ButtonHTMLAttributes<HTMLButtonElement> & { selected: boolean; count?: number; href?: string; tab?: boolean }) {
-  const inUnderlineNav = useContext(UnderlineTabContext);
+  const mode = useContext(ChipGroupContext);
 
-  if (inUnderlineNav) {
+  if (mode === 'underline') {
     if (href) {
       return (
         <UnderlineNav.Item
@@ -165,39 +172,65 @@ export function Chip({
     );
   }
 
+  const segmented = mode === 'segmented';
+  const pillCls = clsx(
+    'inline-flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap text-[13px] transition-all select-none',
+    segmented
+      ? 'h-[26px] rounded-[calc(var(--borderRadius-medium)-2px)] px-2.5 max-[767px]:h-[34px]'
+      : 'h-[var(--ctl-h)] rounded-[var(--borderRadius-medium)] border px-3 max-[767px]:h-[var(--chip-h-touch)]',
+    segmented
+      ? selected
+        ? 'bg-[var(--bgColor-default)] font-medium text-[var(--fgColor-default)] shadow-[0_1px_2px_rgba(31,35,40,0.08),0_0_0_1px_var(--borderColor-default)]'
+        : 'bg-transparent font-normal text-[var(--fgColor-muted)] hover:bg-[var(--bgColor-default)]/60 hover:text-[var(--fgColor-default)]'
+      : selected
+        ? 'border-[var(--borderColor-accent-emphasis)] bg-[var(--primary-soft)] font-medium text-[var(--primary-deep)]'
+        : 'border-[var(--borderColor-default)] bg-[var(--bgColor-default)] font-normal text-[var(--fgColor-muted)] hover:bg-[var(--bgColor-muted)] hover:text-[var(--fgColor-default)]',
+    className,
+  );
+
+  const counterNode =
+    count !== undefined ? (
+      <span
+        className={clsx(
+          'inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1.5 text-[11px] leading-none tabular-nums',
+          selected
+            ? 'bg-[var(--primary-soft)] font-medium text-[var(--primary-deep)]'
+            : 'bg-[var(--bgColor-neutral-muted)] font-normal text-[var(--fgColor-muted)]',
+        )}
+      >
+        {count}
+      </span>
+    ) : null;
+
   if (href) {
     return (
-      <LinkButton
-        as={Link}
+      <Link
         href={href}
-        variant={selected ? 'primary' : 'default'}
+        scroll={false}
         role={tab ? 'tab' : undefined}
         aria-selected={tab ? selected : undefined}
         aria-current={!tab && selected ? 'page' : undefined}
-        className={className}
+        className={pillCls}
       >
         <span className="inline-flex items-center gap-1.5">{children}</span>
-        {count !== undefined && (
-          <CounterLabel className="ml-1.5 !font-normal">{count}</CounterLabel>
-        )}
-      </LinkButton>
+        {counterNode}
+      </Link>
     );
   }
 
   return (
-    <Button
+    <button
       type="button"
-      variant={selected ? 'primary' : 'default'}
-      count={count}
       role={tab ? 'tab' : undefined}
       aria-selected={tab ? selected : undefined}
       aria-pressed={tab ? undefined : selected}
       onClick={onClick}
-      className={className}
+      className={pillCls}
       {...rest}
     >
       <span className="inline-flex items-center gap-1.5">{children}</span>
-    </Button>
+      {counterNode}
+    </button>
   );
 }
 

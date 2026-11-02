@@ -69,7 +69,7 @@ export function NotificationBell() {
       <IconButton
         ref={btnRef}
         icon={BellIcon}
-        variant="default"
+        variant="invisible"
         unsafeDisableTooltip
         aria-haspopup="dialog"
         aria-expanded={open}
@@ -80,7 +80,7 @@ export function NotificationBell() {
       {count > 0 && (
         <span
           aria-hidden
-          className="pointer-events-none absolute -right-1.5 -top-1.5 grid h-5 min-w-5 place-items-center rounded-full bg-[var(--bgColor-danger-emphasis,var(--blush-ink))] px-1 text-2xs font-medium text-white"
+          className="pointer-events-none absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-[var(--bgColor-danger-emphasis,var(--blush-ink))] px-1 text-[10px] font-medium leading-none text-white ring-2 ring-[var(--bgColor-default)]"
         >
           {count > 99 ? '99+' : count}
         </span>

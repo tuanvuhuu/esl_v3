@@ -22,7 +22,7 @@ span[class*='prc-ActionList-VisualWrap-'] {
 }
 
 .text-input-bold input {
-  font-weight: bolder;
+  font-weight: 500;
 }
 
 .button-left span {
@@ -53,13 +53,17 @@ span[class*='prc-ActionList-VisualWrap-'] {
   color: var(--app-accent-fg);
 }
 
-/* Đồng bộ chữ nhẹ nhàng trên Button, Label, NavList, UnderlineNav của Primer v38 */
-button[class*='prc-Button-ButtonBase-'] {
+/* Đồng bộ chữ thanh thoát trên Button, Label, NavList, UnderlineNav của Primer v38 */
+button[class*='prc-Button-ButtonBase-'],
+a[class*='prc-Button-ButtonBase-'] {
   font-weight: 500;
+  font-size: 0.8125rem;
 }
 
 button[class*='prc-Button-ButtonBase-'][data-variant='default'],
-button[class*='prc-Button-ButtonBase-'][data-variant='invisible'] {
+button[class*='prc-Button-ButtonBase-'][data-variant='invisible'],
+a[class*='prc-Button-ButtonBase-'][data-variant='default'],
+a[class*='prc-Button-ButtonBase-'][data-variant='invisible'] {
   font-weight: 400;
 }
 
@@ -71,25 +75,46 @@ span[class*='prc-CounterLabel-CounterLabel-'] {
 a[class*='prc-ActionList-ActionListContent-'],
 button[class*='prc-ActionList-ActionListContent-'] {
   font-weight: 400;
+  font-size: 0.8125rem;
 }
 
-li[class*='prc-ActionList-ActionListItem-'][aria-current='page'] a[class*='prc-ActionList-ActionListContent-'] {
-  font-weight: 500;
+/* Mục đang chọn trên Sidebar (NavList): nền sáng màu chủ đề, chữ & icon đồng bộ giống 01. TSUKUBA */
+a[class*='prc-ActionList-ActionListContent-'][aria-current='page'] {
+  background-color: var(--primary-soft) !important;
+  color: var(--primary-deep) !important;
+  font-weight: 500 !important;
 }
 
-/* Đảm bảo cả khung ngoài lẫn thẻ <input> bên trong TextInput của Primer cao đúng chuẩn 32px (máy tính) / 44px (điện thoại) */
+a[class*='prc-ActionList-ActionListContent-'][aria-current='page'] svg {
+  color: var(--primary) !important;
+}
+
+a[class*='prc-ActionList-ActionListContent-'][aria-current='page']::after {
+  background-color: var(--primary) !important;
+}
+
+/* Làm phẳng bóng đổ bên trong ô nhập Primer để sáng sạch như 01. TSUKUBA */
 span[class*='prc-components-TextInputWrapper-'] {
   height: var(--control-medium-size);
   min-height: var(--control-medium-size);
+  box-shadow: none;
+  font-size: 0.8125rem;
 }
 
 span[class*='prc-components-TextInputWrapper-'] input {
   height: var(--control-medium-size);
   box-sizing: border-box;
+  font-size: 0.8125rem;
+}
+
+/* Chân form cố định ở đáy vùng cuộn ScrollableRegion của Dialog Primer */
+div[class*='prc-Dialog-Body-'] {
+  overflow: visible !important;
 }
 
 /* Ô nhập TextInput của Primer trên điện thoại: giữ chữ 16px không phóng to iOS */
 @media (max-width: 767px) {
+  span[class*='prc-components-TextInputWrapper-'],
   span[class*='prc-components-TextInputWrapper-'] input {
     font-size: var(--fs-input);
   }

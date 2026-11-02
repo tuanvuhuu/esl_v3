@@ -71,14 +71,7 @@ export function Avatar({
 
 export function ProgressBar({ value, max, className = '' }: { value: number; max: number; className?: string }) {
   const percent = max <= 0 ? 0 : Math.min(100, Math.round((value / max) * 100));
-  const bg =
-    percent < 25
-      ? 'danger.emphasis'
-      : percent < 50
-        ? 'attention.emphasis'
-        : percent < 75
-          ? 'accent.emphasis'
-          : 'success.emphasis';
+  const bg = percent >= 100 ? 'success.emphasis' : 'accent.emphasis';
   return <ProgressBarView progress={percent} bg={bg} barSize="default" className={clsx('w-full', className)} aria-valuenow={percent} />;
 }
 

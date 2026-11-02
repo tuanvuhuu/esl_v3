@@ -28,9 +28,15 @@ export function Modal({
   const dialogRef = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
-    if (open && dialogRef.current) {
-      dialogRef.current.setAttribute('aria-labelledby', labelledBy);
-    }
+    if (!open || !dialogRef.current) return;
+    dialogRef.current.setAttribute('aria-labelledby', labelledBy);
+    const id = window.requestAnimationFrame(() => {
+      const firstInput = dialogRef.current?.querySelector<HTMLElement>(
+        'input:not([type="hidden"]):not([disabled]), textarea:not([disabled])',
+      );
+      firstInput?.focus({ preventScroll: true });
+    });
+    return () => window.cancelAnimationFrame(id);
   }, [open, labelledBy]);
 
   if (!open) return null;
@@ -51,7 +57,7 @@ export function Modal({
               <Dialog.Title id={labelledBy}>{title}</Dialog.Title>
               {subtitle && <Dialog.Subtitle>{subtitle}</Dialog.Subtitle>}
             </div>
-            <ActIcon label="Đóng" icon={XIcon} onClick={() => handleHeaderClose('close-button')} />
+            <ActIcon quiet label="Đóng" icon={XIcon} onClick={() => handleHeaderClose('close-button')} />
           </div>
         </Dialog.Header>
       )}

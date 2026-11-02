@@ -10,7 +10,7 @@ import { CounterLabel, SkeletonBox } from '@primer/react';
 import Link from 'next/link';
 import { connection } from 'next/server';
 import { Suspense } from 'react';
-import { BTN_BASE, BTN_GHOST, BTN_PRIMARY } from '@/components/ui/Btn';
+import { BTN_BASE, BTN_GHOST, BTN_PRIMARY } from '@/components/ui/btn-classes';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { EmptyState, Pill, ProgressBar, type Tone } from '@/components/ui/primitives';
 import { Panel } from '@/components/ui/surfaces';
@@ -314,11 +314,11 @@ function sessionLabel(s: { status: string; isPast: boolean }): { tone: Tone; tex
   return { tone: 'mint', text: 'Sắp học' };
 }
 
-const KPI_BAR: Record<'mint' | 'lav' | 'blush' | 'butter', string> = {
-  mint: 'border-t-accent',
-  lav: 'border-t-lav-ink',
-  blush: 'border-t-blush-ink',
-  butter: 'border-t-primary-deep',
+const KPI_DOT: Record<'mint' | 'lav' | 'blush' | 'butter', string> = {
+  mint: 'bg-[var(--accent)]',
+  lav: 'bg-[var(--primary)]',
+  blush: 'bg-[var(--blush-ink)]',
+  butter: 'bg-[var(--butter-ink)]',
 };
 
 function Kpi({
@@ -331,19 +331,20 @@ function Kpi({
   label: string;
   value: string;
   sub?: string;
-  tone: keyof typeof KPI_BAR;
+  tone: keyof typeof KPI_DOT;
   bar?: number;
 }) {
   return (
-    <div
-      className={`min-w-0 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] border-t-[3px] bg-[var(--bgColor-default)] px-4 py-3 ${KPI_BAR[tone]}`}
-    >
-      <small className="block truncate text-xs font-medium text-[var(--fgColor-muted)]">{label}</small>
-      <b className="mt-1 block truncate text-xl font-semibold tabular-nums text-[var(--fgColor-default)] min-[768px]:text-2xl">
+    <div className="min-w-0 rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-4 py-3.5 shadow-[var(--shadow)]">
+      <small className="flex items-center gap-2 truncate text-xs font-medium text-[var(--fgColor-muted)]">
+        <span className={`size-2 shrink-0 rounded-full ${KPI_DOT[tone]}`} aria-hidden />
+        <span className="truncate">{label}</span>
+      </small>
+      <b className="mt-1.5 block truncate text-xl font-semibold tabular-nums text-[var(--fgColor-default)] min-[768px]:text-2xl">
         {value}
       </b>
       {bar !== undefined && <ProgressBar value={bar} max={100} className="mt-2.5" />}
-      {sub && <small className="mt-0.5 block truncate text-xs text-[var(--fgColor-muted)]">{sub}</small>}
+      {sub && <small className="mt-1 block truncate text-xs text-[var(--fgColor-muted)]">{sub}</small>}
     </div>
   );
 }
