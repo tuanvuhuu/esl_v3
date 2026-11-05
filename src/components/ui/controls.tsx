@@ -125,7 +125,7 @@ export function ChipGroup({
         role="group"
         aria-label={label}
         className={clsx(
-          'inline-flex flex-wrap items-center gap-0.5 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] p-0.5',
+          'inline-flex flex-wrap items-center gap-0.5 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[#eef2f7] p-0.5 dark:bg-[var(--bgColor-muted)]',
           className,
         )}
       >
@@ -196,7 +196,7 @@ export function Chip({
       <motion.span
         layoutId={`tsukuba-chip-${groupId}`}
         transition={{ type: 'spring', stiffness: 520, damping: 38 }}
-        className="pointer-events-none absolute inset-0 rounded-[calc(var(--borderRadius-medium)-2px)] bg-[var(--bgColor-default)] shadow-[0_1px_2px_rgba(31,35,40,0.08),0_0_0_1px_var(--borderColor-default)]"
+        className="pointer-events-none absolute inset-0 rounded-[calc(var(--borderRadius-medium)-2px)] bg-[var(--bgColor-default)] shadow-[0_1px_3px_rgba(15,23,42,0.1),0_0_0_1px_rgba(15,23,42,0.06)]"
         aria-hidden
       />
     ) : null;
@@ -207,8 +207,8 @@ export function Chip({
         className={clsx(
           'relative z-[1] inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1.5 text-[11px] leading-none tabular-nums',
           selected
-            ? 'bg-[var(--primary-soft)] font-medium text-[var(--primary-deep)]'
-            : 'bg-[var(--bgColor-neutral-muted)] font-normal text-[var(--fgColor-muted)]',
+            ? 'bg-[var(--primary)] font-semibold text-[var(--on-primary)]'
+            : 'bg-white/80 font-medium text-[var(--fgColor-muted)] ring-1 ring-inset ring-black/[0.06] dark:bg-[var(--bgColor-neutral-muted)] dark:ring-white/10',
         )}
       >
         {count}
@@ -317,9 +317,16 @@ export function Pagination(props: PaginationProps) {
   return (
     <nav
       aria-label={label ?? 'Phân trang'}
-      className="flex flex-wrap items-center justify-between gap-2 py-0.5 text-xs text-[var(--fgColor-muted)] [&_[class*='prc-Pagination-']]:!m-0 [&_a]:!h-7 [&_a]:!min-w-7 [&_a]:!leading-none"
+      className="flex flex-wrap items-center justify-between gap-2 text-xs text-[var(--fgColor-muted)] [&_[class*='prc-Pagination-']]:!m-0 [&_a]:!h-7 [&_a]:!min-w-7 [&_a]:!leading-none"
     >
-      <span>{infoText}</span>
+      <div className="flex items-center gap-2">
+        <span className="font-medium text-[var(--ink-2)]">{infoText}</span>
+        {totalCount !== undefined && totalCount > 0 && (
+          <span className="rounded-md border border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)] px-1.5 py-0.5 text-[11px] font-medium tabular-nums text-[var(--fgColor-muted)]">
+            {Math.min((page - 1) * pageSize + 1, totalCount)}–{Math.min(page * pageSize, totalCount)} / {totalCount}
+          </span>
+        )}
+      </div>
       <PrimerPagination
         pageCount={pageCount}
         currentPage={page}

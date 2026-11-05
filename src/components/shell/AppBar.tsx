@@ -66,7 +66,7 @@ export function AppBar({
   }
 
   return (
-    <header className="sticky top-0 z-40 flex h-[52px] shrink-0 items-center gap-2 border-b border-[var(--borderColor-default)] bg-[color-mix(in_srgb,var(--bgColor-default)_88%,transparent)] px-4 backdrop-blur-md max-[767px]:h-[56px] max-[767px]:px-3">
+    <header className="sticky top-0 z-40 flex h-[52px] shrink-0 items-center gap-2 border-b border-[var(--menu-border)] bg-[var(--bar-bg)] px-4 backdrop-blur-md transition-colors duration-200 max-[767px]:h-[56px] max-[767px]:px-3">
       <IconButton
         icon={ThreeBarsIcon}
         aria-label="Mở menu"
@@ -81,18 +81,22 @@ export function AppBar({
         aria-label="ESL Center, về trang Tổng quan"
         className="group flex shrink-0 items-center gap-2 whitespace-nowrap text-[var(--fgColor-default)]"
       >
-        <span className="grid size-7 shrink-0 place-items-center rounded-[6px] bg-[var(--primary)] text-xs font-bold tracking-tight text-[var(--on-primary)] transition-transform duration-150 group-hover:scale-[1.04]">
+        <span className="grid size-7 shrink-0 place-items-center rounded-[6px] bg-[var(--primary)] text-xs font-bold tracking-tight text-[var(--on-primary)] shadow-[0_1px_2px_rgba(15,23,42,0.16)] transition-transform duration-150 group-hover:scale-[1.04]">
           ESL
         </span>
         <span className="text-sm font-bold tracking-tight text-[var(--fgColor-default)]">ESL Center</span>
-        <span className="hidden rounded-[var(--borderRadius-small)] border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] px-1.5 py-0.5 text-[11px] font-normal text-[var(--fgColor-muted)] min-[960px]:inline-block">
+        <span className="hidden rounded-[var(--borderRadius-small)] border border-[color-mix(in_srgb,var(--primary)_24%,var(--borderColor-default))] bg-[var(--primary-soft)] px-1.5 py-0.5 text-[11px] font-medium text-[var(--primary-deep)] transition-colors min-[960px]:inline-block">
           Quản lý trung tâm
         </span>
       </Link>
 
       <div className="flex-1" />
 
-      <form onSubmit={onSearch} role="search" className="w-72 max-w-full max-[1023px]:w-56 max-[767px]:hidden">
+      <form
+        onSubmit={onSearch}
+        role="search"
+        className="w-72 max-w-full [&_span[class*='TextInputWrapper']]:!border-[var(--menu-border)] [&_span[class*='TextInputWrapper']]:!bg-[color-mix(in_srgb,var(--surface)_90%,var(--primary-soft)_10%)] [&_svg]:!text-[var(--primary)] max-[1023px]:w-56 max-[767px]:hidden"
+      >
         <label htmlFor="global-search" className="sr-only">
           Tìm học sinh, phụ huynh, SĐT
         </label>

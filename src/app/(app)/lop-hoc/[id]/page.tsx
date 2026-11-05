@@ -108,32 +108,32 @@ async function ClassData({ params }: { params: Promise<{ id: string }> }) {
       />
 
       {/* Tsukuba .hero summary banner */}
-      <div className="tsukuba-rise mb-3.5 flex flex-wrap items-center justify-between gap-3 rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] border-l-4 border-l-[var(--primary)] bg-[var(--bgColor-default)] px-4 py-3.5 max-[767px]:px-3.5">
-        <div className="flex min-w-0 flex-col gap-1">
+      <div className="tsukuba-rise mb-3.5 flex flex-wrap items-center justify-between gap-3 rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] border-l-4 border-l-[var(--primary)] bg-[var(--bgColor-default)] px-4 py-3.5 shadow-[var(--shadow)] max-[767px]:px-3.5">
+        <div className="flex min-w-0 flex-col gap-1.5">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-[15px] font-semibold text-[var(--fgColor-default)]">{cls.course}</span>
-            <span className="inline-flex items-center gap-1 rounded-[var(--borderRadius-small)] bg-[var(--bgColor-neutral-muted)] px-2 py-0.5 font-mono text-xs text-[var(--fgColor-default)]">
-              <LocationIcon size={12} aria-hidden />
+            <span className="inline-flex items-center gap-1 rounded-[5px] border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] px-2 py-0.5 font-mono text-[11.5px] font-medium text-[var(--ink-2)]">
+              <LocationIcon size={12} className="text-[var(--fgColor-muted)]" aria-hidden />
               {cls.campusName}
             </span>
             {cls.levelCode && (
-              <span className="rounded-[var(--borderRadius-small)] bg-[var(--bgColor-neutral-muted)] px-2 py-0.5 font-mono text-xs text-[var(--fgColor-default)]">
+              <span className="rounded-[5px] border border-[var(--borderColor-accent-muted)] bg-[var(--primary-soft)] px-2 py-0.5 font-mono text-[11.5px] font-semibold text-[var(--primary-deep)]">
                 CEFR {cls.levelCode}
               </span>
             )}
             {cls.room && (
-              <span className="rounded-[var(--borderRadius-small)] bg-[var(--bgColor-neutral-muted)] px-2 py-0.5 font-mono text-xs text-[var(--fgColor-default)]">
+              <span className="rounded-[5px] border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] px-2 py-0.5 font-mono text-[11.5px] font-medium text-[var(--ink-2)]">
                 {cls.room}
               </span>
             )}
           </div>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[var(--fgColor-muted)]">
-            <span className="inline-flex items-center gap-1.5 font-medium tabular-nums text-[var(--fgColor-default)]">
-              <CalendarIcon size={13} className="text-[var(--fgColor-muted)]" aria-hidden />
+            <span className="inline-flex items-center gap-1.5 font-semibold tabular-nums text-[var(--fgColor-default)]">
+              <CalendarIcon size={13} className="text-[var(--primary)]" aria-hidden />
               {cls.schedule}
             </span>
-            <span className="inline-flex items-center gap-1.5 tabular-nums">
-              <ClockIcon size={13} aria-hidden />
+            <span className="inline-flex items-center gap-1.5 tabular-nums text-[var(--ink-2)]">
+              <ClockIcon size={13} className="text-[var(--fgColor-muted)]" aria-hidden />
               {cls.nextSessionAt ? `Buổi tiếp theo: ${vnDateTimeLabel(new Date(cls.nextSessionAt))}` : 'Không còn buổi chưa học'}
             </span>
           </div>
@@ -142,7 +142,7 @@ async function ClassData({ params }: { params: Promise<{ id: string }> }) {
           <Link
             href={`/diem-danh?cls=${cls.id}`}
             data-link="true"
-            className="inline-flex items-center gap-1 font-medium text-[var(--fgColor-link)] hover:underline"
+            className="inline-flex items-center gap-1 font-semibold text-[var(--fgColor-link)] hover:underline"
           >
             <CheckCircleIcon size={13} aria-hidden />
             Điểm danh lớp
@@ -151,7 +151,7 @@ async function ClassData({ params }: { params: Promise<{ id: string }> }) {
           <Link
             href={`/lich-hoc?cls=${cls.id}`}
             data-link="true"
-            className="inline-flex items-center gap-1 font-medium text-[var(--fgColor-link)] hover:underline"
+            className="inline-flex items-center gap-1 font-semibold text-[var(--fgColor-link)] hover:underline"
           >
             <CalendarIcon size={13} aria-hidden />
             Lịch học lớp
@@ -161,10 +161,10 @@ async function ClassData({ params }: { params: Promise<{ id: string }> }) {
 
       {/* KPI Stat Strip */}
       <div className="mb-4 grid grid-cols-2 gap-2.5 min-[900px]:grid-cols-4">
-        <div className="flex flex-col justify-between rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-4 py-3">
+        <div className="flex flex-col justify-between rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] border-l-[3px] border-l-[var(--primary)] bg-[var(--bgColor-default)] px-4 py-3 shadow-[var(--shadow)]">
           <div>
             <div className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--fgColor-muted)]">
-              <PeopleIcon size={13} aria-hidden />
+              <PeopleIcon size={13} className="text-[var(--primary)]" aria-hidden />
               Sĩ số hiện tại
             </div>
             <div className="mt-0.5 text-xl font-semibold leading-tight tabular-nums text-[var(--fgColor-default)]">
@@ -179,10 +179,10 @@ async function ClassData({ params }: { params: Promise<{ id: string }> }) {
           </div>
         </div>
 
-        <div className="flex flex-col justify-between rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-4 py-3">
+        <div className="flex flex-col justify-between rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] border-l-[3px] border-l-[#1baf7a] bg-[var(--bgColor-default)] px-4 py-3 shadow-[var(--shadow)]">
           <div>
             <div className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--fgColor-muted)]">
-              <CalendarIcon size={13} aria-hidden />
+              <CalendarIcon size={13} className="text-[#1baf7a]" aria-hidden />
               Tiến độ buổi học
             </div>
             <div className="mt-0.5 text-xl font-semibold leading-tight tabular-nums text-[var(--fgColor-default)]">
@@ -197,9 +197,9 @@ async function ClassData({ params }: { params: Promise<{ id: string }> }) {
           </div>
         </div>
 
-        <div className="flex flex-col justify-between rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-4 py-3">
+        <div className="flex flex-col justify-between rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] border-l-[3px] border-l-[#2a78d6] bg-[var(--bgColor-default)] px-4 py-3 shadow-[var(--shadow)]">
           <div className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--fgColor-muted)]">
-            <CreditCardIcon size={13} aria-hidden />
+            <CreditCardIcon size={13} className="text-[#2a78d6]" aria-hidden />
             Đơn giá học phí
           </div>
           <div className="mt-0.5 text-xl font-semibold leading-tight tabular-nums text-[var(--fgColor-default)]">
@@ -208,9 +208,9 @@ async function ClassData({ params }: { params: Promise<{ id: string }> }) {
           <div className="mt-2 text-xs text-[var(--fgColor-muted)]">Thu theo từng buổi thực học</div>
         </div>
 
-        <div className="flex flex-col justify-between rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-4 py-3">
+        <div className="flex flex-col justify-between rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] border-l-[3px] border-l-[#8250df] bg-[var(--bgColor-default)] px-4 py-3 shadow-[var(--shadow)]">
           <div className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--fgColor-muted)]">
-            <MortarBoardIcon size={13} aria-hidden />
+            <MortarBoardIcon size={13} className="text-[#8250df]" aria-hidden />
             Giáo viên phụ trách
           </div>
           <div className="mt-0.5 truncate text-base font-semibold leading-snug text-[var(--fgColor-default)]">
@@ -243,7 +243,7 @@ async function ClassData({ params }: { params: Promise<{ id: string }> }) {
               <dd className="m-0 text-[var(--fgColor-default)]">
                 {cls.levelCode ? (
                   <span className="inline-flex items-center gap-1.5">
-                    <span className="rounded-[var(--borderRadius-small)] bg-[var(--bgColor-neutral-muted)] px-1.5 py-0.5 font-mono text-xs">
+                    <span className="rounded-[5px] border border-[var(--borderColor-accent-muted)] bg-[var(--primary-soft)] px-1.5 py-0.5 font-mono text-xs font-semibold text-[var(--primary-deep)]">
                       {cls.levelCode}
                     </span>
                     <span>· {cls.levelName}</span>
@@ -285,7 +285,7 @@ async function ClassData({ params }: { params: Promise<{ id: string }> }) {
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse text-sm">
-                  <thead className="border-b border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)]/55 text-xs text-[var(--fgColor-muted)]">
+                  <thead className="border-b border-[var(--borderColor-muted)] bg-[#f8fafc] text-xs text-[var(--fgColor-muted)] dark:bg-[var(--bgColor-muted)]/55">
                     <tr>
                       <th scope="col" className="px-4 py-2 text-left font-normal">Học sinh</th>
                       <th scope="col" className="px-3 py-2 text-right font-normal">Đã học</th>
@@ -294,20 +294,20 @@ async function ClassData({ params }: { params: Promise<{ id: string }> }) {
                   </thead>
                   <tbody className="divide-y divide-[var(--borderColor-muted)]">
                     {cls.students.map((s) => (
-                      <tr key={s.id} className="transition-colors hover:bg-[var(--bgColor-accent-muted)]">
+                      <tr key={s.id} className="transition-colors hover:bg-[#f8fafc] dark:hover:bg-[var(--bgColor-muted)]/40">
                         <td className="px-4 py-2.5">
                           <div className="flex items-center gap-2.5">
                             <Avatar name={s.fullName} seed={s.id} size="sm" quiet />
                             <Link
                               href={`/hoc-sinh/${s.id}`}
                               data-link="true"
-                              className="font-semibold text-[var(--fgColor-link)] hover:underline"
+                              className="font-medium text-[var(--fgColor-default)] transition-colors hover:text-[var(--primary)] hover:underline"
                             >
                               {s.fullName}
                             </Link>
                           </div>
                         </td>
-                        <td className="whitespace-nowrap px-3 py-2.5 text-right font-mono text-xs tabular-nums text-[var(--fgColor-muted)]">
+                        <td className="whitespace-nowrap px-3 py-2.5 text-right font-mono text-xs tabular-nums text-[var(--ink-2)]">
                           {s.sessionsDone} buổi
                         </td>
                         <td className="whitespace-nowrap px-4 py-2.5 text-right">
@@ -348,10 +348,10 @@ async function ClassData({ params }: { params: Promise<{ id: string }> }) {
                   return (
                     <li
                       key={s.id}
-                      className="flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-[var(--bgColor-accent-muted)] max-[767px]:px-3.5"
+                      className="flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-[#f8fafc] dark:hover:bg-[var(--bgColor-muted)]/40 max-[767px]:px-3.5"
                     >
-                      <div className="flex w-12 shrink-0 flex-col items-center justify-center rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] py-1 text-center">
-                        <span className="text-[10px] font-medium uppercase leading-none text-[var(--fgColor-muted)]">
+                      <div className="flex w-12 shrink-0 flex-col items-center justify-center rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-accent-muted)] bg-[var(--primary-soft)]/60 py-1 text-center shadow-2xs">
+                        <span className="text-[10px] font-medium uppercase leading-none text-[var(--primary-deep)]">
                           B.{s.sessionNo}
                         </span>
                         <span className="mt-0.5 font-mono text-xs font-semibold tabular-nums text-[var(--fgColor-default)]">
@@ -383,7 +383,7 @@ async function ClassData({ params }: { params: Promise<{ id: string }> }) {
                 {assignments.map((a) => (
                   <li
                     key={a.id}
-                    className="flex items-center justify-between gap-3 px-4 py-2.5 transition-colors hover:bg-[var(--bgColor-accent-muted)] max-[767px]:px-3.5"
+                    className="flex items-center justify-between gap-3 px-4 py-2.5 transition-colors hover:bg-[#f8fafc] dark:hover:bg-[var(--bgColor-muted)]/40 max-[767px]:px-3.5"
                   >
                     <Link href={`/bai-tap/${a.id}`} data-link="true" className="min-w-0 hover:underline">
                       <b className="block truncate text-sm font-semibold text-[var(--fgColor-link)]">{a.title}</b>

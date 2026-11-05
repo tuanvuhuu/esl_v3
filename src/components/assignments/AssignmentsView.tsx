@@ -149,7 +149,7 @@ export function AssignmentsView({
                 return (
                   <Card
                     key={row.id}
-                    className={`tsukuba-rise justify-between hover:border-[var(--borderColor-accent-emphasis)] ${accentCls}`}
+                    className={`tsukuba-rise justify-between hover:-translate-y-0.5 hover:border-[var(--borderColor-accent-emphasis)] ${accentCls}`}
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0 flex-1">
@@ -161,13 +161,16 @@ export function AssignmentsView({
                         >
                           {row.title}
                         </Link>
-                        <small className="mt-0.5 block text-xs tabular-nums text-[var(--fgColor-muted)]">
-                          Hạn {vnDateTimeLabel(new Date(row.dueAt))} · tối đa {row.maxScore} điểm
-                        </small>
+                        <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs tabular-nums text-[var(--fgColor-muted)]">
+                          <span>Hạn {vnDateTimeLabel(new Date(row.dueAt))}</span>
+                          <span className="inline-flex items-center rounded-[5px] border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] px-1.5 py-0.5 font-mono text-[11px] font-medium text-[var(--ink-2)]">
+                            tối đa {row.maxScore} điểm
+                          </span>
+                        </div>
                         {row.lessonTitle && (
-                          <small className="mt-1 inline-block max-w-full truncate rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)] px-2 py-0.5 text-xs text-[var(--fgColor-muted)]">
+                          <span className="mt-1.5 inline-flex max-w-full items-center truncate rounded-[5px] border border-[color-mix(in_srgb,var(--lav-ink)_24%,var(--surface))] bg-[var(--lav)] px-2 py-0.5 text-[11.5px] font-medium text-[var(--lav-ink)]">
                             Bài giảng: {row.lessonTitle}
-                          </small>
+                          </span>
                         )}
                       </div>
                       <div className="hidden shrink-0 min-[768px]:block">
@@ -175,7 +178,7 @@ export function AssignmentsView({
                       </div>
                     </div>
 
-                    <div className="flex flex-col gap-2 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)] px-3 py-2">
+                    <div className="flex flex-col gap-2 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[#f8fafc] px-3 py-2.5 dark:bg-[var(--bgColor-muted)]">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         {row.overdue ? (
                           <Pill tone="blush">Quá hạn</Pill>
@@ -183,8 +186,8 @@ export function AssignmentsView({
                           <Pill tone={isOpen ? 'mint' : 'stone'}>{isOpen ? 'Đang nhận bài' : 'Đã đóng'}</Pill>
                         )}
                         <span className="text-xs tabular-nums text-[var(--fgColor-muted)]">
-                          Đã nộp <b className="font-medium text-[var(--fgColor-default)]">{row.done}/{row.enrolled}</b> · Đã chấm{' '}
-                          <b className="font-medium text-[var(--fgColor-default)]">{row.graded}</b>
+                          Đã nộp <b className="font-semibold text-[var(--fgColor-default)]">{row.done}/{row.enrolled}</b> · Đã chấm{' '}
+                          <b className="font-semibold text-[var(--fgColor-default)]">{row.graded}</b>
                         </span>
                       </div>
                       <ProgressBar value={row.done} max={row.enrolled} />

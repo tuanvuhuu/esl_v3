@@ -4,7 +4,8 @@
 import { XIcon } from '@primer/octicons-react';
 import { ActionList, CounterLabel, Dialog, IconButton } from '@primer/react';
 import Link from 'next/link';
-import type { NavGroup } from '@/lib/nav';
+import { usePathname } from 'next/navigation';
+import { isActivePath, type NavGroup } from '@/lib/nav';
 import { NAV_ICONS } from './nav-icons';
 
 export function FeatureSheet({
@@ -18,6 +19,7 @@ export function FeatureSheet({
   badges: Record<string, number>;
   onClose: () => void;
 }) {
+  const pathname = usePathname();
   if (!open) return null;
 
   return (
@@ -58,10 +60,18 @@ export function FeatureSheet({
             {group.items.map((item) => {
               const Icon = NAV_ICONS[item.icon];
               const count = badges[item.href] ?? 0;
+              const active = isActivePath(pathname, item.href);
               return (
-                <ActionList.LinkItem key={item.href} as={Link} href={item.href} onClick={onClose}>
+                <ActionList.LinkItem
+                  key={item.href}
+                  as={Link}
+                  href={item.href}
+                  active={active}
+                  aria-current={active ? 'page' : undefined}
+                  onClick={onClose}
+                >
                   <ActionList.LeadingVisual>
-                    <Icon size={16} />
+                    <Icon size={16} className="text-[var(--primary)]" />
                   </ActionList.LeadingVisual>
                   {item.label}
                   {count > 0 && (

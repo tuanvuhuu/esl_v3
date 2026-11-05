@@ -83,7 +83,7 @@ export function ClassList({
               <article
                 key={row.id}
                 style={{ animationDelay: `${Math.min(idx, 8) * 28}ms` }}
-                className="tsukuba-rise group flex flex-col overflow-hidden rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] transition-all duration-150 hover:-translate-y-0.5 hover:border-[var(--borderColor-accent-emphasis)] hover:shadow-sm"
+                className="tsukuba-rise group flex flex-col overflow-hidden rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] shadow-[var(--shadow)] transition-all duration-150 hover:-translate-y-0.5 hover:border-[var(--borderColor-accent-emphasis)] hover:shadow-[var(--lift)]"
               >
                 <div aria-hidden className={clsx('h-[3px] w-full shrink-0', tone.ink)} />
 
@@ -95,17 +95,17 @@ export function ClassList({
                           href={`/lop-hoc/${row.id}`}
                           scroll={false}
                           data-card="true"
-                          className="truncate text-[15px] font-semibold text-[var(--fgColor-link)] hover:underline"
+                          className="truncate text-[15px] font-semibold text-[var(--fgColor-default)] transition-colors group-hover:text-[var(--primary)] hover:underline"
                         >
                           {row.name}
                         </Link>
                         {row.levelCode && (
-                          <span className="shrink-0 rounded-[var(--borderRadius-small)] bg-[var(--bgColor-neutral-muted)] px-1.5 py-0.5 font-mono text-[11px] font-normal text-[var(--fgColor-default)]">
+                          <span className="shrink-0 rounded-[5px] border border-[var(--borderColor-accent-muted)] bg-[var(--primary-soft)] px-1.5 py-0.5 font-mono text-[11px] font-semibold text-[var(--primary-deep)]">
                             Trình độ {row.levelCode}
                           </span>
                         )}
                         {showCampus && (
-                          <span className="inline-flex shrink-0 items-center gap-1 rounded-[var(--borderRadius-small)] bg-[var(--bgColor-neutral-muted)] px-1.5 py-0.5 font-mono text-[11px] font-normal text-[var(--fgColor-muted)]">
+                          <span className="inline-flex shrink-0 items-center gap-1 rounded-[5px] border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] px-1.5 py-0.5 font-mono text-[11px] font-medium text-[var(--ink-2)]">
                             <LocationIcon size={11} aria-hidden />
                             {row.campusName}
                           </span>
@@ -118,29 +118,36 @@ export function ClassList({
                     </div>
                   </div>
 
-                  <div className="flex flex-col gap-1.5 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)]/75 px-3 py-2.5 text-[13px]">
-                    <div className="flex items-center gap-1.5 font-semibold tabular-nums text-[var(--fgColor-default)]">
-                      <CalendarIcon size={13} className="shrink-0 text-[var(--fgColor-muted)]" aria-hidden />
-                      <span className="truncate">{row.schedule}</span>
+                  <div className="flex flex-col gap-2 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-muted)] bg-[#f8fafc] px-3 py-2.5 text-[13px] dark:bg-[var(--bgColor-muted)]/60">
+                    <div className="flex items-center justify-between gap-2 font-semibold tabular-nums text-[var(--fgColor-default)]">
+                      <span className="inline-flex min-w-0 items-center gap-1.5">
+                        <CalendarIcon size={13} className="shrink-0 text-[var(--primary)]" aria-hidden />
+                        <span className="truncate">{row.schedule}</span>
+                      </span>
+                      {row.room && (
+                        <span className="inline-flex shrink-0 items-center gap-1 rounded-[5px] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-1.5 py-0.5 font-mono text-[11px] font-medium text-[var(--ink-2)]">
+                          <LocationIcon size={10} className="text-[var(--fgColor-muted)]" aria-hidden />
+                          {row.room}
+                        </span>
+                      )}
                     </div>
-                    <div className="grid grid-cols-[6rem_minmax(0,1fr)] gap-x-2 gap-y-0.5 text-xs">
+                    <div className="grid grid-cols-[6rem_minmax(0,1fr)] gap-x-2 gap-y-1 border-t border-[var(--borderColor-muted)]/80 pt-2 text-xs">
                       <span className="inline-flex items-center gap-1 text-[var(--fgColor-muted)]">
                         <PersonIcon size={12} aria-hidden />
                         GV chủ nhiệm
                       </span>
-                      <span className="truncate font-medium text-[var(--fgColor-default)]">
+                      <span className="truncate font-semibold text-[var(--fgColor-default)]">
                         {row.teacherName}
-                        {row.room ? ` · ${row.room}` : ''}
                       </span>
 
                       <span className="text-[var(--fgColor-muted)]">Trợ giảng</span>
-                      <span className="truncate text-[var(--fgColor-default)]">
-                        {row.assistantName ?? <span className="text-[var(--fgColor-muted)]">chưa có</span>}
+                      <span className="truncate font-medium text-[var(--ink-2)]">
+                        {row.assistantName ?? <span className="font-normal text-[var(--fgColor-muted)]">chưa có</span>}
                       </span>
 
                       <span className="text-[var(--fgColor-muted)]">GV nước ngoài</span>
-                      <span className="truncate text-[var(--fgColor-default)]">
-                        {row.foreignTeacherName ?? <span className="text-[var(--fgColor-muted)]">chưa có</span>}
+                      <span className="truncate font-medium text-[var(--ink-2)]">
+                        {row.foreignTeacherName ?? <span className="font-normal text-[var(--fgColor-muted)]">chưa có</span>}
                       </span>
                     </div>
                   </div>
@@ -148,10 +155,10 @@ export function ClassList({
                   <div className="grid grid-cols-2 gap-3 pt-0.5">
                     <div>
                       <div className="mb-1.5 flex items-baseline justify-between gap-1 text-xs">
-                        <span className="text-[var(--fgColor-muted)]">
+                        <span className="font-medium text-[var(--ink-2)]">
                           Sĩ số {row.studentCount}/{row.capacity}
                         </span>
-                        <span className="font-mono text-[11px] tabular-nums text-[var(--fgColor-muted)]">
+                        <span className="font-mono text-[11px] font-medium tabular-nums text-[var(--fgColor-muted)]">
                           {row.capacity > 0 ? `${Math.round((row.studentCount / row.capacity) * 100)}%` : '0%'}
                         </span>
                       </div>
@@ -159,10 +166,10 @@ export function ClassList({
                     </div>
                     <div>
                       <div className="mb-1.5 flex items-baseline justify-between gap-1 text-xs">
-                        <span className="text-[var(--fgColor-muted)]">
+                        <span className="font-medium text-[var(--ink-2)]">
                           Đã học {row.sessionsDone}/{row.sessionsTotal} buổi
                         </span>
-                        <span className="font-mono text-[11px] tabular-nums text-[var(--fgColor-muted)]">
+                        <span className="font-mono text-[11px] font-medium tabular-nums text-[var(--fgColor-muted)]">
                           {row.sessionsTotal > 0 ? `${Math.round((row.sessionsDone / row.sessionsTotal) * 100)}%` : '0%'}
                         </span>
                       </div>
@@ -171,8 +178,8 @@ export function ClassList({
                   </div>
 
                   <div className="mt-auto flex items-center gap-1.5 border-t border-[var(--borderColor-muted)] pt-2.5 text-xs text-[var(--fgColor-muted)]">
-                    <ClockIcon size={12} className="shrink-0" aria-hidden />
-                    <span className="truncate tabular-nums">
+                    <ClockIcon size={12} className="shrink-0 text-[var(--fgColor-muted)]" aria-hidden />
+                    <span className={clsx('truncate tabular-nums', row.nextSessionAt && 'font-medium text-[var(--ink-2)]')}>
                       {row.nextSessionAt
                         ? `Buổi tiếp theo: ${vnDateTimeLabel(new Date(row.nextSessionAt))}`
                         : 'Không còn buổi chưa học'}

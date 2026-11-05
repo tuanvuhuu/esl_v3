@@ -67,9 +67,12 @@ a[class*='prc-Button-ButtonBase-'][data-variant='invisible'] {
   font-weight: 400;
 }
 
-span[class*='prc-Label-Label-'],
+span[class*='prc-Label-Label-'] {
+  font-weight: 500;
+}
+
 span[class*='prc-CounterLabel-CounterLabel-'] {
-  font-weight: 400;
+  font-weight: 500;
 }
 
 a[class*='prc-ActionList-ActionListContent-'],
@@ -78,14 +81,30 @@ button[class*='prc-ActionList-ActionListContent-'] {
   font-size: 0.8125rem;
 }
 
-/* Mục đang chọn trên Sidebar (NavList): nền sáng màu chủ đề, chữ & icon đồng bộ giống 01. TSUKUBA */
-a[class*='prc-ActionList-ActionListContent-'][aria-current='page'] {
+/* Mục trên ActionList / Menu: đồng bộ hover & trạng thái đang chọn theo màu chủ đề */
+a[class*='prc-ActionList-ActionListContent-']:hover,
+button[class*='prc-ActionList-ActionListContent-']:hover,
+li[class*='prc-ActionList-ActionListItem-']:hover > div[class*='prc-ActionList-ActionListSubContent-'] {
+  background-color: var(--row-hover) !important;
+  color: var(--primary-deep) !important;
+}
+
+a[class*='prc-ActionList-ActionListContent-']:hover svg,
+button[class*='prc-ActionList-ActionListContent-']:hover svg {
+  color: var(--primary) !important;
+}
+
+a[class*='prc-ActionList-ActionListContent-'][aria-current='page'],
+li[class*='prc-ActionList-ActionListItem-'][aria-checked='true'] > div,
+li[class*='prc-ActionList-ActionListItem-'][aria-selected='true'] > div {
   background-color: var(--primary-soft) !important;
   color: var(--primary-deep) !important;
   font-weight: 500 !important;
 }
 
-a[class*='prc-ActionList-ActionListContent-'][aria-current='page'] svg {
+a[class*='prc-ActionList-ActionListContent-'][aria-current='page'] svg,
+li[class*='prc-ActionList-ActionListItem-'][aria-checked='true'] svg,
+li[class*='prc-ActionList-ActionListItem-'][aria-selected='true'] svg {
   color: var(--primary) !important;
 }
 

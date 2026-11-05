@@ -116,7 +116,7 @@ export function ShellFrame({
       {navOpen && <div className="fixed inset-0 z-[55] bg-scrim min-[1200px]:hidden" onClick={() => setNavOpen(false)} aria-hidden />}
 
       <div className="grid min-h-0 min-[1200px]:grid-cols-[244px_minmax(0,1fr)]">
-        <Sidebar groups={groups} badges={badgeCounts} open={navOpen} onNavigate={() => setNavOpen(false)} />
+        <Sidebar groups={groups} open={navOpen} onNavigate={() => setNavOpen(false)} />
 
         <main
           key={pathname}

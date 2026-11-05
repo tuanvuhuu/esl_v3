@@ -37,7 +37,7 @@ import { DataGrid, type GridColumn } from '@/components/ui/datagrid';
 import { Field, FormFooter, FormSection } from '@/components/ui/Field';
 import { Modal } from '@/components/ui/Modal';
 import { PageCrumbs } from '@/components/shell/PageCrumbs';
-import { Alert, Pill, type Tone } from '@/components/ui/primitives';
+import { Alert, InitialBadge, Pill, type Tone } from '@/components/ui/primitives';
 import { Callout, Card, EmptyPanel } from '@/components/ui/surfaces';
 import { Toast, useToast } from '@/components/ui/Toast';
 import { ZaloLink } from '@/components/ui/ZaloLink';
@@ -58,11 +58,11 @@ const FILTERS: { key: LeaveFilter; label: string }[] = [
 ];
 
 const COLUMNS: GridColumn<LeaveListRow>[] = [
-  { key: 'student', label: 'Học sinh', width: 'minmax(150px,1.4fr)', sortValue: (r) => r.studentName },
-  { key: 'session', label: 'Buổi nghỉ', width: 'minmax(140px,1.1fr)', sortValue: (r) => r.startsAt.getTime() },
-  { key: 'reason', label: 'Lý do', width: 'minmax(140px,1.4fr)' },
-  { key: 'parent', label: 'Người gửi', width: 'minmax(130px,1fr)' },
-  { key: 'status', label: 'Trạng thái', width: 'minmax(130px,1fr)', sortValue: (r) => r.status },
+  { key: 'student', label: 'Học sinh', width: 'minmax(196px,1.55fr)', sortValue: (r) => r.studentName },
+  { key: 'session', label: 'Buổi nghỉ', width: 'minmax(180px,1.35fr)', sortValue: (r) => r.startsAt.getTime() },
+  { key: 'reason', label: 'Lý do', width: 'minmax(148px,1.3fr)' },
+  { key: 'parent', label: 'Người gửi', width: 'minmax(148px,1.15fr)' },
+  { key: 'status', label: 'Trạng thái', width: 'minmax(140px,1.1fr)', sortValue: (r) => r.status },
   { key: 'actions', label: 'Thao tác', width: '196px', align: 'end', srOnly: true },
 ];
 
@@ -212,17 +212,18 @@ export function LeavesView({
     switch (key) {
       case 'student':
         return (
-          <div className="flex min-w-0 items-baseline gap-1.5" title={`${r.studentName} · ${r.className}`}>
+          <div className="flex min-w-0 items-center gap-2" title={`${r.studentName} · ${r.className}`}>
+            <InitialBadge name={r.studentName} seed={r.studentId} />
             <Link
               href={`/hoc-sinh/${r.studentId}`}
               data-link="true"
-              className="truncate text-sm font-medium text-[var(--fgColor-accent)] hover:underline"
+              className="min-w-0 truncate text-[13.5px] font-medium text-[var(--fgColor-default)] transition-colors hover:text-[var(--primary)] hover:underline"
             >
               {r.studentName}
             </Link>
-            <small className="shrink-0 rounded-[var(--borderRadius-small)] bg-[var(--bgColor-neutral-muted)] px-1.5 py-0.5 font-mono text-[11px] text-[var(--fgColor-muted)]">
+            <span className="inline-flex shrink-0 items-center rounded-[5px] border border-[var(--borderColor-accent-muted)] bg-[var(--primary-soft)] px-1.5 py-0.5 text-[11px] font-semibold text-[var(--primary-deep)]">
               {r.className}
-            </small>
+            </span>
           </div>
         );
       case 'session':
@@ -231,21 +232,22 @@ export function LeavesView({
             type="button"
             data-link="true"
             onClick={() => setDetailFor(r)}
-            className="text-left font-mono text-xs tabular-nums text-[var(--fgColor-default)] hover:text-[var(--fgColor-link)] hover:underline"
+            className="inline-flex items-center gap-1.5 rounded-[6px] border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]/70 px-2 py-1 font-mono text-xs font-medium tabular-nums text-[var(--fgColor-default)] transition-colors hover:border-[var(--primary)] hover:bg-[var(--primary-soft)]/50 hover:text-[var(--primary-deep)]"
           >
-            {sessionLabel(r.startsAt, r.endsAt)}
+            <CalendarIcon size={12} className="shrink-0 text-[var(--fgColor-muted)]" aria-hidden />
+            <span>{sessionLabel(r.startsAt, r.endsAt)}</span>
           </button>
         );
       case 'reason':
         return (
-          <span className="block truncate text-sm text-[var(--fgColor-muted)]" title={r.reason ?? ''}>
-            {r.reason || <span className="opacity-60">—</span>}
+          <span className="block truncate text-[13px] text-[var(--ink-2)]" title={r.reason ?? ''}>
+            {r.reason || <span className="text-[var(--fgColor-muted)] opacity-60">—</span>}
           </span>
         );
       case 'parent':
         return r.parentName ? (
           <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
-            <span className="truncate text-sm text-[var(--fgColor-default)]">{r.parentName}</span>
+            <span className="truncate text-[13px] font-medium text-[var(--fgColor-default)]">{r.parentName}</span>
             {r.parentPhone && (
               <span className="inline-flex items-center gap-1.5">
                 <a
@@ -260,7 +262,9 @@ export function LeavesView({
             )}
           </div>
         ) : (
-          <span className="text-xs text-[var(--fgColor-muted)]">Giáo vụ ghi</span>
+          <span className="inline-flex items-center rounded-[5px] border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] px-1.5 py-0.5 text-[11px] font-medium text-[var(--ink-2)]">
+            Giáo vụ ghi
+          </span>
         );
       case 'status':
         return statusCell(r);
@@ -284,29 +288,37 @@ export function LeavesView({
   const card = (r: LeaveListRow) => (
     <Card>
       <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <Link
-            href={`/hoc-sinh/${r.studentId}`}
-            data-link="true"
-            className="text-base font-medium text-[var(--fgColor-accent)] underline underline-offset-2"
-          >
-            {r.studentName}
-          </Link>
-          <small className="mt-0.5 block font-mono text-xs tabular-nums text-[var(--fgColor-muted)]">
-            {r.className} · {sessionLabel(r.startsAt, r.endsAt)}
-          </small>
+        <div className="flex min-w-0 items-start gap-2.5">
+          <InitialBadge name={r.studentName} seed={r.studentId} size="md" />
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <Link
+                href={`/hoc-sinh/${r.studentId}`}
+                data-link="true"
+                className="text-[15px] font-semibold text-[var(--fgColor-default)] hover:text-[var(--primary)] hover:underline"
+              >
+                {r.studentName}
+              </Link>
+              <span className="inline-flex items-center rounded-[5px] border border-[var(--borderColor-accent-muted)] bg-[var(--primary-soft)] px-1.5 py-0.5 text-[11px] font-semibold text-[var(--primary-deep)]">
+                {r.className}
+              </span>
+            </div>
+            <small className="mt-1 block font-mono text-xs tabular-nums text-[var(--fgColor-muted)]">
+              {sessionLabel(r.startsAt, r.endsAt)}
+            </small>
+          </div>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex shrink-0 items-center gap-1">
           {statusCell(r, false)}
           <ActIcon quiet label={`Xem chi tiết đơn của ${r.studentName}`} icon={EyeIcon} onClick={() => setDetailFor(r)} />
         </div>
       </div>
-      {r.reason && <p className="m-0 text-sm text-[var(--fgColor-muted)]">Lý do: {r.reason}</p>}
+      {r.reason && <p className="m-0 text-sm text-[var(--ink-2)]">Lý do: {r.reason}</p>}
       {makeupLine(r)}
       <small className="text-xs text-[var(--fgColor-muted)]">
         {r.parentName ? (
           <>
-            Gửi bởi {r.parentName}
+            Gửi bởi <b className="font-medium text-[var(--fgColor-default)]">{r.parentName}</b>
             {r.parentPhone && (
               <>
                 {' · '}
@@ -342,6 +354,7 @@ export function LeavesView({
         cell={cell}
         card={card}
         from="md"
+        fill
         title={
           <ChipGroup label="Lọc đơn nghỉ">
             {FILTERS.map((f) => (

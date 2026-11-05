@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { SKILL_LABELS, SKILLS, type Skill } from '@/lib/assignment-scoring';
 import { BAND_LABEL, bandOf, totalPercent, type Band, type SkillTotals } from '@/lib/skill-stats';
@@ -7,6 +8,7 @@ import { skillCellClass } from './SkillScore';
 import { ComboBox } from '@/components-ui';
 import { DataGrid, type GridColumn } from '@/components/ui/datagrid';
 import { PageCrumbs } from '@/components/shell/PageCrumbs';
+import { InitialBadge } from '@/components/ui/primitives';
 import { Card, EmptyPanel } from '@/components/ui/surfaces';
 
 export type SkillReportRow = { studentId: number; fullName: string; totals: SkillTotals; gradedCount: number };
@@ -66,8 +68,27 @@ export function SkillReportView({
   const activeRows = assignmentCount === 0 ? [] : rows;
 
   const cell = (r: SkillReportRow, key: string) => {
-    if (key === 'student') return <span className="min-w-0 truncate text-sm font-medium text-[var(--fgColor-default)]">{r.fullName}</span>;
-    if (key === 'graded') return <span className="text-sm tabular-nums text-[var(--fgColor-muted)]">{r.gradedCount} bài</span>;
+    if (key === 'student') {
+      return (
+        <div className="flex min-w-0 items-center gap-2.5">
+          <InitialBadge name={r.fullName} seed={r.studentId} />
+          <Link
+            href={`/hoc-sinh/${r.studentId}`}
+            data-link="true"
+            className="min-w-0 truncate text-[13.5px] font-medium text-[var(--fgColor-default)] transition-colors hover:text-[var(--primary)] hover:underline"
+          >
+            {r.fullName}
+          </Link>
+        </div>
+      );
+    }
+    if (key === 'graded') {
+      return (
+        <span className="inline-flex items-center rounded-[5px] border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] px-2 py-0.5 font-mono text-xs font-medium tabular-nums text-[var(--ink-2)]">
+          {r.gradedCount} bài
+        </span>
+      );
+    }
     const percent = totalPercent(r.totals[key as Skill]);
     return (
       <div className="flex items-center gap-2">
@@ -102,7 +123,7 @@ export function SkillReportView({
           return (
             <div
               key={s}
-              className={`rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] border-l-[3px] ${accent.border} bg-[var(--bgColor-default)] px-3.5 py-2.5`}
+              className={`rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] border-l-[3px] ${accent.border} bg-[var(--bgColor-default)] px-3.5 py-2.5 shadow-[var(--shadow)]`}
             >
               <div className="flex items-baseline justify-between gap-2">
                 <dt className="text-xs font-medium text-[var(--fgColor-muted)]">{SKILL_LABELS[s]}</dt>
@@ -130,10 +151,15 @@ export function SkillReportView({
         from="md"
         fill={false}
         title={
-          <div className="flex flex-wrap items-baseline gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <h1 className="m-0 text-base font-semibold text-[var(--fgColor-default)]">Báo cáo kỹ năng</h1>
-            <span className="text-xs tabular-nums text-[var(--fgColor-muted)]">
-              ({cls?.name ?? 'Lớp'} · {assignmentCount} bài có câu hỏi)
+            {cls?.name && (
+              <span className="inline-flex items-center rounded-[5px] border border-[var(--borderColor-accent-muted)] bg-[var(--primary-soft)] px-2 py-0.5 text-[11.5px] font-semibold text-[var(--primary-deep)]">
+                {cls.name}
+              </span>
+            )}
+            <span className="inline-flex items-center rounded-[5px] border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] px-2 py-0.5 font-mono text-xs tabular-nums text-[var(--fgColor-muted)]">
+              {assignmentCount} bài có câu hỏi
             </span>
           </div>
         }

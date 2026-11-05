@@ -17,9 +17,8 @@ import { Suspense } from 'react';
 import { BTN_BASE, BTN_GHOST, BTN_PRIMARY } from '@/components/ui/btn-classes';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { EmptyState, Pill, ProgressBar, type Tone } from '@/components/ui/primitives';
-import { Callout, Panel } from '@/components/ui/surfaces';
+import { Panel } from '@/components/ui/surfaces';
 import { getCampusContext } from '@/lib/campus-context';
-import { classTone } from '@/lib/class-tone';
 import { addDaysKey, dateKeyLabel, todayKeyVN, vnDateTimeLabel, vnDayBounds, weekdayLabel, weekdayOfKey } from '@/lib/datetime';
 import { formatVND } from '@/lib/money';
 import { hasPermission } from '@/lib/permissions';
@@ -41,12 +40,12 @@ export default function DashboardPage() {
 function DashboardSkeleton() {
   return (
     <section aria-busy="true" aria-label="Đang tải tổng quan" className="flex flex-col gap-3">
-      <SkeletonBox height={44} width={280} />
-      <div className="grid grid-cols-2 gap-2.5 min-[768px]:grid-cols-4">
-        <SkeletonBox height={92} />
-        <SkeletonBox height={92} />
-        <SkeletonBox height={92} />
-        <SkeletonBox height={92} />
+      <SkeletonBox height={56} />
+      <div className="grid grid-cols-2 gap-3 min-[768px]:grid-cols-4">
+        <SkeletonBox height={96} />
+        <SkeletonBox height={96} />
+        <SkeletonBox height={96} />
+        <SkeletonBox height={96} />
       </div>
       <SkeletonBox height={220} />
     </section>
@@ -87,11 +86,10 @@ async function DashboardData() {
   const weekday = weekdayLabel(weekdayOfKey(today));
 
   return (
-    <section className="flex flex-col gap-3.5">
+    <section className="flex flex-col gap-3">
       <PageHeader
         crumbs={['Trung tâm', 'Tổng quan']}
         title="Bảng điều khiển"
-        code="1.1"
         subtitle={`${account ? `Xin chào ${account.fullName} · ${account.roleLabel} — ` : ''}${weekday}, ${dateKeyLabel(today)}`}
         actions={
           canStudents ? (
@@ -111,14 +109,13 @@ async function DashboardData() {
         }
       />
 
-      {/* Hàng thẻ KPI chuẩn .stats / .stat của 01. TSUKUBA */}
-      <div className="grid grid-cols-2 gap-2.5 min-[768px]:grid-cols-4">
+      {/* Hàng 4 thẻ KPI đồng nhất 1 tông màu chủ đề, sạch sẽ & dễ nhìn */}
+      <div className="grid grid-cols-2 gap-3 min-[768px]:grid-cols-4">
         <Kpi
           index={0}
           href={canStudents ? '/hoc-sinh' : undefined}
           icon={PeopleIcon}
           label="Học sinh đang học"
-          tone="mint"
           value={String(stats.active)}
           sub={`${stats.trial} học thử đang theo dõi`}
         />
@@ -127,7 +124,6 @@ async function DashboardData() {
           href={canAttendance ? '/diem-danh' : undefined}
           icon={CheckCircleIcon}
           label="Chuyên cần 30 ngày"
-          tone="lav"
           value={`${stats.attendanceRate}%`}
           bar={stats.attendanceRate}
         />
@@ -137,7 +133,7 @@ async function DashboardData() {
             href="/hoc-phi?f=overdue"
             icon={CreditCardIcon}
             label="Công nợ quá hạn"
-            tone={debtTotal > 0 ? 'blush' : 'mint'}
+            alert={debtTotal > 0}
             value={formatVND(debtTotal)}
             sub={`${debtCount} học sinh chưa tất toán`}
           />
@@ -147,7 +143,7 @@ async function DashboardData() {
             href={canStudents ? '/hoc-sinh' : undefined}
             icon={HourglassIcon}
             label="Sắp hết buổi"
-            tone="blush"
+            alert={stats.nearlyDone > 0}
             value={String(stats.nearlyDone)}
             sub="còn từ 3 buổi trở xuống"
           />
@@ -158,7 +154,6 @@ async function DashboardData() {
             href="/lich-hoc"
             icon={CalendarIcon}
             label="Buổi học hôm nay"
-            tone="butter"
             value={String(sessionsToday.length)}
             sub={
               nextSession
@@ -172,108 +167,170 @@ async function DashboardData() {
       </div>
 
       {canStudents && (
-        <div className="grid grid-cols-1 gap-3.5 min-[1100px]:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
-          {/* Cột trái: Việc cần xử lý chuẩn FlowPage.module.css (.task / .taskCount) của 01. TSUKUBA */}
-          <Panel
-            title={`Việc cần xử lý${account ? ` · ${account.roleLabel}` : ''}`}
-            action={
-              <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--bgColor-neutral-muted)] px-1.5 text-[11px] font-semibold tabular-nums text-[var(--fgColor-default)]">
+        <div className="grid grid-cols-1 gap-3 min-[1100px]:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
+          {/* Cột trái: Cần chú ý / Việc cần xử lý */}
+          <section
+            aria-label="Cần chú ý"
+            className="overflow-hidden rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] shadow-[var(--shadow)]"
+          >
+            <header className="flex items-center justify-between gap-3 border-b border-[var(--borderColor-muted)] px-4 py-3 max-[767px]:px-3.5">
+              <h2 className="m-0 truncate text-sm font-semibold text-[var(--fgColor-default)]">
+                Việc cần xử lý{account ? ` · ${account.roleLabel}` : ''}
+              </h2>
+              <span
+                aria-label={`${attentionCount} việc`}
+                className={`inline-flex h-5 min-w-5 items-center justify-center rounded-full px-2 text-xs font-semibold tabular-nums ${
+                  attentionCount > 0
+                    ? 'bg-[var(--blush)] text-[var(--blush-ink)]'
+                    : 'bg-[var(--stone)] text-[var(--fgColor-muted)]'
+                }`}
+              >
                 {attentionCount}
               </span>
-            }
-          >
-            {attentionCount === 0 ? (
-              <Callout tone="success">
-                Không có việc gấp đang chờ xử lý hôm nay. Công nợ, chuyên cần và bài tập đều trong hạn.
-              </Callout>
-            ) : (
-              <div className="flex flex-col gap-3">
-                <div className="grid grid-cols-1 gap-2">
-                  {canTuition && debtCount > 0 && (
-                    <Lane
-                      href="/hoc-phi?f=overdue"
-                      icon={CreditCardIcon}
-                      tone="blush"
-                      urgent
-                      title="Công nợ quá hạn cần nhắc thu"
-                      hint={`${topDebts.slice(0, 2).map((r) => r.fullName).join(', ')}${debtCount > 2 ? ` và ${debtCount - 2} em khác` : ''}`}
-                      count={debtCount}
-                    />
-                  )}
-                  {absentees.length > 0 && (
-                    <Lane
+            </header>
+
+            <div className="p-4 max-[767px]:p-3.5">
+              {attentionCount === 0 ? (
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center gap-3 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--stone)]/60 px-3.5 py-2.5">
+                    <CheckCircleIcon size={18} className="shrink-0 text-[var(--primary)]" aria-hidden />
+                    <div className="min-w-0 flex-1">
+                      <b className="block text-sm font-semibold text-[var(--fgColor-default)]">
+                        Không có việc gấp đang chờ xử lý hôm nay
+                      </b>
+                      <small className="block text-xs text-[var(--fgColor-muted)]">
+                        Công nợ, chuyên cần và bài tập của cơ sở đều đang trong hạn.
+                      </small>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-2.5 min-[640px]:grid-cols-3">
+                    <Link
+                      href="/hoc-phi"
+                      data-card="true"
+                      className="rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-3 py-2.5 transition-colors hover:border-[var(--borderColor-accent-emphasis)] hover:bg-[var(--row-hover)]"
+                    >
+                      <small className="block truncate text-xs text-[var(--fgColor-muted)]">Quá hạn học phí</small>
+                      <b className="mt-0.5 block text-sm font-semibold tabular-nums text-[var(--fgColor-default)]">0 phiếu</b>
+                    </Link>
+
+                    <Link
                       href="/diem-danh"
-                      icon={ClockIcon}
-                      tone="butter"
-                      title="Vắng từ 2 buổi trở lên"
-                      hint="Trong 7 ngày gần đây — cần liên hệ phụ huynh"
-                      count={absentees.length}
-                    />
-                  )}
-                  {canAssignments && overdueAssignments.length > 0 && (
-                    <Lane
+                      data-card="true"
+                      className="rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-3 py-2.5 transition-colors hover:border-[var(--borderColor-accent-emphasis)] hover:bg-[var(--row-hover)]"
+                    >
+                      <small className="block truncate text-xs text-[var(--fgColor-muted)]">Vắng liên tiếp</small>
+                      <b className="mt-0.5 block text-sm font-semibold tabular-nums text-[var(--fgColor-default)]">0 học sinh</b>
+                    </Link>
+
+                    <Link
                       href="/bai-tap"
-                      icon={FileIcon}
-                      tone="lav"
-                      title="Bài tập quá hạn chưa nộp đủ"
-                      hint={overdueAssignments.slice(0, 2).map((a) => a.title).join(', ')}
-                      count={overdueAssignments.length}
-                    />
+                      data-card="true"
+                      className="rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-3 py-2.5 transition-colors hover:border-[var(--borderColor-accent-emphasis)] hover:bg-[var(--row-hover)]"
+                    >
+                      <small className="block truncate text-xs text-[var(--fgColor-muted)]">Bài tập trễ hạn</small>
+                      <b className="mt-0.5 block text-sm font-semibold tabular-nums text-[var(--fgColor-default)]">0 bài</b>
+                    </Link>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2.5">
+                  <div className="grid grid-cols-1 gap-1.5">
+                    {canTuition && debtCount > 0 && (
+                      <Lane
+                        href="/hoc-phi?f=overdue"
+                        icon={CreditCardIcon}
+                        urgent
+                        title="Công nợ quá hạn cần nhắc thu"
+                        hint={`${topDebts.slice(0, 2).map((r) => r.fullName).join(', ')}${debtCount > 2 ? ` và ${debtCount - 2} em khác` : ''}`}
+                        count={debtCount}
+                      />
+                    )}
+                    {absentees.length > 0 && (
+                      <Lane
+                        href="/diem-danh"
+                        icon={ClockIcon}
+                        title="Vắng từ 2 buổi trở lên"
+                        hint="Trong 7 ngày gần đây — cần liên hệ phụ huynh"
+                        count={absentees.length}
+                      />
+                    )}
+                    {canAssignments && overdueAssignments.length > 0 && (
+                      <Lane
+                        href="/bai-tap"
+                        icon={FileIcon}
+                        title="Bài tập quá hạn chưa nộp đủ"
+                        hint={overdueAssignments.slice(0, 2).map((a) => a.title).join(', ')}
+                        count={overdueAssignments.length}
+                      />
+                    )}
+                  </div>
+
+                  {((canTuition && topDebts.length > 0) || (canAssignments && overdueAssignments.length > 0)) && (
+                    <div
+                      className={`grid grid-cols-1 gap-3 border-t border-[var(--borderColor-muted)] pt-2.5 ${
+                        canTuition && topDebts.length > 0 && canAssignments && overdueAssignments.length > 0
+                          ? 'min-[640px]:grid-cols-2'
+                          : ''
+                      }`}
+                    >
+                      {canTuition && topDebts.length > 0 && (
+                        <div className="min-w-0">
+                          <div className="mb-1 text-xs font-medium text-[var(--fgColor-muted)]">Học phí quá hạn cao nhất</div>
+                          <ul className="flex flex-col divide-y divide-[var(--borderColor-muted)]">
+                            {topDebts.slice(0, 2).map((r) => (
+                              <li key={r.id}>
+                                <Link
+                                  href={`/hoc-phi?f=overdue&q=${encodeURIComponent(r.fullName)}`}
+                                  data-card="true"
+                                  className="flex items-center justify-between gap-2 rounded-[var(--borderRadius-medium)] px-2 py-1.5 transition-colors hover:bg-[var(--row-hover)]"
+                                >
+                                  <div className="min-w-0">
+                                    <b className="block truncate text-xs font-medium text-[var(--fgColor-default)]">{r.fullName}</b>
+                                    <small className="block truncate text-[11px] text-[var(--fgColor-muted)]">
+                                      {r.className} · {dateKeyLabel(r.dueDate)}
+                                    </small>
+                                  </div>
+                                  <b className="shrink-0 text-xs font-semibold tabular-nums text-[var(--fgColor-danger)]">
+                                    {formatVND(r.debt)}
+                                  </b>
+                                </Link>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {canAssignments && overdueAssignments.length > 0 && (
+                        <div className="min-w-0">
+                          <div className="mb-1 text-xs font-medium text-[var(--fgColor-muted)]">Bài tập quá hạn gần nhất</div>
+                          <ul className="flex flex-col divide-y divide-[var(--borderColor-muted)]">
+                            {overdueAssignments.slice(0, 2).map((a) => (
+                              <li key={a.id}>
+                                <Link
+                                  href={`/bai-tap/${a.id}`}
+                                  data-card="true"
+                                  className="flex items-center justify-between gap-2 rounded-[var(--borderRadius-medium)] px-2 py-1.5 transition-colors hover:bg-[var(--row-hover)]"
+                                >
+                                  <div className="min-w-0">
+                                    <b className="block truncate text-xs font-medium text-[var(--fgColor-default)]">{a.title}</b>
+                                    <small className="block truncate text-[11px] text-[var(--fgColor-muted)]">
+                                      {a.className} · {vnDateTimeLabel(new Date(a.dueAt))}
+                                    </small>
+                                  </div>
+                                  <Pill tone="blush">-{a.enrolled - a.done}</Pill>
+                                </Link>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
-
-                {canTuition && topDebts.length > 0 && (
-                  <div className="border-t border-[var(--borderColor-muted)] pt-2.5">
-                    <div className="mb-1.5 text-xs font-medium text-[var(--fgColor-muted)]">Học phí quá hạn cao nhất</div>
-                    <ul className="flex flex-col divide-y divide-[var(--borderColor-muted)]">
-                      {topDebts.slice(0, 3).map((r) => (
-                        <li key={r.id}>
-                          <Link
-                            href={`/hoc-phi?f=overdue&q=${encodeURIComponent(r.fullName)}`}
-                            data-card="true"
-                            className="flex items-center justify-between gap-3 rounded-[var(--borderRadius-medium)] px-2 py-2 transition-colors hover:bg-[var(--row-hover)]"
-                          >
-                            <div className="min-w-0">
-                              <b className="block truncate text-sm font-medium text-[var(--fgColor-default)]">{r.fullName}</b>
-                              <small className="block truncate text-xs text-[var(--fgColor-muted)]">
-                                {r.className} · hạn {dateKeyLabel(r.dueDate)}
-                              </small>
-                            </div>
-                            <b className="shrink-0 text-sm font-semibold tabular-nums text-[var(--fgColor-danger)]">{formatVND(r.debt)}</b>
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {canAssignments && overdueAssignments.length > 0 && (
-                  <div className="border-t border-[var(--borderColor-muted)] pt-2.5">
-                    <div className="mb-1.5 text-xs font-medium text-[var(--fgColor-muted)]">Bài tập quá hạn gần nhất</div>
-                    <ul className="flex flex-col divide-y divide-[var(--borderColor-muted)]">
-                      {overdueAssignments.slice(0, 3).map((a) => (
-                        <li key={a.id}>
-                          <Link
-                            href={`/bai-tap/${a.id}`}
-                            data-card="true"
-                            className="flex items-center justify-between gap-3 rounded-[var(--borderRadius-medium)] px-2 py-2 transition-colors hover:bg-[var(--row-hover)]"
-                          >
-                            <div className="min-w-0">
-                              <b className="block truncate text-sm font-medium text-[var(--fgColor-default)]">{a.title}</b>
-                              <small className="block truncate text-xs text-[var(--fgColor-muted)]">
-                                {a.className} · hạn {vnDateTimeLabel(new Date(a.dueAt))}
-                              </small>
-                            </div>
-                            <Pill tone="blush">còn {a.enrolled - a.done} chưa nộp</Pill>
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            )}
-          </Panel>
+              )}
+            </div>
+          </section>
 
           {/* Cột phải: Lịch hôm nay */}
           <Panel
@@ -282,7 +339,7 @@ async function DashboardData() {
               <Link
                 href="/lich-hoc"
                 data-link="true"
-                className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--fgColor-link)] hover:underline"
+                className="inline-flex items-center gap-1 text-xs font-medium text-[var(--fgColor-link)] hover:underline"
               >
                 Xem lịch tuần
                 <ArrowRightIcon size={12} aria-hidden />
@@ -292,24 +349,30 @@ async function DashboardData() {
             {sessionsToday.length === 0 ? (
               <EmptyState title="Hôm nay không có buổi học" hint="Xem lịch tuần để biết buổi sắp tới." />
             ) : (
-              <ol className="flex flex-col">
-                {sessionsToday.map((s) => {
+              <ol className="flex flex-col gap-1.5">
+                {sessionsToday.slice(0, 5).map((s) => {
                   const isNext = s.id === nextSession?.id;
                   const label = isNext ? { tone: 'butter' as Tone, text: 'Tiếp theo' } : sessionLabel(s);
                   return (
                     <li
                       key={s.id}
-                      className={`grid grid-cols-[68px_minmax(0,1fr)_auto] items-center gap-3 border-t border-[var(--borderColor-muted)] py-2.5 first:border-t-0 ${
+                      className={`grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-[var(--borderRadius-medium)] border px-3 py-2 transition-colors ${
                         isNext
-                          ? '-mx-2 rounded-[var(--borderRadius-medium)] border-t-transparent bg-[var(--primary-soft)]/70 px-2.5 shadow-[inset_3px_0_0_var(--primary)]'
-                          : ''
+                          ? 'border-[var(--borderColor-accent-muted)] bg-[var(--primary-soft)]/45'
+                          : 'border-[var(--borderColor-muted)] bg-[var(--stone)]/40'
                       }`}
                     >
-                      <time className={`text-sm font-semibold tabular-nums ${classTone(s.classId).text}`}>
+                      <time
+                        className={`inline-flex w-[58px] shrink-0 items-center justify-center rounded-md border px-2 py-1 font-mono text-xs font-semibold tabular-nums ${
+                          isNext
+                            ? 'border-[var(--primary)] bg-[var(--primary)] text-[var(--on-primary)]'
+                            : 'border-[var(--borderColor-default)] bg-[var(--bgColor-default)] text-[var(--fgColor-default)]'
+                        }`}
+                      >
                         {s.timeLabel.split('–')[0]}
                       </time>
                       <div className="min-w-0">
-                        <b className="block truncate text-sm font-medium text-[var(--fgColor-default)]">{s.className}</b>
+                        <b className="block truncate text-sm font-semibold text-[var(--fgColor-default)]">{s.className}</b>
                         <small className="block truncate text-xs text-[var(--fgColor-muted)]">
                           {s.teacherName}
                           {s.room ? ` · ${s.room}` : ''}
@@ -332,7 +395,7 @@ async function DashboardData() {
             <Link
               href="/lop-hoc"
               data-link="true"
-              className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--fgColor-link)] hover:underline"
+              className="inline-flex items-center gap-1 text-xs font-medium text-[var(--fgColor-link)] hover:underline"
             >
               Xem tất cả ({classes.length})
               <ArrowRightIcon size={12} aria-hidden />
@@ -345,21 +408,20 @@ async function DashboardData() {
                 <Link
                   href={`/lop-hoc/${c.id}`}
                   data-card="true"
-                  className="group relative block overflow-hidden rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-3 pl-4 transition-all duration-150 hover:-translate-y-0.5 hover:border-[var(--borderColor-accent-emphasis)] hover:bg-[var(--row-hover)]"
+                  className="group block rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-3.5 transition-colors hover:border-[var(--borderColor-accent-emphasis)] hover:bg-[var(--row-hover)]"
                 >
-                  <span aria-hidden className={`absolute inset-y-0 left-0 w-1 ${classTone(c.id).ink}`} />
-                  <div className="flex items-baseline justify-between gap-3">
-                    <b className="min-w-0 truncate text-sm font-semibold text-[var(--fgColor-default)] group-hover:text-[var(--primary-deep)]">
+                  <div className="flex items-center justify-between gap-2">
+                    <b className="truncate text-sm font-semibold text-[var(--fgColor-default)] group-hover:text-[var(--primary-deep)]">
                       {c.name}
                     </b>
-                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium tabular-nums ${classTone(c.id).bg}`}>
-                      {c.studentCount}/{c.capacity}
+                    <span className="shrink-0 rounded-md bg-[var(--stone)] px-2 py-0.5 font-mono text-xs font-medium tabular-nums text-[var(--fgColor-muted)]">
+                      {c.studentCount}/{c.capacity} HS
                     </span>
                   </div>
-                  <small className="mt-0.5 block truncate text-xs text-[var(--fgColor-muted)]">
+                  <small className="mt-1 block truncate text-xs text-[var(--fgColor-muted)]">
                     {c.teacherName} · {c.schedule}
                   </small>
-                  <ProgressBar value={c.studentCount} max={c.capacity} className="mt-2" />
+                  <ProgressBar value={c.studentCount} max={c.capacity} className="mt-2.5" />
                 </Link>
               </li>
             ))}
@@ -383,20 +445,6 @@ function sessionLabel(s: { status: string; isPast: boolean }): { tone: Tone; tex
   return { tone: 'mint', text: 'Sắp học' };
 }
 
-const KPI_DOT: Record<'mint' | 'lav' | 'blush' | 'butter', string> = {
-  mint: 'bg-[var(--accent)]',
-  lav: 'bg-[var(--primary)]',
-  blush: 'bg-[var(--blush-ink)]',
-  butter: 'bg-[var(--butter-ink)]',
-};
-
-const KPI_ICON_TONE: Record<'mint' | 'lav' | 'blush' | 'butter', string> = {
-  mint: 'bg-mint text-mint-ink',
-  lav: 'bg-primary-soft text-primary',
-  blush: 'bg-blush text-blush-ink',
-  butter: 'bg-butter text-butter-ink',
-};
-
 function Kpi({
   index,
   href,
@@ -404,7 +452,7 @@ function Kpi({
   label,
   value,
   sub,
-  tone,
+  alert = false,
   bar,
 }: {
   index: number;
@@ -413,30 +461,40 @@ function Kpi({
   label: string;
   value: string;
   sub?: string;
-  tone: keyof typeof KPI_DOT;
+  alert?: boolean;
   bar?: number;
 }) {
   const inner = (
     <>
-      <div className="flex items-center justify-between gap-2">
-        <small className="flex min-w-0 items-center gap-2 truncate text-xs font-medium text-[var(--fgColor-muted)]">
-          <span className={`size-2 shrink-0 rounded-full ${KPI_DOT[tone]}`} aria-hidden />
-          <span className="truncate">{label}</span>
-        </small>
-        <span className={`grid size-6 shrink-0 place-items-center rounded-md ${KPI_ICON_TONE[tone]}`} aria-hidden>
-          <IconComp size={13} />
+      <div className="flex items-start justify-between gap-2.5">
+        <div className="min-w-0">
+          <small className="block truncate text-xs font-medium text-[var(--fgColor-muted)]">{label}</small>
+          <b
+            className={`mt-1 block truncate text-2xl font-bold leading-tight tracking-tight tabular-nums ${
+              alert ? 'text-[var(--fgColor-danger)]' : 'text-[var(--fgColor-default)]'
+            }`}
+          >
+            {value}
+          </b>
+        </div>
+        <span
+          className={`grid size-8 shrink-0 place-items-center rounded-lg ${
+            alert
+              ? 'bg-[var(--blush)] text-[var(--blush-ink)]'
+              : 'bg-[var(--primary-soft)] text-[var(--primary)]'
+          }`}
+          aria-hidden
+        >
+          <IconComp size={16} />
         </span>
       </div>
-      <b className="mt-1 block truncate text-xl font-semibold leading-tight tabular-nums text-[var(--fgColor-default)] min-[768px]:text-2xl">
-        {value}
-      </b>
-      {bar !== undefined && <ProgressBar value={bar} max={100} className="mt-2" />}
-      {sub && <small className="mt-1 block truncate text-xs text-[var(--fgColor-muted)]">{sub}</small>}
+      {bar !== undefined && <ProgressBar value={bar} max={100} className="mt-2.5" />}
+      {sub && <small className="mt-1.5 block truncate text-xs text-[var(--fgColor-muted)]">{sub}</small>}
     </>
   );
 
   const cls =
-    'tsukuba-rise min-w-0 block rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-4 py-3 transition-all duration-150';
+    'tsukuba-rise min-w-0 block rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-4 py-3.5 shadow-[var(--shadow)] transition-colors duration-150';
 
   if (href) {
     return (
@@ -444,7 +502,7 @@ function Kpi({
         href={href}
         data-card="true"
         style={{ animationDelay: `${index * 45}ms` }}
-        className={`${cls} hover:-translate-y-0.5 hover:border-[var(--borderColor-accent-emphasis)]`}
+        className={`${cls} hover:border-[var(--borderColor-accent-emphasis)] hover:bg-[var(--row-hover)]`}
       >
         {inner}
       </Link>
@@ -458,16 +516,9 @@ function Kpi({
   );
 }
 
-const LANE_BADGE: Record<'blush' | 'butter' | 'lav', string> = {
-  blush: 'bg-[var(--bgColor-danger-muted)] text-[var(--fgColor-danger)]',
-  butter: 'bg-[var(--bgColor-attention-muted)] text-[var(--fgColor-attention)]',
-  lav: 'bg-[var(--primary-soft)] text-[var(--primary-deep)]',
-};
-
 function Lane({
   href,
   icon: IconComp,
-  tone,
   urgent,
   title,
   hint,
@@ -475,7 +526,6 @@ function Lane({
 }: {
   href: string;
   icon: Icon;
-  tone: keyof typeof LANE_BADGE;
   urgent?: boolean;
   title: string;
   hint: string;
@@ -485,20 +535,24 @@ function Lane({
     <Link
       href={href}
       data-card="true"
-      className="group grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-3 py-2.5 transition-all duration-150 hover:border-[var(--borderColor-accent-emphasis)] hover:bg-[var(--row-hover)]"
+      className="group grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--stone)]/50 px-3 py-2 transition-colors hover:border-[var(--borderColor-accent-emphasis)] hover:bg-[var(--row-hover)]"
     >
       <b
-        className={`grid h-8 min-w-8 shrink-0 place-items-center rounded-full px-2 text-xs font-semibold tabular-nums ${LANE_BADGE[tone]}`}
+        className={`grid h-7 min-w-7 shrink-0 place-items-center rounded-md px-2 text-xs font-semibold tabular-nums ${
+          urgent
+            ? 'bg-[var(--blush)] text-[var(--blush-ink)]'
+            : 'bg-[var(--primary-soft)] text-[var(--primary-deep)]'
+        }`}
       >
         {count}
       </b>
       <span className="min-w-0">
         <span className="flex flex-wrap items-center gap-1.5">
           <IconComp size={14} className="shrink-0 text-[var(--fgColor-muted)]" aria-hidden />
-          <b className="truncate text-sm font-semibold text-[var(--fgColor-default)]">{title}</b>
+          <b className="truncate text-sm font-medium text-[var(--fgColor-default)]">{title}</b>
           {urgent && <Pill tone="blush">Gấp</Pill>}
         </span>
-        <small className="mt-0.5 block truncate text-xs text-[var(--fgColor-muted)]">{hint}</small>
+        <small className="block truncate text-xs text-[var(--fgColor-muted)]">{hint}</small>
       </span>
       <ArrowRightIcon
         size={16}

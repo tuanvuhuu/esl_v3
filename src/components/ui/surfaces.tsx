@@ -1,6 +1,6 @@
 'use client';
 
-// Khung bề mặt chuẩn dự án 01. TSUKUBA (Section, Panel, Card, StatCards, KeyValue, Callout, Notice, EmptyPanel).
+// Khung bề mặt sạch sẽ, tối giản, nhất quán một tông màu chủ đề (Section, Panel, Card, StatCards, KeyValue, Callout, Notice, EmptyPanel).
 import { InboxIcon } from '@primer/octicons-react';
 import { Banner } from '@primer/react';
 import { Blankslate } from '@primer/react/experimental';
@@ -25,13 +25,13 @@ export function Panel({
     <section
       aria-label={title}
       className={clsx(
-        'overflow-hidden rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)]',
+        'overflow-hidden rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] shadow-[var(--shadow)]',
         className,
       )}
     >
       {(title || action) && (
-        <header className="flex items-center justify-between gap-3 border-b border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)] px-4 py-2.5 max-[767px]:px-3.5">
-          {title && <h2 className="m-0 text-sm font-semibold text-[var(--fgColor-default)]">{title}</h2>}
+        <header className="flex items-center justify-between gap-3 border-b border-[var(--borderColor-muted)] px-4 py-3 max-[767px]:px-3.5">
+          {title && <h2 className="m-0 truncate text-sm font-semibold text-[var(--fgColor-default)]">{title}</h2>}
           {action && <div className="flex flex-wrap items-center gap-2">{action}</div>}
         </header>
       )}
@@ -40,18 +40,17 @@ export function Panel({
   );
 }
 
-// Section chuẩn ui.tsx / ui.module.css của dự án 01. TSUKUBA
 export function Section(props: { title?: ReactNode; actions?: ReactNode; children: ReactNode; flush?: boolean; className?: string }) {
   return (
     <section
       className={clsx(
-        'mb-3 overflow-hidden rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)]',
+        'mb-3 overflow-hidden rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] shadow-[var(--shadow)]',
         props.className,
       )}
     >
       {(props.title || props.actions) && (
-        <div className="flex items-center justify-between gap-2 border-b border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)] px-4 py-2.5">
-          <h2 className="m-0 text-sm font-semibold text-[var(--fgColor-default)]">{props.title}</h2>
+        <div className="flex items-center justify-between gap-2 border-b border-[var(--borderColor-muted)] px-4 py-3">
+          <h2 className="m-0 truncate text-sm font-semibold text-[var(--fgColor-default)]">{props.title}</h2>
           {props.actions && <div className="flex flex-wrap items-center gap-2">{props.actions}</div>}
         </div>
       )}
@@ -71,7 +70,7 @@ export function Card({
     <Tag
       {...rest}
       className={clsx(
-        'flex flex-col gap-3 rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-4 transition-all duration-150 max-[767px]:p-3.5',
+        'flex flex-col gap-3 rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-4 shadow-[var(--shadow)] transition-all duration-150 max-[767px]:p-3.5',
         className,
       )}
     >
@@ -131,19 +130,21 @@ export function StatCards(props: { items: Array<{ label: string; value: ReactNod
       {props.items.map((it) => {
         const inner = (
           <>
-            <div className="text-xs font-medium text-[var(--fgColor-muted)]">{it.label}</div>
-            <div className="mt-0.5 text-2xl font-semibold leading-tight tabular-nums text-[var(--fgColor-default)]">{it.value}</div>
+            <div className="truncate text-xs font-medium text-[var(--fgColor-muted)]">{it.label}</div>
+            <div className="mt-1 text-2xl font-bold leading-tight tabular-nums text-[var(--fgColor-default)]">
+              {it.value}
+            </div>
             {it.sub && <div className="mt-0.5 text-xs text-[var(--fgColor-muted)]">{it.sub}</div>}
           </>
         );
         const cls =
-          'block rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-4 py-3 text-[var(--fgColor-default)] transition-all duration-150';
+          'block rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-4 py-3 text-[var(--fgColor-default)] shadow-[var(--shadow)] transition-all duration-150';
         return it.href ? (
           <Link
             key={it.label}
             href={it.href}
             data-card="true"
-            className={clsx(cls, 'hover:-translate-y-0.5 hover:border-[var(--borderColor-accent-emphasis)]')}
+            className={clsx(cls, 'hover:border-[var(--borderColor-accent-emphasis)] hover:bg-[var(--row-hover)]')}
           >
             {inner}
           </Link>
@@ -159,13 +160,17 @@ export function StatCards(props: { items: Array<{ label: string; value: ReactNod
 
 export function EmptyPanel({ title, hint, action }: { title: string; hint?: string; action?: ReactNode }) {
   return (
-    <Blankslate border spacious>
-      <Blankslate.Visual>
-        <InboxIcon size={24} />
-      </Blankslate.Visual>
-      <Blankslate.Heading as="h3">{title}</Blankslate.Heading>
-      {hint && <Blankslate.Description>{hint}</Blankslate.Description>}
-      {action && <div className="mt-3 flex justify-center">{action}</div>}
-    </Blankslate>
+    <div className="overflow-hidden rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] shadow-[var(--shadow)]">
+      <Blankslate spacious>
+        <Blankslate.Visual>
+          <span className="inline-flex size-11 items-center justify-center rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-accent-muted)] bg-[var(--primary-soft)] text-[var(--primary)]">
+            <InboxIcon size={22} />
+          </span>
+        </Blankslate.Visual>
+        <Blankslate.Heading as="h3">{title}</Blankslate.Heading>
+        {hint && <Blankslate.Description>{hint}</Blankslate.Description>}
+        {action && <div className="mt-3 flex justify-center">{action}</div>}
+      </Blankslate>
+    </div>
   );
 }

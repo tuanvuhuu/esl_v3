@@ -1,173 +1,257 @@
-import type { CSSProperties, ReactNode } from 'react';
+import type { ReactNode } from 'react';
 
-// Ảnh thiên nhiên minh hoạ, vẽ bằng SVG. Màu lấy từ token nên đổi theo màu nhấn và chế độ tối.
-// Chỉ để trang trí: ẩn với trình đọc màn hình.
+// Ảnh nền thiên nhiên nghệ thuật đa lớp (Silk Horizon SVG 1600×900).
+// Bảng màu của từng cảnh (Đồi, Rừng, Biển, Núi, Đồng cỏ) là ĐỘC LẬP hoàn toàn với Màu chủ đề (--primary),
+// và phần bầu trời phía trên được giữ trong suốt để làm nổi bật hoàn toàn các thẻ trắng của Dashboard.
 export type NatureScene = 'hills' | 'forest' | 'sea' | 'mountain' | 'meadow';
 
 const SCENES: NatureScene[] = ['hills', 'forest', 'sea'];
 
-// Mỗi thứ trong tuần một cảnh, nên dải ảnh đổi dần theo ngày
 export function natureSceneFor(weekday: number): NatureScene {
   return SCENES[weekday % SCENES.length];
 }
 
-const fill = (color: string, opacity = 1): CSSProperties => ({ fill: color, opacity });
-const line = (color: string, width: number, opacity = 1): CSSProperties => ({ fill: 'none', stroke: color, strokeWidth: width, strokeLinecap: 'round', opacity });
-
-// Cây thông ba tầng: đỉnh ở (x, base - h), gốc ở base
-function pine(x: number, base: number, h: number) {
-  const t = (top: number, bottom: number, w: number) => `M${x} ${top} L${x + w} ${bottom} L${x - w} ${bottom}Z`;
-  return `${t(base - h, base - h * 0.62, h * 0.2)} ${t(base - h * 0.8, base - h * 0.3, h * 0.3)} ${t(base - h * 0.45, base - h * 0.02, h * 0.38)} M${x - 2} ${base} h4 v${h * 0.08} h-4Z`;
+interface ScenePalette {
+  id: string;
+  orbA: string;
+  orbB: string;
+  orbC: string;
+  wave1Start: string;
+  wave1Mid: string;
+  wave1End: string;
+  wave2Top: string;
+  wave2Bottom: string;
+  wave3Start: string;
+  wave3Mid: string;
+  wave3End: string;
 }
 
-// Mây: các cụm tròn nối nhau
-const cloud = (x: number, y: number, s = 1) =>
-  `M${x} ${y} q${10 * s} ${-18 * s} ${34 * s} ${-8 * s} q${12 * s} ${-16 * s} ${30 * s} ${-2 * s} q${18 * s} ${-4 * s} ${20 * s} ${12 * s}Z`;
-
-// Gradient bầu trời: từ nền sáng ở trên xuống màu nhạt hơn ở đường chân trời
-function Sky({ id, from, to }: { id: string; from: string; to: string }) {
+function AmbientDefs({ p }: { p: ScenePalette }) {
   return (
-    <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" style={{ stopColor: from }} />
-      <stop offset="1" style={{ stopColor: to }} />
-    </linearGradient>
+    <defs>
+      <radialGradient id={`orb-a-${p.id}`} cx="12%" cy="10%" r="42%">
+        <stop offset="0%" stopColor={p.orbA} stopOpacity="0.14" />
+        <stop offset="100%" stopColor={p.orbA} stopOpacity="0" />
+      </radialGradient>
+      <radialGradient id={`orb-b-${p.id}`} cx="88%" cy="14%" r="40%">
+        <stop offset="0%" stopColor={p.orbB} stopOpacity="0.12" />
+        <stop offset="100%" stopColor={p.orbB} stopOpacity="0" />
+      </radialGradient>
+      <radialGradient id={`orb-c-${p.id}`} cx="50%" cy="95%" r="55%">
+        <stop offset="0%" stopColor={p.orbC} stopOpacity="0.22" />
+        <stop offset="100%" stopColor={p.orbC} stopOpacity="0" />
+      </radialGradient>
+      <linearGradient id={`wave-1-${p.id}`} x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stopColor={p.wave1Start} stopOpacity="0.22" />
+        <stop offset="50%" stopColor={p.wave1Mid} stopOpacity="0.28" />
+        <stop offset="100%" stopColor={p.wave1End} stopOpacity="0.22" />
+      </linearGradient>
+      <linearGradient id={`wave-2-${p.id}`} x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor={p.wave2Top} stopOpacity="0.32" />
+        <stop offset="100%" stopColor={p.wave2Bottom} stopOpacity="0.18" />
+      </linearGradient>
+      <linearGradient id={`wave-3-${p.id}`} x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stopColor={p.wave3Start} stopOpacity="0.38" />
+        <stop offset="50%" stopColor={p.wave3Mid} stopOpacity="0.32" />
+        <stop offset="100%" stopColor={p.wave3End} stopOpacity="0.38" />
+      </linearGradient>
+    </defs>
   );
 }
 
+function AmbientBase({ id }: { id: string }) {
+  return (
+    <>
+      <rect width="1600" height="900" fill={`url(#orb-a-${id})`} />
+      <rect width="1600" height="900" fill={`url(#orb-b-${id})`} />
+      <rect width="1600" height="900" fill={`url(#orb-c-${id})`} />
+    </>
+  );
+}
+
+// 1. Đồi (Hills): Bình minh vàng cam & đồi lụa ấm áp (bảng màu riêng biệt)
+const HILLS_PALETTE: ScenePalette = {
+  id: 'hills',
+  orbA: '#f97316',
+  orbB: '#f59e0b',
+  orbC: '#ea580c',
+  wave1Start: '#fb923c',
+  wave1Mid: '#f59e0b',
+  wave1End: '#ea580c',
+  wave2Top: '#f97316',
+  wave2Bottom: '#fdba74',
+  wave3Start: '#ea580c',
+  wave3Mid: '#d97706',
+  wave3End: '#c2410c',
+};
+
 const HILLS = (
   <>
-    <defs>
-      <Sky id="sky-hills" from="var(--surface)" to="var(--primary-soft)" />
-      <linearGradient id="hill-back" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" style={{ stopColor: 'var(--mint)' }} />
-        <stop offset="1" style={{ stopColor: 'var(--accent)' }} />
-      </linearGradient>
-    </defs>
-    <rect width="1200" height="240" style={{ fill: 'url(#sky-hills)' }} />
-    <circle cx="960" cy="58" r="74" style={fill('var(--primary)', 0.18)} />
-    <circle cx="960" cy="58" r="38" style={fill('var(--primary)')} />
-    <g style={fill('var(--surface)', 0.9)}>
-      <path d={cloud(170, 62, 1.1)} />
-      <path d={cloud(560, 40, 0.8)} />
-      <path d={cloud(760, 92, 0.65)} />
-    </g>
-    <path d="M0 150 L90 104 L170 138 L270 82 L380 140 L470 110 L560 150 Z" style={fill('var(--lav-ink)', 0.22)} />
-    <path d="M0 150 Q200 92 420 140 T860 130 T1200 120 V240 H0Z" style={{ fill: 'url(#hill-back)', opacity: 0.85 }} />
-    <path d="M560 240 Q630 196 720 206 T920 190" style={line('var(--surface)', 9, 0.55)} />
-    <path d="M0 190 Q260 130 520 178 T1000 162 T1200 170 V240 H0Z" style={fill('var(--accent)', 0.6)} />
-    <path d="M0 216 Q300 178 640 210 T1200 200 V240 H0Z" style={fill('var(--mint-ink)', 0.4)} />
-    <path d={pine(140, 216, 46) + ' ' + pine(192, 218, 34) + ' ' + pine(236, 214, 28)} style={fill('var(--mint-ink)')} />
-    <path d={pine(1010, 180, 44) + ' ' + pine(1050, 184, 30)} style={fill('var(--mint-ink)', 0.9)} />
-    <path d="M600 52 q7 -7 14 0 q7 -7 14 0 M640 40 q5 -5 10 0 q5 -5 10 0" style={line('var(--ink)', 2, 0.45)} />
+    <AmbientDefs p={HILLS_PALETTE} />
+    <AmbientBase id="hills" />
+    <path
+      d="M0 735 C320 655, 620 765, 960 685 C1220 625, 1420 695, 1600 660 L1600 900 L0 900 Z"
+      fill="url(#wave-1-hills)"
+    />
+    <path
+      d="M0 780 C280 725, 580 685, 920 755 C1180 805, 1410 725, 1600 745 L1600 900 L0 900 Z"
+      fill="url(#wave-2-hills)"
+    />
+    <path
+      d="M0 828 C360 780, 740 855, 1120 800 C1340 770, 1490 805, 1600 790 L1600 900 L0 900 Z"
+      fill="url(#wave-3-hills)"
+    />
   </>
 );
+
+// 2. Rừng (Forest): Nắng sớm xuyên sương & dải lụa ngọc lục bảo (bảng màu riêng biệt)
+const FOREST_PALETTE: ScenePalette = {
+  id: 'forest',
+  orbA: '#10b981',
+  orbB: '#34d399',
+  orbC: '#059669',
+  wave1Start: '#34d399',
+  wave1Mid: '#10b981',
+  wave1End: '#059669',
+  wave2Top: '#10b981',
+  wave2Bottom: '#6ee7b7',
+  wave3Start: '#059669',
+  wave3Mid: '#047857',
+  wave3End: '#0d9488',
+};
 
 const FOREST = (
   <>
-    <defs>
-      <Sky id="sky-forest" from="var(--primary-soft)" to="var(--lav)" />
-      <linearGradient id="forest-floor" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" style={{ stopColor: 'var(--mint-ink)' }} />
-        <stop offset="1" style={{ stopColor: 'var(--lav-ink)' }} />
-      </linearGradient>
-    </defs>
-    <rect width="1200" height="240" style={{ fill: 'url(#sky-forest)' }} />
-    {/* Tia nắng xiên từ trên xuống */}
-    <path d="M860 0 L960 0 L780 240 L640 240Z" style={fill('var(--surface)', 0.14)} />
-    <path d="M1000 0 L1040 0 L900 240 L840 240Z" style={fill('var(--surface)', 0.1)} />
-    <path d={[60, 190, 320, 450, 580, 710, 840, 970, 1100].map((x, i) => pine(x, 210, 120 + (i % 3) * 14)).join(' ')} style={fill('var(--lav-ink)', 0.35)} />
-    <path d={[120, 380, 640, 900, 1150].map((x, i) => pine(x, 214, 130 + (i % 2) * 18)).join(' ')} style={fill('var(--accent)', 0.5)} />
-    <rect x="0" y="196" width="1200" height="44" style={{ fill: 'url(#forest-floor)', opacity: 0.45 }} />
-    <path d={[220, 520, 780, 1040].map((x, i) => pine(x, 226, 118 + i * 6)).join(' ')} style={fill('var(--mint-ink)', 0.85)} />
-    <ellipse cx="300" cy="230" rx="90" ry="14" style={fill('var(--mint-ink)', 0.5)} />
-    <ellipse cx="880" cy="234" rx="120" ry="16" style={fill('var(--mint-ink)', 0.5)} />
+    <AmbientDefs p={FOREST_PALETTE} />
+    <AmbientBase id="forest" />
+    <path
+      d="M0 725 C260 675, 520 755, 820 700 C1120 645, 1360 725, 1600 680 L1600 900 L0 900 Z"
+      fill="url(#wave-1-forest)"
+    />
+    <path
+      d="M0 775 C340 725, 680 805, 1020 745 C1280 700, 1460 755, 1600 735 L1600 900 L0 900 Z"
+      fill="url(#wave-2-forest)"
+    />
+    <path
+      d="M0 825 C290 790, 640 850, 1010 805 C1290 775, 1470 820, 1600 800 L1600 900 L0 900 Z"
+      fill="url(#wave-3-forest)"
+    />
   </>
 );
+
+// 3. Biển (Sea): Sóng lụa đại dương xanh lam & ngọc bích (bảng màu riêng biệt)
+const SEA_PALETTE: ScenePalette = {
+  id: 'sea',
+  orbA: '#0ea5e9',
+  orbB: '#38bdf8',
+  orbC: '#0284c7',
+  wave1Start: '#38bdf8',
+  wave1Mid: '#0ea5e9',
+  wave1End: '#06b6d4',
+  wave2Top: '#0284c7',
+  wave2Bottom: '#7dd3fc',
+  wave3Start: '#0369a1',
+  wave3Mid: '#0284c7',
+  wave3End: '#0e7490',
+};
 
 const SEA = (
   <>
-    <defs>
-      <Sky id="sky-sea" from="var(--surface)" to="var(--primary-soft)" />
-      <linearGradient id="sea-water" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" style={{ stopColor: 'var(--accent)' }} />
-        <stop offset="1" style={{ stopColor: 'var(--mint-ink)' }} />
-      </linearGradient>
-    </defs>
-    <rect width="1200" height="240" style={{ fill: 'url(#sky-sea)' }} />
-    <circle cx="380" cy="142" r="92" style={fill('var(--primary)', 0.16)} />
-    <circle cx="380" cy="142" r="46" style={fill('var(--primary)')} />
-    <g style={fill('var(--surface)', 0.9)}>
-      <path d={cloud(640, 56, 1.2)} />
-      <path d={cloud(900, 34, 0.9)} />
-    </g>
-    <rect x="0" y="150" width="1200" height="90" style={{ fill: 'url(#sea-water)', opacity: 0.7 }} />
-    {/* Đảo nhỏ bên trái */}
-    <path d="M0 150 Q60 128 140 150 Z" style={fill('var(--mint-ink)', 0.55)} />
-    {/* Phản chiếu mặt trời trên mặt biển */}
-    <g style={fill('var(--primary)', 0.45)}>
-      <rect x="340" y="160" width="80" height="4" rx="2" />
-      <rect x="360" y="172" width="44" height="3" rx="1.5" />
-      <rect x="372" y="184" width="22" height="3" rx="1.5" />
-    </g>
-    {/* Thuyền buồm */}
-    <g>
-      <path d="M760 150 L760 92 L800 146Z" style={fill('var(--surface)', 0.95)} />
-      <path d="M752 150 L752 112 L726 146Z" style={fill('var(--primary)', 0.9)} />
-      <path d="M718 152 L820 152 L808 164 L730 164Z" style={fill('var(--blush-ink)', 0.85)} />
-    </g>
-    <path d="M0 176 q60 -12 120 0 t120 0 t120 0 t120 0 t120 0 t120 0 t120 0 t120 0 t120 0 t120 0" style={line('var(--surface)', 3, 0.65)} />
-    <path d="M0 206 q60 -12 120 0 t120 0 t120 0 t120 0 t120 0 t120 0 t120 0 t120 0 t120 0 t120 0" style={line('var(--surface)', 3, 0.45)} />
-    <path d="M0 228 q60 -10 120 0 t120 0 t120 0 t120 0 t120 0 t120 0 t120 0 t120 0 t120 0 t120 0" style={line('var(--surface)', 2, 0.3)} />
+    <AmbientDefs p={SEA_PALETTE} />
+    <AmbientBase id="sea" />
+    <path
+      d="M0 735 C240 695, 480 765, 760 725 C1040 685, 1320 755, 1600 715 L1600 900 L0 900 Z"
+      fill="url(#wave-1-sea)"
+    />
+    <path
+      d="M0 780 C280 815, 560 740, 860 780 C1140 815, 1380 755, 1600 780 L1600 900 L0 900 Z"
+      fill="url(#wave-2-sea)"
+    />
+    <path
+      d="M0 828 C260 800, 540 855, 840 820 C1140 785, 1390 840, 1600 815 L1600 900 L0 900 Z"
+      fill="url(#wave-3-sea)"
+    />
   </>
 );
+
+// 4. Núi (Mountain): Dãy núi mờ sương tím lam cực quang (bảng màu riêng biệt)
+const MOUNTAIN_PALETTE: ScenePalette = {
+  id: 'mountain',
+  orbA: '#8b5cf6',
+  orbB: '#6366f1',
+  orbC: '#7c3aed',
+  wave1Start: '#a78bfa',
+  wave1Mid: '#818cf8',
+  wave1End: '#6366f1',
+  wave2Top: '#7c3aed',
+  wave2Bottom: '#c4b5fd',
+  wave3Start: '#5b21b6',
+  wave3Mid: '#4f46e5',
+  wave3End: '#6d28d9',
+};
 
 const MOUNTAIN = (
   <>
-    <defs>
-      <Sky id="sky-mountain" from="var(--surface)" to="var(--lav)" />
-    </defs>
-    <rect width="1200" height="240" style={{ fill: 'url(#sky-mountain)' }} />
-    <g style={fill('var(--surface)', 0.85)}>
-      <path d={cloud(120, 40, 0.9)} />
-      <path d={cloud(900, 28, 1)} />
-    </g>
-    <path d="M0 170 L150 60 L260 130 L380 40 L520 140 L640 70 L780 150 L900 50 L1040 130 L1200 70 V240 H0Z" style={fill('var(--lav-ink)', 0.3)} />
-    <path d="M150 60 L168 92 L132 92Z M380 40 L404 80 L356 80Z M900 50 L922 84 L878 84Z M1200 70 L1176 98 L1200 98Z" style={fill('var(--surface)', 0.9)} />
-    <path d="M0 200 L120 120 L240 180 L400 100 L560 190 L720 130 L900 200 L1060 115 L1200 180 V240 H0Z" style={fill('var(--mint-ink)', 0.45)} />
-    <rect x="0" y="196" width="1200" height="44" style={fill('var(--accent)', 0.5)} />
-    <path d="M200 214 L400 214 M600 222 L800 222 M300 230 L480 230" style={line('var(--surface)', 2, 0.35)} />
-    <path d={pine(180, 214, 40) + ' ' + pine(230, 218, 30) + ' ' + pine(980, 212, 44)} style={fill('var(--mint-ink)')} />
+    <AmbientDefs p={MOUNTAIN_PALETTE} />
+    <AmbientBase id="mountain" />
+    <path
+      d="M0 750 L220 635 L430 715 L690 595 L960 725 L1210 620 L1430 705 L1600 645 L1600 900 L0 900 Z"
+      fill="url(#wave-1-mountain)"
+    />
+    <path
+      d="M0 795 L180 715 L410 775 L640 685 L910 790 L1160 700 L1390 775 L1600 725 L1600 900 L0 900 Z"
+      fill="url(#wave-2-mountain)"
+    />
+    <path
+      d="M0 835 C380 800, 760 855, 1160 815 C1360 800, 1500 825, 1600 815 L1600 900 L0 900 Z"
+      fill="url(#wave-3-mountain)"
+    />
   </>
 );
 
-// Đồng cỏ: mặt trời, đồi xanh nhiều lớp, cây tròn và hoa dại
+// 5. Đồng cỏ (Meadow): Thảo nguyên nắng mai vàng chanh & xanh non (bảng màu riêng biệt)
+const MEADOW_PALETTE: ScenePalette = {
+  id: 'meadow',
+  orbA: '#eab308',
+  orbB: '#84cc16',
+  orbC: '#16a34a',
+  wave1Start: '#a3e635',
+  wave1Mid: '#84cc16',
+  wave1End: '#22c55e',
+  wave2Top: '#65a30d',
+  wave2Bottom: '#bef264',
+  wave3Start: '#16a34a',
+  wave3Mid: '#4d7c0f',
+  wave3End: '#15803d',
+};
+
 const MEADOW = (
   <>
-    <defs>
-      <Sky id="sky-meadow" from="var(--primary-soft)" to="var(--surface)" />
-    </defs>
-    <rect width="1200" height="240" style={{ fill: 'url(#sky-meadow)' }} />
-    <circle cx="240" cy="66" r="58" style={fill('var(--primary)', 0.18)} />
-    <circle cx="240" cy="66" r="32" style={fill('var(--primary)')} />
-    <path d="M0 150 Q240 118 480 150 T960 138 T1200 150 V240 H0Z" style={fill('var(--mint)')} />
-    <path d="M0 184 Q320 150 640 180 T1200 176 V240 H0Z" style={fill('var(--accent)', 0.55)} />
-    <path d="M520 240 Q600 200 700 206 T900 240" style={line('var(--surface)', 6, 0.5)} />
-    <path d="M0 214 Q300 188 620 210 T1200 206 V240 H0Z" style={fill('var(--mint-ink)', 0.35)} />
-    {[860, 1010].map((x, i) => (
-      <g key={`tree-${x}`}>
-        <rect x={x - 3} y={170 + i * 4} width="6" height="22" style={fill('var(--mint-ink)')} />
-        <circle cx={x} cy={160 + i * 4} r={22 - i * 3} style={fill('var(--accent)')} />
-      </g>
-    ))}
-    {[120, 180, 300, 360, 430, 560, 700, 780, 1080, 1140].map((x, i) => (
-      <circle key={`flower-${x}`} cx={x} cy={204 + (i % 4) * 8} r={3.5} style={fill(i % 3 === 0 ? 'var(--blush-ink)' : i % 3 === 1 ? 'var(--butter-ink)' : 'var(--surface)', 0.9)} />
-    ))}
+    <AmbientDefs p={MEADOW_PALETTE} />
+    <AmbientBase id="meadow" />
+    <path
+      d="M0 740 C340 685, 680 765, 1020 710 C1280 670, 1460 725, 1600 700 L1600 900 L0 900 Z"
+      fill="url(#wave-1-meadow)"
+    />
+    <path
+      d="M0 785 C300 745, 640 815, 980 765 C1260 720, 1450 775, 1600 760 L1600 900 L0 900 Z"
+      fill="url(#wave-2-meadow)"
+    />
+    <path
+      d="M0 830 C360 805, 740 855, 1120 815 C1350 795, 1490 825, 1600 810 L1600 900 L0 900 Z"
+      fill="url(#wave-3-meadow)"
+    />
   </>
 );
 
-const SVG_SCENE: Record<NatureScene, ReactNode> = { hills: HILLS, forest: FOREST, sea: SEA, mountain: MOUNTAIN, meadow: MEADOW };
+const SVG_SCENE: Record<NatureScene, ReactNode> = {
+  hills: HILLS,
+  forest: FOREST,
+  sea: SEA,
+  mountain: MOUNTAIN,
+  meadow: MEADOW,
+};
 
-// Năm cảnh mặc định cho ảnh nền, theo thứ tự hiện trong menu
 export const NATURE_SCENES: NatureScene[] = ['hills', 'forest', 'sea', 'mountain', 'meadow'];
 
 export const NATURE_LABEL: Record<NatureScene, string> = {
@@ -178,10 +262,9 @@ export const NATURE_LABEL: Record<NatureScene, string> = {
   meadow: 'Đồng cỏ',
 };
 
-// Hình cảnh (không kèm khung). Dùng cho nền phủ cả khu nội dung và cho ảnh thu nhỏ trong menu.
 export function NatureSvg({ scene, slice = 'xMidYMax' }: { scene: NatureScene; slice?: 'xMidYMax' | 'xMidYMid' }) {
   return (
-    <svg viewBox="0 0 1200 240" preserveAspectRatio={`${slice} slice`} className="size-full" focusable="false" aria-hidden>
+    <svg viewBox="0 0 1600 900" preserveAspectRatio={`${slice} slice`} className="size-full" focusable="false" aria-hidden>
       {SVG_SCENE[scene]}
     </svg>
   );

@@ -44,7 +44,17 @@
   --bgColor-accent-emphasis: var(--primary);
   --bgColor-accent-muted: var(--primary-soft);
 
-  /* Checkbox / Radio / UnderlineNav theo màu chủ đề */
+  /* Checkbox / Radio / UnderlineNav / Control / Menu theo màu chủ đề */
+  --control-bgColor-rest: var(--surface);
+  --control-bgColor-hover: var(--row-hover);
+  --control-bgColor-active: var(--primary-soft);
+  --control-borderColor-rest: var(--line);
+  --control-fgColor-rest: var(--ink);
+  --control-fgColor-placeholder: var(--muted);
+  --control-transparent-bgColor-hover: var(--row-hover);
+  --control-transparent-bgColor-active: var(--primary-soft);
+  --control-transparent-bgColor-selected: var(--primary-soft);
+  --overlay-borderColor: var(--menu-border, var(--line));
   --control-checked-bgColor-rest: var(--primary);
   --control-checked-bgColor-hover: var(--primary-deep);
   --control-checked-bgColor-active: var(--primary-deep);
@@ -80,22 +90,22 @@
   --button-danger-borderColor-rest: var(--line);
   --button-danger-borderColor-hover: var(--blush-ink);
 
-  /* Trạng thái ngữ nghĩa chuẩn 01. TSUKUBA — sáng trong, dễ nhìn */
+  /* Trạng thái ngữ nghĩa — độ tương phản cao, viền sắc nét */
   --fgColor-danger: var(--blush-ink);
   --bgColor-danger-muted: var(--blush);
   --bgColor-danger-emphasis: var(--blush-ink);
-  --borderColor-danger-muted: color-mix(in srgb, var(--blush-ink) 20%, var(--surface));
+  --borderColor-danger-muted: color-mix(in srgb, var(--blush-ink) 28%, var(--surface));
   --borderColor-danger-emphasis: var(--blush-ink);
 
   --fgColor-success: var(--mint-ink);
   --bgColor-success-muted: var(--mint);
   --bgColor-success-emphasis: var(--accent);
-  --borderColor-success-muted: #e7f8ef;
+  --borderColor-success-muted: color-mix(in srgb, var(--mint-ink) 28%, var(--surface));
 
   --fgColor-attention: var(--butter-ink);
   --bgColor-attention-muted: var(--butter);
-  --bgColor-attention-emphasis: #d29922;
-  --borderColor-attention-muted: color-mix(in srgb, var(--butter-ink) 22%, var(--surface));
+  --bgColor-attention-emphasis: #d97706;
+  --borderColor-attention-muted: color-mix(in srgb, var(--butter-ink) 30%, var(--surface));
 
   /* Kích thước điều khiển chuẩn ESL Center: 32px máy tính */
   --control-medium-size: var(--ctl-h);

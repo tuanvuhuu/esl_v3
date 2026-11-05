@@ -283,8 +283,14 @@ export async function planImport(rawRows: RawRow[], q: Q = db, allowedCampusIds:
 
     if (plan) {
       if (plan.role !== role) {
-        result.errors.push(`${plan.name} đã ghi là ${SLOT_LABELS[plan.role]} ở dòng ${plan.firstRow}, không xếp vào vị trí ${slot} được.`);
-        return null;
+        const bothTeachingStaff =
+          (plan.role === 'teacher' && role === 'assistant') || (plan.role === 'assistant' && role === 'teacher');
+        if (bothTeachingStaff) {
+          plan.role = 'teacher';
+        } else {
+          result.errors.push(`${plan.name} đã ghi là ${SLOT_LABELS[plan.role]} ở dòng ${plan.firstRow}, không xếp vào vị trí ${slot} được.`);
+          return null;
+        }
       }
       if (input.name !== '' && key(input.name) !== key(plan.name)) {
         result.errors.push(`SĐT ${input.phone} của ${slot} ghi tên ${input.name}, khác với ${plan.name} ở dòng ${plan.firstRow}.`);
@@ -295,7 +301,7 @@ export async function planImport(rawRows: RawRow[], q: Q = db, allowedCampusIds:
     }
 
     if (found) {
-      if (found.role !== role) {
+      if (found.role !== role && !(found.role === 'teacher' && role === 'assistant')) {
         result.errors.push(`${found.name} đang là ${STAFF_ROLE_LABELS[found.role]}, không xếp vào vị trí ${slot} được.`);
         return null;
       }
@@ -510,7 +516,7 @@ export async function planImport(rawRows: RawRow[], q: Q = db, allowedCampusIds:
       found = same[0];
     }
 
-    const seenKey = found ? `id:${found.id}` : `new:${key(s.fullName)}|${s.dob}`;
+    const seenKey = found ? `id:${found.id}` : forcedId !== null ? `forced:${forcedId}` : `new:${key(s.fullName)}|${s.dob}`;
     const seenRow = studentSeen.get(seenKey);
     if (seenRow !== undefined) {
       result.errors.push(`Học sinh ${s.fullName || studentCode(s.id!)} đã có ở dòng ${seenRow}.`);
@@ -575,8 +581,9 @@ export async function planImport(rawRows: RawRow[], q: Q = db, allowedCampusIds:
     let plan = parentPlans.get(p.phone);
     if (plan) {
       if (p.fullName !== '' && key(p.fullName) !== key(plan.fullName)) {
-        result.errors.push(`SĐT phụ huynh ${p.phone} ghi tên ${p.fullName}, khác với ${plan.fullName} ở dòng ${plan.firstRow}.`);
-        return;
+        const extra = `Phụ huynh dùng chung SĐT ${p.phone}: ${p.fullName}`;
+        studentPlan.values.note = studentPlan.values.note ? `${studentPlan.values.note}. ${extra}` : extra;
+        result.notes.push(`SĐT phụ huynh ${p.phone} dùng chung với ${plan.fullName} (dòng ${plan.firstRow}); ghi thêm ${p.fullName} vào ghi chú học sinh.`);
       }
     } else {
       const found = snap.parentByPhone.get(p.phone);

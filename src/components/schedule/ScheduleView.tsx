@@ -51,35 +51,35 @@ function sessionVisual(s: SessionRow): { bar: string; surface: string; dot: stri
   if (s.status === 'cancelled') {
     return {
       bar: 'border-l-[var(--blush-ink)]',
-      surface: 'bg-[var(--blush)]/70',
-      dot: 'bg-blush-ink',
+      surface: 'bg-[var(--blush)]',
+      dot: 'bg-[#dc2626]',
     };
   }
   if (isMakeupSession(s) && s.status !== 'done') {
     return {
       bar: 'border-l-[var(--lav-ink)]',
-      surface: 'bg-[var(--lav)]/80',
-      dot: 'bg-lav-ink',
+      surface: 'bg-[var(--lav)]',
+      dot: 'bg-[#2563eb]',
     };
   }
   if (s.status === 'done') {
     return {
       bar: 'border-l-[var(--stone-ink)]',
       surface: 'bg-[var(--stone)]',
-      dot: 'bg-stone-ink',
+      dot: 'bg-[#64748b]',
     };
   }
   if (s.isPast) {
     return {
       bar: 'border-l-[var(--butter-ink)]',
-      surface: 'bg-[var(--butter)]/85',
-      dot: 'bg-butter-ink',
+      surface: 'bg-[var(--butter)]',
+      dot: 'bg-[#d97706]',
     };
   }
   return {
     bar: 'border-l-[var(--mint-ink)]',
-    surface: 'bg-[var(--mint)]/80',
-    dot: 'bg-mint-ink',
+    surface: 'bg-[var(--mint)]',
+    dot: 'bg-[#16a34a]',
   };
 }
 
@@ -323,29 +323,29 @@ export function ScheduleView({
       ) : (
         <>
           {/* Tsukuba .calLegend strip */}
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]/75 px-3.5 py-2 text-xs text-[var(--fgColor-muted)]">
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-              <span className="font-medium tabular-nums text-[var(--fgColor-default)]">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-3.5 py-2.5 text-xs text-[var(--ink-2)] shadow-[var(--shadow)]">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+              <span className="inline-flex items-center rounded-[5px] border border-[var(--borderColor-accent-muted)] bg-[var(--primary-soft)] px-2 py-0.5 font-semibold tabular-nums text-[var(--primary-deep)]">
                 Tổng {sessions.length} buổi học
               </span>
-              <span className="inline-flex items-center gap-1.5">
-                <span aria-hidden className="size-2 rounded-full bg-mint-ink" />
+              <span className="inline-flex items-center gap-1.5 font-medium">
+                <span aria-hidden className="size-2.5 rounded-full bg-[#16a34a]" />
                 Sắp học
               </span>
-              <span className="inline-flex items-center gap-1.5">
-                <span aria-hidden className="size-2 rounded-full bg-stone-ink" />
+              <span className="inline-flex items-center gap-1.5 font-medium">
+                <span aria-hidden className="size-2.5 rounded-full bg-[#64748b]" />
                 Đã học
               </span>
-              <span className="inline-flex items-center gap-1.5">
-                <span aria-hidden className="size-2 rounded-full bg-butter-ink" />
+              <span className="inline-flex items-center gap-1.5 font-medium">
+                <span aria-hidden className="size-2.5 rounded-full bg-[#d97706]" />
                 Chưa điểm danh
               </span>
-              <span className="inline-flex items-center gap-1.5">
-                <span aria-hidden className="size-2 rounded-full bg-lav-ink" />
+              <span className="inline-flex items-center gap-1.5 font-medium">
+                <span aria-hidden className="size-2.5 rounded-full bg-[#2563eb]" />
                 Học bù
               </span>
-              <span className="inline-flex items-center gap-1.5">
-                <span aria-hidden className="size-2 rounded-full bg-blush-ink" />
+              <span className="inline-flex items-center gap-1.5 font-medium">
+                <span aria-hidden className="size-2.5 rounded-full bg-[#dc2626]" />
                 Đã huỷ
               </span>
             </div>
@@ -362,12 +362,12 @@ export function ScheduleView({
               <DndContext id="schedule-dnd" sensors={sensors} collisionDetection={pointerWithin} onDragStart={onDragStart} onDragCancel={onDragCancel} onDragEnd={onDragEnd}>
                 <div ref={gridScroll} data-testid="week-grid" className="relative max-h-[calc(100dvh-14.5rem)] min-h-[24rem] overflow-auto">
                   <div style={{ minWidth: `${gridWidth}px` }}>
-                    {/* Tiêu đề ngày #f7f8fa: dính trên cùng khi cuộn; hôm nay có nhãn điểm nhấn */}
+                    {/* Tiêu đề ngày #f8fafc: dính trên cùng khi cuộn; hôm nay có nhãn điểm nhấn */}
                     <div
-                      className="sticky top-0 z-10 grid border-b border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]"
+                      className="sticky top-0 z-10 grid border-b border-[var(--borderColor-default)] bg-[#f8fafc] dark:bg-[var(--bgColor-muted)]"
                       style={{ gridTemplateColumns: `${TIME_COL} ${dayColumns}` }}
                     >
-                      <div className="flex items-center justify-center px-1 py-2 font-mono text-[10px] text-[var(--fgColor-muted)]">
+                      <div className="flex items-center justify-center px-1 py-2 font-mono text-[10px] font-medium text-[var(--fgColor-muted)]">
                         GMT+7
                       </div>
                       {days.map((day) => {
@@ -379,7 +379,7 @@ export function ScheduleView({
                             aria-current={isToday ? 'date' : undefined}
                             className={clsx(
                               'border-l border-[var(--borderColor-default)] px-2 py-2 text-center',
-                              isToday && 'bg-[var(--primary-soft)]/55',
+                              isToday && 'bg-[var(--primary-soft)]/65',
                             )}
                           >
                             <div className="flex items-center justify-center gap-1.5">
@@ -387,7 +387,7 @@ export function ScheduleView({
                                 {weekdayLabel(weekdayOfKey(day))}
                               </b>
                               {isToday && (
-                                <span className="rounded-[var(--borderRadius-small)] bg-[var(--primary-soft)] px-1.5 py-0.5 text-[11px] font-medium text-[var(--primary-deep)]">
+                                <span className="rounded-[5px] border border-[var(--borderColor-accent-muted)] bg-[var(--primary-soft)] px-1.5 py-0.5 text-[11px] font-semibold text-[var(--primary-deep)]">
                                   Hôm nay
                                 </span>
                               )}
@@ -402,7 +402,7 @@ export function ScheduleView({
 
                     {/* Lưới giờ */}
                     <div className="grid" style={{ gridTemplateColumns: `${TIME_COL} ${dayColumns}` }}>
-                      <div className="relative bg-[var(--bgColor-muted)]/35" style={{ height: gridHeight }}>
+                      <div className="relative bg-[#fcfdff] dark:bg-[var(--bgColor-muted)]/35" style={{ height: gridHeight }}>
                         {hours.map((h) => (
                           <span
                             key={h}
@@ -458,16 +458,16 @@ export function ScheduleView({
                   <section
                     key={day}
                     aria-label={`Buổi học ${dateKeyLabel(day)}`}
-                    className="overflow-hidden rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)]"
+                    className="overflow-hidden rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] shadow-[var(--shadow)]"
                   >
-                    <header className="flex items-center justify-between gap-3 border-b border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)] px-3.5 py-2.5">
+                    <header className="flex items-center justify-between gap-3 border-b border-[var(--borderColor-muted)] bg-[var(--bgColor-default)] px-3.5 py-2.5">
                       <div className="flex items-center gap-2.5">
                         <span
                           className={clsx(
-                            'grid size-9 shrink-0 place-items-center rounded-[var(--borderRadius-medium)] font-mono text-sm font-semibold tabular-nums',
+                            'grid size-9 shrink-0 place-items-center rounded-[var(--borderRadius-medium)] font-mono text-sm font-semibold tabular-nums shadow-2xs',
                             isToday
-                              ? 'bg-[var(--primary)] text-[var(--on-primary)]'
-                              : 'border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] text-[var(--fgColor-default)]',
+                              ? 'bg-gradient-to-br from-[var(--primary)] to-[var(--primary-deep)] text-[var(--on-primary)]'
+                              : 'border border-[var(--borderColor-default)] bg-[#f8fafc] text-[var(--fgColor-default)] dark:bg-[var(--bgColor-muted)]',
                           )}
                         >
                           {day.slice(8, 10)}
@@ -476,7 +476,7 @@ export function ScheduleView({
                           <div className="flex items-center gap-1.5">
                             <h2 className="m-0 text-sm font-semibold text-[var(--fgColor-default)]">{weekdayLabel(weekdayOfKey(day))}</h2>
                             {isToday && (
-                              <span className="rounded-[var(--borderRadius-small)] bg-[var(--primary-soft)] px-1.5 py-0.5 text-[11px] font-medium text-[var(--primary-deep)]">
+                              <span className="rounded-[5px] border border-[var(--borderColor-accent-muted)] bg-[var(--primary-soft)] px-1.5 py-0.5 text-[11px] font-semibold text-[var(--primary-deep)]">
                                 Hôm nay
                               </span>
                             )}
@@ -563,24 +563,24 @@ function CalendarBlock({
       }}
       title={`${s.className} · ${s.timeLabel} · ${s.teacherName}${s.room ? ` · ${s.room}` : ''} · ${state.label}`}
       className={clsx(
-        'absolute flex flex-col overflow-hidden rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] border-l-[3px] px-2 py-1 text-left leading-tight transition-all duration-150 hover:border-[var(--borderColor-accent-emphasis)] hover:shadow-sm',
+        'absolute flex flex-col overflow-hidden rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] border-l-[3px] px-2 py-1 text-left leading-tight shadow-2xs transition-all duration-150 hover:border-[var(--borderColor-accent-emphasis)] hover:shadow-sm',
         visual.surface,
         visual.bar,
         cancelled && 'opacity-65',
         isDragging && 'shadow-md ring-2 ring-[var(--primary)]/35',
       )}
     >
-      <span className={clsx('block truncate font-mono text-[11px] font-medium tabular-nums text-[var(--fgColor-muted)]', cancelled && 'line-through')}>
+      <span className={clsx('block truncate font-mono text-[11px] font-medium tabular-nums text-[var(--ink-2)]', cancelled && 'line-through')}>
         {s.timeLabel}
       </span>
       <span className={clsx('mt-0.5 block truncate text-[13px] font-semibold leading-tight text-[var(--fgColor-default)]', cancelled && 'line-through')}>
         {s.className}
       </span>
-      <span className="mt-0.5 block truncate text-[11px] text-[var(--fgColor-muted)]">
+      <span className="mt-0.5 block truncate text-[11px] text-[var(--ink-2)]">
         {shortTeacher(s.teacherName)}
         {s.room ? ` · ${s.room}` : ''}
       </span>
-      <span className="mt-auto flex items-center gap-1 pt-0.5 whitespace-nowrap text-[11px] text-[var(--fgColor-muted)]">
+      <span className="mt-auto flex items-center gap-1 pt-0.5 whitespace-nowrap text-[11px] font-medium text-[var(--ink-2)]">
         <span aria-hidden className={clsx('size-1.5 shrink-0 rounded-full', visual.dot)} />
         {state.label}
       </span>
@@ -619,7 +619,7 @@ function AgendaCard({ session: s, onOpen }: { session: SessionRow; onOpen: () =>
       data-card="true"
       onClick={onOpen}
       className={clsx(
-        'flex w-full flex-col gap-1 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] border-l-[3px] px-3 py-2.5 text-left transition-all duration-150 hover:border-[var(--borderColor-accent-emphasis)] hover:shadow-sm',
+        'flex w-full flex-col gap-1 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] border-l-[3px] px-3 py-2.5 text-left shadow-2xs transition-all duration-150 hover:border-[var(--borderColor-accent-emphasis)] hover:shadow-sm',
         visual.surface,
         visual.bar,
         cancelled && 'opacity-70',
@@ -627,7 +627,7 @@ function AgendaCard({ session: s, onOpen }: { session: SessionRow; onOpen: () =>
     >
       <div className="flex items-center justify-between gap-2">
         <span className={clsx('inline-flex items-center gap-1.5 font-mono text-xs font-semibold tabular-nums text-[var(--fgColor-default)]', cancelled && 'line-through')}>
-          <ClockIcon size={12} className="text-[var(--fgColor-muted)]" aria-hidden />
+          <ClockIcon size={12} className="text-[var(--ink-2)]" aria-hidden />
           {s.timeLabel}
         </span>
         <Pill tone={state.tone}>{state.label}</Pill>
@@ -636,9 +636,9 @@ function AgendaCard({ session: s, onOpen }: { session: SessionRow; onOpen: () =>
         <span className={clsx('truncate text-sm font-semibold text-[var(--fgColor-default)]', cancelled && 'line-through')}>
           {s.className}
         </span>
-        <span className="shrink-0 font-mono text-[11px] tabular-nums text-[var(--fgColor-muted)]">Buổi {s.sessionNo}</span>
+        <span className="shrink-0 font-mono text-[11px] font-medium tabular-nums text-[var(--ink-2)]">Buổi {s.sessionNo}</span>
       </div>
-      <span className="inline-flex items-center gap-1.5 truncate text-xs text-[var(--fgColor-muted)]">
+      <span className="inline-flex items-center gap-1.5 truncate text-xs text-[var(--ink-2)]">
         <span>{s.teacherName}</span>
         {s.room && (
           <>

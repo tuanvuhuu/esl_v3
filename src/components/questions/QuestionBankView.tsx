@@ -8,27 +8,34 @@ import { ItemDraftCard } from '@/components/assignments/ItemDraftCard';
 import { blankDraft, draftToInput, snippet, toDraft, type Draft } from '@/components/assignments/item-draft';
 import { Btn } from '@/components/ui/Btn';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { Chip, ChipGroup } from '@/components/ui/controls';
 import { DataGrid, type GridColumn } from '@/components/ui/datagrid';
 import { Field, FormFooter, FormSection } from '@/components/ui/Field';
 import { Modal } from '@/components/ui/Modal';
 import { PageCrumbs } from '@/components/shell/PageCrumbs';
 import { RowMenu, type RowMenuItem } from '@/components/ui/RowMenu';
 import { ComboBox, SelectBox } from '@/components-ui';
-import { Pill, Alert } from '@/components/ui/primitives';
+import { Pill, Alert, type Tone } from '@/components/ui/primitives';
 import { Card, EmptyPanel } from '@/components/ui/surfaces';
 import { Toast, useToast } from '@/components/ui/Toast';
-import { ITEM_TYPE_LABELS, SKILL_LABELS, type ItemType, type Skill } from '@/lib/assignment-scoring';
+import { ITEM_TYPE_LABELS, SKILL_LABELS, SKILLS, type ItemType, type Skill } from '@/lib/assignment-scoring';
 import { topicLabel } from '@/lib/vocab-topics';
-import { EMPTY_FILTER, filterBank, LEVEL_FIELD_OPTIONS, LEVEL_OPTIONS, levelLabel, SKILL_OPTIONS, topicFieldOptions, topicOptions, TYPE_OPTIONS, type BankFilter } from './bank-filters';
+import { EMPTY_FILTER, filterBank, LEVEL_FIELD_OPTIONS, LEVEL_OPTIONS, levelLabel, topicFieldOptions, topicOptions, TYPE_OPTIONS, type BankFilter } from './bank-filters';
 import type { BankQuestion } from '@/lib/queries/question-bank';
 
-const COLUMNS: GridColumn[] = [
-  { key: 'prompt', label: 'Nội dung', width: 'minmax(220px,2.4fr)' },
-  { key: 'skill', label: 'Kỹ năng', width: 'minmax(100px,0.8fr)' },
-  { key: 'level', label: 'Trình độ', width: 'minmax(100px,0.8fr)' },
-  { key: 'type', label: 'Loại', width: 'minmax(110px,1fr)' },
-  { key: 'points', label: 'Điểm', width: 'minmax(64px,0.5fr)' },
-  { key: 'usage', label: 'Dùng ở', width: 'minmax(100px,0.8fr)' },
+const SKILL_TONES: Record<Skill, Tone> = {
+  listening: 'lav',
+  speaking: 'butter',
+  reading: 'mint',
+  writing: 'stone',
+};
+
+const COLUMNS: GridColumn<BankQuestion>[] = [
+  { key: 'prompt', label: 'Câu hỏi & chủ đề', width: 'minmax(280px,2.8fr)', sortValue: (q) => q.prompt },
+  { key: 'skill', label: 'Kỹ năng', width: '132px', sortValue: (q) => q.skill },
+  { key: 'type', label: 'Dạng câu', width: '164px', sortValue: (q) => q.itemType },
+  { key: 'points', label: 'Điểm', width: '92px', sortValue: (q) => q.points },
+  { key: 'usage', label: 'Sử dụng', width: '132px', sortValue: (q) => q.usageCount },
   { key: 'action', label: 'Thao tác', width: '44px', align: 'end', srOnly: true },
 ];
 
@@ -90,24 +97,45 @@ export function QuestionBankView({ questions }: { questions: BankQuestion[] }) {
     switch (key) {
       case 'prompt':
         return (
-          <span className="flex min-w-0 flex-col">
-            <span className="text-base text-[var(--fgColor-default)] [overflow-wrap:anywhere]">{snippet(q.prompt, q.audioName)}</span>
-            {q.topic && <span className="text-sm text-[var(--fgColor-muted)]">{topicLabel(q.topic)}</span>}
+          <div className="flex min-w-0 flex-col gap-1">
+            <span className="text-[13.5px] font-semibold text-[var(--fgColor-default)] [overflow-wrap:anywhere]">
+              {snippet(q.prompt, q.audioName)}
+            </span>
+            {(q.level || q.topic) && (
+              <div className="flex flex-wrap items-center gap-1.5">
+                {q.level && (
+                  <span className="inline-flex items-center rounded-[4px] border border-[var(--borderColor-accent-muted)] bg-[var(--primary-soft)] px-1.5 py-0 font-mono text-[11px] font-semibold text-[var(--primary-deep)]">
+                    {levelLabel(q.level)}
+                  </span>
+                )}
+                {q.topic && (
+                  <span className="inline-flex items-center rounded-[4px] border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] px-1.5 py-0 text-[11px] font-medium text-[var(--ink-2)]">
+                    {topicLabel(q.topic)}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      case 'skill':
+        return <Pill tone={SKILL_TONES[q.skill]}>{SKILL_LABELS[q.skill]}</Pill>;
+      case 'type':
+        return (
+          <span className="inline-flex items-center rounded-[5px] border border-[var(--borderColor-default)] bg-[#f8fafc] px-2 py-0.5 text-xs font-medium text-[var(--ink-2)] dark:bg-[var(--bgColor-muted)]">
+            {ITEM_TYPE_LABELS[q.itemType]}
           </span>
         );
-      case 'level':
-        return <span className={`text-sm ${q.level ? 'text-[var(--fgColor-default)]' : 'text-[var(--fgColor-muted)]'}`}>{q.level ? levelLabel(q.level) : ''}</span>;
-      case 'skill':
-        return <Pill tone="lav">{SKILL_LABELS[q.skill]}</Pill>;
-      case 'type':
-        return <span className="text-sm text-[var(--fgColor-muted)]">{ITEM_TYPE_LABELS[q.itemType]}</span>;
       case 'points':
-        return <span className="font-mono text-sm tabular-nums text-[var(--fgColor-default)]">{q.points}</span>;
-      case 'usage':
         return (
-          <span className={`text-sm tabular-nums ${q.usageCount > 0 ? 'font-medium text-[var(--fgColor-default)]' : 'text-[var(--fgColor-muted)]'}`}>
-            {usageText(q)}
+          <span className="inline-flex items-center rounded-[5px] border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] px-2 py-0.5 font-mono text-xs font-semibold tabular-nums text-[var(--fgColor-default)]">
+            {q.points} đ
           </span>
+        );
+      case 'usage':
+        return q.usageCount > 0 ? (
+          <Pill tone="mint">{usageText(q)}</Pill>
+        ) : (
+          <span className="text-xs text-[var(--fgColor-muted)]">{usageText(q)}</span>
         );
       case 'action':
         return <RowMenu label={`Thao tác với câu ${q.id}`} items={menuItems(q)} />;
@@ -127,14 +155,28 @@ export function QuestionBankView({ questions }: { questions: BankQuestion[] }) {
         rowKey={(q) => q.id}
         cell={cell}
         from="md"
+        fill
         stickyEnd
         title={
-          <div className="flex items-baseline gap-2">
-            <h1 className="m-0 text-base font-semibold text-[var(--fgColor-default)]">Ngân hàng câu hỏi</h1>
-            <span className="rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)] px-2 py-0.5 text-xs tabular-nums text-[var(--fgColor-muted)]">
-              {shown.length} câu
-            </span>
-          </div>
+          <ChipGroup label="Lọc theo kỹ năng">
+            <Chip
+              selected={filter.skill === 'all'}
+              count={questions.length}
+              onClick={() => setFilter((f) => ({ ...f, skill: 'all' }))}
+            >
+              Tất cả
+            </Chip>
+            {SKILLS.map((s) => (
+              <Chip
+                key={s}
+                selected={filter.skill === s}
+                count={questions.filter((q) => q.skill === s).length}
+                onClick={() => setFilter((f) => ({ ...f, skill: s }))}
+              >
+                {SKILL_LABELS[s]}
+              </Chip>
+            ))}
+          </ChipGroup>
         }
         actionComponent={
           <>
@@ -142,7 +184,6 @@ export function QuestionBankView({ questions }: { questions: BankQuestion[] }) {
               <>
                 <SelectBox label="Lọc theo trình độ" auto variant="bar" value={filter.level} onChange={(v) => setFilter((f) => ({ ...f, level: v }))} options={LEVEL_OPTIONS} />
                 <ComboBox label="Lọc theo chủ đề" auto variant="bar" value={filter.topic} onChange={(v) => setFilter((f) => ({ ...f, topic: v }))} options={topicOptions(questions)} />
-                <SelectBox label="Lọc theo kỹ năng" auto variant="bar" value={filter.skill} onChange={(v) => setFilter((f) => ({ ...f, skill: v as 'all' | Skill }))} options={SKILL_OPTIONS} />
                 <SelectBox label="Lọc theo dạng câu" auto variant="bar" value={filter.type} onChange={(v) => setFilter((f) => ({ ...f, type: v as 'all' | ItemType }))} options={TYPE_OPTIONS} />
               </>
             )}
@@ -160,9 +201,9 @@ export function QuestionBankView({ questions }: { questions: BankQuestion[] }) {
         }
         card={(q) => (
           <Card className="tsukuba-rise">
-            <b className="text-base font-semibold text-[var(--fgColor-default)] [overflow-wrap:anywhere]">{snippet(q.prompt, q.audioName)}</b>
+            <b className="text-[14px] font-semibold text-[var(--fgColor-default)] [overflow-wrap:anywhere]">{snippet(q.prompt, q.audioName)}</b>
             <div className="flex flex-wrap items-center gap-2 text-xs tabular-nums text-[var(--fgColor-muted)]">
-              <Pill tone="lav">{SKILL_LABELS[q.skill]}</Pill>
+              <Pill tone={SKILL_TONES[q.skill]}>{SKILL_LABELS[q.skill]}</Pill>
               <span>
                 {ITEM_TYPE_LABELS[q.itemType]} · {q.points} điểm · {usageText(q).toLowerCase()}
                 {q.level ? ` · ${levelLabel(q.level)}` : ''}

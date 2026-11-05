@@ -117,11 +117,13 @@ export function StudentProfile({
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <b className="block text-sm font-semibold text-[var(--fgColor-default)]">{student.course}</b>
-              <small className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-[var(--fgColor-muted)]">
-                <MortarBoardIcon size={12} aria-hidden />
-                <span>Lớp {student.className}</span>
+              <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-[var(--fgColor-muted)]">
+                <span className="inline-flex items-center gap-1 rounded-[5px] border border-[var(--borderColor-accent-muted)] bg-[var(--primary-soft)] px-2 py-0.5 text-[11px] font-semibold text-[var(--primary-deep)]">
+                  <MortarBoardIcon size={12} aria-hidden />
+                  Lớp {student.className}
+                </span>
                 {student.teacherName && <span>· {student.teacherName}</span>}
-              </small>
+              </div>
             </div>
             <span className="inline-flex shrink-0 items-center gap-1 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-accent-muted,var(--borderColor-default))] bg-[var(--bgColor-accent-muted)] px-2 py-0.5 text-xs font-medium text-[var(--fgColor-accent)]">
               <CalendarIcon size={12} aria-hidden />
@@ -270,11 +272,11 @@ export function StudentProfile({
   return (
     <section className="flex flex-col gap-3.5">
       {drawerClose ? (
-        <div className="-mx-5 -mt-5 mb-0.5 flex items-center justify-between gap-3 border-b border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)] px-5 py-3">
+        <div className="-mx-5 -mt-5 mb-0.5 flex items-center justify-between gap-3 border-b border-[var(--borderColor-muted)] bg-[var(--bgColor-default)] px-5 py-3">
           <div className="flex min-w-0 items-center gap-2">
             <span aria-hidden="true" className="h-3.5 w-1 shrink-0 rounded-full bg-[var(--primary)]" />
             <h2 className="m-0 truncate text-sm font-semibold text-[var(--fgColor-default)]">Hồ sơ học sinh</h2>
-            <span className="rounded bg-[var(--bgColor-neutral-muted)] px-2 py-0.5 font-mono text-xs text-[var(--fgColor-muted)]">
+            <span className="inline-flex items-center rounded-[5px] border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] px-2 py-0.5 font-mono text-xs font-medium text-[var(--ink-2)]">
               {student.code}
             </span>
           </div>
@@ -282,7 +284,7 @@ export function StudentProfile({
             href={drawerClose}
             scroll={false}
             aria-label="Đóng hồ sơ"
-            className="grid size-[var(--icon-h)] shrink-0 place-items-center rounded-[var(--borderRadius-medium)] text-[var(--fgColor-muted)] transition-colors hover:bg-[var(--bgColor-default)] hover:text-[var(--fgColor-default)] max-[767px]:size-[var(--icon-h-touch)]"
+            className="grid size-[var(--icon-h)] shrink-0 place-items-center rounded-[var(--borderRadius-medium)] text-[var(--fgColor-muted)] transition-colors hover:bg-[var(--bgColor-muted)] hover:text-[var(--fgColor-default)] max-[767px]:size-[var(--icon-h-touch)]"
           >
             <XIcon size={16} aria-hidden />
           </Link>
@@ -298,16 +300,23 @@ export function StudentProfile({
       )}
 
       {/* Thẻ Hero hồ sơ chuẩn 01. TSUKUBA: viền trái cam đỏ, avatar tròn, chip mã font-mono và dải KPI 3 cột */}
-      <div className="tsukuba-rise overflow-hidden rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] border-l-4 border-l-[var(--primary)] bg-[var(--bgColor-default)] p-4 sm:p-5">
+      <div className="tsukuba-rise overflow-hidden rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] border-l-4 border-l-[var(--primary)] bg-[var(--bgColor-default)] p-4 shadow-[var(--shadow)] sm:p-5">
         <div className="flex items-start gap-4">
           <Avatar name={student.fullName} seed={student.id} size="lg" />
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded bg-[var(--bgColor-neutral-muted)] px-2 py-0.5 font-mono text-xs text-[var(--fgColor-default)]">
+              <span className="inline-flex items-center rounded-[5px] border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] px-2 py-0.5 font-mono text-xs font-medium text-[var(--ink-2)]">
                 {student.code}
               </span>
-              <span className="text-xs text-[var(--fgColor-muted)]">
-                {student.gender === 'female' ? 'Nữ' : 'Nam'} · Lớp {student.className}
+              <span className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--ink-2)]">
+                <span
+                  aria-hidden
+                  className={`size-1.5 shrink-0 rounded-full ${student.gender === 'female' ? 'bg-[#ec4899]' : 'bg-[#0ea5e9]'}`}
+                />
+                {student.gender === 'female' ? 'Nữ' : 'Nam'}
+              </span>
+              <span className="inline-flex items-center rounded-[5px] border border-[var(--borderColor-accent-muted)] bg-[var(--primary-soft)] px-2 py-0.5 text-xs font-semibold text-[var(--primary-deep)]">
+                Lớp {student.className}
               </span>
             </div>
             <h1 className="mt-1 text-xl font-semibold leading-tight tracking-tight text-[var(--fgColor-default)] max-[767px]:text-lg">
@@ -386,7 +395,9 @@ function HeroStat({
   valueTone?: string;
 }) {
   return (
-    <div className={`rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-muted)] border-l-[3px] ${accent} bg-[var(--bgColor-muted)]/65 px-3 py-2`}>
+    <div
+      className={`rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] border-l-[3px] ${accent} bg-[var(--bgColor-default)] px-3.5 py-2.5 shadow-2xs`}
+    >
       <span className="block text-[11px] font-medium text-[var(--fgColor-muted)]">{label}</span>
       <b className={`mt-0.5 block truncate text-base font-semibold tabular-nums ${valueTone}`}>{value}</b>
       {sub && <small className="block truncate text-[11px] text-[var(--fgColor-muted)]">{sub}</small>}

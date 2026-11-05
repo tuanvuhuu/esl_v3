@@ -1,6 +1,6 @@
 'use client';
 
-import { PaperclipIcon, PencilIcon, PlusIcon, TrashIcon } from '@primer/octicons-react';
+import { BookIcon, PaperclipIcon, PencilIcon, PlusIcon, TrashIcon } from '@primer/octicons-react';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { deleteLessonAction } from '@/app/(app)/bai-giang/actions';
@@ -8,20 +8,23 @@ import type { CampusOption, CampusScope } from '@/lib/campus';
 import type { LessonRow } from '@/lib/queries/lessons';
 import { Btn } from '@/components/ui/Btn';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { Chip, ChipGroup } from '@/components/ui/controls';
 import { DataGrid, type GridColumn } from '@/components/ui/datagrid';
 import { Modal } from '@/components/ui/Modal';
 import { PageCrumbs } from '@/components/shell/PageCrumbs';
+import { Pill } from '@/components/ui/primitives';
 import { RowMenu, type RowMenuItem } from '@/components/ui/RowMenu';
 import { Card, EmptyPanel } from '@/components/ui/surfaces';
 import { Toast, useToast } from '@/components/ui/Toast';
 import { LessonForm } from './LessonForm';
 import { MaterialsPanel } from './MaterialsPanel';
 
-const COLUMNS: GridColumn[] = [
-  { key: 'title', label: 'Bài giảng', width: 'minmax(220px,2.2fr)' },
-  { key: 'campus', label: 'Cơ sở', width: 'minmax(160px,1.3fr)' },
-  { key: 'materials', label: 'Tài liệu', width: 'minmax(88px,0.7fr)' },
-  { key: 'assignments', label: 'Bài tập', width: 'minmax(88px,0.7fr)' },
+type LessonSegment = 'all' | 'with-materials' | 'assigned';
+
+const COLUMNS: GridColumn<LessonRow>[] = [
+  { key: 'title', label: 'Bài giảng & mục tiêu', width: 'minmax(280px,2.5fr)', sortValue: (l) => l.title },
+  { key: 'campus', label: 'Cơ sở áp dụng', width: 'minmax(180px,1.4fr)', sortValue: (l) => l.campusNames.join(', ') },
+  { key: 'resources', label: 'Tài liệu & bài tập', width: '232px', sortValue: (l) => l.materials.length + l.assignmentCount },
   { key: 'action', label: 'Thao tác', width: '44px', align: 'end', srOnly: true },
 ];
 
@@ -39,10 +42,17 @@ export function LessonsView({
 }) {
   const router = useRouter();
   const { message, notify } = useToast();
+  const [segment, setSegment] = useState<LessonSegment>('all');
   const [editing, setEditing] = useState<LessonRow | 'new' | null>(null);
   const [materialsId, setMaterialsId] = useState<number | null>(null);
   const [toDelete, setToDelete] = useState<LessonRow | null>(null);
   const [pending, startTransition] = useTransition();
+
+  const shownLessons = lessons.filter((l) => {
+    if (segment === 'with-materials') return l.materials.length > 0;
+    if (segment === 'assigned') return l.assignmentCount > 0;
+    return true;
+  });
 
   // Mở tài liệu theo mã bài để luôn thấy danh sách mới sau khi làm mới trang
   const materialsLesson = lessons.find((l) => l.id === materialsId) ?? null;
@@ -69,19 +79,51 @@ export function LessonsView({
     switch (key) {
       case 'title':
         return (
-          <div className="min-w-0">
-            <span className="block min-w-0 text-sm font-medium text-[var(--fgColor-default)] [overflow-wrap:anywhere]">{l.title}</span>
-            {l.objectives && (
-              <span className="mt-0.5 block truncate text-xs text-[var(--fgColor-muted)]">{l.objectives}</span>
-            )}
+          <div className="flex min-w-0 items-center gap-2.5">
+            <span
+              aria-hidden
+              className="grid size-6 shrink-0 place-items-center rounded-[6px] border border-[var(--borderColor-accent-muted)] bg-[var(--primary-soft)] text-[var(--primary-deep)]"
+            >
+              <BookIcon size={13} />
+            </span>
+            <div className="min-w-0">
+              <span className="block min-w-0 text-[13.5px] font-semibold text-[var(--fgColor-default)] [overflow-wrap:anywhere]">
+                {l.title}
+              </span>
+              {l.objectives && (
+                <span className="mt-0.5 block truncate text-xs text-[var(--fgColor-muted)]">{l.objectives}</span>
+              )}
+            </div>
           </div>
         );
       case 'campus':
-        return <span className="text-sm text-[var(--fgColor-muted)]">{campusText(l)}</span>;
-      case 'materials':
-        return <span className="text-sm tabular-nums text-[var(--fgColor-default)]">{l.materials.length} tài liệu</span>;
-      case 'assignments':
-        return <span className="text-sm tabular-nums text-[var(--fgColor-default)]">{l.assignmentCount} bài</span>;
+        return (
+          <div className="flex flex-wrap gap-1">
+            {l.campusNames.map((name) => (
+              <span
+                key={name}
+                className="inline-flex items-center rounded-[5px] border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] px-1.5 py-0.5 text-[11.5px] font-medium text-[var(--ink-2)]"
+              >
+                {name}
+              </span>
+            ))}
+          </div>
+        );
+      case 'resources':
+        return (
+          <div className="flex flex-wrap items-center gap-1.5">
+            <button
+              type="button"
+              data-link="true"
+              onClick={() => setMaterialsId(l.id)}
+              className="inline-flex cursor-pointer items-center gap-1 rounded-[5px] border border-[var(--borderColor-default)] bg-[#f8fafc] px-2 py-0.5 text-xs font-medium tabular-nums text-[var(--ink-2)] transition-colors hover:border-[var(--primary)] hover:bg-[var(--primary-soft)] hover:text-[var(--primary-deep)] dark:bg-[var(--bgColor-muted)]"
+            >
+              <PaperclipIcon size={12} aria-hidden />
+              <span>{l.materials.length} tài liệu</span>
+            </button>
+            <Pill tone={l.assignmentCount > 0 ? 'mint' : 'stone'}>{l.assignmentCount} bài tập</Pill>
+          </div>
+        );
       case 'action':
         return <RowMenu label={`Thao tác với bài giảng ${l.title}`} items={menuItems(l)} />;
       default:
@@ -96,19 +138,33 @@ export function LessonsView({
       <DataGrid
         label="Danh sách bài giảng"
         columns={COLUMNS}
-        rows={lessons}
+        rows={shownLessons}
         rowKey={(l) => l.id}
         cell={cell}
         from="md"
+        fill
         stickyEnd
         searchEnable
         title={
-          <div className="flex items-baseline gap-2">
-            <h1 className="m-0 text-base font-semibold text-[var(--fgColor-default)]">Bài giảng</h1>
-            <span className="rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)] px-2 py-0.5 text-xs tabular-nums text-[var(--fgColor-muted)]">
-              {lessons.length}
-            </span>
-          </div>
+          <ChipGroup label="Lọc bài giảng">
+            <Chip selected={segment === 'all'} count={lessons.length} onClick={() => setSegment('all')}>
+              Tất cả
+            </Chip>
+            <Chip
+              selected={segment === 'with-materials'}
+              count={lessons.filter((l) => l.materials.length > 0).length}
+              onClick={() => setSegment('with-materials')}
+            >
+              Có tài liệu
+            </Chip>
+            <Chip
+              selected={segment === 'assigned'}
+              count={lessons.filter((l) => l.assignmentCount > 0).length}
+              onClick={() => setSegment('assigned')}
+            >
+              Đã gắn bài tập
+            </Chip>
+          </ChipGroup>
         }
         actionComponent={
           canManage && (

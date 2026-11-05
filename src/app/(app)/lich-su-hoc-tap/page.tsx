@@ -64,7 +64,7 @@ async function HistoryData({ searchParams }: { searchParams: Promise<SearchParam
         method="get"
         action="/lich-su-hoc-tap"
         role="search"
-        className="mb-4 flex flex-wrap items-center gap-2 rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-3"
+        className="mb-4 flex flex-wrap items-center gap-2 rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-3 shadow-[var(--shadow)]"
       >
         <SelectPanel
           multiple

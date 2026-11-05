@@ -13,7 +13,7 @@ import { ActIcon } from '@/components/ui/ActIcon';
 import { Btn } from '@/components/ui/Btn';
 import { DataGrid, type GridColumn } from '@/components/ui/datagrid';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { Avatar } from '@/components/ui/primitives';
+import { Avatar, Pill } from '@/components/ui/primitives';
 import { Card, EmptyPanel, Notice, StatCards } from '@/components/ui/surfaces';
 import { Toast, useToast } from '@/components/ui/Toast';
 import { ItemsEditor } from './ItemsEditor';
@@ -114,7 +114,7 @@ export function GradingView({
         return (
           <div className="flex min-w-0 items-center gap-2.5">
             <Avatar name={r.fullName} seed={r.studentId} quiet />
-            <span className="min-w-0 truncate text-sm font-medium text-[var(--fgColor-default)]">{r.fullName}</span>
+            <span className="min-w-0 truncate text-[13.5px] font-medium text-[var(--fgColor-default)]">{r.fullName}</span>
           </div>
         );
       case 'status':
@@ -204,10 +204,10 @@ export function GradingView({
         searchEnable
         paging={{ enable: false }}
         title={
-          <div className="flex flex-wrap gap-3 text-xs tabular-nums text-[var(--fgColor-muted)]">
-            <span>Chưa nộp <b className="font-semibold text-[var(--fgColor-default)]">{counts.not_submitted}</b></span>
-            <span>Đã nộp <b className="font-semibold text-[var(--fgColor-default)]">{counts.submitted}</b></span>
-            <span>Đã chấm <b className="font-semibold text-[var(--fgColor-default)]">{counts.graded}</b></span>
+          <div className="flex flex-wrap items-center gap-2 tabular-nums">
+            <Pill tone="stone">Chưa nộp {counts.not_submitted}</Pill>
+            <Pill tone="butter">Đã nộp {counts.submitted}</Pill>
+            <Pill tone="mint">Đã chấm {counts.graded}</Pill>
           </div>
         }
       />

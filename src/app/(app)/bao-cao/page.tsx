@@ -130,31 +130,32 @@ async function ReportData({ searchParams }: { searchParams: Promise<SearchParams
                 key={t.month}
                 href={href(t.month)}
                 data-card="true"
-                className={`group flex min-w-0 flex-col items-center gap-2 rounded-[var(--borderRadius-medium)] border px-2 py-2.5 transition-colors max-[767px]:px-1 ${
+                className={`group flex min-w-0 flex-col items-center gap-2 rounded-[var(--borderRadius-medium)] border px-2 py-2.5 transition-all duration-150 max-[767px]:px-1 ${
                   active
-                    ? 'border-[var(--primary)] bg-[var(--primary-soft)]/35'
-                    : 'border-transparent hover:border-[var(--borderColor-default)] hover:bg-[var(--bgColor-muted)]/60'
+                    ? 'border-[var(--primary)] bg-[var(--primary-soft)]/45 shadow-2xs'
+                    : 'border-transparent hover:border-[var(--borderColor-default)] hover:bg-[#f8fafc] dark:hover:bg-[var(--bgColor-muted)]/60'
                 }`}
               >
                 <small
                   className={`text-xs tabular-nums max-[767px]:text-2xs ${
-                    active ? 'font-semibold text-[var(--primary-deep)]' : 'text-[var(--fgColor-muted)]'
+                    active ? 'font-semibold text-[var(--primary-deep)]' : 'font-medium text-[var(--ink-2)]'
                   }`}
                 >
                   {t.total > 0 ? formatVNDShort(t.total) : '0'}
                 </small>
-                <span className="flex h-[136px] w-full max-w-[44px] items-end overflow-hidden rounded-[var(--borderRadius-small)] bg-[var(--bgColor-neutral-muted)]">
+                <span className="flex h-[136px] w-full max-w-[44px] items-end overflow-hidden rounded-[var(--borderRadius-small)] bg-[#eef2f7] ring-1 ring-inset ring-black/[0.04] dark:bg-[var(--bgColor-neutral-muted)]">
                   <span
-                    className="block w-full rounded-t-[var(--borderRadius-small)] transition-all duration-200"
-                    style={{
-                      height: `${pct}%`,
-                      backgroundColor: active ? '#eb6834' : '#2a78d6',
-                    }}
+                    className={`block w-full rounded-t-[var(--borderRadius-small)] transition-all duration-200 ${
+                      active
+                        ? 'bg-gradient-to-t from-[#ea580c] to-[#fb923c] shadow-2xs'
+                        : 'bg-gradient-to-t from-[#2563eb] to-[#60a5fa] group-hover:brightness-105'
+                    }`}
+                    style={{ height: `${pct}%` }}
                   />
                 </span>
                 <small
                   className={`font-mono text-xs tabular-nums max-[767px]:text-2xs ${
-                    active ? 'font-semibold text-[var(--fgColor-default)]' : 'text-[var(--fgColor-muted)]'
+                    active ? 'font-semibold text-[var(--primary-deep)]' : 'text-[var(--fgColor-muted)]'
                   }`}
                 >
                   {monthLabel(t.month)}
@@ -186,23 +187,27 @@ async function ReportData({ searchParams }: { searchParams: Promise<SearchParams
                 const barWidth = Math.max(4, Math.round((Math.max(0, c.total) / maxClassTotal) * 100));
                 switch (key) {
                   case 'name':
-                    return <b className="block truncate text-sm font-medium text-[var(--fgColor-default)]">{c.name}</b>;
+                    return (
+                      <span className="inline-flex max-w-full items-center truncate rounded-[5px] border border-[var(--borderColor-accent-muted)] bg-[var(--primary-soft)] px-2 py-0.5 text-xs font-semibold text-[var(--primary-deep)]">
+                        {c.name}
+                      </span>
+                    );
                   case 'share':
                     return (
                       <div className="flex items-center gap-2.5">
-                        <span className="h-2 flex-1 overflow-hidden rounded-full bg-[var(--bgColor-neutral-muted)]">
+                        <span className="h-2 flex-1 overflow-hidden rounded-full bg-[#eef2f7] ring-1 ring-inset ring-black/[0.04] dark:bg-[var(--bgColor-neutral-muted)]">
                           <span
-                            className="block h-full rounded-full"
-                            style={{ width: `${barWidth}%`, backgroundColor: '#1baf7a' }}
+                            className="block h-full rounded-full bg-gradient-to-r from-[#10b981] to-[#059669]"
+                            style={{ width: `${barWidth}%` }}
                           />
                         </span>
-                        <span className="w-9 text-right font-mono text-xs tabular-nums text-[var(--fgColor-muted)]">{ratio}%</span>
+                        <span className="w-9 text-right font-mono text-xs font-medium tabular-nums text-[var(--ink-2)]">{ratio}%</span>
                       </div>
                     );
                   case 'count':
-                    return <span className="text-sm tabular-nums text-[var(--fgColor-muted)]">{c.count}</span>;
+                    return <span className="text-sm tabular-nums text-[var(--ink-2)]">{c.count}</span>;
                   case 'total':
-                    return <span className="text-sm font-medium tabular-nums text-[var(--fgColor-default)]">{formatVND(c.total)}</span>;
+                    return <span className="text-sm font-semibold tabular-nums text-[var(--fgColor-default)]">{formatVND(c.total)}</span>;
                   default:
                     return null;
                 }
@@ -210,23 +215,28 @@ async function ReportData({ searchParams }: { searchParams: Promise<SearchParams
               card={(c) => {
                 const barWidth = Math.max(4, Math.round((Math.max(0, c.total) / maxClassTotal) * 100));
                 return (
-                  <div className="flex flex-col gap-2 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-muted)] bg-[var(--bgColor-default)] px-3 py-2.5">
+                  <div className="flex flex-col gap-2 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-3 py-2.5 shadow-2xs">
                     <div className="flex items-center justify-between gap-3">
                       <div className="min-w-0">
-                        <b className="block truncate text-sm font-medium text-[var(--fgColor-default)]">{c.name}</b>
-                        <small className="text-xs tabular-nums text-[var(--fgColor-muted)]">{c.count} khoản thu</small>
+                        <span className="inline-flex max-w-full items-center truncate rounded-[5px] border border-[var(--borderColor-accent-muted)] bg-[var(--primary-soft)] px-2 py-0.5 text-xs font-semibold text-[var(--primary-deep)]">
+                          {c.name}
+                        </span>
+                        <small className="mt-1 block text-xs tabular-nums text-[var(--fgColor-muted)]">{c.count} khoản thu</small>
                       </div>
                       <b className="shrink-0 text-sm font-semibold tabular-nums text-[var(--fgColor-default)]">{formatVND(c.total)}</b>
                     </div>
-                    <span className="block h-1.5 w-full overflow-hidden rounded-full bg-[var(--bgColor-neutral-muted)]">
-                      <span className="block h-full rounded-full" style={{ width: `${barWidth}%`, backgroundColor: '#1baf7a' }} />
+                    <span className="block h-1.5 w-full overflow-hidden rounded-full bg-[#eef2f7] ring-1 ring-inset ring-black/[0.04] dark:bg-[var(--bgColor-neutral-muted)]">
+                      <span
+                        className="block h-full rounded-full bg-gradient-to-r from-[#10b981] to-[#059669]"
+                        style={{ width: `${barWidth}%` }}
+                      />
                     </span>
                   </div>
                 );
               }}
             />
             {/* Phiếu tổng kết cuối bảng kiểu .slip */}
-            <div className="mt-3 flex items-baseline justify-between gap-3 rounded-[var(--borderRadius-medium)] border border-dashed border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]/60 px-3.5 py-2.5">
+            <div className="mt-3 flex items-baseline justify-between gap-3 rounded-[var(--borderRadius-medium)] border border-dashed border-[var(--borderColor-default)] bg-[#f8fafc] px-3.5 py-2.5 dark:bg-[var(--bgColor-muted)]/60">
               <span className="text-xs font-semibold uppercase tracking-wide text-[var(--fgColor-muted)]">
                 Tổng cộng · {report.count} khoản thu
               </span>
@@ -254,7 +264,7 @@ function Stat({
 }) {
   return (
     <div
-      className={`rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] border-l-[3px] ${accent} bg-[var(--bgColor-default)] px-4 py-3.5`}
+      className={`rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] border-l-[3px] ${accent} bg-[var(--bgColor-default)] px-4 py-3.5 shadow-[var(--shadow)]`}
     >
       <small className="block text-xs font-medium text-[var(--fgColor-muted)]">{label}</small>
       <b

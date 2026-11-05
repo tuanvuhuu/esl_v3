@@ -85,17 +85,21 @@ const CARDS_HIDE_ABOVE = {
 const CARDS_MD_ONLY = 'hidden min-[768px]:flex';
 const CARDS_ALL = 'flex';
 
-function parseColumnWidth(spec: string): { width?: number; flex?: number } {
+function parseColumnWidth(spec: string): { width?: number; minWidth?: number; flex?: number } {
   const trimmed = spec.trim();
   const exactPx = /^(\d+)px$/.exec(trimmed);
   if (exactPx) {
     const px = Number(exactPx[1]);
     return { width: Math.max(40, px) };
   }
-  const minMaxFr = /^minmax\(\s*\d+px\s*,\s*([\d.]+)fr\s*\)$/.exec(trimmed);
+  const minMaxFr = /^minmax\(\s*(\d+)px\s*,\s*([\d.]+)fr\s*\)$/.exec(trimmed);
   if (minMaxFr) {
-    const fr = Number(minMaxFr[1]);
-    return { flex: Number.isFinite(fr) && fr > 0 ? fr : 1 };
+    const minPx = Number(minMaxFr[1]);
+    const fr = Number(minMaxFr[2]);
+    return {
+      minWidth: Number.isFinite(minPx) && minPx > 0 ? minPx : undefined,
+      flex: Number.isFinite(fr) && fr > 0 ? fr : 1,
+    };
   }
   const pureFr = /^([\d.]+)fr$/.exec(trimmed);
   if (pureFr) {
@@ -112,7 +116,8 @@ function extractNodeText(node: ReactNode): string {
     return node.map(extractNodeText).filter(Boolean).join(' · ');
   }
   if (isValidElement(node)) {
-    const el = node as ReactElement<{ children?: ReactNode }>;
+    const el = node as ReactElement<{ children?: ReactNode; 'aria-hidden'?: boolean | 'true' | 'false' }>;
+    if (el.props?.['aria-hidden'] === true || el.props?.['aria-hidden'] === 'true') return '';
     return extractNodeText(el.props?.children);
   }
   return '';
@@ -235,7 +240,7 @@ export function DataGrid<T>({
       const dims = parseColumnWidth(col.width);
       const canSortCol = sortable && col.sortable !== false && !isActionCol && !isSelectCol;
       const resolvedWidth = isActionCol
-        ? dims.width && dims.width > 64
+        ? dims.width && dims.width >= 36
           ? dims.width
           : 44
         : isSelectCol
@@ -248,6 +253,7 @@ export function DataGrid<T>({
         dataField: !isActionCol && !isSelectCol ? col.key : undefined,
         caption: col.srOnly ? '' : col.label,
         width: resolvedWidth,
+        minWidth: resolvedWidth === undefined ? dims.minWidth : undefined,
         flex: resolvedWidth === undefined ? (dims.flex ?? 1) : undefined,
         align: col.align === 'end' ? 'right' : isSelectCol ? 'center' : 'left',
         fixed: (stickyEnd || isActionCol) && isLast ? 'right' : isSelectCol ? 'left' : undefined,
@@ -393,7 +399,7 @@ export function DataGrid<T>({
           subToolbarElement={subToolbarElement}
           searchEnable={searchEnable}
           isShowRowIdx={!hasSelectCol}
-          isAltertingRowColor
+          isAltertingRowColor={false}
           filterRow={{ enable: showFilterRow }}
           sorting={{
             enable: sortable,

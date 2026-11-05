@@ -229,7 +229,7 @@ const DataGrid = <T = DataGridRowRecord,>(props: IDataGridProps<T>) => {
     if (normalizedProps.isShowRowIdx === false) return null;
     return {
       id: "col_idx",
-      width: 36,
+      width: 34,
       align: "center",
       caption: "#",
       fixed: "left",
@@ -298,6 +298,15 @@ const DataGrid = <T = DataGridRowRecord,>(props: IDataGridProps<T>) => {
   const isConstrained = height !== undefined || maxHeight !== undefined;
   const showBuiltInPaging = _paging?.enable === true && _pageCount > 0;
   const hasFooterArea = showBuiltInPaging || Boolean(footerElement);
+  const hasToolbarArea = Boolean(
+    normalizedProps.title ||
+      normalizedProps.subTitle ||
+      normalizedProps.actionComponent ||
+      normalizedProps.searchEnable ||
+      normalizedProps.exportConfig?.enable ||
+      normalizedProps.columnChooserConfig?.enable ||
+      normalizedProps.subToolbarElement,
+  );
 
   return (
     <DataGridContainerContext.Provider value={contextValue}>
@@ -311,19 +320,21 @@ const DataGrid = <T = DataGridRowRecord,>(props: IDataGridProps<T>) => {
             styles.grayscale,
         )}
       >
-        <div className={clsx(styles.toolbarArea, "pb-1")}>
-          <Toolbar
-            onSearchKeyChanged={_setSearchKeyDelayed}
-            filterdData={filterdData}
-            dataColumns={dataColumn}
-          />
-          {typeof props.subToolbarElement === "function"
-            ? props.subToolbarElement(filterdData as unknown as T[])
-            : props.subToolbarElement}
-        </div>
+        {hasToolbarArea && (
+          <div className={styles.toolbarArea}>
+            <Toolbar
+              onSearchKeyChanged={_setSearchKeyDelayed}
+              filterdData={filterdData}
+              dataColumns={dataColumn}
+            />
+            {typeof props.subToolbarElement === "function"
+              ? props.subToolbarElement(filterdData as unknown as T[])
+              : props.subToolbarElement}
+          </div>
+        )}
         <div className={styles.tableArea}>
           <Table
-            isAltertingRowColor={normalizedProps.isAltertingRowColor !== false}
+            isAltertingRowColor={normalizedProps.isAltertingRowColor === true}
             conditions={_conditions}
             dataSource={normalizedProps.dataSource}
             dataColumn={dataColumn}
@@ -339,13 +350,13 @@ const DataGrid = <T = DataGridRowRecord,>(props: IDataGridProps<T>) => {
             isLoading={normalizedProps.isLoading}
             showLoadingMode={normalizedProps.showLoadingMode}
             focusedCell={normalizedProps.focusedCell}
-            mainColor={"#1a7f37"}
+            mainColor={"#16a34a"}
             totalSummary={normalizedProps.totalSummary}
             filterdData={filterdData}
           />
         </div>
         {hasFooterArea && (
-          <div className={clsx(styles.pagingArea, "pt-1.5")}>
+          <div className={styles.pagingArea}>
             {showBuiltInPaging && (
               <Paging
                 pageSizeItems={_paging?.pageSizeItems}

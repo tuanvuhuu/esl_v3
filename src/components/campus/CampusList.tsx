@@ -17,6 +17,25 @@ import { CampusForm } from './CampusForm';
 
 export type CampusRowView = { id: number; name: string; address: string; classCount: number };
 
+const CAMPUS_ACCENTS = [
+  {
+    border: 'border-l-[var(--primary)]',
+    icon: 'border-[var(--borderColor-accent-muted)] bg-[var(--primary-soft)] text-[var(--primary-deep)]',
+  },
+  {
+    border: 'border-l-[#0284c7]',
+    icon: 'border-[#bae6fd] bg-[#f0f9ff] text-[#0369a1] dark:border-[#075985] dark:bg-[#082f49] dark:text-[#7dd3fc]',
+  },
+  {
+    border: 'border-l-[#059669]',
+    icon: 'border-[#a7f3d0] bg-[#ecfdf5] text-[#047857] dark:border-[#065f46] dark:bg-[#064e3b] dark:text-[#6ee7b7]',
+  },
+  {
+    border: 'border-l-[#7c3aed]',
+    icon: 'border-[#ddd6fe] bg-[#f5f3ff] text-[#6d28d9] dark:border-[#5b21b6] dark:bg-[#2e1065] dark:text-[#c4b5fd]',
+  },
+] as const;
+
 export function CampusList({
   campuses,
   canManage,
@@ -106,51 +125,59 @@ export function CampusList({
         <EmptyPanel title="Chưa có cơ sở nào" hint="Thêm cơ sở đầu tiên để xếp lớp học vào." />
       ) : (
         <div className="tsukuba-rise grid grid-cols-1 gap-3.5 min-[768px]:grid-cols-2 min-[1200px]:grid-cols-3">
-          {campuses.map((row) => (
-            <Card key={row.id} className="border-l-[3px] border-l-[var(--primary)]">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex min-w-0 items-start gap-3">
-                  <span className="grid size-9 shrink-0 place-items-center rounded-[var(--borderRadius-medium)] bg-[var(--primary-soft)] text-[var(--primary)]">
-                    <OrganizationIcon size={16} aria-hidden />
-                  </span>
-                  <div className="min-w-0">
-                    <b className="block truncate text-base font-semibold text-[var(--fgColor-default)]">{row.name}</b>
-                    <small className="mt-0.5 flex items-center gap-1.5 text-xs text-[var(--fgColor-muted)]">
-                      <LocationIcon size={12} className="shrink-0" aria-hidden />
-                      <span className="truncate">{row.address || 'Chưa cập nhật địa chỉ'}</span>
-                    </small>
+          {campuses.map((row, idx) => {
+            const accent = CAMPUS_ACCENTS[idx % CAMPUS_ACCENTS.length];
+            return (
+              <Card
+                key={row.id}
+                className={`border-l-[3px] ${accent.border} hover:-translate-y-0.5 hover:border-[var(--borderColor-accent-emphasis)]`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex min-w-0 items-start gap-3">
+                    <span
+                      className={`grid size-10 shrink-0 place-items-center rounded-[var(--borderRadius-medium)] border ${accent.icon}`}
+                    >
+                      <OrganizationIcon size={16} aria-hidden />
+                    </span>
+                    <div className="min-w-0">
+                      <b className="block truncate text-base font-semibold text-[var(--fgColor-default)]">{row.name}</b>
+                      <small className="mt-0.5 flex items-center gap-1.5 text-xs text-[var(--fgColor-muted)]">
+                        <LocationIcon size={12} className="shrink-0" aria-hidden />
+                        <span className="truncate">{row.address || 'Chưa cập nhật địa chỉ'}</span>
+                      </small>
+                    </div>
+                  </div>
+                  <div className="hidden shrink-0 min-[768px]:block">
+                    <RowMenu label={`Thao tác với cơ sở ${row.name}`} items={menuItems(row)} />
                   </div>
                 </div>
-                <div className="hidden shrink-0 min-[768px]:block">
-                  <RowMenu label={`Thao tác với cơ sở ${row.name}`} items={menuItems(row)} />
-                </div>
-              </div>
 
-              <div className="flex items-center justify-between gap-2 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)] px-3 py-2 text-xs">
-                <span className="text-[var(--fgColor-muted)]">Quy mô vận hành</span>
-                <div className="flex items-center gap-2">
-                  <Pill tone={row.classCount > 0 ? 'mint' : 'stone'}>{row.classCount} lớp</Pill>
-                  <span className="text-[var(--fgColor-muted)]">{row.classCount > 0 ? 'Đang có lớp' : 'Chưa xếp lớp'}</span>
+                <div className="flex items-center justify-between gap-2 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-muted)] bg-[#f8fafc] px-3 py-2 text-xs dark:bg-[var(--bgColor-muted)]/60">
+                  <span className="font-medium text-[var(--fgColor-muted)]">Quy mô vận hành</span>
+                  <div className="flex items-center gap-2">
+                    <Pill tone={row.classCount > 0 ? 'mint' : 'stone'}>{row.classCount} lớp</Pill>
+                    <span className="font-medium text-[var(--ink-2)]">{row.classCount > 0 ? 'Đang có lớp' : 'Chưa xếp lớp'}</span>
+                  </div>
                 </div>
-              </div>
 
-              {/* Điện thoại: hai nút có chữ, bằng nhau */}
-              <div className="grid grid-cols-2 gap-2 min-[768px]:hidden">
-                <Btn block leadingVisual={PencilIcon} onClick={() => setEditing(row)} disabled={!canManage}>
-                  Sửa
-                </Btn>
-                <Btn
-                  block
-                  variant="danger"
-                  leadingVisual={TrashIcon}
-                  onClick={() => askDelete(row)}
-                  disabled={!canManage || !canAddRemove}
-                >
-                  Xoá
-                </Btn>
-              </div>
-            </Card>
-          ))}
+                {/* Điện thoại: hai nút có chữ, bằng nhau */}
+                <div className="grid grid-cols-2 gap-2 min-[768px]:hidden">
+                  <Btn block leadingVisual={PencilIcon} onClick={() => setEditing(row)} disabled={!canManage}>
+                    Sửa
+                  </Btn>
+                  <Btn
+                    block
+                    variant="danger"
+                    leadingVisual={TrashIcon}
+                    onClick={() => askDelete(row)}
+                    disabled={!canManage || !canAddRemove}
+                  >
+                    Xoá
+                  </Btn>
+                </div>
+              </Card>
+            );
+          })}
         </div>
       )}
 

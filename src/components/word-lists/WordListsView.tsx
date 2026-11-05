@@ -10,18 +10,23 @@ import type { WordListItem, WordListRow } from '@/lib/queries/word-lists';
 import { usePresent } from '@/components/present/usePresent';
 import { Btn, BTN_BASE, BTN_PRIMARY } from '@/components/ui/Btn';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { Chip, ChipGroup } from '@/components/ui/controls';
 import { DataGrid, type GridColumn } from '@/components/ui/datagrid';
 import { Modal } from '@/components/ui/Modal';
 import { PageCrumbs } from '@/components/shell/PageCrumbs';
+import { Pill } from '@/components/ui/primitives';
 import { RowMenu, type RowMenuItem } from '@/components/ui/RowMenu';
 import { Card, EmptyPanel } from '@/components/ui/surfaces';
 import { Toast, useToast } from '@/components/ui/Toast';
 import { WordListForm } from './WordListForm';
 
+type WordListSegment = 'all' | 'class' | 'shared';
+
 const COLUMNS: GridColumn<WordListRow>[] = [
-  { key: 'name', label: 'Danh sách', width: 'minmax(220px,2fr)', sortValue: (r) => r.name },
-  { key: 'link', label: 'Gắn với', width: 'minmax(160px,1.2fr)' },
-  { key: 'count', label: 'Số từ', width: 'minmax(80px,0.5fr)', sortValue: (r) => r.wordCount },
+  { key: 'name', label: 'Danh sách & từ mẫu', width: 'minmax(240px,2.2fr)', sortValue: (r) => r.name },
+  { key: 'link', label: 'Phạm vi gắn', width: 'minmax(168px,1.3fr)' },
+  { key: 'count', label: 'Số từ', width: '104px', sortValue: (r) => r.wordCount },
+  { key: 'quick', label: 'Luyện & trình chiếu', width: '196px', sortable: false },
   { key: 'actions', label: 'Thao tác', width: '44px', align: 'end', srOnly: true },
 ];
 
@@ -31,10 +36,17 @@ export function WordListsView({ lists, classes, lessons, canManage }: { lists: W
   const router = useRouter();
   const { message, notify } = useToast();
   const present = usePresent(notify);
+  const [segment, setSegment] = useState<WordListSegment>('all');
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<{ row: WordListRow; items: WordListItem[] } | null>(null);
   const [toDelete, setToDelete] = useState<WordListRow | null>(null);
   const [pending, startTransition] = useTransition();
+
+  const shownLists = lists.filter((r) => {
+    if (segment === 'class') return Boolean(r.className || r.lessonTitle);
+    if (segment === 'shared') return !r.className && !r.lessonTitle;
+    return true;
+  });
 
   function openEdit(row: WordListRow) {
     startTransition(async () => {
@@ -78,20 +90,61 @@ export function WordListsView({ lists, classes, lessons, canManage }: { lists: W
               type="button"
               data-link="true"
               onClick={() => openEdit(r)}
-              className="text-left text-base font-normal text-[var(--fgColor-link)] underline underline-offset-2"
+              className="cursor-pointer text-left text-[13.5px] font-semibold text-[var(--fgColor-default)] transition-colors hover:text-[var(--primary)] hover:underline"
             >
               {r.name}
             </button>
-            <small className="block truncate text-xs text-[var(--fgColor-muted)]">{r.preview}</small>
+            {r.preview && (
+              <small className="mt-0.5 block truncate text-xs text-[var(--fgColor-muted)]">{r.preview}</small>
+            )}
           </div>
         );
       case 'link':
-        return <span className="text-sm text-[var(--fgColor-muted)]">{linkText(r)}</span>;
+        if (!r.className && !r.lessonTitle) {
+          return <Pill tone="stone">Dùng chung</Pill>;
+        }
+        return (
+          <div className="flex flex-wrap items-center gap-1.5">
+            {r.className && (
+              <span className="inline-flex items-center rounded-[5px] border border-[var(--borderColor-accent-muted)] bg-[var(--primary-soft)] px-1.5 py-0.5 text-[11.5px] font-semibold text-[var(--primary-deep)]">
+                {r.className}
+              </span>
+            )}
+            {r.lessonTitle && (
+              <span className="inline-flex items-center rounded-[5px] border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] px-1.5 py-0.5 text-[11.5px] font-medium text-[var(--ink-2)]">
+                {r.lessonTitle}
+              </span>
+            )}
+          </div>
+        );
       case 'count':
         return (
-          <span className="inline-flex items-center rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)] px-2 py-0.5 font-mono text-xs tabular-nums text-[var(--fgColor-default)]">
-            {r.wordCount}
+          <span className="inline-flex items-center rounded-[5px] border border-[var(--borderColor-accent-muted)] bg-[var(--primary-soft)] px-2 py-0.5 font-mono text-xs font-semibold tabular-nums text-[var(--primary-deep)]">
+            {r.wordCount} từ
           </span>
+        );
+      case 'quick':
+        return (
+          <div className="flex items-center gap-1.5">
+            <Link
+              href={`/tu-vung/${r.id}`}
+              data-link="true"
+              className="inline-flex items-center gap-1 rounded-[5px] border border-[var(--borderColor-default)] bg-[#f8fafc] px-2 py-0.5 text-xs font-medium text-[var(--fgColor-default)] no-underline transition-colors hover:border-[var(--primary)] hover:bg-[var(--primary-soft)] hover:text-[var(--primary-deep)] dark:bg-[var(--bgColor-muted)]"
+            >
+              <PlayIcon size={11} aria-hidden />
+              <span>Chơi thử</span>
+            </Link>
+            <button
+              type="button"
+              data-link="true"
+              disabled={present.starting}
+              onClick={() => present.start('word_list', r.id)}
+              className="inline-flex cursor-pointer items-center gap-1 rounded-[5px] border border-[var(--borderColor-default)] bg-[#f8fafc] px-2 py-0.5 text-xs font-medium text-[var(--ink-2)] transition-colors hover:border-[var(--primary)] hover:bg-[var(--primary-soft)] hover:text-[var(--primary-deep)] disabled:opacity-50 dark:bg-[var(--bgColor-muted)]"
+            >
+              <BroadcastIcon size={11} aria-hidden />
+              <span>Chiếu</span>
+            </button>
+          </div>
         );
       case 'actions':
         return (
@@ -137,19 +190,34 @@ export function WordListsView({ lists, classes, lessons, canManage }: { lists: W
       <DataGrid
         label="Danh sách từ"
         columns={COLUMNS}
-        rows={lists}
+        rows={shownLists}
         rowKey={(r) => r.id}
         cell={cell}
         card={card}
         from="md"
+        fill
+        stickyEnd
         searchEnable
         title={
-          <div className="flex items-baseline gap-2">
-            <h1 className="m-0 text-base font-semibold text-[var(--fgColor-default)]">Danh sách từ</h1>
-            <span className="rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)] px-2 py-0.5 text-xs tabular-nums text-[var(--fgColor-muted)]">
-              {lists.length}
-            </span>
-          </div>
+          <ChipGroup label="Lọc danh sách từ">
+            <Chip selected={segment === 'all'} count={lists.length} onClick={() => setSegment('all')}>
+              Tất cả
+            </Chip>
+            <Chip
+              selected={segment === 'class'}
+              count={lists.filter((r) => Boolean(r.className || r.lessonTitle)).length}
+              onClick={() => setSegment('class')}
+            >
+              Theo lớp / bài
+            </Chip>
+            <Chip
+              selected={segment === 'shared'}
+              count={lists.filter((r) => !r.className && !r.lessonTitle).length}
+              onClick={() => setSegment('shared')}
+            >
+              Dùng chung
+            </Chip>
+          </ChipGroup>
         }
         actionComponent={
           canManage ? (

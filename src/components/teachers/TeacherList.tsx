@@ -10,27 +10,28 @@ import { STAFF_ROLE_LABELS, TEACHER_STATUS_LABELS, type StaffRole } from '@/lib/
 import { formatPhone } from '@/lib/text';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Btn } from '@/components/ui/Btn';
+import { Chip, ChipGroup } from '@/components/ui/controls';
 import { Modal } from '@/components/ui/Modal';
 import { PageCrumbs } from '@/components/shell/PageCrumbs';
 import { RowMenu, type RowMenuItem } from '@/components/ui/RowMenu';
-import { Avatar, EmptyState, Pill, type Tone } from '@/components/ui/primitives';
+import { Avatar, Pill, type Tone } from '@/components/ui/primitives';
 import { Toast, useToast } from '@/components/ui/Toast';
 import { DataGrid, type GridColumn } from '@/components/ui/datagrid';
-import { Panel, Card } from '@/components/ui/surfaces';
+import { EmptyPanel, Card } from '@/components/ui/surfaces';
 import { TeacherForm, type CampusChoice } from './TeacherForm';
 
 const STATUS_TONE: Record<TeacherRow['status'], Tone> = { active: 'mint', leave: 'butter' };
 // Vai trò quyết định người này được xếp vào vị trí nào của lớp (chủ nhiệm, trợ giảng, giáo viên nước ngoài)
 const ROLE_TONE: Record<StaffRole, Tone> = { teacher: 'stone', assistant: 'butter', foreign: 'lav' };
-const LINK = 'text-[var(--fgColor-link)] underline underline-offset-2';
+
+type TeacherSegment = 'all' | StaffRole | 'leave';
 
 const COLUMNS: GridColumn<TeacherRow>[] = [
-  { key: 'name', label: 'Giáo viên', width: 'minmax(200px,1.5fr)' },
-  { key: 'role', label: 'Vai trò', width: 'minmax(150px,1fr)', sortValue: (r) => r.staffRole },
-  { key: 'subject', label: 'Chuyên môn', width: 'minmax(130px,1fr)' },
-  { key: 'years', label: 'Kinh nghiệm', width: 'minmax(110px,0.9fr)', sortValue: (r) => r.years },
-  { key: 'status', label: 'Trạng thái', width: 'minmax(110px,0.9fr)', sortValue: (r) => r.status },
-  { key: 'classes', label: 'Lớp đang dạy', width: 'minmax(180px,1.8fr)', sortValue: (r) => r.classes.length },
+  { key: 'name', label: 'Giáo viên', width: '236px' },
+  { key: 'role', label: 'Vai trò', width: '156px', sortValue: (r) => r.staffRole },
+  { key: 'subject', label: 'Chuyên môn & KN', width: 'minmax(176px,1.25fr)', sortValue: (r) => r.years },
+  { key: 'classes', label: 'Lớp phụ trách', width: 'minmax(220px,2fr)', sortValue: (r) => r.classes.length },
+  { key: 'status', label: 'Trạng thái', width: '132px', sortValue: (r) => r.status },
   { key: 'actions', label: 'Thao tác', width: '44px', align: 'end', srOnly: true },
 ];
 
@@ -46,6 +47,7 @@ export function TeacherList({
   canManage: boolean;
 }) {
   const router = useRouter();
+  const [segment, setSegment] = useState<TeacherSegment>('all');
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<{ id: number; values: TeacherFormValues } | null>(null);
   const [toDelete, setToDelete] = useState<TeacherRow | null>(null);
@@ -93,7 +95,12 @@ export function TeacherList({
     { kind: 'action', label: 'Xoá', icon: TrashIcon, danger: true, onSelect: () => askDelete(row), disabled: !canManage, disabledHint: 'Không có quyền quản lý giáo viên' },
   ];
 
-  const teaching = teachers.filter((t) => t.status === 'active').length;
+  const leaveCount = teachers.filter((t) => t.status === 'leave').length;
+  const shownTeachers = teachers.filter((t) => {
+    if (segment === 'all') return true;
+    if (segment === 'leave') return t.status === 'leave';
+    return t.staffRole === segment;
+  });
 
   const cell = (row: TeacherRow, key: string) => {
     switch (key) {
@@ -102,8 +109,12 @@ export function TeacherList({
           <div className="flex min-w-0 items-center gap-2.5">
             <Avatar name={row.name} seed={row.id} />
             <div className="min-w-0">
-              <span className="block truncate text-sm font-medium text-[var(--fgColor-default)]">{row.name}</span>
-              <a href={`tel:${row.phone.replace(/\s/g, '')}`} className={`inline-flex items-center gap-1 text-xs ${LINK}`}>
+              <span className="block truncate text-[13.5px] font-semibold text-[var(--fgColor-default)]">{row.name}</span>
+              <a
+                href={`tel:${row.phone.replace(/\s/g, '')}`}
+                data-link="true"
+                className="inline-flex items-center gap-1 font-mono text-xs tabular-nums text-[var(--fgColor-muted)] transition-colors hover:text-[var(--primary)] hover:underline"
+              >
                 <DeviceMobileIcon size={12} aria-hidden />
                 {formatPhone(row.phone)}
               </a>
@@ -113,19 +124,31 @@ export function TeacherList({
       case 'role':
         return <Pill tone={ROLE_TONE[row.staffRole]}>{STAFF_ROLE_LABELS[row.staffRole]}</Pill>;
       case 'subject':
-        return <span className="text-sm text-[var(--fgColor-default)]">{row.subject}</span>;
-      case 'years':
-        return <span className="text-sm text-[var(--fgColor-muted)]">{row.years} năm</span>;
+        return (
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="inline-flex items-center rounded-[5px] border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] px-2 py-0.5 text-[12.5px] font-medium text-[var(--ink-2)]">
+              {row.subject}
+            </span>
+            <span className="inline-flex items-center rounded-[5px] border border-[var(--borderColor-muted)] bg-[var(--bgColor-default)] px-1.5 py-0.5 font-mono text-[11.5px] font-medium tabular-nums text-[var(--fgColor-muted)]">
+              {row.years} năm
+            </span>
+          </div>
+        );
       case 'status':
         return <Pill tone={STATUS_TONE[row.status]}>{TEACHER_STATUS_LABELS[row.status]}</Pill>;
       case 'classes':
         return (
-          <div className="flex min-w-0 flex-wrap gap-x-3 gap-y-1">
+          <div className="flex min-w-0 flex-wrap gap-1.5">
             {row.classes.length === 0 ? (
               <small className="text-xs text-[var(--fgColor-muted)]">Chưa dạy lớp nào</small>
             ) : (
               row.classes.map((c) => (
-                <Link key={c.id} href={`/lop-hoc/${c.id}`} className={`text-sm ${LINK}`}>
+                <Link
+                  key={c.id}
+                  href={`/lop-hoc/${c.id}`}
+                  data-link="true"
+                  className="inline-flex items-center rounded-[5px] border border-[var(--borderColor-accent-muted)] bg-[var(--primary-soft)] px-2 py-0.5 text-xs font-semibold text-[var(--primary-deep)] transition-colors hover:border-[var(--primary)] hover:underline"
+                >
                   {c.name}
                 </Link>
               ))
@@ -149,29 +172,39 @@ export function TeacherList({
         <Avatar name={row.name} seed={row.id} size="lg" />
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
-            <b className="min-w-0 truncate text-base font-medium text-[var(--fgColor-default)]">{row.name}</b>
+            <b className="min-w-0 truncate text-base font-semibold text-[var(--fgColor-default)]">{row.name}</b>
             <div className="hidden min-[768px]:block">
               <RowMenu label={`Thao tác với ${row.name}`} items={menuItems(row)} />
             </div>
           </div>
-          <small className="block truncate text-xs text-[var(--fgColor-muted)]">{row.subject} · {row.years} năm kinh nghiệm</small>
+          <small className="block truncate text-xs text-[var(--fgColor-muted)]">
+            {row.subject} · <span className="font-mono tabular-nums">{row.years} năm</span> kinh nghiệm
+          </small>
           <div className="mt-1.5 flex flex-wrap items-center gap-2">
             <Pill tone={ROLE_TONE[row.staffRole]}>{STAFF_ROLE_LABELS[row.staffRole]}</Pill>
             <Pill tone={STATUS_TONE[row.status]}>{TEACHER_STATUS_LABELS[row.status]}</Pill>
-            <a href={`tel:${row.phone.replace(/\s/g, '')}`} className={`inline-flex items-center gap-1.5 text-sm ${LINK}`}>
-              <DeviceMobileIcon size={14} aria-hidden />
+            <a
+              href={`tel:${row.phone.replace(/\s/g, '')}`}
+              className="inline-flex items-center gap-1.5 font-mono text-[13px] font-medium tabular-nums text-[var(--fgColor-default)] hover:text-[var(--primary)] hover:underline"
+            >
+              <DeviceMobileIcon size={14} className="text-[var(--fgColor-muted)]" aria-hidden />
               {formatPhone(row.phone)}
             </a>
           </div>
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-x-4 gap-y-1.5 rounded-[var(--borderRadius-medium)] bg-[var(--bgColor-muted)] px-3 py-2.5">
+      <div className="flex flex-wrap gap-1.5 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-muted)] bg-[#f8fafc] px-3 py-2.5 dark:bg-[var(--bgColor-muted)]/60">
         {row.classes.length === 0 ? (
           <small className="text-xs text-[var(--fgColor-muted)]">Chưa dạy lớp nào</small>
         ) : (
           row.classes.map((c) => (
-            <Link key={c.id} href={`/lop-hoc/${c.id}`} className={`text-sm font-medium ${LINK}`}>
+            <Link
+              key={c.id}
+              href={`/lop-hoc/${c.id}`}
+              data-link="true"
+              className="inline-flex items-center rounded-[5px] border border-[var(--borderColor-accent-muted)] bg-[var(--primary-soft)] px-2 py-0.5 text-xs font-semibold text-[var(--primary-deep)] transition-colors hover:border-[var(--primary)] hover:underline"
+            >
               {c.name}
             </Link>
           ))
@@ -196,19 +229,46 @@ export function TeacherList({
       <DataGrid
         label="Danh sách giáo viên"
         columns={COLUMNS}
-        rows={teachers}
+        rows={shownTeachers}
         rowKey={(t) => t.id}
         cell={cell}
         card={card}
         from="md"
+        fill
+        stickyEnd
         searchEnable
         title={
-          <div className="flex items-baseline gap-2">
-            <h1 className="m-0 text-base font-semibold text-[var(--fgColor-default)]">Giáo viên</h1>
-            <span className="text-xs text-[var(--fgColor-muted)]">
-              ({teachers.length} giáo viên · {teaching} đang dạy)
-            </span>
-          </div>
+          <ChipGroup label="Lọc giáo viên">
+            <Chip selected={segment === 'all'} count={teachers.length} onClick={() => setSegment('all')}>
+              Tất cả
+            </Chip>
+            <Chip
+              selected={segment === 'teacher'}
+              count={teachers.filter((t) => t.staffRole === 'teacher').length}
+              onClick={() => setSegment('teacher')}
+            >
+              Giáo viên
+            </Chip>
+            <Chip
+              selected={segment === 'foreign'}
+              count={teachers.filter((t) => t.staffRole === 'foreign').length}
+              onClick={() => setSegment('foreign')}
+            >
+              GV nước ngoài
+            </Chip>
+            <Chip
+              selected={segment === 'assistant'}
+              count={teachers.filter((t) => t.staffRole === 'assistant').length}
+              onClick={() => setSegment('assistant')}
+            >
+              Trợ giảng
+            </Chip>
+            {leaveCount > 0 && (
+              <Chip selected={segment === 'leave'} count={leaveCount} onClick={() => setSegment('leave')}>
+                Nghỉ phép
+              </Chip>
+            )}
+          </ChipGroup>
         }
         actionComponent={
           canManage && (
@@ -217,11 +277,7 @@ export function TeacherList({
             </Btn>
           )
         }
-        empty={
-          <Panel padded={false}>
-            <EmptyState title="Chưa có giáo viên nào" hint="Thêm giáo viên trước khi tạo lớp học." />
-          </Panel>
-        }
+        empty={<EmptyPanel title="Chưa có giáo viên nào" hint="Thêm giáo viên trước khi tạo lớp học." />}
       />
 
       <Toast message={message} />

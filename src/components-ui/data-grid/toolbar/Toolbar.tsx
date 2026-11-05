@@ -70,7 +70,7 @@ const Toolbar = (props: IToolbarProps) => {
   if (!hasToolbarContent) return null;
 
   return (
-    <div className="d-grid gap-1 mb-2">
+    <div className="d-grid gap-1">
       <div className="d-flex flex-wrap items-center justify-between gap-2">
         {(title || subTitle) ? (
           <div className={styles.toolbarTitle}>

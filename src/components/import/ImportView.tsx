@@ -182,7 +182,7 @@ export function ImportView() {
             <p className="m-0 text-sm leading-relaxed text-[var(--fgColor-default)]">
               Mỗi dòng là một học sinh, kèm cơ sở, lớp, giáo viên chủ nhiệm, trợ giảng, giáo viên nước ngoài và một phụ huynh. Dòng chỉ có lớp (bỏ trống phần học sinh) sẽ chỉ tạo hoặc cập nhật lớp.
             </p>
-            <ul className="m-0 flex list-none flex-col gap-1.5 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)]/60 px-3 py-2.5 text-xs text-[var(--fgColor-muted)]">
+            <ul className="m-0 flex list-none flex-col gap-1.5 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-muted)] bg-[#f8fafc] px-3 py-2.5 text-xs text-[var(--fgColor-muted)] dark:bg-[var(--bgColor-muted)]/60">
               <li className="flex items-start gap-2">
                 <CheckCircleIcon size={14} className="mt-0.5 shrink-0 text-[#1baf7a]" aria-hidden />
                 <span>Cơ sở & lớp đối chiếu theo tên; giáo viên & phụ huynh đối chiếu theo số điện thoại.</span>
@@ -222,11 +222,11 @@ export function ImportView() {
               className={`flex flex-col items-start gap-3 rounded-[var(--borderRadius-large)] border-2 border-dashed p-4 transition-colors ${
                 dragging
                   ? 'border-[var(--primary)] bg-[var(--primary-soft)]/35'
-                  : 'border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]/50 hover:border-[var(--primary)]'
+                  : 'border-[var(--borderColor-default)] bg-[#f8fafc] hover:border-[var(--primary)] dark:bg-[var(--bgColor-muted)]/50'
               }`}
             >
               <div className="flex items-center gap-3">
-                <span className="grid size-9 shrink-0 place-items-center rounded-[var(--borderRadius-medium)] bg-[var(--primary-soft)] text-[var(--primary)]">
+                <span className="grid size-9 shrink-0 place-items-center rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-accent-muted)] bg-[var(--primary-soft)] text-[var(--primary-deep)]">
                   {file ? <FileIcon size={16} aria-hidden /> : <UploadIcon size={16} aria-hidden />}
                 </span>
                 <div className="min-w-0">
@@ -316,18 +316,35 @@ export function ImportView() {
               cell={(r, k) => {
                 if (k === 'row')
                   return (
-                    <span className="inline-block rounded bg-[var(--bgColor-neutral-muted)] px-1.5 py-0.5 font-mono text-xs tabular-nums text-[var(--fgColor-muted)]">
+                    <span className="inline-flex items-center rounded-[5px] border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] px-1.5 py-0.5 font-mono text-xs font-medium tabular-nums text-[var(--ink-2)]">
                       #{r.rowNumber}
                     </span>
                   );
                 if (k === 'place')
                   return (
-                    <span className="text-sm text-[var(--fgColor-default)] [overflow-wrap:anywhere]">
-                      {r.campus || '—'} · {r.className || '—'}
-                    </span>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {r.campus ? (
+                        <span className="inline-flex items-center rounded-[5px] border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] px-1.5 py-0.5 text-[11.5px] font-medium text-[var(--ink-2)]">
+                          {r.campus}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-[var(--fgColor-muted)]">—</span>
+                      )}
+                      {r.className ? (
+                        <span className="inline-flex items-center rounded-[5px] border border-[var(--borderColor-accent-muted)] bg-[var(--primary-soft)] px-1.5 py-0.5 text-[11.5px] font-semibold text-[var(--primary-deep)]">
+                          {r.className}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-[var(--fgColor-muted)]">—</span>
+                      )}
+                    </div>
                   );
                 if (k === 'student')
-                  return <span className="text-sm font-medium text-[var(--fgColor-default)] [overflow-wrap:anywhere]">{r.student}</span>;
+                  return r.student ? (
+                    <span className="text-[13.5px] font-medium text-[var(--fgColor-default)] [overflow-wrap:anywhere]">{r.student}</span>
+                  ) : (
+                    <span className="text-xs text-[var(--fgColor-muted)]">—</span>
+                  );
                 if (k === 'actions') return <ActionList row={r} />;
                 return <Issues row={r} />;
               }}

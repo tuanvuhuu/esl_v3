@@ -16,7 +16,7 @@ import { DataGrid, type GridColumn } from '@/components/ui/datagrid';
 import { Pagination } from '@/components/ui/controls';
 import { Modal } from '@/components/ui/Modal';
 import { RowMenu, type RowMenuItem } from '@/components/ui/RowMenu';
-import { Pill, ProgressBar, type Tone } from '@/components/ui/primitives';
+import { InitialBadge, Pill, ProgressBar, type Tone } from '@/components/ui/primitives';
 import { Card, EmptyPanel } from '@/components/ui/surfaces';
 import { StudentFilters, StudentStatusTabs, StudentToolbarActions, type FilterState } from './StudentFilters';
 import { StudentForm, type CampusChoice, type ClassOption, type ParentChoice } from './StudentForm';
@@ -37,17 +37,17 @@ const TUITION_META: Record<StudentRow['tuition'], { label: string; tone: Tone }>
   unpaid: { label: 'Chưa đóng', tone: 'blush' },
 };
 
-// Cột của bảng máy tính, mỗi thông tin một cột riêng (không avatar). Độ rộng là lưới CSS, dùng chung cho tiêu đề và mọi dòng.
+// Cột của bảng máy tính, mỗi thông tin một cột riêng sắc nét. Độ rộng là lưới CSS, dùng chung cho tiêu đề và mọi dòng.
 const COLUMNS: GridColumn[] = [
-  { key: 'name', label: 'Họ tên', width: 'minmax(140px,1.25fr)', sortable: true },
-  { key: 'code', label: 'Mã HS', width: '92px', sortable: true },
-  { key: 'gender', label: 'Giới tính', width: '94px', sortable: true },
-  { key: 'class', label: 'Lớp & giáo viên', width: 'minmax(148px,1.35fr)', sortable: true },
-  { key: 'progress', label: 'Tiến độ', width: 'minmax(136px,1.15fr)', sortable: true },
-  { key: 'attendance', label: 'Chuyên cần', width: '110px', sortable: true },
-  { key: 'tuition', label: 'Học phí', width: 'minmax(176px,1.55fr)', sortable: true },
+  { key: 'name', label: 'Họ tên', width: 'minmax(204px,2.2fr)', sortable: true },
+  { key: 'code', label: 'Mã HS', width: '80px', sortable: true },
+  { key: 'gender', label: 'Giới tính', width: '74px', sortable: true },
+  { key: 'class', label: 'Lớp & giáo viên', width: 'minmax(168px,1.6fr)', sortable: true },
+  { key: 'progress', label: 'Tiến độ', width: '110px', sortable: true },
+  { key: 'attendance', label: 'Chuyên cần', width: '88px', sortable: true },
+  { key: 'tuition', label: 'Học phí', width: 'minmax(156px,1.45fr)', sortable: true },
   { key: 'status', label: 'Trạng thái', width: '104px', sortable: true },
-  { key: 'actions', label: 'Thao tác', width: '40px', align: 'end', srOnly: true },
+  { key: 'actions', label: 'Thao tác', width: '38px', align: 'end', srOnly: true },
 ];
 
 type Props = {
@@ -144,36 +144,73 @@ export function StudentList({
     switch (key) {
       case 'name':
         return (
-          <Link href={profileHref(row.id)} scroll={false} className="block truncate text-sm font-normal text-[var(--fgColor-link)] hover:underline">
-            {row.fullName}
-          </Link>
+          <div className="flex min-w-0 items-center gap-2">
+            <InitialBadge name={row.fullName} seed={row.id} />
+            <Link
+              href={profileHref(row.id)}
+              scroll={false}
+              title={row.fullName}
+              className="block min-w-0 text-[13.5px] font-medium leading-snug text-[var(--fgColor-default)] transition-colors hover:text-[var(--primary)] hover:underline"
+            >
+              {row.fullName}
+            </Link>
+          </div>
         );
       case 'code':
-        return <span className="block truncate text-sm text-[var(--fgColor-muted)]">{row.code}</span>;
+        return (
+          <span className="inline-flex whitespace-nowrap items-center rounded-[5px] border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] px-1.5 py-0.5 font-mono text-[11.5px] font-medium text-[var(--ink-2)]">
+            {row.code}
+          </span>
+        );
       case 'gender':
-        return <span className="block truncate text-sm text-[var(--fgColor-muted)]">{row.gender === 'female' ? 'Nữ' : 'Nam'}</span>;
+        return (
+          <span className="inline-flex whitespace-nowrap items-center gap-1.5 text-[13px] text-[var(--ink-2)]">
+            <span
+              aria-hidden
+              className={`size-1.5 shrink-0 rounded-full ${row.gender === 'female' ? 'bg-[#ec4899]' : 'bg-[#0ea5e9]'}`}
+            />
+            {row.gender === 'female' ? 'Nữ' : 'Nam'}
+          </span>
+        );
       case 'class':
         return (
-          <div className="truncate text-xs" title={row.teacherName ? `${row.className} · ${row.teacherName}` : row.className}>
-            <span className="text-sm text-[var(--fgColor-default)]">{row.className}</span>
-            {row.teacherName && <span className="text-[var(--fgColor-muted)]"> · {row.teacherName}</span>}
+          <div
+            className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5"
+            title={row.teacherName ? `${row.className} · ${row.teacherName}` : row.className}
+          >
+            <span className="inline-flex shrink-0 items-center rounded-[5px] border border-[var(--borderColor-accent-muted)] bg-[var(--primary-soft)] px-1.5 py-0.5 text-[11.5px] font-semibold text-[var(--primary-deep)]">
+              {row.className}
+            </span>
+            {row.teacherName && (
+              <span className="text-[12.5px] leading-snug text-[var(--fgColor-muted)]">{row.teacherName}</span>
+            )}
           </div>
         );
       case 'progress':
         return (
-          <div className="flex min-w-0 items-center gap-2">
-            <ProgressBar value={row.sessionsDone} max={row.sessionsTotal} className="w-16 shrink-0" />
-            <span className="truncate text-xs tabular-nums text-[var(--fgColor-muted)]">
-              {row.sessionsDone}/{row.sessionsTotal} buổi
+          <div className="flex min-w-0 items-center gap-1.5">
+            <ProgressBar value={row.sessionsDone} max={row.sessionsTotal} className="w-8 shrink-0" />
+            <span className="whitespace-nowrap text-xs tabular-nums text-[var(--fgColor-muted)]">
+              <b className="font-semibold text-[var(--fgColor-default)]">{row.sessionsDone}</b>/{row.sessionsTotal} buổi
             </span>
           </div>
         );
-      case 'attendance':
+      case 'attendance': {
+        const rateCls =
+          row.attendanceRate >= 90
+            ? 'text-[#15803d] dark:text-[#3fb950]'
+            : row.attendanceRate >= 75
+              ? 'text-[#b45309] dark:text-[#d29922]'
+              : 'text-[var(--fgColor-danger)]';
+        const dotCls =
+          row.attendanceRate >= 90 ? 'bg-[#16a34a]' : row.attendanceRate >= 75 ? 'bg-[#d97706]' : 'bg-[#dc2626]';
         return (
-          <span className={`text-sm font-normal tabular-nums ${row.attendanceRate >= 75 ? 'text-[var(--fgColor-default)]' : 'text-[var(--fgColor-danger)]'}`}>
+          <span className={`inline-flex items-center gap-1.5 text-[13px] font-semibold tabular-nums ${rateCls}`}>
+            <span aria-hidden className={`size-1.5 shrink-0 rounded-full ${dotCls}`} />
             {row.attendanceRate}%
           </span>
         );
+      }
       case 'tuition': {
         const summary = [
           row.sessionsLeft >= 0 ? `Còn ${row.sessionsLeft}/${row.sessionsBought} buổi đã đóng` : `Nợ ${-row.sessionsLeft} buổi`,
@@ -182,10 +219,15 @@ export function StudentList({
         ]
           .filter(Boolean)
           .join(' · ');
+        const owed = row.sessionsLeft < 0 || row.debt > 0;
         return (
-          <div className="flex min-w-0 items-center gap-1.5" title={summary}>
+          <div className="flex min-w-0 flex-wrap items-center gap-1.5" title={summary}>
             <Pill tone={TUITION_META[row.tuition].tone}>{TUITION_META[row.tuition].label}</Pill>
-            <span className="truncate text-xs tabular-nums text-[var(--fgColor-muted)]">
+            <span
+              className={`whitespace-nowrap text-xs tabular-nums ${
+                owed ? 'font-medium text-[var(--fgColor-danger)]' : 'text-[var(--ink-2)]'
+              }`}
+            >
               {row.sessionsLeft >= 0 ? `${row.sessionsLeft}/${row.sessionsBought} buổi` : `Nợ ${-row.sessionsLeft} buổi`}
               {row.debt > 0 ? ` · -${formatVNDShort(row.debt)}` : ''}
             </span>

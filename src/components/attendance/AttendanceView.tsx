@@ -44,30 +44,30 @@ const MARK_META: Record<
 > = {
   present: {
     label: 'Có mặt',
-    on: 'border-mint-ink/35 bg-mint text-mint-ink',
+    on: 'border-[#16a34a]/45 bg-[var(--mint)] text-[var(--mint-ink)] shadow-2xs',
     tone: 'mint',
-    dot: 'bg-accent',
+    dot: 'bg-[#16a34a]',
     icon: CheckCircleIcon,
   },
   late: {
     label: 'Trễ',
-    on: 'border-butter-ink/35 bg-butter text-butter-ink',
+    on: 'border-[#d97706]/45 bg-[var(--butter)] text-[var(--butter-ink)] shadow-2xs',
     tone: 'butter',
-    dot: 'bg-primary-deep',
+    dot: 'bg-[#d97706]',
     icon: ClockIcon,
   },
   absent: {
     label: 'Vắng',
-    on: 'border-blush-ink/35 bg-blush text-blush-ink',
+    on: 'border-[#dc2626]/45 bg-[var(--blush)] text-[var(--blush-ink)] shadow-2xs',
     tone: 'blush',
-    dot: 'bg-blush-ink',
+    dot: 'bg-[#dc2626]',
     icon: XCircleIcon,
   },
   excused: {
     label: 'Có phép',
-    on: 'border-lav-ink/35 bg-lav text-lav-ink',
+    on: 'border-[#2563eb]/45 bg-[var(--lav)] text-[var(--lav-ink)] shadow-2xs',
     tone: 'lav',
-    dot: 'bg-lav-ink',
+    dot: 'bg-[#2563eb]',
     icon: ShieldCheckIcon,
   },
 };
@@ -75,10 +75,10 @@ const MARKS: Mark[] = ['present', 'late', 'absent', 'excused'];
 
 // Trạng thái buổi cho người điểm danh
 function sessionStatus(s: SessionRow): { label: string; tone: Tone; dot: string } {
-  if (s.status === 'cancelled') return { label: 'Đã huỷ', tone: 'blush', dot: 'bg-blush-ink' };
-  if (s.status === 'done') return { label: 'Đã điểm danh', tone: 'mint', dot: 'bg-accent' };
-  if (s.isPast) return { label: 'Chưa điểm danh', tone: 'butter', dot: 'bg-primary-deep' };
-  return { label: 'Chưa đến giờ', tone: 'stone', dot: 'bg-stone-ink' };
+  if (s.status === 'cancelled') return { label: 'Đã huỷ', tone: 'blush', dot: 'bg-[#dc2626]' };
+  if (s.status === 'done') return { label: 'Đã điểm danh', tone: 'mint', dot: 'bg-[#16a34a]' };
+  if (s.isPast) return { label: 'Chưa điểm danh', tone: 'butter', dot: 'bg-[#d97706]' };
+  return { label: 'Chưa đến giờ', tone: 'stone', dot: 'bg-[#64748b]' };
 }
 
 // Tỉ lệ phần trăm an toàn cho thanh tổng hợp
@@ -187,7 +187,7 @@ export function AttendanceView({
         <div
           role="tablist"
           aria-label="Buổi học"
-          className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1"
+          className="flex gap-1.5 overflow-x-auto pb-1"
         >
           {sessions.map((s) => {
             const st = sessionStatus(s);
@@ -215,18 +215,18 @@ export function AttendanceView({
         <EmptyPanel title="Lớp này chưa có buổi học" hint="Tạo lịch học cho lớp ở màn Lịch học." />
       ) : (
         <>
-          {/* Tsukuba #f7f8fa Session Header & KPI Card */}
+          {/* Tsukuba Pure-White Session Header & KPI Card */}
           <section
             aria-label="Thông tin buổi điểm danh"
-            className="tsukuba-rise overflow-hidden rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)]"
+            className="tsukuba-rise overflow-hidden rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] shadow-[var(--shadow)]"
           >
-            <div className="flex flex-col gap-3.5 border-b border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)] px-4 py-3.5 max-[767px]:px-3.5 min-[768px]:flex-row min-[768px]:items-center min-[768px]:justify-between">
+            <div className="flex flex-col gap-3.5 border-b border-[var(--borderColor-muted)] bg-[var(--bgColor-default)] px-4 py-3.5 max-[767px]:px-3.5 min-[768px]:flex-row min-[768px]:items-center min-[768px]:justify-between">
               <div className="flex min-w-0 items-center gap-3.5">
-                <div className="flex size-12 shrink-0 flex-col items-center justify-center rounded-[var(--borderRadius-medium)] bg-[var(--primary)] text-[var(--on-primary)]">
+                <div className="flex size-12 shrink-0 flex-col items-center justify-center rounded-[var(--borderRadius-medium)] bg-gradient-to-br from-[var(--primary)] to-[var(--primary-deep)] text-[var(--on-primary)] shadow-2xs ring-1 ring-inset ring-black/10">
                   <span className="font-mono text-base font-semibold leading-none tabular-nums">
                     {session.dateKey.slice(8, 10)}
                   </span>
-                  <span className="mt-0.5 text-[11px] font-medium leading-none opacity-90">
+                  <span className="mt-0.5 text-[11px] font-medium leading-none opacity-95">
                     {weekdayLabel(weekdayOfKey(session.dateKey))}
                   </span>
                 </div>
@@ -236,22 +236,22 @@ export function AttendanceView({
                       Buổi {session.sessionNo} · {session.timeLabel}
                     </b>
                     {status && <Pill tone={status.tone}>{status.label}</Pill>}
-                    <span className="rounded-[var(--borderRadius-small)] bg-[var(--bgColor-neutral-muted)] px-1.5 py-0.5 font-mono text-[11px] tabular-nums text-[var(--fgColor-muted)]">
+                    <span className="rounded-[5px] border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] px-1.5 py-0.5 font-mono text-[11px] font-medium tabular-nums text-[var(--ink-2)]">
                       {dateKeyLabel(session.dateKey)}
                     </span>
                   </div>
                   <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-[var(--fgColor-muted)]">
-                    <span className="inline-flex items-center gap-1 font-medium text-[var(--fgColor-default)]">
-                      <PeopleIcon size={12} className="text-[var(--fgColor-muted)]" aria-hidden />
+                    <span className="inline-flex items-center gap-1 rounded-[5px] border border-[var(--borderColor-accent-muted)] bg-[var(--primary-soft)] px-1.5 py-0.5 text-[11px] font-semibold text-[var(--primary-deep)]">
+                      <PeopleIcon size={11} aria-hidden />
                       {session.className}
                     </span>
-                    <span className="inline-flex items-center gap-1">
-                      <PersonIcon size={12} aria-hidden />
+                    <span className="inline-flex items-center gap-1 font-medium text-[var(--ink-2)]">
+                      <PersonIcon size={12} className="text-[var(--fgColor-muted)]" aria-hidden />
                       {session.teacherName}
                     </span>
                     {session.room && (
-                      <span className="inline-flex items-center gap-1 font-mono">
-                        <LocationIcon size={12} aria-hidden />
+                      <span className="inline-flex items-center gap-1 font-mono text-[var(--ink-2)]">
+                        <LocationIcon size={12} className="text-[var(--fgColor-muted)]" aria-hidden />
                         {session.room}
                       </span>
                     )}
@@ -277,22 +277,22 @@ export function AttendanceView({
               )}
             </div>
 
-            <div className="flex flex-col gap-3 p-4 max-[767px]:p-3.5">
+            <div className="flex flex-col gap-3 bg-[#fcfdff] p-4 dark:bg-transparent max-[767px]:p-3.5">
               {roster.length > 0 && (
                 <>
-                  <div className="flex h-2 overflow-hidden rounded-full bg-[var(--bgColor-muted)]">
-                    <span className="h-full bg-accent transition-all duration-200" style={{ width: pct(counts.present, roster.length) } as CSSProperties} />
-                    <span className="h-full bg-primary-deep transition-all duration-200" style={{ width: pct(counts.late, roster.length) } as CSSProperties} />
-                    <span className="h-full bg-blush-ink transition-all duration-200" style={{ width: pct(counts.absent, roster.length) } as CSSProperties} />
-                    <span className="h-full bg-lav-ink transition-all duration-200" style={{ width: pct(counts.excused, roster.length) } as CSSProperties} />
+                  <div className="flex h-2 overflow-hidden rounded-full bg-[#eef2f7] ring-1 ring-inset ring-black/[0.04] dark:bg-[var(--bgColor-muted)]">
+                    <span className="h-full bg-[#16a34a] transition-all duration-200" style={{ width: pct(counts.present, roster.length) } as CSSProperties} />
+                    <span className="h-full bg-[#d97706] transition-all duration-200" style={{ width: pct(counts.late, roster.length) } as CSSProperties} />
+                    <span className="h-full bg-[#dc2626] transition-all duration-200" style={{ width: pct(counts.absent, roster.length) } as CSSProperties} />
+                    <span className="h-full bg-[#2563eb] transition-all duration-200" style={{ width: pct(counts.excused, roster.length) } as CSSProperties} />
                   </div>
                   <div className="flex flex-wrap items-center gap-2 text-xs">
-                    <KpiPill icon={CheckCircleIcon} iconClass="text-mint-ink" label="Có mặt" value={counts.present} />
-                    <KpiPill icon={ClockIcon} iconClass="text-butter-ink" label="Trễ" value={counts.late} />
-                    <KpiPill icon={XCircleIcon} iconClass="text-blush-ink" label="Vắng" value={counts.absent} />
-                    <KpiPill icon={ShieldCheckIcon} iconClass="text-lav-ink" label="Có phép" value={counts.excused} />
+                    <KpiPill icon={CheckCircleIcon} iconClass="text-[#16a34a] dark:text-[#3fb950]" label="Có mặt" value={counts.present} />
+                    <KpiPill icon={ClockIcon} iconClass="text-[#d97706] dark:text-[#d29922]" label="Trễ" value={counts.late} />
+                    <KpiPill icon={XCircleIcon} iconClass="text-[#dc2626] dark:text-[#f85149]" label="Vắng" value={counts.absent} />
+                    <KpiPill icon={ShieldCheckIcon} iconClass="text-[#2563eb] dark:text-[#58a6ff]" label="Có phép" value={counts.excused} />
                     <KpiPill icon={AlertIcon} iconClass="text-[var(--fgColor-muted)]" label="Chưa điểm danh" value={unmarked} />
-                    <span className="ml-auto font-mono text-xs tabular-nums text-[var(--fgColor-muted)]">
+                    <span className="ml-auto font-mono text-xs font-medium tabular-nums text-[var(--ink-2)]">
                       Đã điểm danh {marked}/{roster.length}
                     </span>
                   </div>
@@ -343,7 +343,7 @@ export function AttendanceView({
                     return (
                       <li
                         key={r.id}
-                        className="flex flex-col gap-2.5 px-4 py-3 transition-colors hover:bg-[var(--bgColor-accent-muted)] max-[767px]:px-3.5 min-[960px]:flex-row min-[960px]:items-center min-[960px]:justify-between"
+                        className="flex flex-col gap-2.5 px-4 py-3 transition-colors hover:bg-[#f8fafc] dark:hover:bg-[var(--bgColor-muted)]/40 max-[767px]:px-3.5 min-[960px]:flex-row min-[960px]:items-center min-[960px]:justify-between"
                       >
                         <div className="flex min-w-0 items-center gap-3">
                           <span className="hidden w-5 shrink-0 text-right font-mono text-xs tabular-nums text-[var(--fgColor-muted)] min-[768px]:inline-block">
@@ -355,7 +355,7 @@ export function AttendanceView({
                               <Link
                                 href={`/hoc-sinh/${r.id}`}
                                 data-link="true"
-                                className="break-words text-sm font-semibold text-[var(--fgColor-default)] hover:text-[var(--fgColor-link)] hover:underline"
+                                className="break-words text-sm font-semibold text-[var(--fgColor-default)] transition-colors hover:text-[var(--primary)] hover:underline"
                               >
                                 {r.fullName}
                               </Link>
@@ -374,7 +374,7 @@ export function AttendanceView({
                         <div
                           role="group"
                           aria-label={`Điểm danh ${r.fullName}`}
-                          className="grid shrink-0 grid-cols-4 gap-1 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]/80 p-1 min-[960px]:w-[23rem]"
+                          className="grid shrink-0 grid-cols-4 gap-1 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[#f8fafc] p-1 dark:bg-[var(--bgColor-muted)]/80 min-[960px]:w-[23rem]"
                         >
                           {MARKS.map((m) => {
                             const on = mark === m;
@@ -388,10 +388,10 @@ export function AttendanceView({
                                 disabled={!canMark}
                                 onClick={() => setMark(r.id, m)}
                                 className={clsx(
-                                  'inline-flex h-[var(--ctl-h)] items-center justify-center gap-1 rounded-[calc(var(--borderRadius-medium)-2px)] border px-2 text-xs font-semibold transition-colors max-[767px]:h-[var(--ctl-h-touch)] disabled:opacity-40',
+                                  'inline-flex h-[var(--ctl-h)] items-center justify-center gap-1 rounded-[calc(var(--borderRadius-medium)-2px)] border px-1.5 text-xs font-semibold transition-colors max-[767px]:h-[var(--ctl-h-touch)] min-[480px]:px-2 disabled:opacity-40',
                                   on
                                     ? meta.on
-                                    : 'border-[var(--borderColor-default)] bg-[var(--bgColor-default)] text-[var(--fgColor-muted)] hover:border-[var(--borderColor-accent-emphasis)] hover:text-[var(--fgColor-default)]',
+                                    : 'border-[var(--borderColor-default)] bg-[var(--bgColor-default)] text-[var(--ink-2)] hover:border-[var(--borderColor-accent-emphasis)] hover:text-[var(--fgColor-default)]',
                                 )}
                               >
                                 <Icon size={12} className="hidden shrink-0 min-[480px]:inline-block" aria-hidden />
@@ -437,7 +437,7 @@ export function AttendanceView({
       {canRecord && session && session.isPast && session.status !== 'cancelled' && (
         <aside
           aria-label="Thao tác điểm danh nhanh"
-          className="sticky bottom-[calc(68px+var(--safe-b))] z-30 -mx-4 -mb-2 mt-4 flex items-center justify-between gap-3 border-t border-[var(--borderColor-default)] bg-[var(--bgColor-default)]/95 px-4 py-2.5 shadow-lg backdrop-blur-md min-[768px]:hidden"
+          className="sticky bottom-[calc(68px+var(--safe-b))] z-30 mt-3 flex items-center justify-between gap-2 rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)]/95 px-3.5 py-2.5 shadow-[var(--lift)] backdrop-blur-md min-[768px]:hidden"
         >
           <span className="text-xs tabular-nums text-[var(--fgColor-muted)]">
             Đã điểm danh <b className="font-semibold text-[var(--fgColor-default)]">{marked}/{roster.length}</b>
@@ -479,7 +479,7 @@ function KpiPill({
   value: number;
 }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]/65 px-2.5 py-1 text-xs tabular-nums text-[var(--fgColor-muted)]">
+    <span className="inline-flex items-center gap-1.5 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-2.5 py-1 text-xs tabular-nums text-[var(--ink-2)] shadow-2xs">
       <Icon size={12} className={clsx('shrink-0', iconClass)} aria-hidden />
       {label} <b className="font-mono font-semibold text-[var(--fgColor-default)]">{value}</b>
     </span>

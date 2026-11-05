@@ -12,18 +12,18 @@ import { getCurrentPermissions } from '@/lib/session';
 
 const GROUP_ACCENT: Record<string, { badgeBg: string; badgeText: string; hoverBorder: string }> = {
   main: {
-    badgeBg: 'bg-[var(--primary-soft)]',
-    badgeText: 'text-[var(--primary)]',
+    badgeBg: 'bg-[var(--primary-soft)] ring-1 ring-inset ring-[var(--borderColor-accent-muted)]',
+    badgeText: 'text-[var(--primary-deep)]',
     hoverBorder: 'hover:border-l-[var(--primary)]',
   },
   finance: {
-    badgeBg: 'bg-[#1baf7a]/12',
-    badgeText: 'text-[#1baf7a]',
+    badgeBg: 'bg-[#ecfdf5] ring-1 ring-inset ring-[#a7f3d0] dark:bg-[#064e3b] dark:ring-[#065f46]',
+    badgeText: 'text-[#047857] dark:text-[#6ee7b7]',
     hoverBorder: 'hover:border-l-[#1baf7a]',
   },
   system: {
-    badgeBg: 'bg-[#2a78d6]/12',
-    badgeText: 'text-[#2a78d6]',
+    badgeBg: 'bg-[#eff6ff] ring-1 ring-inset ring-[#bfdbfe] dark:bg-[#122d4f] dark:ring-[#1f477a]',
+    badgeText: 'text-[#1d4ed8] dark:text-[#58a6ff]',
     hoverBorder: 'hover:border-l-[#2a78d6]',
   },
 };
@@ -73,12 +73,12 @@ async function FeaturesData() {
             <section
               key={group.id}
               aria-label={group.title}
-              className="overflow-hidden rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)]"
+              className="overflow-hidden rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] shadow-[var(--shadow)]"
             >
-              <header className="flex items-center justify-between gap-2 border-b border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)] px-4 py-2.5">
+              <header className="flex items-center justify-between gap-2 border-b border-[var(--borderColor-muted)] bg-[var(--bgColor-default)] px-4 py-2.5">
                 <div className="flex items-center gap-2">
                   <span className="h-3.5 w-1 rounded-full bg-[var(--primary)]" aria-hidden />
-                  <h2 className="m-0 text-xs font-semibold uppercase tracking-wider text-[var(--fgColor-muted)]">
+                  <h2 className="m-0 text-xs font-semibold uppercase tracking-wider text-[var(--ink-2)]">
                     {group.title}
                   </h2>
                 </div>
@@ -94,7 +94,7 @@ async function FeaturesData() {
                       key={item.href}
                       href={item.href}
                       data-card="true"
-                      className={`group relative flex min-w-0 items-center gap-3.5 rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] border-l-[3px] border-l-transparent ${palette.hoverBorder} bg-[var(--bgColor-default)] px-3.5 py-3 transition-all duration-150 hover:-translate-y-0.5 hover:border-[var(--borderColor-accent-emphasis)] hover:bg-[var(--bgColor-muted)]/50`}
+                      className={`group relative flex min-w-0 items-center gap-3.5 rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] border-l-[3px] border-l-transparent ${palette.hoverBorder} bg-[var(--bgColor-default)] px-3.5 py-3 shadow-2xs transition-all duration-150 hover:-translate-y-0.5 hover:border-[var(--borderColor-accent-emphasis)] hover:bg-[#fcfdff] hover:shadow-[var(--shadow)] dark:hover:bg-[var(--bgColor-muted)]/50`}
                     >
                       <span
                         className={`grid size-10 shrink-0 place-items-center rounded-[var(--borderRadius-medium)] ${palette.badgeBg} ${palette.badgeText} transition-transform duration-150 group-hover:scale-105`}

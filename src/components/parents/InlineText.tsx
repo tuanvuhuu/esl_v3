@@ -137,8 +137,8 @@ export function InlineText({
       className={`group -mx-1 flex h-[var(--ctl-h)] max-w-full min-w-0 items-center rounded-[var(--borderRadius-small)] px-1 text-left hover:bg-[var(--bgColor-muted)] max-[767px]:h-[var(--ctl-h-touch)] ${isEmpty ? '' : className}`}
     >
       {isEmpty ? (
-        <span className="min-w-0 truncate text-sm text-[var(--fgColor-muted)] opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
-          {placeholder}
+        <span className="min-w-0 truncate text-xs text-[var(--fgColor-muted)]/65 transition-colors group-hover:text-[var(--fgColor-default)] group-focus-visible:text-[var(--fgColor-default)]">
+          + {placeholder}
         </span>
       ) : (
         <span className={`min-w-0 ${wrap ? 'line-clamp-2 break-words' : 'truncate'}`} title={value}>

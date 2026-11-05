@@ -1,5 +1,6 @@
 :root {
-  ---table-border: var(--borderColor-default, #00000014);
+  ---table-border: var(--borderColor-default, #dbe2ec);
+  ---table-row-border: var(--borderColor-muted, #e8edf4);
 }
 
 .table {
@@ -7,46 +8,45 @@
   border-spacing: 0;
   table-layout: fixed;
   width: 100%;
-  border-radius: var(--radius-2, 8px);
   background-color: var(--bgColor-default);
 }
 
 .table thead {
   font-weight: 500;
-  background-color: var(--bgColor-muted);
+  background-color: var(--bgColor-default);
 }
 
 .table th {
-  border-right: 1px solid var(---table-border);
+  border-right: 0;
   border-bottom: 1px solid var(---table-border);
-  padding: 0.375rem 0.625rem;
+  padding: 0.4375rem 0.5625rem;
   font-size: 0.8125rem;
   font-weight: 500;
   box-sizing: border-box;
-  background-color: var(--bgColor-muted);
+  background-color: var(--bgColor-default);
   transition: background-color 0.14s ease;
 }
 
 .table .bands th {
-  border-right: 1px solid var(---table-border);
+  border-right: 1px solid var(---table-row-border);
 }
 
 .table th:hover {
-  background-color: var(--bgColor-neutral-muted);
-}
-
-.table th.left.lastFixed {
-  border-right: 1px solid var(---table-border);
-}
-
-.table th.fixed {
   background-color: var(--bgColor-muted);
 }
 
+.table th.left.lastFixed {
+  border-right: 1px solid var(---table-row-border);
+}
+
+.table th.fixed {
+  background-color: var(--bgColor-default);
+}
+
 .table td {
-  border-bottom: 1px solid var(---table-border);
-  border-right: 1px solid var(---table-border);
-  padding: 0.34375rem 0.625rem;
+  border-bottom: 1px solid var(---table-row-border);
+  border-right: 0;
+  padding: 0.3125rem 0.5625rem;
   font-size: 0.8125rem;
   font-weight: 400;
   line-height: 1.35;
@@ -72,7 +72,7 @@
 }
 
 .table td.left.lastFixed {
-  border-right: 1px solid var(---table-border);
+  border-right: 1px solid var(---table-row-border);
 }
 
 .table td.right.lastFixed::before {
@@ -82,7 +82,7 @@
   top: 0;
   bottom: 0;
   width: 1px;
-  border-left: 1px solid var(---table-border);
+  border-left: 1px solid var(---table-row-border);
 }
 
 .table th.right.lastFixed::before {
@@ -92,12 +92,12 @@
   top: 0;
   bottom: 0;
   width: 1px;
-  border-left: 1px solid var(---table-border);
+  border-left: 1px solid var(---table-row-border);
 }
 
-/* Dòng chẵn lẻ & hover kèm vạch nhấn bên trái chuẩn 01. TSUKUBA */
+/* Mặt bảng mặc định trắng tinh #ffffff; chỉ tô sọc rất nhẹ khi bật thủ công */
 .table tr.even td {
-  background-color: color-mix(in srgb, var(--bgColor-muted) 65%, var(--bgColor-default));
+  background-color: color-mix(in srgb, var(--bgColor-muted) 35%, var(--bgColor-default));
 }
 
 .table td.fixed {
@@ -105,7 +105,7 @@
 }
 
 .table tr.even td.fixed {
-  background-color: color-mix(in srgb, var(--bgColor-muted) 65%, var(--bgColor-default));
+  background-color: color-mix(in srgb, var(--bgColor-muted) 35%, var(--bgColor-default));
 }
 
 .table tbody tr:hover td,
@@ -139,16 +139,32 @@
   box-shadow: none !important;
 }
 
-/* ---- Khung DataGrid ---- */
+/* ---- Khung DataGrid trắng tinh nguyên khối ---- */
 .container {
-  overflow: visible;
+  overflow: hidden;
   position: relative;
+  border-radius: var(--radius-panel, 12px);
+  border: 1px solid var(--borderColor-default);
+  background-color: var(--bgColor-default);
+  box-shadow: var(--shadow);
 }
 
 .container.fixedHeight {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+.toolbarArea {
+  background-color: var(--bgColor-default);
+  border-bottom: 1px solid var(--borderColor-muted);
+  padding: 0.5625rem 0.875rem;
+}
+
+.pagingArea {
+  background-color: var(--bgColor-default);
+  border-top: 1px solid var(--borderColor-muted);
+  padding: 0.4375rem 0.875rem;
 }
 
 .fixedHeight .toolbarArea,
@@ -161,6 +177,7 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
+  background-color: var(--bgColor-default);
 }
 
 .grayscale {
@@ -171,8 +188,6 @@
   overflow-x: auto;
   overflow-y: visible;
   position: relative;
-  border-radius: var(--radius-2, 8px);
-  border: 1px solid var(--borderColor-default);
   background-color: var(--bgColor-default);
 }
 
@@ -205,6 +220,7 @@
 
 /* ---- Header ---- */
 .headerCell {
+  position: relative;
   display: flex;
   gap: 0.25rem;
   width: 100%;
@@ -212,7 +228,7 @@
   align-items: center;
   font-weight: 600;
   font-size: 0.8125rem;
-  color: var(--fgColor-muted);
+  color: var(--ink-2, var(--fgColor-default));
 }
 
 .headerCaption {
@@ -223,14 +239,28 @@
 }
 
 .filterTrigger {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
   opacity: 0;
+  pointer-events: none;
   flex-shrink: 0;
+  background-color: var(--bgColor-muted);
+  border-radius: 4px;
   transition: opacity 0.15s ease;
 }
 
 .table th:hover .filterTrigger,
 .filterTriggerActive {
   opacity: 1;
+  pointer-events: auto;
+}
+
+.filterTriggerActive {
+  position: static;
+  transform: none;
+  background-color: transparent;
 }
 
 .resizer {

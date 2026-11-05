@@ -49,7 +49,7 @@ async function StudentHomeData() {
   return (
     <section className="flex flex-col gap-5">
       {/* Thẻ chào mừng chuẩn Portal.module.css (.hero) của 01. TSUKUBA */}
-      <div className="tsukuba-rise flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--borderColor-default)] border-l-4 border-l-[var(--primary)] bg-[var(--bgColor-default)] p-4 min-[640px]:p-5">
+      <div className="tsukuba-rise flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--borderColor-default)] border-l-4 border-l-[var(--primary)] bg-[var(--bgColor-default)] p-4 shadow-[var(--shadow)] min-[640px]:p-5">
         <div className="min-w-0 flex-1">
           <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--primary)]">
             <SparklesFillIcon size={12} aria-hidden />

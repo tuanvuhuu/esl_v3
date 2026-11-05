@@ -1,45 +1,49 @@
 @import "tailwindcss";
 @import "../styles/primer/index.css";
 
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 /* ============================================================
    Bảng màu nền chuẩn dự án 01. TSUKUBA & GitHub Primer cho ESL Center.
    Giao diện Sáng mặc định: mặt thẻ trắng (#ffffff), nền phụ sạch (#f7f8fa),
    viền mảnh tinh tế (#00000014 / rgb(239, 243, 244)), màu nhấn cam đỏ Tsukuba (#d93b0e).
    ============================================================ */
 
-/* ---------- Bảng màu: sáng (mặc định — 01. TSUKUBA Light) ---------- */
+/* ---------- Bảng màu: sáng (mặc định — Mặt bảng trắng tinh #ffffff trên nền #f3f5f9) ---------- */
 :root {
-  --bg: #ffffff;
+  --bg: #eef2f7;
   --surface: #ffffff;
   --qr-bg: #ffffff; /* nền mã QR: giữ trắng cả ở giao diện tối để app ngân hàng quét được */
-  --ink: #1f2328;
-  --ink-2: #3d444d;
-  --muted: #59636e;
-  --line: #00000014;
-  --line-muted: rgb(239, 243, 244);
-  --stone: #f7f8fa;
-  --stone-ink: #424a53;
+  --ink: #0f172a;
+  --ink-2: #334155;
+  --muted: #526071;
+  --line: #d5deeb;
+  --line-muted: #e4eaf3;
+  --stone: #f4f7fb;
+  --stone-ink: #334155;
   --primary: #d93b0e;
   --primary-deep: #b62f08;
   --primary-soft: #fdebe5;
   --on-primary: #ffffff;
-  --accent: #1a7f37;
-  --mint: #e7f8ef;
-  --mint-ink: #157333;
-  --lav: #e8f3ff;
-  --lav-ink: #0969da;
-  --butter: #fff6db;
-  --butter-ink: #946200;
-  --blush: #ffebe9;
-  --blush-ink: #cf222e;
-  --row-hover: #fdf5f2;
+  --accent: #16a34a;
+  --mint: #dcfce7;
+  --mint-ink: #15803d;
+  --lav: #dbeafe;
+  --lav-ink: #1d4ed8;
+  --butter: #fef3c7;
+  --butter-ink: #b45309;
+  --blush: #fee2e2;
+  --blush-ink: #b91c1c;
+  --row-hover: #fff7f4;
   --link: #d93b0e;
-  --relation: #8250df;
-  --bar-bg: rgba(255, 255, 255, 0.88);
+  --relation: #7c3aed;
+  --bar-bg: color-mix(in srgb, color-mix(in srgb, var(--surface) 84%, var(--primary-soft) 16%) 90%, transparent);
+  --menu-bg: color-mix(in srgb, color-mix(in srgb, var(--surface) 80%, var(--primary-soft) 20%) 88%, transparent);
+  --menu-border: color-mix(in srgb, var(--primary) 20%, var(--line));
   --glass: rgba(255, 255, 255, 0.96);
-  --scrim: rgba(31, 35, 40, 0.32);
-  --shadow: 0 1px 2px rgba(31, 35, 40, 0.04);
-  --lift: 0 8px 24px rgba(31, 35, 40, 0.12), 0 1px 3px rgba(31, 35, 40, 0.06);
+  --scrim: rgba(15, 23, 42, 0.36);
+  --shadow: 0 4px 16px -2px rgba(15, 23, 42, 0.07), 0 2px 6px -1px rgba(15, 23, 42, 0.04);
+  --lift: 0 12px 28px -4px rgba(15, 23, 42, 0.14), 0 4px 10px -2px rgba(15, 23, 42, 0.06);
   --safe-b: env(safe-area-inset-bottom, 0px);
   color-scheme: light;
 
@@ -81,7 +85,9 @@
   --row-hover: #1e242c;
   --link: #ff7b54;
   --relation: #a371f7;
-  --bar-bg: rgba(21, 27, 35, 0.88);
+  --bar-bg: color-mix(in srgb, color-mix(in srgb, var(--surface) 76%, var(--primary-soft) 24%) 86%, transparent);
+  --menu-bg: color-mix(in srgb, color-mix(in srgb, #0d1117 70%, var(--primary-soft) 30%) 80%, transparent);
+  --menu-border: color-mix(in srgb, var(--primary) 28%, var(--line));
   --glass: rgba(21, 27, 35, 0.95);
   --scrim: rgba(1, 4, 9, 0.65);
   --shadow: 0 0 0 1px var(--line), 0 1px 3px rgba(1, 4, 9, 0.4), 0 8px 24px rgba(1, 4, 9, 0.5);
@@ -117,7 +123,9 @@
     --row-hover: #1e242c;
     --link: #ff7b54;
     --relation: #a371f7;
-    --bar-bg: rgba(21, 27, 35, 0.88);
+    --bar-bg: color-mix(in srgb, color-mix(in srgb, var(--surface) 76%, var(--primary-soft) 24%) 86%, transparent);
+    --menu-bg: color-mix(in srgb, color-mix(in srgb, #0d1117 70%, var(--primary-soft) 30%) 80%, transparent);
+    --menu-border: color-mix(in srgb, var(--primary) 28%, var(--line));
     --glass: rgba(21, 27, 35, 0.95);
     --scrim: rgba(1, 4, 9, 0.65);
     --shadow: 0 0 0 1px var(--line), 0 1px 3px rgba(1, 4, 9, 0.4), 0 8px 24px rgba(1, 4, 9, 0.5);

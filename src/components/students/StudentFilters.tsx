@@ -23,12 +23,12 @@ export type FilterState = {
   order?: string;
 };
 
-const STATUS_CHIPS: { value: string; label: string }[] = [
+const STATUS_CHIPS: { value: string; label: string; dot?: string }[] = [
   { value: 'all', label: 'Tất cả' },
-  { value: 'active', label: 'Đang học' },
-  { value: 'trial', label: 'Học thử' },
-  { value: 'paused', label: 'Bảo lưu' },
-  { value: 'finished', label: 'Đã nghỉ' },
+  { value: 'active', label: 'Đang học', dot: 'bg-[#16a34a]' },
+  { value: 'trial', label: 'Học thử', dot: 'bg-[#2563eb]' },
+  { value: 'paused', label: 'Bảo lưu', dot: 'bg-[#64748b]' },
+  { value: 'finished', label: 'Đã nghỉ', dot: 'bg-[#dc2626]' },
 ];
 
 const TUITION_OPTIONS = [
@@ -60,6 +60,7 @@ export function StudentStatusTabs({
           count={statusCounts[chip.value] ?? 0}
           onClick={() => router.push(studentsHref({ ...current, status: chip.value, p: 1, n: 1 }))}
         >
+          {chip.dot && <span className={`size-1.5 shrink-0 rounded-full ${chip.dot}`} aria-hidden />}
           {chip.label}
         </Chip>
       ))}

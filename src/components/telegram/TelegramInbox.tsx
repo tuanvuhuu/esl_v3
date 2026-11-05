@@ -1,16 +1,18 @@
 'use client';
 
-import { ArrowLeftIcon, MegaphoneIcon, PaperAirplaneIcon } from '@primer/octicons-react';
+import { ArrowLeftIcon, DeviceMobileIcon, MegaphoneIcon, PaperAirplaneIcon, SearchIcon } from '@primer/octicons-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState, useTransition } from 'react';
+import { useMemo, useState, useTransition } from 'react';
 import { createMyLinkAction, replyToParentAction } from '@/app/(app)/tin-nhan/actions';
-import { TextAreaAutoHeight } from '@/components-ui';
+import { TextAreaAutoHeight, TextInput } from '@/components-ui';
 import { Btn, BTN_BASE, BTN_GHOST } from '@/components/ui/Btn';
+import { Chip, ChipGroup } from '@/components/ui/controls';
 import { Field } from '@/components/ui/Field';
 import { Avatar, Pill } from '@/components/ui/primitives';
 import { EmptyPanel, Notice, Panel } from '@/components/ui/surfaces';
 import { Toast, useToast } from '@/components/ui/Toast';
+import { normalizeSearch } from '@/lib/text';
 import type { Conversation, ThreadMessage } from '@/lib/telegram/service';
 import { BroadcastDialog } from './BroadcastDialog';
 import { TelegramLinkDialog } from './TelegramLinkDialog';
@@ -25,23 +27,36 @@ function timeLabel(iso: string): string {
   });
 }
 
-// Kết nối Telegram của chính nhân viên, để nhận thông báo (bài nộp mới...)
+// Thanh trạng thái kết nối Telegram cá nhân gọn 1 dòng chuẩn CRM
 export function MyTelegramPanel({ linked }: { linked: boolean }) {
   const [open, setOpen] = useState(false);
   return (
-    <Panel
-      title="Telegram của bạn"
-      action={<Pill tone={linked ? 'mint' : 'stone'}>{linked ? 'Đã kết nối' : 'Chưa kết nối'}</Pill>}
-      className="tsukuba-rise"
+    <section
+      aria-label="Telegram của bạn"
+      className="tsukuba-rise flex flex-wrap items-center justify-between gap-3 rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] border-l-[3px] border-l-[#0ea5e9] bg-[var(--bgColor-default)] px-4 py-2.5 shadow-[var(--shadow)] max-[767px]:px-3.5"
     >
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="m-0 text-sm text-[var(--fgColor-muted)]">
-          {linked
-            ? 'Đã kết nối. Bạn nhận thông báo công việc (đơn xin nghỉ, bài nộp mới...) trực tiếp qua bot Telegram.'
-            : 'Kết nối tài khoản Telegram cá nhân để nhận thông báo ngay khi học sinh nộp bài hoặc phụ huynh gửi đơn nghỉ.'}
-        </p>
-        <Btn onClick={() => setOpen(true)}>{linked ? 'Kết nối thêm máy' : 'Kết nối Telegram'}</Btn>
+      <div className="flex min-w-0 flex-1 items-center gap-3">
+        <span
+          aria-hidden
+          className="grid size-8 shrink-0 place-items-center rounded-[var(--borderRadius-medium)] border border-[#bae6fd] bg-[#f0f9ff] text-[#0284c7] dark:border-[#075985] dark:bg-[#082f49] dark:text-[#38bdf8]"
+        >
+          <PaperAirplaneIcon size={15} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <b className="text-sm font-semibold text-[var(--fgColor-default)]">Telegram của bạn</b>
+            <Pill tone={linked ? 'mint' : 'stone'}>{linked ? 'Đã kết nối' : 'Chưa kết nối'}</Pill>
+          </div>
+          <p className="m-0 truncate text-xs text-[var(--fgColor-muted)] max-[639px]:whitespace-normal">
+            {linked
+              ? 'Nhận thông báo đơn xin nghỉ và bài nộp mới trực tiếp qua bot Telegram.'
+              : 'Kết nối tài khoản Telegram cá nhân để nhận thông báo ngay khi học sinh nộp bài hoặc phụ huynh gửi đơn nghỉ.'}
+          </p>
+        </div>
       </div>
+      <Btn variant={linked ? 'ghost' : 'primary'} leadingVisual={PaperAirplaneIcon} onClick={() => setOpen(true)}>
+        {linked ? 'Kết nối thêm máy' : 'Kết nối Telegram'}
+      </Btn>
       <TelegramLinkDialog
         open={open}
         title="Kết nối Telegram của bạn"
@@ -50,11 +65,11 @@ export function MyTelegramPanel({ linked }: { linked: boolean }) {
         create={createMyLinkAction}
         onClose={() => setOpen(false)}
       />
-    </Panel>
+    </section>
   );
 }
 
-// Hộp tin 2 ngăn chuẩn 01. TSUKUBA: danh sách hội thoại có vạch nhấn vermilion bên trái + luồng bong bóng tin nhắn + chân soạn thảo #f7f8fa.
+// Hộp tin 2 ngăn chuẩn 01. TSUKUBA: danh sách hội thoại trắng tinh có vạch nhấn bên trái + luồng bong bóng tin nhắn #f8fafc + chân soạn thảo trắng.
 export function TelegramInbox({
   conversations,
   selected,
@@ -74,10 +89,22 @@ export function TelegramInbox({
 }) {
   const router = useRouter();
   const [text, setText] = useState('');
+  const [search, setSearch] = useState('');
+  const [filterTab, setFilterTab] = useState<'all' | 'unread'>('all');
   const [error, setError] = useState<string | null>(null);
   const [broadcastOpen, setBroadcastOpen] = useState(false);
   const [pending, startTransition] = useTransition();
   const { message, notify } = useToast();
+
+  const unreadTotal = useMemo(() => conversations.filter((c) => c.unread > 0).length, [conversations]);
+  const filteredConversations = useMemo(() => {
+    const q = normalizeSearch(search);
+    return conversations.filter((c) => {
+      if (filterTab === 'unread' && c.unread === 0) return false;
+      if (!q) return true;
+      return normalizeSearch(`${c.parentName} ${c.phone} ${c.lastText}`).includes(q);
+    });
+  }, [conversations, filterTab, search]);
 
   function send() {
     if (!selected) return;
@@ -138,11 +165,36 @@ export function TelegramInbox({
           ) : undefined
         }
       >
-        <ul
-          aria-label="Cuộc trò chuyện"
-          className="m-0 flex max-h-[68dvh] list-none flex-col divide-y divide-[var(--borderColor-muted)] overflow-y-auto p-0 scroll-quiet"
-        >
-          {conversations.map((c) => {
+        <div className="flex flex-col gap-2 border-b border-[var(--borderColor-muted)] bg-[#fcfdff] px-3.5 py-2.5 dark:bg-transparent">
+          <TextInput
+            block
+            type="search"
+            leadingVisual={SearchIcon}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Tìm phụ huynh hoặc nội dung…"
+            aria-label="Tìm cuộc trò chuyện"
+            className="[&::-webkit-search-cancel-button]:hidden"
+          />
+          <ChipGroup label="Lọc hội thoại">
+            <Chip selected={filterTab === 'all'} count={conversations.length} onClick={() => setFilterTab('all')}>
+              Tất cả
+            </Chip>
+            <Chip selected={filterTab === 'unread'} count={unreadTotal} onClick={() => setFilterTab('unread')}>
+              Chưa đọc
+            </Chip>
+          </ChipGroup>
+        </div>
+        {filteredConversations.length === 0 ? (
+          <div className="px-4 py-8 text-center text-xs text-[var(--fgColor-muted)]">
+            Không có cuộc trò chuyện nào khớp bộ lọc.
+          </div>
+        ) : (
+          <ul
+            aria-label="Cuộc trò chuyện"
+            className="m-0 flex max-h-[62dvh] list-none flex-col divide-y divide-[var(--borderColor-muted)] overflow-y-auto p-0 scroll-quiet"
+          >
+            {filteredConversations.map((c) => {
             const active = selected?.parentId === c.parentId;
             return (
               <li key={c.parentId}>
@@ -152,8 +204,8 @@ export function TelegramInbox({
                   aria-current={active ? 'true' : undefined}
                   className={`flex items-start gap-3 px-3.5 py-3 transition-colors ${
                     active
-                      ? 'bg-[var(--primary-soft)]/55 shadow-[inset_3px_0_0_var(--primary)]'
-                      : 'bg-[var(--bgColor-default)] hover:bg-[var(--bgColor-muted)]/75'
+                      ? 'bg-[var(--primary-soft)]/65 shadow-[inset_3px_0_0_var(--primary)]'
+                      : 'bg-[var(--bgColor-default)] hover:bg-[#f8fafc] dark:hover:bg-[var(--bgColor-muted)]/75'
                   }`}
                 >
                   <Avatar name={c.parentName} seed={c.parentId} />
@@ -182,7 +234,8 @@ export function TelegramInbox({
               </li>
             );
           })}
-        </ul>
+          </ul>
+        )}
       </Panel>
 
       {selected ? (
@@ -203,26 +256,29 @@ export function TelegramInbox({
         >
           <div className="flex flex-col">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--borderColor-muted)] bg-[var(--bgColor-default)] px-4 py-2 text-xs text-[var(--fgColor-muted)]">
-              <span>
-                Số điện thoại:{' '}
-                <code className="rounded bg-[var(--bgColor-neutral-muted)] px-1.5 py-0.5 font-mono text-xs text-[var(--fgColor-default)]">
+              <span className="inline-flex items-center gap-1.5">
+                <DeviceMobileIcon size={13} className="text-[var(--fgColor-muted)]" aria-hidden />
+                <span>Số điện thoại:</span>
+                <code className="rounded-[5px] border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] px-1.5 py-0.5 font-mono text-xs font-medium tabular-nums text-[var(--fgColor-default)]">
                   {selected.phone}
                 </code>
               </span>
-              <span className="tabular-nums">{thread.length} tin nhắn</span>
+              <span className="inline-flex items-center rounded-[5px] border border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)]/70 px-2 py-0.5 font-mono text-[11px] font-medium tabular-nums text-[var(--ink-2)]">
+                {thread.length} tin nhắn
+              </span>
             </div>
 
             <ol
               aria-label="Tin nhắn"
-              className="m-0 flex max-h-[52dvh] min-h-[260px] list-none flex-col gap-2.5 overflow-y-auto bg-[var(--bgColor-inset)] p-4 scroll-quiet"
+              className="m-0 flex max-h-[52dvh] min-h-[260px] list-none flex-col gap-2.5 overflow-y-auto bg-[#f8fafc] p-4 scroll-quiet dark:bg-[var(--bgColor-inset)]"
             >
               {thread.map((m) => (
                 <li
                   key={m.id}
                   className={`flex max-w-[84%] flex-col gap-1 px-3.5 py-2.5 ${
                     m.direction === 'out'
-                      ? 'self-end rounded-2xl rounded-br-[4px] border border-[var(--primary)]/25 bg-[var(--primary-soft)]/70 text-[var(--fgColor-default)]'
-                      : 'self-start rounded-2xl rounded-bl-[4px] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] text-[var(--fgColor-default)] shadow-[0_1px_2px_rgba(31,35,40,0.04)]'
+                      ? 'self-end rounded-2xl rounded-br-[4px] border border-[var(--borderColor-accent-muted)] bg-[var(--primary-soft)] text-[var(--fgColor-default)] shadow-2xs'
+                      : 'self-start rounded-2xl rounded-bl-[4px] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] text-[var(--fgColor-default)] shadow-xs'
                   }`}
                 >
                   <span className="whitespace-pre-wrap text-sm leading-relaxed [overflow-wrap:anywhere]">{m.text}</span>
@@ -239,7 +295,7 @@ export function TelegramInbox({
               ))}
             </ol>
 
-            <div className="border-t border-[var(--borderColor-muted)] bg-[var(--bgColor-muted)] px-4 py-3 max-[767px]:px-3.5">
+            <div className="border-t border-[var(--borderColor-muted)] bg-[var(--bgColor-default)] px-4 py-3 max-[767px]:px-3.5">
               {selected.linked ? (
                 <div className="flex flex-col gap-2.5">
                   <Field label="Trả lời" error={error ?? undefined}>

@@ -18,6 +18,7 @@
     "db:seed:reset": "node --env-file-if-exists=.env.local --import tsx src/db/seed.ts --reset",
     "db:set-password": "node --env-file-if-exists=.env.local --import tsx src/db/set-password.ts",
     "db:studio": "node --env-file-if-exists=.env.local node_modules/drizzle-kit/bin.cjs studio",
+    "db:import-campuses": "node --env-file-if-exists=.env.local --import tsx scripts/import-and-create-accounts.ts --execute",
     "files:migrate": "node scripts/migrate-files-to-supabase.mjs",
     "files:archive": "node scripts/archive-old-files-to-drive.mjs",
     "db:backup": "node scripts/backup-db-to-drive.mjs"

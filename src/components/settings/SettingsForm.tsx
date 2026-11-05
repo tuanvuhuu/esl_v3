@@ -254,8 +254,8 @@ export function SettingsForm({ settings, canManage }: { settings: CenterSettings
           </p>
         </Panel>
 
-        <div className="col-span-full flex flex-wrap items-center justify-between gap-3 rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] px-4 py-3">
-          <span className="text-xs text-[var(--fgColor-muted)]">
+        <div className="col-span-full flex flex-wrap items-center justify-between gap-3 rounded-[var(--borderRadius-large)] border border-[var(--borderColor-default)] border-l-[3px] border-l-[var(--primary)] bg-[var(--bgColor-default)] px-4 py-3 shadow-[var(--shadow)]">
+          <span className="text-xs font-medium text-[var(--ink-2)]">
             Mọi thay đổi áp dụng ngay cho toàn bộ cơ sở sau khi lưu.
           </span>
           <Btn

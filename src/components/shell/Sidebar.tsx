@@ -1,6 +1,6 @@
 'use client';
 
-// Thanh điều hướng bên trái đồng bộ KhungUngDung.tsx & AppLayout.module.css (01. TSUKUBA) + vạch trượt mượt framer-motion.
+// Thanh điều hướng bên trái tối giản, sạch sẽ, dễ nhìn; đồng bộ màu chủ đề ở mục đang chọn và trạng thái hover.
 import { ChevronDownIcon, HomeIcon, SearchIcon } from '@primer/octicons-react';
 import { TextInput } from '@primer/react';
 import clsx from 'clsx';
@@ -33,12 +33,10 @@ function fold(text: string): string {
 
 export function Sidebar({
   groups,
-  badges = {},
   open,
   onNavigate,
 }: {
   groups: NavGroup[];
-  badges?: Record<string, number>;
   open: boolean;
   onNavigate: () => void;
 }) {
@@ -68,10 +66,10 @@ export function Sidebar({
       id="side"
       aria-label="Menu chính"
       className={clsx(
-        'scroll-quiet flex flex-col gap-1 overflow-y-auto bg-[var(--bgColor-default)] px-2.5 py-3',
+        'scroll-quiet flex flex-col gap-1 overflow-y-auto bg-[var(--bgColor-default)]/95 px-2.5 py-3 backdrop-blur-md transition-colors duration-200',
         'max-[767px]:hidden',
         'min-[1200px]:sticky min-[1200px]:top-[52px] min-[1200px]:h-[calc(100vh-52px)] min-[1200px]:w-[244px] min-[1200px]:border-r min-[1200px]:border-[var(--borderColor-default)]',
-        'max-[1199px]:fixed max-[1199px]:inset-y-0 max-[1199px]:left-0 max-[1199px]:z-[56] max-[1199px]:w-[min(268px,86vw)] max-[1199px]:border-r max-[1199px]:border-[var(--borderColor-default)] max-[1199px]:shadow-[var(--shadow-floating-large,var(--lift))] max-[1199px]:transition-transform max-[1199px]:duration-200',
+        'max-[1199px]:fixed max-[1199px]:inset-y-0 max-[1199px]:left-0 max-[1199px]:z-[56] max-[1199px]:w-[min(268px,86vw)] max-[1199px]:border-r max-[1199px]:border-[var(--borderColor-default)] max-[1199px]:bg-[var(--glass)] max-[1199px]:backdrop-blur-xl max-[1199px]:shadow-[var(--shadow-floating-large,var(--lift))] max-[1199px]:transition-transform max-[1199px]:duration-200',
         open ? 'max-[1199px]:translate-x-0' : 'max-[1199px]:-translate-x-[104%]',
       )}
     >
@@ -95,23 +93,27 @@ export function Sidebar({
             onClick={onNavigate}
             aria-current={homeActive ? 'page' : undefined}
             className={clsx(
-              'relative flex min-h-8 items-center gap-2.5 rounded-[var(--borderRadius-medium)] px-2.5 py-1.5 text-[13px] transition-colors',
+              'group relative flex min-h-8 items-center gap-2.5 rounded-[var(--borderRadius-medium)] px-2.5 py-1.5 text-[13px] transition-colors',
               homeActive
                 ? 'bg-[var(--primary-soft)] font-semibold text-[var(--primary-deep)]'
-                : 'font-normal text-[var(--fgColor-default)] hover:bg-[var(--bgColor-neutral-muted)]',
+                : 'font-normal text-[var(--fgColor-default)] hover:bg-[var(--row-hover)] hover:text-[var(--primary-deep)]',
             )}
           >
             {homeActive && (
               <motion.span
                 layoutId="tsukuba-sidebar-active-bar"
                 transition={{ type: 'spring', stiffness: 480, damping: 36 }}
-                className="pointer-events-none absolute -left-1.5 top-1.5 bottom-1.5 w-[3px] rounded-full bg-[var(--primary)]"
+                className="pointer-events-none absolute -left-1 top-1.5 bottom-1.5 w-[3px] rounded-full bg-[var(--primary)]"
                 aria-hidden
               />
             )}
             <HomeIcon
               size={16}
-              className={clsx('shrink-0 transition-colors', homeActive ? 'text-[var(--primary)]' : 'text-[var(--fgColor-muted)]')}
+              aria-hidden
+              className={clsx(
+                'shrink-0 transition-colors',
+                homeActive ? 'text-[var(--primary)]' : 'text-[var(--fgColor-muted)] group-hover:text-[var(--primary)]',
+              )}
             />
             <span className="min-w-0 flex-1 truncate">{HOME_ITEM.label}</span>
           </Link>
@@ -127,7 +129,7 @@ export function Sidebar({
                 aria-expanded={!isCollapsed}
                 disabled={searching}
                 onClick={() => toggle(group.id)}
-                className="flex h-8 w-full items-center justify-between gap-2 rounded-[var(--borderRadius-medium)] px-2 text-left text-[13px] font-semibold text-[var(--fgColor-default)] transition-colors hover:bg-[var(--bgColor-neutral-muted)] disabled:cursor-default disabled:hover:bg-transparent"
+                className="group flex h-8 w-full items-center justify-between gap-2 rounded-[var(--borderRadius-medium)] px-2.5 text-left text-xs font-semibold tracking-wide text-[var(--fgColor-muted)] uppercase transition-colors hover:bg-[var(--row-hover)] hover:text-[var(--fgColor-default)] disabled:cursor-default disabled:hover:bg-transparent"
               >
                 <span className="flex-1 truncate">{group.title}</span>
                 {isCollapsed && hasActive && (
@@ -135,7 +137,7 @@ export function Sidebar({
                 )}
                 {!searching && (
                   <ChevronDownIcon
-                    size={15}
+                    size={14}
                     aria-hidden
                     className={clsx(
                       'shrink-0 text-[var(--fgColor-muted)] transition-transform duration-200',
@@ -146,11 +148,10 @@ export function Sidebar({
               </button>
 
               {!isCollapsed && (
-                <div className="ml-2 mt-0.5 flex flex-col gap-0.5 border-l border-[var(--borderColor-muted)] pl-2">
+                <div className="ml-2.5 mt-0.5 flex flex-col gap-0.5 border-l border-[var(--borderColor-default)] pl-2">
                   {group.items.map((item) => {
                     const active = isActivePath(pathname, item.href);
                     const Icon = NAV_ICONS[item.icon];
-                    const count = badges[item.href] ?? 0;
                     return (
                       <Link
                         key={item.href}
@@ -158,33 +159,29 @@ export function Sidebar({
                         onClick={onNavigate}
                         aria-current={active ? 'page' : undefined}
                         className={clsx(
-                          'relative flex min-h-8 items-center gap-2.5 rounded-[var(--borderRadius-medium)] px-2.5 py-1.5 text-[13px] transition-colors',
+                          'group relative flex min-h-8 items-center gap-2.5 rounded-[var(--borderRadius-medium)] px-2.5 py-1.5 text-[13px] transition-colors',
                           active
                             ? 'bg-[var(--primary-soft)] font-semibold text-[var(--primary-deep)]'
-                            : 'font-normal text-[var(--fgColor-default)] hover:bg-[var(--bgColor-neutral-muted)]',
+                            : 'font-normal text-[var(--fgColor-default)] hover:bg-[var(--row-hover)] hover:text-[var(--primary-deep)]',
                         )}
                       >
                         {active && (
                           <motion.span
                             layoutId="tsukuba-sidebar-active-bar"
                             transition={{ type: 'spring', stiffness: 480, damping: 36 }}
-                            className="pointer-events-none absolute -left-[9.5px] top-1.5 bottom-1.5 w-[3px] rounded-full bg-[var(--primary)]"
+                            className="pointer-events-none absolute -left-[9px] top-1.5 bottom-1.5 w-[3px] rounded-full bg-[var(--primary)]"
                             aria-hidden
                           />
                         )}
                         <Icon
                           size={16}
+                          aria-hidden
                           className={clsx(
                             'shrink-0 transition-colors',
-                            active ? 'text-[var(--primary)]' : 'text-[var(--fgColor-muted)]',
+                            active ? 'text-[var(--primary)]' : 'text-[var(--fgColor-muted)] group-hover:text-[var(--primary)]',
                           )}
                         />
                         <span className="min-w-0 flex-1 truncate">{item.label}</span>
-                        {count > 0 && (
-                          <span className="inline-flex h-[18px] min-w-5 items-center justify-center rounded-full bg-[var(--bgColor-attention-muted)] px-1.5 text-[11px] font-medium leading-none tabular-nums text-[var(--fgColor-attention)]">
-                            {count > 99 ? '99+' : count}
-                          </span>
-                        )}
                       </Link>
                     );
                   })}

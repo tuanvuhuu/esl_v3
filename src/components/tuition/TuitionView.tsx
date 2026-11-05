@@ -19,7 +19,7 @@ import { DataGrid, type GridColumn } from '@/components/ui/datagrid';
 import { Field, FormFooter, FormSection } from '@/components/ui/Field';
 import { Modal } from '@/components/ui/Modal';
 import { PageCrumbs } from '@/components/shell/PageCrumbs';
-import { Alert, Pill, type Tone } from '@/components/ui/primitives';
+import { Alert, InitialBadge, Pill, type Tone } from '@/components/ui/primitives';
 import { Card, EmptyPanel } from '@/components/ui/surfaces';
 import { Toast, useToast } from '@/components/ui/Toast';
 import { dateKeyLabel } from '@/lib/datetime';
@@ -41,16 +41,16 @@ const LOW_SESSIONS = 2;
 const needsPay = (r: InvoiceRow) => r.debt > 0 || (r.sessionsLeft <= LOW_SESSIONS && (r.status === 'active' || r.status === 'trial'));
 
 const COLUMNS: GridColumn<InvoiceRow>[] = [
-  { key: 'fullName', label: 'Học sinh', width: 'minmax(190px,1.9fr)' },
-  { key: 'paid', label: 'Đã nộp', width: '104px' },
-  { key: 'discount', label: 'Giảm trừ', width: '92px' },
-  { key: 'bought', label: 'Buổi đã mua', width: '108px', sortValue: (r) => r.sessionsBought },
-  { key: 'done', label: 'Đã học', width: '82px', sortValue: (r) => r.sessionsDone },
-  { key: 'left', label: 'Còn lại', width: '92px', sortValue: (r) => r.sessionsLeft },
-  { key: 'balance', label: 'Tiền trước/nợ', width: '138px', sortValue: (r) => r.balance },
-  { key: 'status', label: 'Trạng thái', width: '158px', sortValue: (r) => r.state },
+  { key: 'fullName', label: 'Học sinh', width: 'minmax(210px,2fr)' },
+  { key: 'paid', label: 'Đã nộp', width: '96px' },
+  { key: 'discount', label: 'Giảm trừ', width: '84px' },
+  { key: 'bought', label: 'Buổi mua', width: '92px', sortValue: (r) => r.sessionsBought },
+  { key: 'done', label: 'Đã học', width: '74px', sortValue: (r) => r.sessionsDone },
+  { key: 'left', label: 'Còn lại', width: '84px', sortValue: (r) => r.sessionsLeft },
+  { key: 'balance', label: 'Tiền trước/nợ', width: '126px', sortValue: (r) => r.balance },
+  { key: 'status', label: 'Trạng thái', width: '178px', sortValue: (r) => r.state },
   // Đủ chỗ cho hai nút có chữ "Ghi thu", "Hoàn số dư" trên một dòng không tràn cột
-  { key: 'actions', label: 'Thao tác', width: '164px', align: 'end', srOnly: true },
+  { key: 'actions', label: 'Thao tác', width: '156px', align: 'end', srOnly: true },
 ];
 
 // Cột chọn dòng để ghi thu nhiều học sinh cùng lúc (chỉ hiện với người có quyền thu)
@@ -136,13 +136,20 @@ export function TuitionView({
         );
       case 'fullName':
         return (
-          <div className="flex min-w-0 items-baseline justify-between gap-2" title={`${r.fullName} · ${r.code} · ${r.className}`}>
-            <Link href={`/hoc-sinh/${r.id}`} data-link="true" className="min-w-0 truncate text-sm font-normal text-[var(--fgColor-link)] hover:underline">
-              {r.fullName}
-            </Link>
-            <small className="shrink-0 text-xs text-[var(--fgColor-muted)]">
+          <div className="flex min-w-0 items-center justify-between gap-2" title={`${r.fullName} · ${r.code} · ${r.className}`}>
+            <div className="flex min-w-0 items-center gap-2">
+              <InitialBadge name={r.fullName} seed={r.id} />
+              <Link
+                href={`/hoc-sinh/${r.id}`}
+                data-link="true"
+                className="min-w-0 truncate text-[13.5px] font-medium text-[var(--fgColor-default)] transition-colors hover:text-[var(--primary)] hover:underline"
+              >
+                {r.fullName}
+              </Link>
+            </div>
+            <span className="inline-flex shrink-0 items-center rounded-[5px] border border-[var(--borderColor-accent-muted)] bg-[var(--primary-soft)] px-1.5 py-0.5 text-[11px] font-semibold text-[var(--primary-deep)]">
               {r.className}
-            </small>
+            </span>
           </div>
         );
       case 'paid':
@@ -400,7 +407,7 @@ function TotalsStrip({ totals }: { totals: InvoiceTotals }) {
       {items.map((it) => (
         <div
           key={it.label}
-          className={`flex items-baseline justify-between gap-2 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] border-l-[3px] ${it.accent} bg-[var(--bgColor-default)] px-3 py-1.5`}
+          className={`flex items-baseline justify-between gap-2 rounded-[var(--borderRadius-medium)] border border-[var(--borderColor-default)] border-l-[3px] ${it.accent} bg-[var(--bgColor-default)] px-3 py-1.5 shadow-[var(--shadow)]`}
         >
           <dt className="text-xs text-[var(--fgColor-muted)]">{it.label}</dt>
           <dd className={`m-0 text-sm font-medium tabular-nums ${it.tone}`}>{it.value}</dd>
