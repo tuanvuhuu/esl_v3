@@ -286,7 +286,7 @@ export function DataGrid<T>({
         if (node.tagName === 'MAIN') break;
         node = node.parentElement;
       }
-      const available = Math.max(260, Math.floor(window.innerHeight - docTop - Math.max(8, bottomSpace) - 2));
+      const available = Math.max(320, Math.floor(window.innerHeight - docTop - Math.max(12, bottomSpace) - 4));
       setAutoMaxHeight((prev) => (prev === available ? prev : available));
     };
 
@@ -331,8 +331,8 @@ export function DataGrid<T>({
   const hasCustomHeader = Boolean(title || subTitle || actionComponent || subToolbarElement);
   const resolvedPaging: IDataGridPaging | undefined = useMemo(() => {
     if (paging !== undefined) return paging;
-    if (fill && !footer && dataSource.length > 15) {
-      return { enable: true, pageSize: 15, pageSizeItems: [15, 30, 50, 100] };
+    if (fill && !footer && dataSource.length > 20) {
+      return { enable: true, pageSize: 20, pageSizeItems: [20, 30, 50, 100] };
     }
     return undefined;
   }, [paging, fill, footer, dataSource.length]);
@@ -391,6 +391,7 @@ export function DataGrid<T>({
           keyExpr="id"
           dataSource={dataSource}
           columns={gridColumns}
+          height={fill ? autoMaxHeight : undefined}
           maxHeight={fill ? autoMaxHeight : undefined}
           footerElement={footer}
           title={title}

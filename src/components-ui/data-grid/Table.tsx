@@ -79,11 +79,13 @@ const Table = (props: ITableProps) => {
     0,
   );
   const minTableWidth = fixedSum + flexMinSum;
+  const needsHorizontalScroll = wrapperWidth > 0 && wrapperWidth < minTableWidth;
   const effectiveTableWidth = wrapperWidth > 0 ? Math.max(minTableWidth, wrapperWidth) : minTableWidth;
   const availableFlexWidth = Math.max(flexMinSum, effectiveTableWidth - fixedSum);
 
-  // Phân bổ chính xác độ rộng từng cột flex để tổng không vượt quá availableFlexWidth
-  const flexWidths = new Map<number, number>();
+  // Phân bổ chính xác độ rộng từng cột flex. Khi đủ chỗ (wrapperWidth >= minTableWidth),
+  // cột flex cuối cùng để trình duyệt tự ăn phần dư sub-pixel (auto) nhằm tránh thanh cuộn ngang 1px trên màn hình Windows scale 125%/150%.
+  const flexWidths = new Map<number, number | undefined>();
   if (flexSum > 0 && wrapperWidth > 0) {
     const flexIndices = visibleCols
       .map((col, idx) => (typeof col.width === "number" ? -1 : idx))
@@ -96,12 +98,16 @@ const Table = (props: ITableProps) => {
       const weight = col.flex ?? 1;
       const minW = col.minWidth ?? 80;
       const isLast = i === flexIndices.length - 1;
-      const allocated = isLast
-        ? Math.max(minW, remainingFlexWidth)
-        : Math.max(minW, Math.round((remainingFlexWidth * weight) / Math.max(0.0001, remainingFlexWeight)));
-      flexWidths.set(idx, allocated);
-      remainingFlexWidth = Math.max(0, remainingFlexWidth - allocated);
-      remainingFlexWeight = Math.max(0, remainingFlexWeight - weight);
+      if (isLast && !needsHorizontalScroll) {
+        flexWidths.set(idx, undefined);
+      } else {
+        const allocated = isLast
+          ? Math.max(minW, remainingFlexWidth)
+          : Math.max(minW, Math.floor((remainingFlexWidth * weight) / Math.max(0.0001, remainingFlexWeight)));
+        flexWidths.set(idx, allocated);
+        remainingFlexWidth = Math.max(0, remainingFlexWidth - allocated);
+        remainingFlexWeight = Math.max(0, remainingFlexWeight - weight);
+      }
     }
   }
 
@@ -116,7 +122,7 @@ const Table = (props: ITableProps) => {
         style={{
           tableLayout: "fixed",
           position: "relative",
-          minWidth: minTableWidth > 0 ? `${minTableWidth}px` : undefined,
+          minWidth: needsHorizontalScroll ? `${minTableWidth}px` : undefined,
         }}
       >
         <colgroup>
@@ -124,9 +130,9 @@ const Table = (props: ITableProps) => {
             if (typeof col.width === "number") {
               return <col key={col.uuid ?? idx} style={{ width: `${col.width}px` }} />;
             }
-            const computedPx = flexWidths.get(idx);
-            if (computedPx !== undefined) {
-              return <col key={col.uuid ?? idx} style={{ width: `${computedPx}px` }} />;
+            if (flexWidths.has(idx)) {
+              const computedPx = flexWidths.get(idx);
+              return <col key={col.uuid ?? idx} style={computedPx !== undefined ? { width: `${computedPx}px` } : undefined} />;
             }
             const colWidth =
               flexSum > 0
