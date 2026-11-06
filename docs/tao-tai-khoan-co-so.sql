@@ -5,12 +5,33 @@
 -- 1. Vào trang /nhap-du-lieu trên hệ thống, tải lên và nhấn "Nhập dữ liệu" cho 2 file đã được chuẩn hóa:
 --    - docs/hoàng gia.xlsx       (Cơ sở: ESL Hoàng Gia - 116 dòng, 0 lỗi)
 --    - docs/tuổi thần tiên.xlsx  (Cơ sở: ESL TTT       - 69 dòng, 0 lỗi)
--- 2. Sau đó chạy script SQL bên dưới để tạo tài khoản riêng (vai trò Giáo vụ / Quản lý cơ sở,
+-- 2. Sau đó chạy script SQL bên dưới để tạo tài khoản riêng (vai trò Admin đơn vị - campus_admin,
 --    mật khẩu mặc định: esl123) và gán quyền truy cập đúng từng cơ sở.
 --    (Script cũng tự động đảm bảo 2 cơ sở ESL Hoàng Gia và ESL TTT tồn tại nếu chạy trước).
 -- =============================================================================
 
+ALTER TYPE "role" ADD VALUE IF NOT EXISTS 'campus_admin' AFTER 'admin';
+
 BEGIN;
+
+-- 0. Cấp đầy đủ 13 quyền cho vai trò Admin đơn vị (campus_admin)
+INSERT INTO role_permissions (role, permission, granted) VALUES
+  ('campus_admin', 'students.view', true),
+  ('campus_admin', 'students.edit', true),
+  ('campus_admin', 'students.delete', true),
+  ('campus_admin', 'parents.manage', true),
+  ('campus_admin', 'classes.manage', true),
+  ('campus_admin', 'teachers.manage', true),
+  ('campus_admin', 'attendance.record', true),
+  ('campus_admin', 'assignments.manage', true),
+  ('campus_admin', 'learning.manage', true),
+  ('campus_admin', 'tuition.manage', true),
+  ('campus_admin', 'reports.view', true),
+  ('campus_admin', 'accounts.manage', true),
+  ('campus_admin', 'settings.manage', true)
+ON CONFLICT (role, permission) DO UPDATE SET
+  granted = EXCLUDED.granted,
+  updated_at = now();
 
 -- 1. Đảm bảo các cơ sở tồn tại trong bảng campuses
 INSERT INTO campuses (name, address)
@@ -25,34 +46,34 @@ WHERE NOT EXISTS (
   SELECT 1 FROM campuses WHERE lower(trim(name)) = lower('ESL TTT')
 );
 
--- 2. Tạo tài khoản riêng cho từng cơ sở (Mật khẩu mặc định: esl123)
+-- 2. Tạo tài khoản riêng cho từng cơ sở (Vai trò: Admin đơn vị - campus_admin, Mật khẩu mặc định: esl123)
 INSERT INTO accounts (full_name, email, role, status, password_hash)
 VALUES
   (
     'Quản lý cơ sở Hoàng Gia',
     'hoanggia@esl-center.vn',
-    'academic',
+    'campus_admin',
     'active',
     'scrypt$afd4eac9f6c2eff118732b62162afef3$c44e68e572f076a55a9d1fbaf5b87eeff4b51bea0aa729553a8d4fd4f8f5a335bc2d64d9b3bce5de994e9706f7c3f133344cf6c296df8277e62d5fc83ddb6fc9'
   ),
   (
     'Quản lý cơ sở Tuổi Thần Tiên',
     'tuoithantien@esl-center.vn',
-    'academic',
+    'campus_admin',
     'active',
     'scrypt$afd4eac9f6c2eff118732b62162afef3$c44e68e572f076a55a9d1fbaf5b87eeff4b51bea0aa729553a8d4fd4f8f5a335bc2d64d9b3bce5de994e9706f7c3f133344cf6c296df8277e62d5fc83ddb6fc9'
   ),
   (
     'Quản lý cơ sở Mầm Xanh',
     'mamxanh@esl-center.vn',
-    'academic',
+    'campus_admin',
     'active',
     'scrypt$afd4eac9f6c2eff118732b62162afef3$c44e68e572f076a55a9d1fbaf5b87eeff4b51bea0aa729553a8d4fd4f8f5a335bc2d64d9b3bce5de994e9706f7c3f133344cf6c296df8277e62d5fc83ddb6fc9'
   ),
   (
     'Quản lý cơ sở Anh ngữ SILA',
     'sila@esl-center.vn',
-    'academic',
+    'campus_admin',
     'active',
     'scrypt$afd4eac9f6c2eff118732b62162afef3$c44e68e572f076a55a9d1fbaf5b87eeff4b51bea0aa729553a8d4fd4f8f5a335bc2d64d9b3bce5de994e9706f7c3f133344cf6c296df8277e62d5fc83ddb6fc9'
   )

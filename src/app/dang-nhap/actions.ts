@@ -64,6 +64,7 @@ export async function loginAction(_prev: ActionResult, formData: FormData): Prom
 // Xoá hàm này và phần LoginForm tương ứng trước khi đưa lên máy chủ thật.
 const DEV_ACCOUNT_EMAIL: Record<Role, string> = {
   admin: 'admin@esl-center.vn',
+  campus_admin: 'hoanggia@esl-center.vn',
   academic: 'trang.giaovu@esl-center.vn',
   teacher: 'thu.ha@esl-center.vn',
   accountant: 'ngoc.ketoan@esl-center.vn',

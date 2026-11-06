@@ -2,7 +2,7 @@
 // Nguồn chuẩn cho server action (requirePermission) và giao diện (ẩn menu, nút).
 // Quyền thực tế đang áp dụng nằm trong bảng role_permissions, quản trị chỉnh ở màn Tài khoản & quyền.
 
-export const ROLE_CODES = ['admin', 'academic', 'teacher', 'accountant'] as const;
+export const ROLE_CODES = ['admin', 'campus_admin', 'academic', 'teacher', 'accountant'] as const;
 export type Role = (typeof ROLE_CODES)[number];
 
 // Vai trò của mọi tài khoản trong bảng accounts. Học sinh đăng nhập làm bài (P28), không nằm trong ma trận quyền.
@@ -11,6 +11,7 @@ export type AccountRole = Role | typeof STUDENT_ROLE;
 
 export const ROLE_LABELS: Record<Role, string> = {
   admin: 'Quản trị',
+  campus_admin: 'Admin đơn vị',
   academic: 'Giáo vụ',
   teacher: 'Giáo viên',
   accountant: 'Kế toán',
@@ -37,9 +38,10 @@ export type Permission = (typeof PERMISSIONS)[number]['key'];
 
 const ALL_PERMISSIONS = PERMISSIONS.map((p) => p.key) as Permission[];
 
-// Mặc định khi tạo hệ thống. Quản trị luôn có toàn bộ quyền.
+// Mặc định khi tạo hệ thống. Quản trị luôn có toàn bộ quyền. Admin đơn vị có toàn bộ quyền trong phạm vi cơ sở được gán.
 export const DEFAULT_GRANTS: Record<Role, Permission[]> = {
   admin: ALL_PERMISSIONS,
+  campus_admin: ALL_PERMISSIONS,
   academic: [
     'students.view',
     'students.edit',

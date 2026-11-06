@@ -5,8 +5,9 @@ import { NAV_GROUPS, MOBILE_TABS, visibleGroups } from '@/lib/nav';
 const ALL = PERMISSIONS.map((p) => p.key) as Permission[];
 
 describe('ma trận quyền mặc định', () => {
-  it('quản trị có đủ mọi quyền', () => {
+  it('quản trị và admin đơn vị có đủ mọi quyền', () => {
     expect(new Set(DEFAULT_GRANTS.admin)).toEqual(new Set(ALL));
+    expect(new Set(DEFAULT_GRANTS.campus_admin)).toEqual(new Set(ALL));
   });
   it('mọi vai trò chỉ dùng quyền có trong danh sách', () => {
     for (const role of ROLE_CODES) {

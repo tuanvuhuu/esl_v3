@@ -40,7 +40,13 @@ import { AccountForm, type TeacherOption } from './AccountForm';
 
 export type TabKey = 'nguoi-dung' | 'phan-quyen' | 'nhat-ky';
 
-const ROLE_TONE: Record<Role, Tone> = { admin: 'butter', academic: 'mint', teacher: 'lav', accountant: 'stone' };
+const ROLE_TONE: Record<Role, Tone> = {
+  admin: 'butter',
+  campus_admin: 'blush',
+  academic: 'mint',
+  teacher: 'lav',
+  accountant: 'stone',
+};
 
 const ACCOUNT_COLUMNS: GridColumn<AccountRow>[] = [
   { key: 'name', label: 'Thành viên', width: '236px', sortValue: (r) => r.fullName },
@@ -464,7 +470,7 @@ function PermissionsTab({ matrix, canManage }: { matrix: RoleMatrix; canManage: 
         <div role="table" aria-label="Ma trận quyền" className="flex flex-col">
           <div
             role="row"
-            className="grid grid-cols-[minmax(220px,2fr)_repeat(4,minmax(96px,1fr))] border-b border-[var(--borderColor-default)] bg-[#f8fafc] dark:bg-[var(--bgColor-muted)]"
+            className="grid grid-cols-[minmax(220px,2fr)_repeat(5,minmax(96px,1fr))] border-b border-[var(--borderColor-default)] bg-[#f8fafc] dark:bg-[var(--bgColor-muted)]"
           >
             <div
               role="columnheader"
@@ -523,7 +529,7 @@ function PermissionCells({
   return (
     <div
       role="row"
-      className="grid grid-cols-[minmax(220px,2fr)_repeat(4,minmax(96px,1fr))] border-b border-[var(--borderColor-muted)] bg-[var(--bgColor-default)] transition-colors last:border-b-0 hover:bg-[var(--row-hover)]"
+      className="grid grid-cols-[minmax(220px,2fr)_repeat(5,minmax(96px,1fr))] border-b border-[var(--borderColor-muted)] bg-[var(--bgColor-default)] transition-colors last:border-b-0 hover:bg-[var(--row-hover)]"
     >
       <div role="cell" className="flex items-center px-4 py-2.5 text-[13.5px] font-medium text-[var(--fgColor-default)]">
         {label}

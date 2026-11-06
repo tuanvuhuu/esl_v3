@@ -32,7 +32,7 @@ export const teacherStatusEnum = pgEnum('teacher_status', ['active', 'leave']);
 export const staffRoleEnum = pgEnum('staff_role', ['teacher', 'foreign', 'assistant']);
 export const accountStatusEnum = pgEnum('account_status', ['active', 'locked']);
 // Vai trò học sinh (P28) dùng cho tài khoản học sinh đăng nhập làm bài. Không có quyền quản lý.
-export const roleEnum = pgEnum('role', ['admin', 'academic', 'teacher', 'accountant', 'student']);
+export const roleEnum = pgEnum('role', ['admin', 'campus_admin', 'academic', 'teacher', 'accountant', 'student']);
 export const parentRelationEnum = pgEnum('parent_relation', ['father', 'mother', 'guardian', 'other']);
 export const sessionStatusEnum = pgEnum('session_status', ['planned', 'done', 'cancelled']);
 export const submissionStatusEnum = pgEnum('submission_status', ['not_submitted', 'submitted', 'graded']);

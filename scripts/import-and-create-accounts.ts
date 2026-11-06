@@ -2,9 +2,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { sql } from 'drizzle-orm';
 import { db } from '../src/db/client';
-import { accountCampuses, accounts, campuses } from '../src/db/schema';
+import { accountCampuses, accounts, campuses, rolePermissions } from '../src/db/schema';
 import { readImportFile } from '../src/lib/import/excel';
 import { applyImport, planImport, type ImportPlan } from '../src/lib/import/plan';
+import { DEFAULT_GRANTS, PERMISSIONS } from '../src/lib/permissions';
 import { describeSchedule, generateSessions } from '../src/lib/schedule';
 import { normalizeSearch } from '../src/lib/text';
 import type { StaffRole } from '../src/lib/validation/teacher';
@@ -199,11 +200,21 @@ async function main() {
     const chunks: string[] = [
       '-- =============================================================================',
       '-- SCRIPT TỔNG HỢP: NHẬP DỮ LIỆU 2 CƠ SỞ (HOÀNG GIA & TUỔI THẦN TIÊN)',
-      '-- VÀ TẠO TÀI KHOẢN QUẢN LÝ RIÊNG CHO TỪNG CƠ SỞ',
+      '-- VÀ TẠO TÀI KHOẢN QUẢN LÝ RIÊNG CHO TỪNG CƠ SỞ (ADMIN ĐƠN VỊ)',
       '-- =============================================================================',
+      `ALTER TYPE "role" ADD VALUE IF NOT EXISTS 'campus_admin' AFTER 'admin';`,
+      '',
       'BEGIN;',
       '',
     ];
+
+    for (const p of PERMISSIONS) {
+      const granted = DEFAULT_GRANTS.campus_admin.includes(p.key);
+      chunks.push(
+        `INSERT INTO role_permissions (role, permission, granted) VALUES ('campus_admin', ${esc(p.key)}, ${granted}) ON CONFLICT (role, permission) DO UPDATE SET granted = EXCLUDED.granted, updated_at = now();`,
+      );
+    }
+    chunks.push('');
 
     for (const f of parsedFiles) {
       const plan = await planImport(f.rows.rows, db, null);
@@ -218,7 +229,7 @@ async function main() {
     chunks.push('-- =============================================================================');
     for (const acc of CAMPUS_ACCOUNTS) {
       chunks.push(
-        `INSERT INTO accounts (full_name, email, role, status, password_hash) VALUES (${esc(acc.fullName)}, ${esc(acc.email)}, 'academic', 'active', ${esc(DEFAULT_PASSWORD_HASH)}) ON CONFLICT (email) DO UPDATE SET full_name = EXCLUDED.full_name, role = EXCLUDED.role, status = 'active', updated_at = now();`,
+        `INSERT INTO accounts (full_name, email, role, status, password_hash) VALUES (${esc(acc.fullName)}, ${esc(acc.email)}, 'campus_admin', 'active', ${esc(DEFAULT_PASSWORD_HASH)}) ON CONFLICT (email) DO UPDATE SET full_name = EXCLUDED.full_name, role = EXCLUDED.role, status = 'active', updated_at = now();`,
       );
       chunks.push(
         `INSERT INTO account_campuses (account_id, campus_id) SELECT a.id, c.id FROM accounts a JOIN campuses c ON a.email = ${esc(acc.email)} AND lower(trim(c.name)) = lower(${esc(acc.campusName)}) ON CONFLICT (account_id, campus_id) DO NOTHING;`,
@@ -236,7 +247,20 @@ async function main() {
   }
 
   // mode === 'execute'
+  await db.execute(sql.raw(`ALTER TYPE "role" ADD VALUE IF NOT EXISTS 'campus_admin' AFTER 'admin'`));
+
   await db.transaction(async (tx) => {
+    for (const p of PERMISSIONS) {
+      const granted = DEFAULT_GRANTS.campus_admin.includes(p.key);
+      await tx
+        .insert(rolePermissions)
+        .values({ role: 'campus_admin', permission: p.key, granted })
+        .onConflictDoUpdate({
+          target: [rolePermissions.role, rolePermissions.permission],
+          set: { granted, updatedAt: new Date() },
+        });
+    }
+
     for (const f of parsedFiles) {
       const plan = await planImport(f.rows.rows, tx, null);
       if (plan.errorCount > 0) {
@@ -252,13 +276,13 @@ async function main() {
         .values({
           fullName: acc.fullName,
           email: acc.email,
-          role: 'academic',
+          role: 'campus_admin',
           status: 'active',
           passwordHash: DEFAULT_PASSWORD_HASH,
         })
         .onConflictDoUpdate({
           target: accounts.email,
-          set: { fullName: acc.fullName, role: 'academic', status: 'active', updatedAt: new Date() },
+          set: { fullName: acc.fullName, role: 'campus_admin', status: 'active', updatedAt: new Date() },
         })
         .returning({ id: accounts.id });
 
